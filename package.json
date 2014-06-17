@@ -1,0 +1,43 @@
+{
+  "name": "swagger-tools",
+  "version": "0.0.0",
+  "description": "Various tools for using and integrating with Swagger.",
+  "main": "index.js",
+  "scripts": {
+    "test": "gulp test"
+  },
+  "author": {
+    "name": "Jeremy Whitlock",
+    "email": "jwhitlock@apache.org",
+    "url": "https://github.com/whitlockjc"
+  },
+  "bugs": {
+    "url": "https://github.com/apigee/connect-swagger/issues"
+  },
+  "homepage": "https://github.com/apigee/connect-swagger",
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/apigee/connect-swagger.git"
+  },
+  "keywords": [
+    "connect",
+    "swagger"
+  ],
+  "devDependencies": {
+    "gulp": "^3.8.0",
+    "gulp-jshint": "^1.6.2",
+    "gulp-mocha": "^0.4.1",
+    "jshint-stylish": "^0.2.0"
+  },
+  "dependencies": {
+    "jjv": "^1.0.0",
+    "jjve": "^0.2.1",
+    "lodash": "^2.4.1"
+  }
+}
