@@ -53,10 +53,12 @@ describe('swagger-tools v1.2 Specification', function () {
   describe('metadata', function () {
     it('should have proper docsUrl, options, schemasUrl and verison properties', function () {
       assert.deepEqual(spec.options, {
-        useDefault: false,
-        useCoerce: false,
-        checkRequired: true,
-        removeAdditional: false
+        validator: {
+          useDefault: false,
+          useCoerce: false,
+          checkRequired: true,
+          removeAdditional: false
+        }
       });
       assert.strictEqual(spec.docsUrl, 'https://github.com/wordnik/swagger-spec/blob/master/versions/1.2.md');
       assert.strictEqual(spec.schemasUrl, 'https://github.com/wordnik/swagger-spec/tree/master/schemas/v1.2');
@@ -109,7 +111,7 @@ describe('swagger-tools v1.2 Specification', function () {
       });
     });
 
-    it('should return false for invalid JSON files', function () {
+    it('should return errors for structurally invalid JSON files', function () {
       var petJson = _.cloneDeep(allSampleFiles['pet.json']);
       var petErrors = [
         {
@@ -158,10 +160,51 @@ describe('swagger-tools v1.2 Specification', function () {
       // Extra property
       userJson.apis[0].operations[0].authorizations.oauth2[0].extra = 'value';
 
-      assert.deepEqual(spec.validate(petJson), petErrors);
-      assert.deepEqual(spec.validate(rlJson, 'resourceListing.json'), rlErrors);
-      assert.deepEqual(spec.validate(storeJson), storeErrors);
-      assert.deepEqual(spec.validate(userJson), userErrors);
+      assert.deepEqual(spec.validate(petJson).errors, petErrors);
+      assert.equal(spec.validate(petJson).warnings, 0);
+      assert.deepEqual(spec.validate(rlJson, 'resourceListing.json').errors, rlErrors);
+      assert.equal(spec.validate(rlJson, 'resourceListing.json').warnings, 0);
+      assert.deepEqual(spec.validate(storeJson).errors, storeErrors);
+      assert.equal(spec.validate(storeJson).warnings, 0);
+      assert.deepEqual(spec.validate(userJson).errors, userErrors);
+      assert.equal(spec.validate(userJson).warnings, 0);
+    });
+
+    it('should return errors for missing model references in apiDeclaration/resource files', function () {
+      var json = require('./v1_2-invalid-models.json');
+      var result = spec.validate(json);
+      var expectedMissingModelRefs = {
+        'MissingParamRef': '$.apis[0].operations[0].parameters[0].type',
+        'MissingParamItemsRef': '$.apis[0].operations[0].parameters[1].items.$ref',
+        'MissingResponseMessageRef': '$.apis[0].operations[0].responseMessages[0].responseModel',
+        'MissingTypeRef': '$.apis[0].operations[0].type',
+        'MissingTypeItemsRef': '$.apis[1].operations[0].items.$ref',
+        'MissingPropertyItemsRef': '$.models[\'Animal\'].properties[\'breeds\'].items.$ref',
+        'MissingSubTypeRef': '$.models[\'Animal\'].subTypes[1]',
+        'MissingPropertyRef': '$.models[\'Cat\'].properties[\'address\'].$ref'
+      };
+
+      assert.equal(result.errors.length, Object.keys(expectedMissingModelRefs).length);
+
+      result.errors.forEach(function (error) {
+        assert.equal(error.code, 'UNRESOLVABLE_MODEL_REFERENCE');
+        assert.equal(error.message, 'Model reference could not be resolved: ' + error.data);
+        assert.equal(error.path, expectedMissingModelRefs[error.data]);
+      });
+    });
+
+    it('should return warnings for unused models in apiDeclaration/resource files', function () {
+      var json = require('./v1_2-invalid-models.json');
+      var result = spec.validate(json);
+
+      assert.equal(1, result.warnings.length);
+
+      assert.deepEqual(result.warnings[0], {
+        code: 'UNUSED_MODEL',
+        message: 'Model is defined but is not used: Animal',
+        data: 'Animal',
+        path: '$.models[\'Animal\']'
+      });
     });
   });
 });

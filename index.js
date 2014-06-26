@@ -22,11 +22,13 @@ var fs = require('fs');
 var jjv = require('jjv');
 var jjve = require('jjve');
 
-var validatorDefaults = {
-  useDefault: false,
-  useCoerce: false,
-  checkRequired: true,
-  removeAdditional: false
+var defaultOptions = {
+  validator: {
+    useDefault: false,
+    useCoerce: false,
+    checkRequired: true,
+    removeAdditional: false
+  }
 };
 
 var throwUnsupportedVersion = function (version) {
@@ -37,21 +39,21 @@ var throwUnsupportedVersion = function (version) {
  * Creates a new Swagger specification object.
  *
  * @param {string} version - The Swagger version
- * @param {object} [options] - The specification options (Currently used to pass validator options)
- * @param {boolean} [options.useDefault=false] - If true it modifies the object to have the default values for missing
- *                                               non-required fields
- * @param {boolean} [options.useCoerce=false] - If true it enables type coercion where defined
- * @param {boolean} [options.checkRequired=true] - If true it reports missing required properties, otherwise it allows
- *                                                 missing required properties
- * @param {boolean} [options.removeAdditional=false] - If true it removes all attributes of an object which are not
- *                                                     matched by the schema's specification
+ * @param {object} [options] - The specification options
+ * @param {boolean} [options.validator.useDefault=false] - If true it modifies the object to have the default values for
+ *                                                         missing non-required fields
+ * @param {boolean} [options.validator.useCoerce=false] - If true it enables type coercion where defined
+ * @param {boolean} [options.validatorcheckRequired=true] - If true it reports missing required properties, otherwise it
+ *                                                          allows missing required properties
+ * @param {boolean} [options.validator.removeAdditional=false] - If true it removes all attributes of an object which
+ *                                                               are not matched by the schema's specification
  * @constructor
  */
 var Specification = function Specification (version, options) {
   var docsUrl;
   var schemasUrl;
 
-  options = _.defaults(options || {}, validatorDefaults);
+  options = _.defaults(options || {}, defaultOptions);
 
   switch (version) {
   case '1.2':
@@ -85,7 +87,7 @@ var Specification = function Specification (version, options) {
   switch (version) {
   case '1.2':
     Object.keys(this.schemas).forEach(function (schemaName) {
-      var validator = jjv();
+      var validator = jjv(this.options.validator);
       var toCompile = [];
 
       // Disable the 'uri' format checker as it's got issues: https://github.com/acornejo/jjv/issues/24
@@ -157,6 +159,132 @@ var Specification = function Specification (version, options) {
   }
 };
 
+var validateModels = function validateModels (spec, resource) {
+  var modelIds = _.map(resource.models || {}, function (model) {
+    return model.id;
+  });
+  var modelRefs = {};
+  var primitives = _.union(spec.schemas['dataType.json'].definitions.primitiveType.properties.type.enum,
+                           ['array', 'void', 'File']);
+  var addModelRef = function (modelId, modelRef) {
+    if (Object.keys(modelRefs).indexOf(modelId) === -1) {
+      modelRefs[modelId] = [];
+    }
+
+    modelRefs[modelId].push(modelRef);
+  };
+  var errors = [];
+  var warnings = [];
+
+  switch (spec.version) {
+  case '1.2':
+    // Find references defined in the operations (Validation happens elsewhere but we have to be smart)
+    if (resource.apis && _.isArray(resource.apis)) {
+      _.each(resource.apis, function (api, index) {
+        var apiPath = '$.apis[' + index + ']';
+
+        _.each(api.operations, function (operation, index) {
+          var operationPath = apiPath + '.operations[' + index + ']';
+
+          // References in operation type
+          if (operation.type) {
+            if (operation.type === 'array' && _.isObject(operation.items) && operation.items.$ref) {
+              addModelRef(operation.items.$ref, operationPath + '.items.$ref');
+            } else if (primitives.indexOf(operation.type) === -1) {
+              addModelRef(operation.type, operationPath + '.type');
+            }
+          }
+
+          // References in operation parameters
+          if (operation.parameters && _.isObject(operation.parameters)) {
+            _.each(operation.parameters, function (parameter, index) {
+
+              if (parameter.type && primitives.indexOf(parameter.type) === -1) {
+                addModelRef(parameter.type, operationPath + '.parameters[' + index + '].type');
+              } else if (parameter.type === 'array' && _.isObject(parameter.items) && parameter.items.$ref) {
+                addModelRef(parameter.items.$ref, operationPath + '.parameters[' + index + '].items.$ref');
+              }
+            });
+          }
+
+          // References in response messages
+          if (operation.responseMessages && _.isArray(operation.responseMessages)) {
+            _.each(operation.responseMessages, function (message, index) {
+              if (message.responseModel) {
+                addModelRef(message.responseModel, operationPath + '.responseMessages[' + index + '].responseModel');
+              }
+            });
+          }
+        });
+      });
+    }
+
+    // Find references defined in the models themselves (Validation happens elsewhere but we have to be smart)
+    if (resource.models && _.isObject(resource.models)) {
+      _.each(resource.models, function (model, name) {
+        var modelPath = '$.models[\'' + name + '\']'; // Always use bracket notation just to be safe
+
+        // References in model properties
+        if (model.properties && _.isObject(model.properties)) {
+          _.each(model.properties, function (property, name) {
+            var propPath = modelPath + '.properties[\'' + name + '\']'; // Always use bracket notation just to be safe
+
+            if (property.$ref) {
+              addModelRef(property.$ref, propPath + '.$ref');
+            } else if (property.type === 'array' && _.isObject(property.items) && property.items.$ref) {
+              addModelRef(property.items.$ref, propPath + '.items.$ref');
+            }
+          });
+        }
+
+        // References in model subTypes
+        if (model.subTypes && _.isArray(model.subTypes)) {
+          _.each(model.subTypes, function (name, index) {
+            addModelRef(name, modelPath + '.subTypes[' + index + ']');
+          });
+        }
+      });
+    }
+
+    break;
+  default:
+    throwUnsupportedVersion(spec.version);
+  }
+
+  // Handle missing models
+  _.difference(Object.keys(modelRefs), modelIds).forEach(function (missing) {
+    modelRefs[missing].forEach(function (modelRef) {
+      errors.push({
+        code: 'UNRESOLVABLE_MODEL_REFERENCE',
+        message: 'Model reference could not be resolved: ' + missing,
+        data: missing,
+        path: modelRef
+      });
+    });
+  });
+
+  // Handle unused models
+  _.difference(modelIds, Object.keys(modelRefs)).forEach(function (unused) {
+    warnings.push({
+      code: 'UNUSED_MODEL',
+      message: 'Model is defined but is not used: ' + unused,
+      data: unused,
+      path: '$.models[\'' + unused + '\']'
+    });
+  });
+
+  // TODO: Validate subTypes are not cyclical
+  // TODO: Validate subTypes do not override parent properties
+  // TODO: Validate subTypes do not include discriminiator
+  // TODO: Validate discriminitor property exists
+  // TODO: Validate required properties exist
+
+  return {
+    errors: errors,
+    warnings: warnings
+  };
+};
+
 /**
  * Returns the result of the validation of the Swagger document against its schema.
  *
@@ -172,6 +300,8 @@ Specification.prototype.validate = function (data, schemaName) {
     throw new TypeError('data must be an object');
   }
 
+  var errors = [];
+  var warnings = [];
   var schema;
   var validator;
   var result;
@@ -181,25 +311,41 @@ Specification.prototype.validate = function (data, schemaName) {
     // Default to 'apiDeclaration.json'
     schemaName = schemaName || 'apiDeclaration.json';
 
-    schema = this.schemas[schemaName];
-
     break;
   default:
     throwUnsupportedVersion(this.version);
   }
 
+  schema = this.schemas[schemaName];
+
   if (!schema) {
-    throw new Error('dataSchema is not valid.  Valid schema names: ' + Object.keys(this.schemas).join(', '));
+    throw new Error('schemaName is not valid.  Valid schema names: ' + Object.keys(this.schemas).join(', '));
   }
 
+  // Do structural (JSON Schema) validation
   validator = this.validators[schemaName];
   result = validator.validate(schema, data);
 
   if (result) {
-    return validator.je(schema, data, result);
-  } else {
-    return undefined;
+    errors = validator.je(schema, data, result);
   }
+
+  switch (schemaName) {
+  case 'apiDeclaration.json':
+    result = validateModels(this, data);
+
+    if (result.errors && _.isArray(result.errors)) {
+      errors = errors.concat(result.errors);
+    }
+
+    if (result.warnings && _.isArray(result.warnings)) {
+      warnings = warnings.concat(result.warnings);
+    }
+
+    break;
+  }
+
+  return errors.length === 0 && warnings.length === 0 ? undefined : {errors: errors, warnings: warnings};
 };
 
 var v1_2 = module.exports.v1_2 = new Specification('1.2'); // jshint ignore:line
