@@ -51,7 +51,7 @@ fs.readdirSync(path.join(__dirname, '..', 'samples', '1.2'))
 
 describe('swagger-tools v1.2 Specification', function () {
   describe('metadata', function () {
-    it('should have proper docsUrl, options, schemasUrl and verison properties', function () {
+    it('should have proper docsUrl, primitives, options, schemasUrl and verison properties', function () {
       assert.deepEqual(spec.options, {
         validator: {
           useDefault: false,
@@ -61,6 +61,17 @@ describe('swagger-tools v1.2 Specification', function () {
         }
       });
       assert.strictEqual(spec.docsUrl, 'https://github.com/wordnik/swagger-spec/blob/master/versions/1.2.md');
+      assert.deepEqual(spec.primitives, [
+        'integer',
+        'long',
+        'float',
+        'double',
+        'string',
+        'byte',
+        'boolean',
+        'date',
+        'dateTime'
+      ]);
       assert.strictEqual(spec.schemasUrl, 'https://github.com/wordnik/swagger-spec/tree/master/schemas/v1.2');
       assert.strictEqual(spec.version, '1.2');
     });

@@ -51,6 +51,7 @@ var throwUnsupportedVersion = function (version) {
  */
 var Specification = function Specification (version, options) {
   var docsUrl;
+  var primitives;
   var schemasUrl;
 
   options = _.defaults(options || {}, defaultOptions);
@@ -58,6 +59,18 @@ var Specification = function Specification (version, options) {
   switch (version) {
   case '1.2':
     docsUrl = 'https://github.com/wordnik/swagger-spec/blob/master/versions/1.2.md';
+    // Manually maintained list due to the related JSON Schema files not being complete or used
+    primitives = [
+      'integer',
+      'long',
+      'float',
+      'double',
+      'string',
+      'byte',
+      'boolean',
+      'date',
+      'dateTime'
+    ];
     schemasUrl = 'https://github.com/wordnik/swagger-spec/tree/master/schemas/v1.2';
 
     break;
@@ -67,6 +80,7 @@ var Specification = function Specification (version, options) {
 
   this.docsUrl = docsUrl;
   this.options = options;
+  this.primitives = primitives;
   this.schemasUrl = schemasUrl;
   this.version = version;
 
@@ -164,8 +178,7 @@ var validateModels = function validateModels (spec, resource) {
     return model.id;
   });
   var modelRefs = {};
-  var primitives = _.union(spec.schemas['dataType.json'].definitions.primitiveType.properties.type.enum,
-                           ['array', 'void', 'File']);
+  var primitives = _.union(spec.primitives, ['array', 'void', 'File']);
   var addModelRef = function (modelId, modelRef) {
     if (Object.keys(modelRefs).indexOf(modelId) === -1) {
       modelRefs[modelId] = [];
