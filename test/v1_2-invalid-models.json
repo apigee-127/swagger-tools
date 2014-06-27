@@ -15,7 +15,7 @@
               "name": "name",
               "paramType": "path",
               "required": true,
-              "type": "MissingParamRef"
+              "type": "string"
             }
           ],
           "summary": "Create a greeting",
@@ -31,43 +31,133 @@
       "id": "A",
       "name": "A",
       "required": [
-        "id",
-        "type"
+        "aId"
       ],
       "properties": {
-        "id": {
-          "type": "long"
-        },
-        "type": {
+        "aId": {
           "type": "string"
         }
       },
-      "subTypes": ["B"],
-      "discriminator": "type"
+      "subTypes": ["B", "C"],
+      "discriminator": "aId"
     },
     "B": {
       "id": "B",
       "name": "B",
       "required": [
-        "b"
+        "bId"
       ],
       "properties": {
-        "b": {
-          "type": "boolean"
+        "bId": {
+          "type": "string"
         }
-      },
-      "subType": ["A"],
-      "discriminator": "type"
+      }
     },
     "C": {
+      "id": "C",
+      "name": "C",
+      "required": [
+        "cId"
+      ],
+      "properties": {
+        "cId": {
+          "type": "string"
+        }
+      },
+      "subTypes": ["D"],
+      "discriminator": "cId"
+    },
+    "D": {
+      "id": "D",
+      "name": "D",
+      "required": [
+        "dId"
+      ],
+      "properties": {
+        "dId": {
+          "type": "string"
+        }
+      },
+      "subTypes": ["A"],
+      "discriminator": "dId"
+    },
+    "E": {
+      "id": "E",
+      "name": "E",
+      "required": [
+        "eId"
+      ],
+      "properties": {
+        "eId": {
+          "type": "string"
+        }
+      },
+      "subTypes": ["B"],
+      "discriminator": "eId"
+    },
+    "F": {
+      "id": "F",
+      "name": "F",
+      "required": [
+        "fId"
+      ],
+      "properties": {
+        "fId": {
+          "type": "string"
+        }
+      },
+      "subTypes": ["G"],
+      "discriminator": "fId"
+    },
+    "G": {
+      "id": "G",
+      "name": "G",
+      "required": [
+        "gId"
+      ],
+      "properties": {
+        "gId": {
+          "type": "string"
+        }
+      }
+    },
+    "H": {
+      "id": "H",
+      "name": "H",
+      "required": [
+        "hId"
+      ],
+      "properties": {
+        "hId": {
+          "type": "string"
+        }
+      },
+      "subTypes": ["I"],
+      "discriminator": "hId"
+    },
+    "I": {
+      "id": "I",
+      "name": "I",
+      "required": [
+        "iId"
+      ],
+      "properties": {
+        "iId": {
+          "type": "string"
+        }
+      },
+      "subTypes": ["F", "H"],
+      "discriminator": "iId"
+    },
+    "J": {
       "id": "A",
       "name": "A",
       "required": [
-        "id"
+        "jId"
       ],
       "properties": {
-        "id": {
-          "type": "long"
+        "jId": {
+          "type": "string"
         }
       }
     }

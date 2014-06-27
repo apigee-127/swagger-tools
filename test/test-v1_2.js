@@ -231,8 +231,33 @@ describe('swagger-tools v1.2 Specification', function () {
         code: 'DUPLICATE_MODEL_DEFINITION',
         message: 'Model already defined: A',
         data: 'A',
-        path: '$.models[\'C\'].id'
+        path: '$.models[\'J\'].id'
       });
+    });
+
+    it('should return errors for cyclical model subTypes in apiDeclaration/resource files', function () {
+      var errors = [];
+
+      spec.validate(invalidModelsJson).errors.forEach(function (error) {
+        if (error.code === 'CYCLICAL_MODEL_INHERITANCE') {
+          errors.push(error);
+        }
+      });
+
+      assert.deepEqual(errors, [
+        {
+          code: 'CYCLICAL_MODEL_INHERITANCE',
+          message: 'Model has a circular inheritance: D -> A -> C -> D',
+          data: ['A'],
+          path: '$.models[\'D\'].subTypes'
+        },
+        {
+          code: 'CYCLICAL_MODEL_INHERITANCE',
+          message: 'Model has a circular inheritance: I -> H -> I',
+          data: ['F', 'H'],
+          path: '$.models[\'I\'].subTypes'
+        }
+      ]);
     });
   });
 });

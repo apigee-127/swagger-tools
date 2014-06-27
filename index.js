@@ -174,10 +174,6 @@ var Specification = function Specification (version, options) {
 };
 
 var validateModels = function validateModels (spec, resource) {
-  var modelDeps = {};
-  var modelIds = [];
-  var modelRefs = {};
-  var primitives = _.union(spec.primitives, ['array', 'void', 'File']);
   var addModelRef = function (modelId, modelRef) {
     if (Object.keys(modelRefs).indexOf(modelId) === -1) {
       modelRefs[modelId] = [];
@@ -186,25 +182,55 @@ var validateModels = function validateModels (spec, resource) {
     modelRefs[modelId].push(modelRef);
   };
   var errors = [];
+  var findCyclicModels = function (modelDeps) {
+    var circular = {};
+    var resolved = {};
+    var unresolved = {};
+    var getPath = function (parent, unresolved) {
+      var parentVisited = false;
+
+      return Object.keys(unresolved).filter(function (dep) {
+        if (dep === parent) {
+          parentVisited = true;
+        }
+        return parentVisited && unresolved[dep];
+      });
+    };
+    var resolver = function (id, deps, circular, resolved, unresolved) {
+      unresolved[id] = true;
+
+      if (deps[id]) {
+        deps[id].forEach(function (dep) {
+          if (!resolved[dep]) {
+            if (unresolved[dep]) {
+              circular[id] = getPath(dep, unresolved);
+              return;
+            }
+            resolver(dep, deps, circular, resolved, unresolved);
+          }
+        });
+      }
+
+      resolved[id] = true;
+      unresolved[id] = false;
+    };
+
+    Object.keys(modelDeps).forEach(function (modelId) {
+      resolver(modelId, modelDeps, circular, resolved, unresolved);
+    });
+
+    return circular;
+  };
+  var modelDeps = {};
+  var modelIds = [];
+  var modelProps = {};
+  var modelRefs = {};
+  var models = resource.models || {};
+  var primitives = _.union(spec.primitives, ['array', 'void', 'File']);
   var warnings = [];
 
   switch (spec.version) {
   case '1.2':
-    _.each(resource.models || {}, function (model, modelName) {
-      var modelId = model.id;
-
-      if (modelIds.indexOf(modelId) > -1) {
-        errors.push({
-          code: 'DUPLICATE_MODEL_DEFINITION',
-          message: 'Model already defined: ' + modelId,
-          data: modelId,
-          path: '$.models[\'' + modelName + '\'].id'
-        });
-      } else {
-        modelIds.push(modelId);
-      }
-    });
-
     // Find references defined in the operations (Validation happens elsewhere but we have to be smart)
     if (resource.apis && _.isArray(resource.apis)) {
       _.each(resource.apis, function (api, index) {
@@ -247,9 +273,25 @@ var validateModels = function validateModels (spec, resource) {
     }
 
     // Find references defined in the models themselves (Validation happens elsewhere but we have to be smart)
-    if (resource.models && _.isObject(resource.models)) {
-      _.each(resource.models, function (model, name) {
+    if (models && _.isObject(models)) {
+      _.each(models, function (model, name) {
         var modelPath = '$.models[\'' + name + '\']'; // Always use bracket notation just to be safe
+        var modelId = model.id;
+
+        // Keep track of model children and properties and duplicate models
+        if (modelIds.indexOf(modelId) > -1) {
+          errors.push({
+            code: 'DUPLICATE_MODEL_DEFINITION',
+            message: 'Model already defined: ' + modelId,
+            data: modelId,
+            path: '$.models[\'' + name + '\'].id'
+          });
+        } else {
+          modelIds.push(modelId);
+
+          modelDeps[name] = model.subTypes || [];
+          modelProps[name] = Object.keys(model.properties || {});
+        }
 
         // References in model properties
         if (model.properties && _.isObject(model.properties)) {
@@ -278,7 +320,7 @@ var validateModels = function validateModels (spec, resource) {
     throwUnsupportedVersion(spec.version);
   }
 
-  // Handle missing models
+  // Identify missing models (referenced but not declared)
   _.difference(Object.keys(modelRefs), modelIds).forEach(function (missing) {
     modelRefs[missing].forEach(function (modelRef) {
       errors.push({
@@ -290,7 +332,7 @@ var validateModels = function validateModels (spec, resource) {
     });
   });
 
-  // Handle unused models
+  // Identify unused models (declared but not referenced)
   _.difference(modelIds, Object.keys(modelRefs)).forEach(function (unused) {
     warnings.push({
       code: 'UNUSED_MODEL',
@@ -300,8 +342,17 @@ var validateModels = function validateModels (spec, resource) {
     });
   });
 
-  // TODO: Validate subTypes are not cyclical
-  
+  // Identify cyclical model dependencies
+  _.each(findCyclicModels(modelDeps), function (cycleGroup, modelName) {
+    var model = models[modelName];
+
+    errors.push({
+      code: 'CYCLICAL_MODEL_INHERITANCE',
+      message: 'Model has a circular inheritance: ' + model.id + ' -> ' + cycleGroup.join(' -> '),
+      data: model.subTypes,
+      path: '$.models[\'' + modelName + '\'].subTypes'
+    });
+  });
 
   // TODO: Validate subTypes do not override parent properties
   // TODO: Validate subTypes do not include discriminiator
