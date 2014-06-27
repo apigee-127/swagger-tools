@@ -39,6 +39,8 @@ var allSchemaFiles = [
   'resourceObject.json'
 ];
 var allSampleFiles = {};
+var invalidModelRefsJson = require('./v1_2-invalid-model-refs.json');
+var invalidModelsJson = require('./v1_2-invalid-models.json');
 
 // Load the sample files from disk
 fs.readdirSync(path.join(__dirname, '..', 'samples', '1.2'))
@@ -182,8 +184,7 @@ describe('swagger-tools v1.2 Specification', function () {
     });
 
     it('should return errors for missing model references in apiDeclaration/resource files', function () {
-      var json = require('./v1_2-invalid-models.json');
-      var result = spec.validate(json);
+      var result = spec.validate(invalidModelRefsJson);
       var expectedMissingModelRefs = {
         'MissingParamRef': '$.apis[0].operations[0].parameters[0].type',
         'MissingParamItemsRef': '$.apis[0].operations[0].parameters[1].items.$ref',
@@ -205,8 +206,7 @@ describe('swagger-tools v1.2 Specification', function () {
     });
 
     it('should return warnings for unused models in apiDeclaration/resource files', function () {
-      var json = require('./v1_2-invalid-models.json');
-      var result = spec.validate(json);
+      var result = spec.validate(invalidModelRefsJson);
 
       assert.equal(1, result.warnings.length);
 
@@ -215,6 +215,23 @@ describe('swagger-tools v1.2 Specification', function () {
         message: 'Model is defined but is not used: Animal',
         data: 'Animal',
         path: '$.models[\'Animal\']'
+      });
+    });
+
+    it('should return errors for duplicate model ids in apiDeclaration/resource files', function () {
+      var cError;
+
+      spec.validate(invalidModelsJson).errors.forEach(function (error) {
+        if (error.code === 'DUPLICATE_MODEL_DEFINITION') {
+          cError = error;
+        }
+      });
+
+      assert.deepEqual(cError, {
+        code: 'DUPLICATE_MODEL_DEFINITION',
+        message: 'Model already defined: A',
+        data: 'A',
+        path: '$.models[\'C\'].id'
       });
     });
   });

@@ -16,55 +16,20 @@
               "paramType": "path",
               "required": true,
               "type": "MissingParamRef"
-            },
-            {
-              "allowMultiple": true,
-              "description": "Some fake stuff",
-              "name": "fake",
-              "paramType": "query",
-              "required": false,
-              "type": "array",
-              "items": {
-                "$ref": "MissingParamItemsRef"
-              }
             }
           ],
-          "responseMessages": [
-            {
-              "code": 400,
-              "message": "Missing name",
-              "responseModel": "MissingResponseMessageRef"
-            }
-          ],
-          "summary": "Find pet by ID",
-          "type": "MissingTypeRef"
+          "summary": "Create a greeting",
+          "type": "string"
         }
       ],
       "path": "/greeting/{name}"
-    },
-    {
-      "operations": [
-        {
-          "authorizations": {},
-          "method": "GET",
-          "nickname": "getGreetings",
-          "notes": "Returns all greetings",
-          "parameters": [],
-          "summary": "Find pet by ID",
-          "type": "array",
-          "items": {
-            "$ref": "MissingTypeItemsRef"
-          }
-        }
-      ],
-      "path": "/greetings/"
     }
   ],
   "basePath": "http://localhost:8080/api",
   "models": {
-    "Animal": {
-      "id": "Animal",
-      "name": "Animal",
+    "A": {
+      "id": "A",
+      "name": "A",
       "required": [
         "id",
         "type"
@@ -75,29 +40,34 @@
         },
         "type": {
           "type": "string"
-        },
-        "breeds": {
-          "type": "array",
-          "items": {
-            "$ref": "MissingPropertyItemsRef"
-          }
         }
       },
-      "subTypes": ["Cat", "MissingSubTypeRef"],
+      "subTypes": ["B"],
       "discriminator": "type"
     },
-    "Cat": {
-      "id": "Cat",
-      "name": "Cat",
+    "B": {
+      "id": "B",
+      "name": "B",
       "required": [
-        "likesMilk"
+        "b"
       ],
       "properties": {
-        "likesMilk": {
+        "b": {
           "type": "boolean"
-        },
-        "address": {
-          "$ref": "MissingPropertyRef"
+        }
+      },
+      "subType": ["A"],
+      "discriminator": "type"
+    },
+    "C": {
+      "id": "A",
+      "name": "A",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "long"
         }
       }
     }

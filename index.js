@@ -174,9 +174,8 @@ var Specification = function Specification (version, options) {
 };
 
 var validateModels = function validateModels (spec, resource) {
-  var modelIds = _.map(resource.models || {}, function (model) {
-    return model.id;
-  });
+  var modelDeps = {};
+  var modelIds = [];
   var modelRefs = {};
   var primitives = _.union(spec.primitives, ['array', 'void', 'File']);
   var addModelRef = function (modelId, modelRef) {
@@ -191,6 +190,21 @@ var validateModels = function validateModels (spec, resource) {
 
   switch (spec.version) {
   case '1.2':
+    _.each(resource.models || {}, function (model, modelName) {
+      var modelId = model.id;
+
+      if (modelIds.indexOf(modelId) > -1) {
+        errors.push({
+          code: 'DUPLICATE_MODEL_DEFINITION',
+          message: 'Model already defined: ' + modelId,
+          data: modelId,
+          path: '$.models[\'' + modelName + '\'].id'
+        });
+      } else {
+        modelIds.push(modelId);
+      }
+    });
+
     // Find references defined in the operations (Validation happens elsewhere but we have to be smart)
     if (resource.apis && _.isArray(resource.apis)) {
       _.each(resource.apis, function (api, index) {
@@ -287,6 +301,8 @@ var validateModels = function validateModels (spec, resource) {
   });
 
   // TODO: Validate subTypes are not cyclical
+  
+
   // TODO: Validate subTypes do not override parent properties
   // TODO: Validate subTypes do not include discriminiator
   // TODO: Validate discriminitor property exists
