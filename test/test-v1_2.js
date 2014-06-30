@@ -183,7 +183,7 @@ describe('swagger-tools v1.2 Specification', function () {
       assert.equal(spec.validate(userJson).warnings, 0);
     });
 
-    it('should return errors for missing model references in apiDeclaration/resource files', function () {
+    it('should return errors for missing model references in apiDeclaration files', function () {
       var result = spec.validate(invalidModelRefsJson);
       var expectedMissingModelRefs = {
         'MissingParamRef': '$.apis[0].operations[0].parameters[0].type',
@@ -205,7 +205,7 @@ describe('swagger-tools v1.2 Specification', function () {
       });
     });
 
-    it('should return warnings for unused models in apiDeclaration/resource files', function () {
+    it('should return warnings for unused models in apiDeclaration files', function () {
       var result = spec.validate(invalidModelRefsJson);
 
       assert.equal(1, result.warnings.length);
@@ -218,24 +218,26 @@ describe('swagger-tools v1.2 Specification', function () {
       });
     });
 
-    it('should return errors for duplicate model ids in apiDeclaration/resource files', function () {
-      var cError;
+    it('should return errors for duplicate model ids in apiDeclaration files', function () {
+      var errors = [];
 
       spec.validate(invalidModelsJson).errors.forEach(function (error) {
         if (error.code === 'DUPLICATE_MODEL_DEFINITION') {
-          cError = error;
+          errors.push(error);
         }
       });
 
-      assert.deepEqual(cError, {
-        code: 'DUPLICATE_MODEL_DEFINITION',
-        message: 'Model already defined: A',
-        data: 'A',
-        path: '$.models[\'J\'].id'
-      });
+      assert.deepEqual(errors, [
+        {
+          code: 'DUPLICATE_MODEL_DEFINITION',
+          message: 'Model already defined: A',
+          data: 'A',
+          path: '$.models[\'J\'].id'
+        }
+      ]);
     });
 
-    it('should return errors for cyclical model subTypes in apiDeclaration/resource files', function () {
+    it('should return errors for cyclical model subTypes in apiDeclaration files', function () {
       var errors = [];
 
       spec.validate(invalidModelsJson).errors.forEach(function (error) {
@@ -247,15 +249,72 @@ describe('swagger-tools v1.2 Specification', function () {
       assert.deepEqual(errors, [
         {
           code: 'CYCLICAL_MODEL_INHERITANCE',
-          message: 'Model has a circular inheritance: D -> A -> C -> D',
-          data: ['A'],
-          path: '$.models[\'D\'].subTypes'
+          message: 'Model has a circular inheritance: C -> A -> D -> C',
+          data: ['D'],
+          path: '$.models[\'C\'].subTypes'
         },
         {
           code: 'CYCLICAL_MODEL_INHERITANCE',
-          message: 'Model has a circular inheritance: I -> H -> I',
-          data: ['F', 'H'],
-          path: '$.models[\'I\'].subTypes'
+          message: 'Model has a circular inheritance: H -> I -> H',
+          data: ['I', 'I'],
+          path: '$.models[\'H\'].subTypes'
+        }
+      ]);
+    });
+
+    it('should return errors for model multiple inheritance in apiDeclaration files', function () {
+      var errors = [];
+
+      spec.validate(invalidModelsJson).errors.forEach(function (error) {
+        if (error.code === 'MULTIPLE_MODEL_INHERITANCE') {
+          errors.push(error);
+        }
+      });
+
+      assert.deepEqual(errors, [
+        {
+          code: 'MULTIPLE_MODEL_INHERITANCE',
+          message: 'Child model is sub type of multiple models: A && E',
+          data: invalidModelsJson.models.B,
+          path: '$.models[\'B\']'
+        }
+      ]);
+    });
+
+    it('should return errors for model subTypes redeclaring ancestor properties apiDeclaration files', function () {
+      var errors = [];
+
+      spec.validate(invalidModelsJson).errors.forEach(function (error) {
+        if (error.code === 'CHILD_MODEL_REDECLARES_PROPERTY') {
+          errors.push(error);
+        }
+      });
+
+      assert.deepEqual(errors, [
+        {
+          code: 'CHILD_MODEL_REDECLARES_PROPERTY',
+          message: 'Child model declares property already declared by ancestor: fId',
+          data: invalidModelsJson.models.G.properties.fId,
+          path: '$.models[\'G\'].properties[\'fId\']'
+        }
+      ]);
+    });
+
+    it('should return warning for model subTypes with duplicate entries apiDeclaration files', function () {
+      var warnings = [];
+
+      spec.validate(invalidModelsJson).warnings.forEach(function (warning) {
+        if (warning.code === 'DUPLICATE_MODEL_SUBTYPE_DEFINITION') {
+          warnings.push(warning);
+        }
+      });
+
+      assert.deepEqual(warnings, [
+        {
+          code: 'DUPLICATE_MODEL_SUBTYPE_DEFINITION',
+          message: 'Model already has subType defined: I',
+          data: 'I',
+          path: '$.models[\'H\'].subTypes[1]'
         }
       ]);
     });

@@ -182,10 +182,29 @@ var validateModels = function validateModels (spec, resource) {
     modelRefs[modelId].push(modelRef);
   };
   var errors = [];
-  var findCyclicModels = function (modelDeps) {
+  var identifyModelInheritanceIssues = function (modelDeps) {
     var circular = {};
+    var composed = {};
     var resolved = {};
     var unresolved = {};
+    var addModelProps = function (parentModel, modelName) {
+      var model = models[modelName];
+
+      if (model && model.properties && _.isObject(model.properties)) {
+        _.each(model.properties, function (prop, propName) {
+          if (composed[propName]) {
+            errors.push({
+              code: 'CHILD_MODEL_REDECLARES_PROPERTY',
+              message: 'Child model declares property already declared by ancestor: ' + propName,
+              data: prop,
+              path: '$.models[\'' + parentModel + '\'].properties[\'' + propName + '\']'
+            });
+          } else {
+            composed[propName] = propName;
+          }
+        });
+      }
+    };
     var getPath = function (parent, unresolved) {
       var parentVisited = false;
 
@@ -197,15 +216,37 @@ var validateModels = function validateModels (spec, resource) {
       });
     };
     var resolver = function (id, deps, circular, resolved, unresolved) {
+      var model = models[id];
+      var modelDeps = deps[id];
+
       unresolved[id] = true;
 
-      if (deps[id]) {
-        deps[id].forEach(function (dep) {
+      if (modelDeps) {
+        if (modelDeps.length > 1) {
+          errors.push({
+            code: 'MULTIPLE_MODEL_INHERITANCE',
+            message: 'Child model is sub type of multiple models: ' + modelDeps.join(' && '),
+            data: model,
+            path: '$.models[\'' + id + '\']'
+          });
+        }
+
+        modelDeps.forEach(function (dep) {
           if (!resolved[dep]) {
             if (unresolved[dep]) {
               circular[id] = getPath(dep, unresolved);
+
+              errors.push({
+                code: 'CYCLICAL_MODEL_INHERITANCE',
+                message: 'Model has a circular inheritance: ' + id + ' -> ' + circular[id].join(' -> '),
+                data: model.subTypes || [],
+                path: '$.models[\'' + id + '\'].subTypes'
+              });
               return;
             }
+
+            addModelProps(id, dep);
+
             resolver(dep, deps, circular, resolved, unresolved);
           }
         });
@@ -215,11 +256,11 @@ var validateModels = function validateModels (spec, resource) {
       unresolved[id] = false;
     };
 
-    Object.keys(modelDeps).forEach(function (modelId) {
-      resolver(modelId, modelDeps, circular, resolved, unresolved);
+    Object.keys(modelDeps).forEach(function (modelName) {
+      composed = {};
+      addModelProps(modelName, modelName);
+      resolver(modelName, modelDeps, circular, resolved, unresolved);
     });
-
-    return circular;
   };
   var modelDeps = {};
   var modelIds = [];
@@ -277,6 +318,7 @@ var validateModels = function validateModels (spec, resource) {
       _.each(models, function (model, name) {
         var modelPath = '$.models[\'' + name + '\']'; // Always use bracket notation just to be safe
         var modelId = model.id;
+        var seenSubTypes = [];
 
         // Keep track of model children and properties and duplicate models
         if (modelIds.indexOf(modelId) > -1) {
@@ -289,8 +331,28 @@ var validateModels = function validateModels (spec, resource) {
         } else {
           modelIds.push(modelId);
 
-          modelDeps[name] = model.subTypes || [];
           modelProps[name] = Object.keys(model.properties || {});
+
+          (model.subTypes || []).forEach(function (subType, index) {
+            var deps = modelDeps[subType];
+
+            if (deps) {
+              if (seenSubTypes.indexOf(subType) > -1) {
+                warnings.push({
+                  code: 'DUPLICATE_MODEL_SUBTYPE_DEFINITION',
+                  message: 'Model already has subType defined: ' + subType,
+                  data: subType,
+                  path: '$.models[\'' + name + '\'].subTypes[' + index + ']'
+                });
+              } else {
+                modelDeps[subType].push(name);
+              }
+            } else {
+              modelDeps[subType] = [name];
+            }
+
+            seenSubTypes.push(subType);
+          });
         }
 
         // References in model properties
@@ -343,19 +405,11 @@ var validateModels = function validateModels (spec, resource) {
   });
 
   // Identify cyclical model dependencies
-  _.each(findCyclicModels(modelDeps), function (cycleGroup, modelName) {
-    var model = models[modelName];
+  // Identify model multiple inheritance
+  // Identify model duplicate subType entries
+  // Identify model redeclares property of ancestor
+  identifyModelInheritanceIssues(modelDeps);
 
-    errors.push({
-      code: 'CYCLICAL_MODEL_INHERITANCE',
-      message: 'Model has a circular inheritance: ' + model.id + ' -> ' + cycleGroup.join(' -> '),
-      data: model.subTypes,
-      path: '$.models[\'' + modelName + '\'].subTypes'
-    });
-  });
-
-  // TODO: Validate subTypes do not override parent properties
-  // TODO: Validate subTypes do not include discriminiator
   // TODO: Validate discriminitor property exists
   // TODO: Validate required properties exist
 

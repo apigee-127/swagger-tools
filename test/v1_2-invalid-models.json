@@ -118,6 +118,9 @@
       "properties": {
         "gId": {
           "type": "string"
+        },
+        "fId": {
+          "type": "string"
         }
       }
     },
@@ -132,7 +135,7 @@
           "type": "string"
         }
       },
-      "subTypes": ["I"],
+      "subTypes": ["I", "I"],
       "discriminator": "hId"
     },
     "I": {
