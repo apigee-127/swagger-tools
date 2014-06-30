@@ -40,7 +40,7 @@ var allSchemaFiles = [
 ];
 var allSampleFiles = {};
 var invalidModelRefsJson = require('./v1_2-invalid-model-refs.json');
-var invalidModelsJson = require('./v1_2-invalid-models.json');
+var invalidModelInheritanceJson = require('./v1_2-invalid-model-inheritance.json');
 
 // Load the sample files from disk
 fs.readdirSync(path.join(__dirname, '..', 'samples', '1.2'))
@@ -221,7 +221,7 @@ describe('swagger-tools v1.2 Specification', function () {
     it('should return errors for duplicate model ids in apiDeclaration files', function () {
       var errors = [];
 
-      spec.validate(invalidModelsJson).errors.forEach(function (error) {
+      spec.validate(invalidModelInheritanceJson).errors.forEach(function (error) {
         if (error.code === 'DUPLICATE_MODEL_DEFINITION') {
           errors.push(error);
         }
@@ -240,7 +240,7 @@ describe('swagger-tools v1.2 Specification', function () {
     it('should return errors for cyclical model subTypes in apiDeclaration files', function () {
       var errors = [];
 
-      spec.validate(invalidModelsJson).errors.forEach(function (error) {
+      spec.validate(invalidModelInheritanceJson).errors.forEach(function (error) {
         if (error.code === 'CYCLICAL_MODEL_INHERITANCE') {
           errors.push(error);
         }
@@ -265,7 +265,7 @@ describe('swagger-tools v1.2 Specification', function () {
     it('should return errors for model multiple inheritance in apiDeclaration files', function () {
       var errors = [];
 
-      spec.validate(invalidModelsJson).errors.forEach(function (error) {
+      spec.validate(invalidModelInheritanceJson).errors.forEach(function (error) {
         if (error.code === 'MULTIPLE_MODEL_INHERITANCE') {
           errors.push(error);
         }
@@ -275,7 +275,7 @@ describe('swagger-tools v1.2 Specification', function () {
         {
           code: 'MULTIPLE_MODEL_INHERITANCE',
           message: 'Child model is sub type of multiple models: A && E',
-          data: invalidModelsJson.models.B,
+          data: invalidModelInheritanceJson.models.B,
           path: '$.models[\'B\']'
         }
       ]);
@@ -284,7 +284,7 @@ describe('swagger-tools v1.2 Specification', function () {
     it('should return errors for model subTypes redeclaring ancestor properties apiDeclaration files', function () {
       var errors = [];
 
-      spec.validate(invalidModelsJson).errors.forEach(function (error) {
+      spec.validate(invalidModelInheritanceJson).errors.forEach(function (error) {
         if (error.code === 'CHILD_MODEL_REDECLARES_PROPERTY') {
           errors.push(error);
         }
@@ -294,7 +294,7 @@ describe('swagger-tools v1.2 Specification', function () {
         {
           code: 'CHILD_MODEL_REDECLARES_PROPERTY',
           message: 'Child model declares property already declared by ancestor: fId',
-          data: invalidModelsJson.models.G.properties.fId,
+          data: invalidModelInheritanceJson.models.G.properties.fId,
           path: '$.models[\'G\'].properties[\'fId\']'
         }
       ]);
@@ -303,7 +303,7 @@ describe('swagger-tools v1.2 Specification', function () {
     it('should return warning for model subTypes with duplicate entries apiDeclaration files', function () {
       var warnings = [];
 
-      spec.validate(invalidModelsJson).warnings.forEach(function (warning) {
+      spec.validate(invalidModelInheritanceJson).warnings.forEach(function (warning) {
         if (warning.code === 'DUPLICATE_MODEL_SUBTYPE_DEFINITION') {
           warnings.push(warning);
         }
