@@ -39,6 +39,7 @@ var allSchemaFiles = [
   'resourceObject.json'
 ];
 var allSampleFiles = {};
+var invalidModelMiscJson = require('./v1_2-invalid-model-misc.json');
 var invalidModelRefsJson = require('./v1_2-invalid-model-refs.json');
 var invalidModelInheritanceJson = require('./v1_2-invalid-model-inheritance.json');
 
@@ -315,6 +316,44 @@ describe('swagger-tools v1.2 Specification', function () {
           message: 'Model already has subType defined: I',
           data: 'I',
           path: '$.models[\'H\'].subTypes[1]'
+        }
+      ]);
+    });
+
+    it('should return errors for model with invalid discriminator apiDeclaration files', function () {
+      var errors = [];
+
+      spec.validate(invalidModelMiscJson).errors.forEach(function (error) {
+        if (error.code === 'INVALID_MODEL_DISCRIMINATOR') {
+          errors.push(error);
+        }
+      });
+
+      assert.deepEqual(errors, [
+        {
+          'code': 'INVALID_MODEL_DISCRIMINATOR',
+          'message': 'Model cannot have discriminator without subTypes: aId',
+          'data': 'aId',
+          'path': '$.models[\'A\'].discriminator'
+        }
+      ]);
+    });
+
+    it('should return errors for model with missing required property apiDeclaration files', function () {
+      var errors = [];
+
+      spec.validate(invalidModelMiscJson).errors.forEach(function (error) {
+        if (error.code === 'MISSING_REQUIRED_MODEL_PROPERTY') {
+          errors.push(error);
+        }
+      });
+
+      assert.deepEqual(errors, [
+        {
+          'code': 'MISSING_REQUIRED_MODEL_PROPERTY',
+          'message': 'Model requires property but it is not defined: bId',
+          'data': 'bId',
+          'path': '$.models[\'A\'].required[1]'
         }
       ]);
     });

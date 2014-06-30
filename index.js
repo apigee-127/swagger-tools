@@ -374,6 +374,30 @@ var validateModels = function validateModels (spec, resource) {
             addModelRef(name, modelPath + '.subTypes[' + index + ']');
           });
         }
+
+        if (model.discriminator && _.isUndefined(model.subTypes)) {
+          errors.push({
+            code: 'INVALID_MODEL_DISCRIMINATOR',
+            message: 'Model cannot have discriminator without subTypes: ' + model.discriminator,
+            data: model.discriminator,
+            path: '$.models[\'' + name + '\'].discriminator'
+          });
+        }
+
+        if (model.required && _.isArray(model.required)) {
+          var props = model.properties || {};
+
+          _.each(model.required, function (propName, index) {
+            if (_.isUndefined(props[propName])) {
+              errors.push({
+                code: 'MISSING_REQUIRED_MODEL_PROPERTY',
+                message: 'Model requires property but it is not defined: ' + propName,
+                data: propName,
+                path: '$.models[\'' + name + '\'].required[' + index + ']'
+              });
+            }
+          });
+        }
       });
     }
 
