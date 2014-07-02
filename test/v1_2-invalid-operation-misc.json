@@ -1,0 +1,59 @@
+{
+  "apiVersion": "1.0.0",
+  "apis": [
+    {
+      "operations": [
+        {
+          "authorizations": {},
+          "method": "GET",
+          "nickname": "getGreeting",
+          "notes": "Returns a greeting",
+          "parameters": [
+            {
+              "allowMultiple": false,
+              "description": "Name used in greeting",
+              "name": "name",
+              "paramType": "path",
+              "required": true,
+              "type": "string"
+            }
+          ],
+          "summary": "Create a greeting",
+          "type": "string",
+          "responseMessages": [
+            {
+              "code": 400,
+              "message": "Invalid ID supplied"
+            },
+            {
+              "code": 400,
+              "message": "Order not found"
+            }
+          ]
+        },
+        {
+          "authorizations": {},
+          "method": "GET",
+          "nickname": "getGreeting",
+          "notes": "Returns another greeting",
+          "parameters": [
+            {
+              "allowMultiple": false,
+              "description": "Another name used in greeting",
+              "name": "aName",
+              "paramType": "path",
+              "required": true,
+              "type": "string"
+            }
+          ],
+          "summary": "<TO_BE_REPLACED_DURING_TESTING>",
+          "type": "string"
+        }
+      ],
+      "path": "/greeting/{name}"
+    }
+  ],
+  "basePath": "http://localhost:8080/api",
+  "resourcePath": "/greeting",
+  "swaggerVersion": "1.2"
+}

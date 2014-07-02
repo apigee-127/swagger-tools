@@ -30,7 +30,7 @@
     "swagger"
   ],
   "devDependencies": {
-    "gulp": "^3.8.0",
+    "gulp": "^3.8.5",
     "gulp-jshint": "^1.6.2",
     "gulp-mocha": "^0.4.1",
     "jshint-stylish": "^0.2.0"

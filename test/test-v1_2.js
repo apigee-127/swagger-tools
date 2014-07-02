@@ -42,6 +42,7 @@ var allSampleFiles = {};
 var invalidModelMiscJson = require('./v1_2-invalid-model-misc.json');
 var invalidModelRefsJson = require('./v1_2-invalid-model-refs.json');
 var invalidModelInheritanceJson = require('./v1_2-invalid-model-inheritance.json');
+var invalidOperationMiscJson = require('./v1_2-invalid-operation-misc.json');
 
 // Load the sample files from disk
 fs.readdirSync(path.join(__dirname, '..', 'samples', '1.2'))
@@ -282,7 +283,7 @@ describe('swagger-tools v1.2 Specification', function () {
       ]);
     });
 
-    it('should return errors for model subTypes redeclaring ancestor properties apiDeclaration files', function () {
+    it('should return errors for model subTypes redeclaring ancestor properties in apiDeclaration files', function () {
       var errors = [];
 
       spec.validate(invalidModelInheritanceJson).errors.forEach(function (error) {
@@ -301,7 +302,7 @@ describe('swagger-tools v1.2 Specification', function () {
       ]);
     });
 
-    it('should return warning for model subTypes with duplicate entries apiDeclaration files', function () {
+    it('should return warning for model subTypes with duplicate entries in apiDeclaration files', function () {
       var warnings = [];
 
       spec.validate(invalidModelInheritanceJson).warnings.forEach(function (warning) {
@@ -320,7 +321,7 @@ describe('swagger-tools v1.2 Specification', function () {
       ]);
     });
 
-    it('should return errors for model with invalid discriminator apiDeclaration files', function () {
+    it('should return errors for model with invalid discriminator in apiDeclaration files', function () {
       var errors = [];
 
       spec.validate(invalidModelMiscJson).errors.forEach(function (error) {
@@ -331,15 +332,15 @@ describe('swagger-tools v1.2 Specification', function () {
 
       assert.deepEqual(errors, [
         {
-          'code': 'INVALID_MODEL_DISCRIMINATOR',
-          'message': 'Model cannot have discriminator without subTypes: aId',
-          'data': 'aId',
-          'path': '$.models[\'A\'].discriminator'
+          code: 'INVALID_MODEL_DISCRIMINATOR',
+          message: 'Model cannot have discriminator without subTypes: aId',
+          data: 'aId',
+          path: '$.models[\'A\'].discriminator'
         }
       ]);
     });
 
-    it('should return errors for model with missing required property apiDeclaration files', function () {
+    it('should return errors for model with missing required property in apiDeclaration files', function () {
       var errors = [];
 
       spec.validate(invalidModelMiscJson).errors.forEach(function (error) {
@@ -354,6 +355,86 @@ describe('swagger-tools v1.2 Specification', function () {
           'message': 'Model requires property but it is not defined: bId',
           'data': 'bId',
           'path': '$.models[\'A\'].required[1]'
+        }
+      ]);
+    });
+
+    it('should return warning for operations with duplicate method apiDeclaration files', function () {
+      var errors = [];
+
+      spec.validate(invalidOperationMiscJson).errors.forEach(function (error) {
+        if (error.code === 'DUPLICATE_OPERATION_METHOD') {
+          errors.push(error);
+        }
+      });
+
+      assert.deepEqual(errors, [
+        {
+          code: 'DUPLICATE_OPERATION_METHOD',
+          message: 'Operation method already defined: GET',
+          data: 'GET',
+          path: '$.apis[0].operations[1].method'
+        }
+      ]);
+    });
+
+    it('should return warning for operations with duplicate nickname apiDeclaration files', function () {
+      var errors = [];
+
+      spec.validate(invalidOperationMiscJson).errors.forEach(function (error) {
+        if (error.code === 'DUPLICATE_OPERATION_NICKNAME') {
+          errors.push(error);
+        }
+      });
+
+      assert.deepEqual(errors, [
+        {
+          code: 'DUPLICATE_OPERATION_NICKNAME',
+          message: 'Operation method already defined: getGreeting',
+          data: 'getGreeting',
+          path: '$.apis[0].operations[1].nickname'
+        }
+      ]);
+    });
+
+    it('should return warning for operations with responseMessage codes nickname apiDeclaration files', function () {
+      var errors = [];
+
+      spec.validate(invalidOperationMiscJson).errors.forEach(function (error) {
+        if (error.code === 'DUPLICATE_OPERATION_RESPONSEMESSAGE_CODE') {
+          errors.push(error);
+        }
+      });
+
+      assert.deepEqual(errors, [
+        {
+          code: 'DUPLICATE_OPERATION_RESPONSEMESSAGE_CODE',
+          message: 'Operation responseMessage code already defined: 400',
+          data: 400,
+          path: '$.apis[0].operations[0].responseMessages[1].code'
+        }
+      ]);
+    });
+
+    it('should return warning for operation with 121+ character summary length in apiDeclaration files', function () {
+      var json = _.cloneDeep(invalidOperationMiscJson);
+      var summary = new Array(122).join('.');
+      var warnings = [];
+
+      json.apis[0].operations[1].summary = summary;
+
+      spec.validate(json).warnings.forEach(function (warning) {
+        if (warning.code === 'OPERATION_SUMMARY_LONG') {
+          warnings.push(warning);
+        }
+      });
+
+      assert.deepEqual(warnings, [
+        {
+          code: 'OPERATION_SUMMARY_LONG',
+          message: 'Operation summary is greater than 120 characters: 121',
+          data: summary,
+          path: '$.apis[0].operations[1].summary'
         }
       ]);
     });

@@ -277,6 +277,10 @@ var validateModels = function validateModels (spec, resource) {
       _.each(resource.apis, function (api, index) {
         var apiPath = '$.apis[' + index + ']';
 
+        if (!api.operations || !_.isArray(api.operations)) {
+          return;
+        }
+
         _.each(api.operations, function (operation, index) {
           var operationPath = apiPath + '.operations[' + index + ']';
 
@@ -434,8 +438,91 @@ var validateModels = function validateModels (spec, resource) {
   // Identify model redeclares property of ancestor
   identifyModelInheritanceIssues(modelDeps);
 
-  // TODO: Validate discriminitor property exists
-  // TODO: Validate required properties exist
+  return {
+    errors: errors,
+    warnings: warnings
+  };
+};
+
+var validateOperations = function validateOperations (spec, resource) {
+  var errors = [];
+  var warnings = [];
+
+  switch (spec.version) {
+  case '1.2':
+    if (resource.apis && _.isArray(resource.apis)) {
+      _.each(resource.apis, function (api, index) {
+        var apiPath = '$.apis[' + index + ']';
+        var seenMethods = [];
+        var seenNicknames = [];
+
+        if (!api.operations || !_.isArray(api.operations)) {
+          return;
+        }
+
+        _.each(api.operations, function (operation, index) {
+          var operationPath = apiPath + '.operations[' + index + ']';
+          var seenResponseMessageCodes = [];
+
+          // Identify duplicate operation methods
+          if (operation.method) {
+            if (seenMethods.indexOf(operation.method) > -1) {
+              errors.push({
+                code: 'DUPLICATE_OPERATION_METHOD',
+                message: 'Operation method already defined: ' + operation.method,
+                data: operation.method,
+                path: operationPath + '.method'
+              });
+            } else {
+              seenMethods.push(operation.method);
+            }
+          }
+
+          // Identify duplicate operation nicknames
+          if (operation.nickname) {
+            if (seenNicknames.indexOf(operation.nickname) > -1) {
+              errors.push({
+                code: 'DUPLICATE_OPERATION_NICKNAME',
+                message: 'Operation method already defined: ' + operation.nickname,
+                data: operation.nickname,
+                path: operationPath + '.nickname'
+              });
+            } else {
+              seenNicknames.push(operation.nickname);
+            }
+          }
+
+          // Identify duplicate operation responseMessage codes
+          if (operation.responseMessages && _.isArray(operation.responseMessages)) {
+            _.each(operation.responseMessages, function (responseMessage, index) {
+              if (responseMessage.code) {
+                if (seenResponseMessageCodes.indexOf(responseMessage.code) > -1) {
+                  errors.push({
+                    code: 'DUPLICATE_OPERATION_RESPONSEMESSAGE_CODE',
+                    message: 'Operation responseMessage code already defined: ' + responseMessage.code,
+                    data: responseMessage.code,
+                    path: operationPath + '.responseMessages[' + index + '].code'
+                  });
+                } else {
+                  seenResponseMessageCodes.push(responseMessage.code);
+                }
+              }
+            });
+          }
+
+          // Identify operation summary greater than 120 characters
+          if (operation.summary && _.isString(operation.summary) && operation.summary.length > 120) {
+            warnings.push({
+              code: 'OPERATION_SUMMARY_LONG',
+              message: 'Operation summary is greater than 120 characters: ' + operation.summary.length,
+              data: operation.summary,
+              path: operationPath + '.summary'
+            });
+          }
+        });
+      });
+    }
+  }
 
   return {
     errors: errors,
@@ -490,15 +577,17 @@ Specification.prototype.validate = function (data, schemaName) {
 
   switch (schemaName) {
   case 'apiDeclaration.json':
-    result = validateModels(this, data);
+    [validateModels, validateOperations].forEach(function (func) {
+      result = func(this, data);
 
-    if (result.errors && _.isArray(result.errors)) {
-      errors = errors.concat(result.errors);
-    }
+      if (result.errors && _.isArray(result.errors)) {
+        errors = errors.concat(result.errors);
+      }
 
-    if (result.warnings && _.isArray(result.warnings)) {
-      warnings = warnings.concat(result.warnings);
-    }
+      if (result.warnings && _.isArray(result.warnings)) {
+        warnings = warnings.concat(result.warnings);
+      }
+    }.bind(this));
 
     break;
   }
