@@ -22,7 +22,7 @@ following structure:
 
 * `docsUrl`: This is a link to the Swagger documentation for the corresponding specification version
 * `schemasUrl`: This is a link to the Swagger JSON Schema files for the corresponding specification version
-* `verison`: This is the Swagger specification version
+* `version`: This is the Swagger specification version
 * `schemas`: This is an object where the keys are the Swagger JSON Schema file names and the object is the loaded schema
 contents
 * `validate`: This is a function used to validate a Swagger document, as a JavaScript object, against a Swagger schema
