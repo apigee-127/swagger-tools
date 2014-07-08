@@ -39,6 +39,7 @@ var allSchemaFiles = [
   'resourceObject.json'
 ];
 var allSampleFiles = {};
+var invalidDefaultValuesJson = require('./v1_2-invalid-defaultValues.json');
 var invalidModelMiscJson = require('./v1_2-invalid-model-misc.json');
 var invalidModelRefsJson = require('./v1_2-invalid-model-refs.json');
 var invalidModelInheritanceJson = require('./v1_2-invalid-model-inheritance.json');
@@ -70,6 +71,7 @@ describe('swagger-tools v1.2 Specification', function () {
         'long',
         'float',
         'double',
+        'number',
         'string',
         'byte',
         'boolean',
@@ -437,6 +439,59 @@ describe('swagger-tools v1.2 Specification', function () {
           path: '$.apis[0].operations[1].summary'
         }
       ]);
+    });
+
+    it('should return errors for defaultValue related properties in apiDeclaration files', function () {
+      var result = spec.validate(invalidDefaultValuesJson);
+      var expectedErrors = [
+        {
+          code: 'ENUM_MISMATCH',
+          message: 'Default value is not within enum values (A, B): C',
+          data: 'C',
+          path: '$.apis[0].operations[0].parameters[0].defaultValue'
+        },
+        {
+          code: 'INVALID_TYPE',
+          message: 'Invalid type (expected parseable number): NaN',
+          data: 'NaN',
+          path: '$.apis[0].operations[0].parameters[1].defaultValue'
+        },
+        {
+          code: 'INVALID_TYPE',
+          message: 'Invalid type (expected parseable number): NaN',
+          data: 'NaN',
+          path: '$.apis[0].operations[0].parameters[2].maximum'
+        },
+        {
+          code: 'MAXIMUM',
+          message: 'Default value is greater than maximum (1): 2',
+          data: '2',
+          path: '$.apis[0].operations[0].parameters[3].defaultValue'
+        },
+        {
+          code: 'INVALID_TYPE',
+          message: 'Invalid type (expected parseable number): NaN',
+          data: 'NaN',
+          path: '$.apis[0].operations[0].parameters[4].minimum'
+        },
+        {
+          code: 'MINIMUM',
+          message: 'Default value is less than minimum (2): 1',
+          data: '1',
+          path: '$.apis[0].operations[0].parameters[5].defaultValue'
+        },
+        {
+          code: 'INVALID_TYPE',
+          message: 'Invalid type (expected parseable boolean): NaN',
+          data: 'NaN',
+          path: '$.apis[0].operations[0].parameters[6].defaultValue'
+        }
+      ];
+
+      assert.equal(result.errors.length, Object.keys(expectedErrors).length);
+      assert.equal(result.warnings.length, 0);
+
+      assert.deepEqual(result.errors, expectedErrors);
     });
   });
 });

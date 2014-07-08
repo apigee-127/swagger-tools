@@ -1,0 +1,91 @@
+{
+  "apiVersion": "1.0.0",
+  "apis": [
+    {
+      "operations": [
+        {
+          "authorizations": {},
+          "method": "GET",
+          "nickname": "getGreeting",
+          "notes": "Returns a greeting",
+          "parameters": [
+            {
+              "allowMultiple": false,
+              "description": "Invalid enum parameter",
+              "name": "invalidEnum",
+              "paramType": "query",
+              "required": true,
+              "type": "string",
+              "enum": ["A", "B"],
+              "defaultValue": "C"
+            },
+            {
+              "allowMultiple": false,
+              "description": "Invalid defaultValue type parameter",
+              "name": "invalidDefaultValueType",
+              "paramType": "query",
+              "required": true,
+              "type": "number",
+              "defaultValue": "NaN"
+            },
+            {
+              "allowMultiple": false,
+              "description": "Invalid maximum type parameter",
+              "name": "invalidMaximumType",
+              "paramType": "query",
+              "required": true,
+              "type": "number",
+              "defaultValue": "1",
+              "maximum": "NaN"
+            },
+            {
+              "allowMultiple": false,
+              "description": "Invalid defaultValue greater than maximum parameter",
+              "name": "invalidDefaultValueMaximum",
+              "paramType": "query",
+              "required": true,
+              "type": "number",
+              "defaultValue": "2",
+              "maximum": "1"
+            },
+            {
+              "allowMultiple": false,
+              "description": "Invalid minimum type parameter",
+              "name": "invalidMinimumType",
+              "paramType": "query",
+              "required": true,
+              "type": "number",
+              "defaultValue": "1",
+              "minimum": "NaN"
+            },
+            {
+              "allowMultiple": false,
+              "description": "Invalid defaultValue less than minimum parameter",
+              "name": "invalidDefaultValueMinimum",
+              "paramType": "query",
+              "required": true,
+              "type": "number",
+              "defaultValue": "1",
+              "minimum": "2"
+            },
+            {
+              "allowMultiple": false,
+              "description": "Invalid defaultValue boolean type parameter",
+              "name": "invalidDefaultValueBooleanType",
+              "paramType": "query",
+              "required": true,
+              "type": "boolean",
+              "defaultValue": "NaN"
+            }
+          ],
+          "summary": "Create a greeting",
+          "type": "string"
+        }
+      ],
+      "path": "/greeting"
+    }
+  ],
+  "basePath": "http://localhost:8080/api",
+  "resourcePath": "/greeting",
+  "swaggerVersion": "1.2"
+}

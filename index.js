@@ -1,14 +1,14 @@
 /*
  * Copyright 2014 Apigee Corporation
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the 'License');
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
+ * distributed under the License is distributed on an 'AS IS' BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -65,6 +65,7 @@ var Specification = function Specification (version, options) {
       'long',
       'float',
       'double',
+      'number',
       'string',
       'byte',
       'boolean',
@@ -171,6 +172,106 @@ var Specification = function Specification (version, options) {
 
     break;
   }
+};
+
+var validateDefaultValue = function validateDefaultValue (data, path) {
+  var defaultValue = data.defaultValue;
+  var errors = [];
+  var type = data.type;
+  var parsedValue;
+  var parsedMaximumValue;
+  var parsedMinimumValue;
+
+  // Should we return an error/warning when defaultValue is used without a type?
+
+  if (!_.isUndefined(defaultValue) && !_.isUndefined(type)) {
+    if (data.enum && _.isArray(data.enum) && data.enum.indexOf(defaultValue) === -1) {
+      errors.push({
+        code: 'ENUM_MISMATCH',
+        message: 'Default value is not within enum values (' + data.enum.join(', ') + '): ' + defaultValue,
+        data: defaultValue,
+        path: path + '.defaultValue'
+      });
+    }
+
+    // Should we return an error/warning when minimum and/or maximum is used with for a non-integer/non-number?
+
+    switch (type) {
+      case 'integer':
+      case 'number':
+        if (['integer', 'number'].indexOf(type) > -1) {
+          parsedValue = parseFloat(defaultValue);
+
+          if (isNaN(parsedValue)) {
+            errors.push({
+              code: 'INVALID_TYPE',
+              message: 'Invalid type (expected parseable number): ' + defaultValue,
+              data: defaultValue,
+              path: path + '.defaultValue'
+            });
+          }
+
+          if (!_.isUndefined(data.maximum)) {
+            parsedMaximumValue = parseFloat(data.maximum);
+
+            if (isNaN(parsedMaximumValue)) {
+              errors.push({
+                code: 'INVALID_TYPE',
+                message: 'Invalid type (expected parseable number): ' + data.maximum,
+                data: data.maximum,
+                path: path + '.maximum'
+              });
+            } else if (_.isNumber(parsedValue) && _.isNumber(parsedMaximumValue) && parsedValue > parsedMaximumValue) {
+              errors.push({
+                code: 'MAXIMUM',
+                message: 'Default value is greater than maximum (' + data.maximum + '): ' + defaultValue,
+                data: defaultValue,
+                path: path + '.defaultValue'
+              });
+            }
+          }
+
+          if (!_.isUndefined(data.minimum)) {
+            parsedMinimumValue = parseFloat(data.minimum);
+
+            if (isNaN(parsedMinimumValue)) {
+              errors.push({
+                code: 'INVALID_TYPE',
+                message: 'Invalid type (expected parseable number): ' + data.minimum,
+                data: data.minimum,
+                path: path + '.minimum'
+              });
+            } else if (_.isNumber(parsedValue) && _.isNumber(parsedMinimumValue) && parsedValue < parsedMinimumValue) {
+              errors.push({
+                code: 'MINIMUM',
+                message: 'Default value is less than minimum (' + data.minimum + '): ' + defaultValue,
+                data: defaultValue,
+                path: path + '.defaultValue'
+              });
+            }
+          }
+        }
+
+        break;
+
+      case 'boolean':
+        if (['false', 'true'].indexOf(defaultValue) === -1) {
+          errors.push({
+            code: 'INVALID_TYPE',
+            message: 'Invalid type (expected parseable boolean): ' + defaultValue,
+            data: defaultValue,
+            path: path + '.defaultValue'
+          });
+        }
+
+        break;
+    }
+  }
+
+  return {
+    errors: errors,
+    warnings: []
+  };
 };
 
 var validateModels = function validateModels (spec, resource) {
@@ -363,11 +464,22 @@ var validateModels = function validateModels (spec, resource) {
         if (model.properties && _.isObject(model.properties)) {
           _.each(model.properties, function (property, name) {
             var propPath = modelPath + '.properties[\'' + name + '\']'; // Always use bracket notation just to be safe
+            var result;
 
             if (property.$ref) {
               addModelRef(property.$ref, propPath + '.$ref');
             } else if (property.type === 'array' && _.isObject(property.items) && property.items.$ref) {
               addModelRef(property.items.$ref, propPath + '.items.$ref');
+            } else {
+              result = validateDefaultValue(property, propPath);
+
+              if (result.errors && _.isArray(result.errors)) {
+                errors = errors.concat(result.errors);
+              }
+
+              if (result.warnings && _.isArray(result.warnings)) {
+                warnings = warnings.concat(result.warnings);
+              }
             }
           });
         }
@@ -463,6 +575,21 @@ var validateOperations = function validateOperations (spec, resource) {
         _.each(api.operations, function (operation, index) {
           var operationPath = apiPath + '.operations[' + index + ']';
           var seenResponseMessageCodes = [];
+          var result;
+
+          if (operation.parameters && _.isArray(operation.parameters)) {
+            _.each(operation.parameters, function (parameter, index) {
+              result = validateDefaultValue(parameter, operationPath + '.parameters[' + index + ']');
+
+              if (result.errors && _.isArray(result.errors)) {
+                errors = errors.concat(result.errors);
+              }
+
+              if (result.warnings && _.isArray(result.warnings)) {
+                warnings = warnings.concat(result.warnings);
+              }
+            });
+          }
 
           // Identify duplicate operation methods
           if (operation.method) {
@@ -536,7 +663,7 @@ var validateOperations = function validateOperations (spec, resource) {
  * @param {object} data - The object representing the Swagger document/fragment
  * @param {string} [schemaName='apiDeclaration.json'] - The schema name to use to validate the document/fragment
  *
- * @returns undefined if validation passes or an array of error objects
+ * @returns undefined if validation passes or an object containing errors and/or warnings
  */
 Specification.prototype.validate = function (data, schemaName) {
   if (_.isUndefined(data)) {
