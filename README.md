@@ -10,6 +10,8 @@ see what issues we are aware of and what features/enhancements we are working on
 
 * Schema validation: For the file(s) supported by the Swagger specification, ensure they pass structural validation
 based on the [JSON Schema][json-schema] associated with that version of the specification
+* Semantic validation: Validates Swagger files individually and as a whole (resource listing combined with API
+declarations) _(See [Issue #1](https://github.com/apigee-127/swagger-tools/issues/1) for more details)_
 
 ## Installation
 
