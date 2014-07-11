@@ -27,6 +27,8 @@ following structure:
 contents
 * `validate`: This is a function used to validate a Swagger document, as a JavaScript object, against a Swagger schema
 file
+* `validateApi`: This is a function used to validate a "full API" of Swagger documents including a resource listing and
+an array of API declarations
 
 Here is an example showing how to use both versions of the `validate` function *(For more details, the sources are
 documented)*:
@@ -37,6 +39,7 @@ var petJson = require('./samples/1.2/pet.json');
 var rlJson = require('./samples/1.2/resource-listing.json');
 var petResults = spec.validate(petJson); // The default schema used is 'apiDeclaration.json'
 var rlResults = spec.validate(rlJson, 'resourceListing.json');
+var apiResults = spec.validateApi(rlJson, [petJson]);
 ```
 
 ## Contributing
