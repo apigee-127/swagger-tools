@@ -126,6 +126,15 @@ describe('Specification v1.2', function () {
   });
 
   describe('#validate', function () {
+    it('should throw error when using invalid schema name', function () {
+      try {
+        spec.validate(allSampleFiles['pet.json'], 'fakeSchema.json');
+      } catch (err) {
+        assert.equal(err.message, 'schemaName is not valid (fakeSchema.json).  Valid schema names: ' +
+                    Object.keys(spec.schemas).join(', '))
+      }
+    });
+
     it('should return true for valid JSON files', function () {
       Object.keys(allSampleFiles).forEach(function (name) {
         var result;
@@ -645,5 +654,3 @@ describe('Specification v1.2', function () {
     });
   });
 });
-
-// TODO: Add test for calling 'validate' with invalid schema name
