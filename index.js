@@ -898,7 +898,7 @@ Specification.prototype.validateApi = function (resourceList, resources) {
 
   // Identify unused authorizations (declared but not referenced)
   _.difference(Object.keys(authScopes), Object.keys(seenAuthScopes)).forEach(function (unused) {
-    result.errors.push({
+    result.warnings.push({
       code: 'UNUSED_AUTHORIZATION',
       message: 'Authorization is defined but is not used: ' + unused,
       data: resourceList.authorizations[unused],
@@ -913,7 +913,7 @@ Specification.prototype.validateApi = function (resourceList, resources) {
     _.difference(scopes, seenAuthScopes[name] || []).forEach(function (unused) {
       var index = scopes.indexOf(unused);
 
-      result.errors.push({
+      result.warnings.push({
         code: 'UNUSED_AUTHORIZATION_SCOPE',
         message: 'Authorization scope is defined but is not used: ' + unused,
         data: resourceList.authorizations[name].scopes[index],

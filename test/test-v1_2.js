@@ -522,15 +522,15 @@ describe('Specification v1.2', function () {
       ]);
     });
 
-    it('should return errors for defined but unused authorizations in resource listing JSON files', function () {
+    it('should return warnings for unused authorizations in resource listing JSON files', function () {
       var result = spec.validateApi(invalidApiResourceListingJson, [
         invalidApiResource1Json,
         invalidApiResource2Json,
         invalidApiResource3Json
       ]);
-      var errors = findAllErrorsOrWarnings('errors', 'UNUSED_AUTHORIZATION', result);
+      var warnings = findAllErrorsOrWarnings('warnings', 'UNUSED_AUTHORIZATION', result);
 
-      assert.deepEqual(errors, [
+      assert.deepEqual(warnings, [
         {
           code: 'UNUSED_AUTHORIZATION',
           message: 'Authorization is defined but is not used: unusedBasicAuth',
@@ -542,15 +542,15 @@ describe('Specification v1.2', function () {
       ]);
     });
 
-    it('should return errors for defined but unused authorization scopes in resource listing JSON files', function () {
+    it('should return warnings for unused authorization scopes in resource listing JSON files', function () {
       var result = spec.validateApi(invalidApiResourceListingJson, [
         invalidApiResource1Json,
         invalidApiResource2Json,
         invalidApiResource3Json
       ]);
-      var errors = findAllErrorsOrWarnings('errors', 'UNUSED_AUTHORIZATION_SCOPE', result);
+      var warnings = findAllErrorsOrWarnings('warnings', 'UNUSED_AUTHORIZATION_SCOPE', result);
 
-      assert.deepEqual(errors, [
+      assert.deepEqual(warnings, [
         {
           code: 'UNUSED_AUTHORIZATION_SCOPE',
           message: 'Authorization scope is defined but is not used: scope2',
