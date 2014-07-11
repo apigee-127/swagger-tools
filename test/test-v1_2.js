@@ -39,11 +39,32 @@ var allSchemaFiles = [
   'resourceObject.json'
 ];
 var allSampleFiles = {};
-var invalidDefaultValuesJson = require('./v1_2-invalid-defaultValues.json');
+var invalidApiResourceListingJson = require('./v1_2-invalid-api-resource-listing.json');
+var invalidApiResource1Json = require('./v1_2-invalid-api-resource1.json');
+var invalidApiResource2Json = require('./v1_2-invalid-api-resource2.json');
+var invalidApiResource3Json = require('./v1_2-invalid-api-resource3.json');
 var invalidModelMiscJson = require('./v1_2-invalid-model-misc.json');
 var invalidModelRefsJson = require('./v1_2-invalid-model-refs.json');
 var invalidModelInheritanceJson = require('./v1_2-invalid-model-inheritance.json');
 var invalidOperationMiscJson = require('./v1_2-invalid-operation-misc.json');
+var findAllErrorsOrWarnings = function (type, code, results) {
+  var arr = [];
+  var finder = function (result) {
+    if (result.code === code) {
+      arr.push(result);
+    }
+  };
+
+  if (_.isArray(results)) {
+    results.forEach(function (resource) {
+      resource[type].forEach(finder);
+    });
+  } else {
+    results[type].forEach(finder);
+  }
+
+  return arr;
+};
 
 // Load the sample files from disk
 fs.readdirSync(path.join(__dirname, '..', 'samples', '1.2'))
@@ -54,7 +75,7 @@ fs.readdirSync(path.join(__dirname, '..', 'samples', '1.2'))
     allSampleFiles[name] = require('../samples/1.2/' + name);
   });
 
-describe('swagger-tools v1.2 Specification', function () {
+describe('Specification v1.2', function () {
   describe('metadata', function () {
     it('should have proper docsUrl, primitives, options, schemasUrl and verison properties', function () {
       assert.deepEqual(spec.options, {
@@ -223,13 +244,8 @@ describe('swagger-tools v1.2 Specification', function () {
     });
 
     it('should return errors for duplicate model ids in apiDeclaration files', function () {
-      var errors = [];
-
-      spec.validate(invalidModelInheritanceJson).errors.forEach(function (error) {
-        if (error.code === 'DUPLICATE_MODEL_DEFINITION') {
-          errors.push(error);
-        }
-      });
+      var result = spec.validate(invalidModelInheritanceJson);
+      var errors = findAllErrorsOrWarnings('errors', 'DUPLICATE_MODEL_DEFINITION', result);
 
       assert.deepEqual(errors, [
         {
@@ -242,13 +258,8 @@ describe('swagger-tools v1.2 Specification', function () {
     });
 
     it('should return errors for cyclical model subTypes in apiDeclaration files', function () {
-      var errors = [];
-
-      spec.validate(invalidModelInheritanceJson).errors.forEach(function (error) {
-        if (error.code === 'CYCLICAL_MODEL_INHERITANCE') {
-          errors.push(error);
-        }
-      });
+      var result = spec.validate(invalidModelInheritanceJson);
+      var errors = findAllErrorsOrWarnings('errors', 'CYCLICAL_MODEL_INHERITANCE', result);
 
       assert.deepEqual(errors, [
         {
@@ -267,13 +278,8 @@ describe('swagger-tools v1.2 Specification', function () {
     });
 
     it('should return errors for model multiple inheritance in apiDeclaration files', function () {
-      var errors = [];
-
-      spec.validate(invalidModelInheritanceJson).errors.forEach(function (error) {
-        if (error.code === 'MULTIPLE_MODEL_INHERITANCE') {
-          errors.push(error);
-        }
-      });
+      var result = spec.validate(invalidModelInheritanceJson);
+      var errors = findAllErrorsOrWarnings('errors', 'MULTIPLE_MODEL_INHERITANCE', result);
 
       assert.deepEqual(errors, [
         {
@@ -286,13 +292,8 @@ describe('swagger-tools v1.2 Specification', function () {
     });
 
     it('should return errors for model subTypes redeclaring ancestor properties in apiDeclaration files', function () {
-      var errors = [];
-
-      spec.validate(invalidModelInheritanceJson).errors.forEach(function (error) {
-        if (error.code === 'CHILD_MODEL_REDECLARES_PROPERTY') {
-          errors.push(error);
-        }
-      });
+      var result = spec.validate(invalidModelInheritanceJson);
+      var errors = findAllErrorsOrWarnings('errors', 'CHILD_MODEL_REDECLARES_PROPERTY', result);
 
       assert.deepEqual(errors, [
         {
@@ -305,13 +306,8 @@ describe('swagger-tools v1.2 Specification', function () {
     });
 
     it('should return warning for model subTypes with duplicate entries in apiDeclaration files', function () {
-      var warnings = [];
-
-      spec.validate(invalidModelInheritanceJson).warnings.forEach(function (warning) {
-        if (warning.code === 'DUPLICATE_MODEL_SUBTYPE_DEFINITION') {
-          warnings.push(warning);
-        }
-      });
+      var result = spec.validate(invalidModelInheritanceJson);
+      var warnings = findAllErrorsOrWarnings('warnings', 'DUPLICATE_MODEL_SUBTYPE_DEFINITION', result);
 
       assert.deepEqual(warnings, [
         {
@@ -324,13 +320,8 @@ describe('swagger-tools v1.2 Specification', function () {
     });
 
     it('should return errors for model with invalid discriminator in apiDeclaration files', function () {
-      var errors = [];
-
-      spec.validate(invalidModelMiscJson).errors.forEach(function (error) {
-        if (error.code === 'INVALID_MODEL_DISCRIMINATOR') {
-          errors.push(error);
-        }
-      });
+      var result = spec.validate(invalidModelMiscJson);
+      var errors = findAllErrorsOrWarnings('errors', 'INVALID_MODEL_DISCRIMINATOR', result);
 
       assert.deepEqual(errors, [
         {
@@ -343,13 +334,8 @@ describe('swagger-tools v1.2 Specification', function () {
     });
 
     it('should return errors for model with missing required property in apiDeclaration files', function () {
-      var errors = [];
-
-      spec.validate(invalidModelMiscJson).errors.forEach(function (error) {
-        if (error.code === 'MISSING_REQUIRED_MODEL_PROPERTY') {
-          errors.push(error);
-        }
-      });
+      var result = spec.validate(invalidModelMiscJson);
+      var errors = findAllErrorsOrWarnings('errors', 'MISSING_REQUIRED_MODEL_PROPERTY', result);
 
       assert.deepEqual(errors, [
         {
@@ -362,13 +348,8 @@ describe('swagger-tools v1.2 Specification', function () {
     });
 
     it('should return warning for operations with duplicate method apiDeclaration files', function () {
-      var errors = [];
-
-      spec.validate(invalidOperationMiscJson).errors.forEach(function (error) {
-        if (error.code === 'DUPLICATE_OPERATION_METHOD') {
-          errors.push(error);
-        }
-      });
+      var result = spec.validate(invalidOperationMiscJson);
+      var errors = findAllErrorsOrWarnings('errors', 'DUPLICATE_OPERATION_METHOD', result);
 
       assert.deepEqual(errors, [
         {
@@ -381,13 +362,8 @@ describe('swagger-tools v1.2 Specification', function () {
     });
 
     it('should return warning for operations with duplicate nickname apiDeclaration files', function () {
-      var errors = [];
-
-      spec.validate(invalidOperationMiscJson).errors.forEach(function (error) {
-        if (error.code === 'DUPLICATE_OPERATION_NICKNAME') {
-          errors.push(error);
-        }
-      });
+      var result = spec.validate(invalidOperationMiscJson);
+      var errors = findAllErrorsOrWarnings('errors', 'DUPLICATE_OPERATION_NICKNAME', result);
 
       assert.deepEqual(errors, [
         {
@@ -400,13 +376,8 @@ describe('swagger-tools v1.2 Specification', function () {
     });
 
     it('should return warning for operations with responseMessage codes nickname apiDeclaration files', function () {
-      var errors = [];
-
-      spec.validate(invalidOperationMiscJson).errors.forEach(function (error) {
-        if (error.code === 'DUPLICATE_OPERATION_RESPONSEMESSAGE_CODE') {
-          errors.push(error);
-        }
-      });
+      var result = spec.validate(invalidOperationMiscJson);
+      var errors = findAllErrorsOrWarnings('errors', 'DUPLICATE_OPERATION_RESPONSEMESSAGE_CODE', result);
 
       assert.deepEqual(errors, [
         {
@@ -422,14 +393,12 @@ describe('swagger-tools v1.2 Specification', function () {
       var json = _.cloneDeep(invalidOperationMiscJson);
       var summary = new Array(122).join('.');
       var warnings = [];
+      var result;
 
       json.apis[0].operations[1].summary = summary;
 
-      spec.validate(json).warnings.forEach(function (warning) {
-        if (warning.code === 'OPERATION_SUMMARY_LONG') {
-          warnings.push(warning);
-        }
-      });
+      result = spec.validate(json);
+      warnings = findAllErrorsOrWarnings('warnings', 'OPERATION_SUMMARY_LONG', result);
 
       assert.deepEqual(warnings, [
         {
@@ -442,7 +411,7 @@ describe('swagger-tools v1.2 Specification', function () {
     });
 
     it('should return errors for defaultValue related properties in apiDeclaration files', function () {
-      var result = spec.validate(invalidDefaultValuesJson);
+      var result = spec.validate(require('./v1_2-invalid-defaultValues.json'));
       var expectedErrors = [
         {
           code: 'ENUM_MISMATCH',
@@ -494,4 +463,187 @@ describe('swagger-tools v1.2 Specification', function () {
       assert.deepEqual(result.errors, expectedErrors);
     });
   });
+
+  describe('#validateApi', function () {
+    it('should return errors for duplicate resource paths in resource listing JSON files', function () {
+      var result = spec.validateApi(invalidApiResourceListingJson, [
+        invalidApiResource1Json,
+        invalidApiResource2Json,
+        invalidApiResource3Json
+      ]);
+      var errors = findAllErrorsOrWarnings('errors', 'DUPLICATE_RESOURCE_PATH', result);
+
+      assert.deepEqual(errors, [
+        {
+          code: 'DUPLICATE_RESOURCE_PATH',
+          message: 'Resource path already defined: /resource1',
+          data: '/resource1',
+          path: '$.apis[2].path'
+        }
+      ]);
+    });
+
+    it('should return errors for defined but unused resource paths in resource listing JSON files', function () {
+      var result = spec.validateApi(invalidApiResourceListingJson, [
+        invalidApiResource1Json,
+        invalidApiResource2Json,
+        invalidApiResource3Json
+      ]);
+      var errors = findAllErrorsOrWarnings('errors', 'UNUSED_RESOURCE', result);
+
+      assert.deepEqual(errors, [
+        {
+          code: 'UNUSED_RESOURCE',
+          message: 'Resource is defined but is not used: /resource2',
+          data: {
+            description: 'Operations about resource2',
+            path: '/resource2'
+          },
+          path: '$.apis[1]'
+        },
+        {
+          code: 'UNUSED_RESOURCE',
+          message: 'Resource is defined but is not used: /resource4',
+          data: {
+            description: 'Operations about resource4',
+            path: '/resource4'
+          },
+          path: '$.apis[3]'
+        }
+      ]);
+    });
+
+    it('should return errors for defined but unused authorizations in resource listing JSON files', function () {
+      var result = spec.validateApi(invalidApiResourceListingJson, [
+        invalidApiResource1Json,
+        invalidApiResource2Json,
+        invalidApiResource3Json
+      ]);
+      var errors = findAllErrorsOrWarnings('errors', 'UNUSED_AUTHORIZATION', result);
+
+      assert.deepEqual(errors, [
+        {
+          code: 'UNUSED_AUTHORIZATION',
+          message: 'Authorization is defined but is not used: unusedBasicAuth',
+          data: {
+            type: 'basicAuth'
+          },
+          path: '$.authorizations[\'unusedBasicAuth\']'
+        }
+      ]);
+    });
+
+    it('should return errors for defined but unused authorization scopes in resource listing JSON files', function () {
+      var result = spec.validateApi(invalidApiResourceListingJson, [
+        invalidApiResource1Json,
+        invalidApiResource2Json,
+        invalidApiResource3Json
+      ]);
+      var errors = findAllErrorsOrWarnings('errors', 'UNUSED_AUTHORIZATION_SCOPE', result);
+
+      assert.deepEqual(errors, [
+        {
+          code: 'UNUSED_AUTHORIZATION_SCOPE',
+          message: 'Authorization scope is defined but is not used: scope2',
+          data: {
+            description: 'Scope 2',
+            scope: 'scope2'
+          },
+          path: '$.authorizations[\'oauth2\'].scopes[1]'
+        }
+      ]);
+    });
+
+    it('should return errors for missing authorization references in apiDeclaration JSON files', function () {
+      var result = spec.validateApi(invalidApiResourceListingJson, [
+        invalidApiResource1Json,
+        invalidApiResource2Json,
+        invalidApiResource3Json
+      ]);
+      var errors = findAllErrorsOrWarnings('errors', 'UNRESOLVABLE_AUTHORIZATION_REFERENCE', result.resources);
+
+      assert.deepEqual(errors, [
+        {
+          code: 'UNRESOLVABLE_AUTHORIZATION_REFERENCE',
+          message: 'Authorization reference could not be resolved: missingAuth',
+          data: [],
+          path: '$.apis[0].operations[0].authorizations[\'missingAuth\']'
+        }
+      ]);
+    });
+
+    it('should return errors for missing authorization scope reference in apiDeclaration JSON files', function () {
+      var result = spec.validateApi(invalidApiResourceListingJson, [
+        invalidApiResource1Json,
+        invalidApiResource2Json,
+        invalidApiResource3Json
+      ]);
+      var errors = findAllErrorsOrWarnings('errors', 'UNRESOLVABLE_AUTHORIZATION_SCOPE_REFERENCE', result.resources);
+
+      assert.deepEqual(errors, [
+        {
+          code: 'UNRESOLVABLE_AUTHORIZATION_SCOPE_REFERENCE',
+          message: 'Authorization scope reference could not be resolved: missingScope',
+          data: 'missingScope',
+          path: '$.apis[1].operations[0].authorizations[\'oauth2\'].scopes[1]'
+        }
+      ]);
+    });
+
+    it('should return errors for duplicate resource path in apiDeclaration JSON files', function () {
+      var result = spec.validateApi(invalidApiResourceListingJson, [
+        invalidApiResource1Json,
+        invalidApiResource2Json,
+        invalidApiResource3Json
+      ]);
+      var errors = findAllErrorsOrWarnings('errors', 'DUPLICATE_RESOURCE_PATH', result.resources);
+
+      assert.deepEqual(errors, [
+        {
+          code: 'DUPLICATE_RESOURCE_PATH',
+          message: 'Resource path already defined: /resource1',
+          data: '/resource1',
+          path: '$.resourcePath'
+        }
+      ]);
+    });
+
+    it('should return errors for missing resource listing for resource path in apiDeclaration JSON files', function () {
+      var result = spec.validateApi(invalidApiResourceListingJson, [
+        invalidApiResource1Json,
+        invalidApiResource2Json,
+        invalidApiResource3Json
+      ]);
+      var errors = findAllErrorsOrWarnings('errors', 'UNRESOLVABLE_RESOURCEPATH_REFERENCE', result.resources);
+
+      assert.deepEqual(errors, [
+        {
+          code: 'UNRESOLVABLE_RESOURCEPATH_REFERENCE',
+          message: 'Resource defined but not declared in resource listing: /resource3',
+          data: '/resource3',
+          path: '$.resourcePath'
+        }
+      ]);
+    });
+
+    it('should return warning for Swagger version mismatch in apiDeclaration JSON files', function () {
+      var result = spec.validateApi(invalidApiResourceListingJson, [
+        invalidApiResource1Json,
+        invalidApiResource2Json,
+        invalidApiResource3Json
+      ]);
+      var warnings = findAllErrorsOrWarnings('warnings', 'SWAGGER_VERSION_MISMATCH', result.resources);
+
+      assert.deepEqual(warnings, [
+        {
+          code: 'SWAGGER_VERSION_MISMATCH',
+          message: 'Swagger version differs from resource listing (1.2): 1.1',
+          data: '1.1',
+          path: '$.swaggerVersion'
+        }
+      ]);
+    });
+  });
 });
+
+// TODO: Add test for calling 'validate' with invalid schema name

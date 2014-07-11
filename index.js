@@ -31,6 +31,22 @@ var defaultOptions = {
   }
 };
 
+var mergeResults = function mergeResults (errors, warnings, results) {
+  if (_.isObject(results)) {
+    if (results.errors && _.isArray(results.errors) && _.isArray(errors)) {
+      results.errors.forEach(function (error) {
+        errors.push(error);
+      });
+    }
+
+    if (results.warnings && _.isArray(results.warnings) && _.isArray(warnings)) {
+      results.warnings.forEach(function (warning) {
+        warnings.push(warning);
+      });
+    }
+  }
+};
+
 var throwUnsupportedVersion = function (version) {
   throw new Error(version + ' is an unsupported Swagger specification version');
 };
@@ -464,22 +480,13 @@ var validateModels = function validateModels (spec, resource) {
         if (model.properties && _.isObject(model.properties)) {
           _.each(model.properties, function (property, name) {
             var propPath = modelPath + '.properties[\'' + name + '\']'; // Always use bracket notation just to be safe
-            var result;
 
             if (property.$ref) {
               addModelRef(property.$ref, propPath + '.$ref');
             } else if (property.type === 'array' && _.isObject(property.items) && property.items.$ref) {
               addModelRef(property.items.$ref, propPath + '.items.$ref');
             } else {
-              result = validateDefaultValue(property, propPath);
-
-              if (result.errors && _.isArray(result.errors)) {
-                errors = errors.concat(result.errors);
-              }
-
-              if (result.warnings && _.isArray(result.warnings)) {
-                warnings = warnings.concat(result.warnings);
-              }
+              mergeResults(errors, warnings, validateDefaultValue(property, propPath));
             }
           });
         }
@@ -575,19 +582,11 @@ var validateOperations = function validateOperations (spec, resource) {
         _.each(api.operations, function (operation, index) {
           var operationPath = apiPath + '.operations[' + index + ']';
           var seenResponseMessageCodes = [];
-          var result;
 
           if (operation.parameters && _.isArray(operation.parameters)) {
             _.each(operation.parameters, function (parameter, index) {
-              result = validateDefaultValue(parameter, operationPath + '.parameters[' + index + ']');
-
-              if (result.errors && _.isArray(result.errors)) {
-                errors = errors.concat(result.errors);
-              }
-
-              if (result.warnings && _.isArray(result.warnings)) {
-                warnings = warnings.concat(result.warnings);
-              }
+              mergeResults(errors, warnings,
+                           validateDefaultValue(parameter, operationPath + '.parameters[' + index + ']'));
             });
           }
 
@@ -691,7 +690,8 @@ Specification.prototype.validate = function (data, schemaName) {
   schema = this.schemas[schemaName];
 
   if (!schema) {
-    throw new Error('schemaName is not valid.  Valid schema names: ' + Object.keys(this.schemas).join(', '));
+    throw new Error('schemaName is not valid (' + schemaName + ').  Valid schema names: ' +
+                    Object.keys(this.schemas).join(', '));
   }
 
   // Do structural (JSON Schema) validation
@@ -702,24 +702,231 @@ Specification.prototype.validate = function (data, schemaName) {
     errors = validator.je(schema, data, result);
   }
 
+  // Do semantic validation
   switch (schemaName) {
   case 'apiDeclaration.json':
     [validateModels, validateOperations].forEach(function (func) {
-      result = func(this, data);
-
-      if (result.errors && _.isArray(result.errors)) {
-        errors = errors.concat(result.errors);
-      }
-
-      if (result.warnings && _.isArray(result.warnings)) {
-        warnings = warnings.concat(result.warnings);
-      }
+      mergeResults(errors, warnings, func(this, data));
     }.bind(this));
 
     break;
   }
 
   return errors.length === 0 && warnings.length === 0 ? undefined : {errors: errors, warnings: warnings};
+};
+
+/**
+ * Returns the result of the validation of the Swagger API as a whole.
+ *
+ * @param {object} resourceListing - The resource listing object
+ * @param {object[]} resources - The array of resources
+ *
+ * @returns undefined if validation passes or an object containing errors and/or warnings
+ */
+Specification.prototype.validateApi = function (resourceList, resources) {
+  if (_.isUndefined(resourceList)) {
+    throw new Error('resourceList is required');
+  } else if (!_.isObject(resourceList)) {
+    throw new TypeError('resourceList must be an object');
+  }
+
+  if (_.isUndefined(resources)) {
+    throw new Error('resources is required');
+  } else if (!_.isArray(resources)) {
+    throw new TypeError('resources must be an array');
+  }
+
+  var authNames = [];
+  var authScopes = {};
+  var resourcePaths = [];
+  var resourceRefs = {};
+  var result = {
+    errors: [],
+    warnings: [],
+    resources: []
+  };
+  var seenAuthScopes = {};
+  var seenResourcePaths = [];
+  var swaggerVersion = resourceList.swaggerVersion;
+
+  // Generate list of declared API paths
+  if (_.isArray(resourceList.apis)) {
+    resourceList.apis.forEach(function (api, index) {
+      if (api.path) {
+        if (resourcePaths.indexOf(api.path) > -1) {
+          result.errors.push({
+            code: 'DUPLICATE_RESOURCE_PATH',
+            message: 'Resource path already defined: ' + api.path,
+            data: api.path,
+            path: '$.apis[' + index + '].path'
+          });
+        } else {
+          resourcePaths.push(api.path);
+          resourceRefs[api.path] = [];
+        }
+      }
+    });
+  }
+
+  // Generate list of declared auth scopes
+  _.each(resourceList.authorizations, function (authorization, name) {
+    var scopes = [];
+
+    authNames.push(name);
+
+    if (authorization.type === 'oauth2' && _.isArray(authorization.scopes)) {
+      scopes = _.map(authorization.scopes, function (scope) {
+        return scope.scope;
+      });
+    }
+
+    authScopes[name] = scopes;
+  });
+
+  // Validate the resource listing (structural)
+  mergeResults(result.errors, result.warnings, this.validate(resourceList, 'resourceListing.json'));
+
+  // Validate the resources
+  resources.forEach(function (resource, index) {
+    var vResult = this.validate(resource) || {errors: [], warnings: []};
+    var recordAuth = function (authorization, name, path) {
+      var scopes = authScopes[name];
+
+      if (!_.isArray(seenAuthScopes[name])) {
+        seenAuthScopes[name] = [];
+      }
+
+      // Identify missing models (referenced but not declared)
+      if (_.isUndefined(scopes)) {
+        vResult.errors.push({
+          code: 'UNRESOLVABLE_AUTHORIZATION_REFERENCE',
+          message: 'Authorization reference could not be resolved: ' + name,
+          data: authorization,
+          path: path
+        });
+      } else if (_.isArray(authorization) && authorization.length > 0) {
+        if (scopes.length > 0) {
+          _.each(authorization, function (scope, index) {
+            if (scopes.indexOf(scope.scope) === -1) {
+              vResult.errors.push({
+                code: 'UNRESOLVABLE_AUTHORIZATION_SCOPE_REFERENCE',
+                message: 'Authorization scope reference could not be resolved: ' + scope.scope,
+                data: scope.scope,
+                path: path + '.scopes[' + index + ']'
+              });
+            } else {
+              if (seenAuthScopes[name].indexOf(scope.scope) === -1) {
+                seenAuthScopes[name].push(scope.scope);
+              }
+            }
+          });
+        }
+      }
+    };
+
+    if (swaggerVersion && resource.swaggerVersion && swaggerVersion !== resource.swaggerVersion) {
+      vResult.warnings.push({
+        code: 'SWAGGER_VERSION_MISMATCH',
+        message: 'Swagger version differs from resource listing (' + swaggerVersion + '): ' + resource.swaggerVersion,
+        data: resource.swaggerVersion,
+        path: '$.swaggerVersion'
+      });
+    }
+
+    // References in resource
+    if (_.isObject(resource.authorizations)) {
+      _.each(resource.authorizations, function (authorization, name) {
+        recordAuth(authorization, name, '$.authorizations[\'' + name + ']');
+      });
+    }
+
+    // References in resource operations
+    if (_.isArray(resource.apis)) {
+      _.each(resource.apis, function (api, index) {
+        var aPath = '$.apis[' + index + ']';
+
+        if (_.isArray(api.operations)) {
+          _.each(api.operations, function (operation, index) {
+            var oPath = aPath + '.operations[' + index + ']';
+
+            if (_.isObject(operation.authorizations)) {
+              _.each(operation.authorizations, function (authorization, name) {
+                recordAuth(authorization, name, oPath + '.authorizations[\'' + name + '\']');
+              });
+            }
+          });
+        }
+      });
+    }
+
+    if (resource.resourcePath) {
+      if (resourcePaths.indexOf(resource.resourcePath) === -1) {
+        vResult.errors.push({
+          code: 'UNRESOLVABLE_RESOURCEPATH_REFERENCE',
+          message: 'Resource defined but not declared in resource listing: ' + resource.resourcePath,
+          data: resource.resourcePath,
+          path: '$.resourcePath'
+        });
+      } else if (seenResourcePaths.indexOf(resource.resourcePath) > -1) {
+        vResult.errors.push({
+          code: 'DUPLICATE_RESOURCE_PATH',
+          message: 'Resource path already defined: ' + resource.resourcePath,
+          data: resource.resourcePath,
+          path: '$.resourcePath'
+        });
+      } else {
+        if (seenResourcePaths.indexOf(resource.resourcePath) === -1) {
+          seenResourcePaths.push(resource.resourcePath);
+        }
+      }
+    }
+
+    result.resources[index] = vResult;
+  }.bind(this));
+
+  // Identify unused resources (declared but not referenced)
+  _.difference(resourcePaths, seenResourcePaths).forEach(function (unused) {
+    var index = _.map(resourceList.apis, function (api) { return api.path; }).indexOf(unused);
+
+    result.errors.push({
+      code: 'UNUSED_RESOURCE',
+      message: 'Resource is defined but is not used: ' + unused,
+      data: resourceList.apis[index],
+      path: '$.apis[' + index + ']'
+    });
+  });
+
+  // Identify unused authorizations (declared but not referenced)
+  _.difference(Object.keys(authScopes), Object.keys(seenAuthScopes)).forEach(function (unused) {
+    result.errors.push({
+      code: 'UNUSED_AUTHORIZATION',
+      message: 'Authorization is defined but is not used: ' + unused,
+      data: resourceList.authorizations[unused],
+      path: '$.authorizations[\'' + unused + '\']'
+    });
+  });
+
+  _.each(authScopes, function (scopes, name) {
+    var path = '$.authorizations[\'' + name + '\']';
+
+    // Identify unused authorization scope (declared but not referenced)
+    _.difference(scopes, seenAuthScopes[name] || []).forEach(function (unused) {
+      var index = scopes.indexOf(unused);
+
+      result.errors.push({
+        code: 'UNUSED_AUTHORIZATION_SCOPE',
+        message: 'Authorization scope is defined but is not used: ' + unused,
+        data: resourceList.authorizations[name].scopes[index],
+        path: path + '.scopes[' + index + ']'
+      });
+    });
+  });
+
+  return result.errors.length + result.warnings.length + _.reduce(result.resources, function(count, resource) {
+      return count +
+        (_.isArray(resource.errors) ? resource.errors.length : 0) +
+        (_.isArray(resource.warnings) ? resource.warnings.length : 0);
+    }, 0) > 0 ? result : undefined;
 };
 
 var v1_2 = module.exports.v1_2 = new Specification('1.2'); // jshint ignore:line

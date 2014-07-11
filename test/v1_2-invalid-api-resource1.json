@@ -1,0 +1,58 @@
+{
+  "apiVersion": "1.0.0",
+  "apis": [
+    {
+      "operations": [
+        {
+          "authorizations": {
+            "missingAuth": []
+          },
+          "method": "GET",
+          "nickname": "getGreeting",
+          "notes": "Returns a greeting",
+          "parameters": [
+            {
+              "allowMultiple": false,
+              "description": "Name used in greeting",
+              "name": "name",
+              "paramType": "path",
+              "required": true,
+              "type": "string"
+            }
+          ],
+          "summary": "Returns a greeting",
+          "type": "string"
+        }
+      ],
+      "path": "/resource1/{name}"
+    },
+    {
+      "operations": [
+        {
+          "authorizations": {
+            "oauth2": [
+              {
+                "scope": "scope1",
+                "description": "Scope 1"
+              },
+              {
+                "scope": "missingScope",
+                "description": "This should be flagged as missing"
+              }
+            ]
+          },
+          "method": "GET",
+          "nickname": "getAllGreeting",
+          "notes": "Returns all greeting",
+          "parameters": [],
+          "summary": "Returns all greeting",
+          "type": "string"
+        }
+      ],
+      "path": "/resource1"
+    }
+  ],
+  "basePath": "http://localhost:8080/api",
+  "resourcePath": "/resource1",
+  "swaggerVersion": "1.1"
+}
