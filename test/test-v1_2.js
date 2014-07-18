@@ -39,14 +39,14 @@ var allSchemaFiles = [
   'resourceObject.json'
 ];
 var allSampleFiles = {};
-var invalidApiResourceListingJson = require('./v1_2-invalid-api-resource-listing.json');
-var invalidApiResource1Json = require('./v1_2-invalid-api-resource1.json');
-var invalidApiResource2Json = require('./v1_2-invalid-api-resource2.json');
-var invalidApiResource3Json = require('./v1_2-invalid-api-resource3.json');
-var invalidModelMiscJson = require('./v1_2-invalid-model-misc.json');
-var invalidModelRefsJson = require('./v1_2-invalid-model-refs.json');
-var invalidModelInheritanceJson = require('./v1_2-invalid-model-inheritance.json');
-var invalidOperationMiscJson = require('./v1_2-invalid-operation-misc.json');
+var invalidApiResourceListingJson = require('./json/v1_2-invalid-api-resource-listing.json');
+var invalidApiResource1Json = require('./json/v1_2-invalid-api-resource1.json');
+var invalidApiResource2Json = require('./json/v1_2-invalid-api-resource2.json');
+var invalidApiResource3Json = require('./json/v1_2-invalid-api-resource3.json');
+var invalidModelMiscJson = require('./json/v1_2-invalid-model-misc.json');
+var invalidModelRefsJson = require('./json/v1_2-invalid-model-refs.json');
+var invalidModelInheritanceJson = require('./json/v1_2-invalid-model-inheritance.json');
+var invalidOperationMiscJson = require('./json/v1_2-invalid-operation-misc.json');
 var findAllErrorsOrWarnings = function (type, code, results) {
   var arr = [];
   var finder = function (result) {
@@ -65,6 +65,8 @@ var findAllErrorsOrWarnings = function (type, code, results) {
 
   return arr;
 };
+var petJson = require('../samples/1.2/pet.json');
+var resourceListJson = require('../samples/1.2/resource-listing.json');
 
 // Load the sample files from disk
 fs.readdirSync(path.join(__dirname, '..', 'samples', '1.2'))
@@ -126,12 +128,27 @@ describe('Specification v1.2', function () {
   });
 
   describe('#validate', function () {
+    it('should fail when passed the wrong arguments', function () {
+      var errors = {
+        'data is required': [],
+        'data must be an object': ['wrongType']
+      };
+
+      _.each(errors, function (args, message) {
+        try {
+          spec.validate.apply(spec, args);
+        } catch (err) {
+          assert.equal(message, err.message);
+        }
+      });
+    });
+
     it('should throw error when using invalid schema name', function () {
       try {
         spec.validate(allSampleFiles['pet.json'], 'fakeSchema.json');
       } catch (err) {
         assert.equal(err.message, 'schemaName is not valid (fakeSchema.json).  Valid schema names: ' +
-                    Object.keys(spec.schemas).join(', '))
+                     Object.keys(spec.schemas).join(', '));
       }
     });
 
@@ -420,7 +437,7 @@ describe('Specification v1.2', function () {
     });
 
     it('should return errors for defaultValue related properties in apiDeclaration files', function () {
-      var result = spec.validate(require('./v1_2-invalid-defaultValues.json'));
+      var result = spec.validate(require('./json/v1_2-invalid-defaultValues.json'));
       var expectedErrors = [
         {
           code: 'ENUM_MISMATCH',
@@ -474,6 +491,33 @@ describe('Specification v1.2', function () {
   });
 
   describe('#validateApi', function () {
+    it('should fail when passed the wrong arguments', function () {
+      var errors = {
+        'resourceList is required': [],
+        'resourceList must be an object': ['wrongType'],
+        'resources is required': [resourceListJson],
+        'resources must be an array': [resourceListJson, petJson]
+      };
+
+      _.each(errors, function (args, message) {
+        try {
+          spec.validateApi.apply(spec, args);
+        } catch (err) {
+          assert.equal(message, err.message);
+        }
+      });
+    });
+
+    it('should succeed when passed the right arguments', function () {
+      try {
+        spec.validateApi.apply(spec, [
+          resourceListJson, [petJson]
+        ]);
+      } catch (err) {
+        assert.fail();
+      }
+    });
+
     it('should return errors for duplicate resource paths in resource listing JSON files', function () {
       var result = spec.validateApi(invalidApiResourceListingJson, [
         invalidApiResource1Json,

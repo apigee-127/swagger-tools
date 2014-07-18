@@ -12,6 +12,10 @@ see what issues we are aware of and what features/enhancements we are working on
 based on the [JSON Schema][json-schema] associated with that version of the specification
 * Semantic validation: Validates Swagger files individually and as a whole (resource listing combined with API
 declarations) _(See [Issue #1](https://github.com/apigee-127/swagger-tools/issues/1) for more details)_
+* Connect middleware for using Swagger resource documents for pre-route validation
+    * Validate the request Content-Type based on the operation's `consumes` value(s)
+    * Validate the request parameter types
+    * Validate the request parameter values
 
 ## Installation
 
@@ -42,6 +46,21 @@ var rlJson = require('./samples/1.2/resource-listing.json');
 var petResults = spec.validate(petJson); // The default schema used is 'apiDeclaration.json'
 var rlResults = spec.validate(rlJson, 'resourceListing.json');
 var apiResults = spec.validateApi(rlJson, [petJson]);
+```
+
+Here is an example of using the Swagger middleware for validating requests based on your Swagger resource documents:
+
+```
+var connect = require('connect');
+var petJson = require('./samples/1.2/pet.json');
+var storeJson = require('./samples/1.2/user.json');
+var userJson = require('./samples/1.2/store.json');
+var swaggerValidator = require('swagger-tools/middleware/swagger-validator');
+var app = connect();
+
+app.use(swaggerValidator([petJson, storeJson, userJson]));
+
+// ...
 ```
 
 ## Contributing

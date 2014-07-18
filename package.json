@@ -29,15 +29,29 @@
     "connect",
     "swagger"
   ],
+  "files": [
+    "bin",
+    "index.js",
+    "LICENSE",
+    "middleware",
+    "schemas"
+  ],
   "devDependencies": {
+    "body-parser": "^1.4.3",
+    "connect": "^3.0.2",
     "gulp": "^3.8.5",
     "gulp-jshint": "^1.6.2",
     "gulp-mocha": "^0.4.1",
-    "jshint-stylish": "^0.2.0"
+    "jshint-stylish": "^0.2.0",
+    "qs": "^0.6.6",
+    "string": "^1.9.0",
+    "supertest": "^0.13.0"
   },
   "dependencies": {
     "jjv": "^1.0.0",
     "jjve": "^0.2.1",
-    "lodash": "^2.4.1"
+    "lodash": "^2.4.1",
+    "parseurl": "^1.1.3",
+    "path-to-regexp": "^0.2.3"
   }
 }
