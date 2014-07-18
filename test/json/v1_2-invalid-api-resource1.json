@@ -54,5 +54,5 @@
   ],
   "basePath": "http://localhost:8080/api",
   "resourcePath": "/resource1",
-  "swaggerVersion": "1.1"
+  "swaggerVersion": "1.2"
 }

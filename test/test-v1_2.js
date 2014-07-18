@@ -592,9 +592,8 @@ describe('Specification v1.2', function () {
         invalidApiResource2Json,
         invalidApiResource3Json
       ]);
-      var warnings = findAllErrorsOrWarnings('warnings', 'UNUSED_AUTHORIZATION_SCOPE', result);
 
-      assert.deepEqual(warnings, [
+      assert.deepEqual(findAllErrorsOrWarnings('warnings', 'UNUSED_AUTHORIZATION_SCOPE', result), [
         {
           code: 'UNUSED_AUTHORIZATION_SCOPE',
           message: 'Authorization scope is defined but is not used: scope2',
@@ -613,9 +612,8 @@ describe('Specification v1.2', function () {
         invalidApiResource2Json,
         invalidApiResource3Json
       ]);
-      var errors = findAllErrorsOrWarnings('errors', 'UNRESOLVABLE_AUTHORIZATION_REFERENCE', result.resources);
 
-      assert.deepEqual(errors, [
+      assert.deepEqual(findAllErrorsOrWarnings('errors', 'UNRESOLVABLE_AUTHORIZATION_REFERENCE', result.resources), [
         {
           code: 'UNRESOLVABLE_AUTHORIZATION_REFERENCE',
           message: 'Authorization reference could not be resolved: missingAuth',
@@ -631,9 +629,9 @@ describe('Specification v1.2', function () {
         invalidApiResource2Json,
         invalidApiResource3Json
       ]);
-      var errors = findAllErrorsOrWarnings('errors', 'UNRESOLVABLE_AUTHORIZATION_SCOPE_REFERENCE', result.resources);
 
-      assert.deepEqual(errors, [
+      assert.deepEqual(findAllErrorsOrWarnings('errors', 'UNRESOLVABLE_AUTHORIZATION_SCOPE_REFERENCE',
+                                               result.resources), [
         {
           code: 'UNRESOLVABLE_AUTHORIZATION_SCOPE_REFERENCE',
           message: 'Authorization scope reference could not be resolved: missingScope',
@@ -649,9 +647,8 @@ describe('Specification v1.2', function () {
         invalidApiResource2Json,
         invalidApiResource3Json
       ]);
-      var errors = findAllErrorsOrWarnings('errors', 'DUPLICATE_RESOURCE_PATH', result.resources);
 
-      assert.deepEqual(errors, [
+      assert.deepEqual(findAllErrorsOrWarnings('errors', 'DUPLICATE_RESOURCE_PATH', result.resources), [
         {
           code: 'DUPLICATE_RESOURCE_PATH',
           message: 'Resource path already defined: /resource1',
@@ -667,32 +664,13 @@ describe('Specification v1.2', function () {
         invalidApiResource2Json,
         invalidApiResource3Json
       ]);
-      var errors = findAllErrorsOrWarnings('errors', 'UNRESOLVABLE_RESOURCEPATH_REFERENCE', result.resources);
 
-      assert.deepEqual(errors, [
+      assert.deepEqual(findAllErrorsOrWarnings('errors', 'UNRESOLVABLE_RESOURCEPATH_REFERENCE', result.resources), [
         {
           code: 'UNRESOLVABLE_RESOURCEPATH_REFERENCE',
           message: 'Resource defined but not declared in resource listing: /resource3',
           data: '/resource3',
           path: '$.resourcePath'
-        }
-      ]);
-    });
-
-    it('should return warning for Swagger version mismatch in apiDeclaration JSON files', function () {
-      var result = spec.validateApi(invalidApiResourceListingJson, [
-        invalidApiResource1Json,
-        invalidApiResource2Json,
-        invalidApiResource3Json
-      ]);
-      var warnings = findAllErrorsOrWarnings('warnings', 'SWAGGER_VERSION_MISMATCH', result.resources);
-
-      assert.deepEqual(warnings, [
-        {
-          code: 'SWAGGER_VERSION_MISMATCH',
-          message: 'Swagger version differs from resource listing (1.2): 1.1',
-          data: '1.1',
-          path: '$.swaggerVersion'
         }
       ]);
     });

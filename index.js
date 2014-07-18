@@ -200,8 +200,8 @@ var validateDefaultValue = function validateDefaultValue (data, path) {
 
   // Should we return an error/warning when defaultValue is used without a type?
 
-  if (!_.isUndefined(defaultValue) && !_.isUndefined(type)) {
-    if (data.enum && _.isArray(data.enum) && data.enum.indexOf(defaultValue) === -1) {
+  if (!_.isUndefined(defaultValue)) {
+    if (!_.isUndefined(data.enum) && data.enum.indexOf(defaultValue) === -1) {
       errors.push({
         code: 'ENUM_MISMATCH',
         message: 'Default value is not within enum values (' + data.enum.join(', ') + '): ' + defaultValue,
@@ -271,7 +271,7 @@ var validateDefaultValue = function validateDefaultValue (data, path) {
         break;
 
       case 'boolean':
-        if (['false', 'true'].indexOf(defaultValue) === -1) {
+        if (!_.isBoolean(defaultValue)) {
           errors.push({
             code: 'INVALID_TYPE',
             message: 'Invalid type (expected parseable boolean): ' + defaultValue,
@@ -307,7 +307,7 @@ var validateModels = function validateModels (spec, resource) {
     var addModelProps = function (parentModel, modelName) {
       var model = models[modelName];
 
-      if (model && model.properties && _.isObject(model.properties)) {
+      if (model) {
         _.each(model.properties, function (prop, propName) {
           if (composed[propName]) {
             errors.push({
@@ -390,52 +390,39 @@ var validateModels = function validateModels (spec, resource) {
   switch (spec.version) {
   case '1.2':
     // Find references defined in the operations (Validation happens elsewhere but we have to be smart)
-    if (resource.apis && _.isArray(resource.apis)) {
-      _.each(resource.apis, function (api, index) {
-        var apiPath = '$.apis[' + index + ']';
+    _.each(resource.apis, function (api, index) {
+      var apiPath = '$.apis[' + index + ']';
 
-        if (!api.operations || !_.isArray(api.operations)) {
-          return;
+      _.each(api.operations, function (operation, index) {
+        var operationPath = apiPath + '.operations[' + index + ']';
+
+        // References in operation type
+        if (operation.type === 'array' && operation.items.$ref) {
+          addModelRef(operation.items.$ref, operationPath + '.items.$ref');
+        } else if (primitives.indexOf(operation.type) === -1) {
+          addModelRef(operation.type, operationPath + '.type');
         }
 
-        _.each(api.operations, function (operation, index) {
-          var operationPath = apiPath + '.operations[' + index + ']';
-
-          // References in operation type
-          if (operation.type) {
-            if (operation.type === 'array' && _.isObject(operation.items) && operation.items.$ref) {
-              addModelRef(operation.items.$ref, operationPath + '.items.$ref');
-            } else if (primitives.indexOf(operation.type) === -1) {
-              addModelRef(operation.type, operationPath + '.type');
-            }
+        // References in operation parameters
+        _.each(operation.parameters, function (parameter, index) {
+          if (primitives.indexOf(parameter.type) === -1) {
+            addModelRef(parameter.type, operationPath + '.parameters[' + index + '].type');
+          } else if (parameter.type === 'array' && parameter.items.$ref) {
+            addModelRef(parameter.items.$ref, operationPath + '.parameters[' + index + '].items.$ref');
           }
+        });
 
-          // References in operation parameters
-          if (operation.parameters && _.isObject(operation.parameters)) {
-            _.each(operation.parameters, function (parameter, index) {
-
-              if (parameter.type && primitives.indexOf(parameter.type) === -1) {
-                addModelRef(parameter.type, operationPath + '.parameters[' + index + '].type');
-              } else if (parameter.type === 'array' && _.isObject(parameter.items) && parameter.items.$ref) {
-                addModelRef(parameter.items.$ref, operationPath + '.parameters[' + index + '].items.$ref');
-              }
-            });
-          }
-
-          // References in response messages
-          if (operation.responseMessages && _.isArray(operation.responseMessages)) {
-            _.each(operation.responseMessages, function (message, index) {
-              if (message.responseModel) {
-                addModelRef(message.responseModel, operationPath + '.responseMessages[' + index + '].responseModel');
-              }
-            });
+        // References in response messages
+        _.each(operation.responseMessages, function (message, index) {
+          if (message.responseModel) {
+            addModelRef(message.responseModel, operationPath + '.responseMessages[' + index + '].responseModel');
           }
         });
       });
-    }
+    });
 
     // Find references defined in the models themselves (Validation happens elsewhere but we have to be smart)
-    if (models && _.isObject(models)) {
+    if (!_.isUndefined(models)) {
       _.each(models, function (model, name) {
         var modelPath = '$.models[\'' + name + '\']'; // Always use bracket notation just to be safe
         var modelId = model.id;
@@ -477,22 +464,20 @@ var validateModels = function validateModels (spec, resource) {
         }
 
         // References in model properties
-        if (model.properties && _.isObject(model.properties)) {
-          _.each(model.properties, function (property, name) {
-            var propPath = modelPath + '.properties[\'' + name + '\']'; // Always use bracket notation just to be safe
+        _.each(model.properties, function (property, name) {
+          var propPath = modelPath + '.properties[\'' + name + '\']'; // Always use bracket notation just to be safe
 
-            if (property.$ref) {
-              addModelRef(property.$ref, propPath + '.$ref');
-            } else if (property.type === 'array' && _.isObject(property.items) && property.items.$ref) {
-              addModelRef(property.items.$ref, propPath + '.items.$ref');
-            } else {
-              mergeResults(errors, warnings, validateDefaultValue(property, propPath));
-            }
-          });
-        }
+          if (property.$ref) {
+            addModelRef(property.$ref, propPath + '.$ref');
+          } else if (property.type === 'array' && property.items.$ref) {
+            addModelRef(property.items.$ref, propPath + '.items.$ref');
+          } else {
+            mergeResults(errors, warnings, validateDefaultValue(property, propPath));
+          }
+        });
 
         // References in model subTypes
-        if (model.subTypes && _.isArray(model.subTypes)) {
+        if (!_.isUndefined(model.subTypes)) {
           _.each(model.subTypes, function (name, index) {
             addModelRef(name, modelPath + '.subTypes[' + index + ']');
           });
@@ -507,7 +492,7 @@ var validateModels = function validateModels (spec, resource) {
           });
         }
 
-        if (model.required && _.isArray(model.required)) {
+        if (!_.isUndefined(model.required)) {
           var props = model.properties || {};
 
           _.each(model.required, function (propName, index) {
@@ -569,85 +554,78 @@ var validateOperations = function validateOperations (spec, resource) {
 
   switch (spec.version) {
   case '1.2':
-    if (resource.apis && _.isArray(resource.apis)) {
-      _.each(resource.apis, function (api, index) {
-        var apiPath = '$.apis[' + index + ']';
-        var seenMethods = [];
-        var seenNicknames = [];
+    _.each(resource.apis, function (api, index) {
+      var apiPath = '$.apis[' + index + ']';
+      var seenMethods = [];
+      var seenNicknames = [];
 
-        if (!api.operations || !_.isArray(api.operations)) {
-          return;
+      if (!api.operations || !_.isArray(api.operations)) {
+        return;
+      }
+
+      _.each(api.operations, function (operation, index) {
+        var operationPath = apiPath + '.operations[' + index + ']';
+        var seenResponseMessageCodes = [];
+
+        // Validate the default value when necessary
+        _.each(operation.parameters, function (parameter, index) {
+          mergeResults(errors, warnings,
+                       validateDefaultValue(parameter, operationPath + '.parameters[' + index + ']'));
+        });
+
+        // Identify duplicate operation methods
+        if (seenMethods.indexOf(operation.method) > -1) {
+          errors.push({
+            code: 'DUPLICATE_OPERATION_METHOD',
+            message: 'Operation method already defined: ' + operation.method,
+            data: operation.method,
+            path: operationPath + '.method'
+          });
+        } else {
+          seenMethods.push(operation.method);
         }
 
-        _.each(api.operations, function (operation, index) {
-          var operationPath = apiPath + '.operations[' + index + ']';
-          var seenResponseMessageCodes = [];
+        // Identify duplicate operation nicknames
+        if (seenNicknames.indexOf(operation.nickname) > -1) {
+          errors.push({
+            code: 'DUPLICATE_OPERATION_NICKNAME',
+            message: 'Operation method already defined: ' + operation.nickname,
+            data: operation.nickname,
+            path: operationPath + '.nickname'
+          });
+        } else {
+          seenNicknames.push(operation.nickname);
+        }
 
-          if (operation.parameters && _.isArray(operation.parameters)) {
-            _.each(operation.parameters, function (parameter, index) {
-              mergeResults(errors, warnings,
-                           validateDefaultValue(parameter, operationPath + '.parameters[' + index + ']'));
-            });
-          }
-
-          // Identify duplicate operation methods
-          if (operation.method) {
-            if (seenMethods.indexOf(operation.method) > -1) {
-              errors.push({
-                code: 'DUPLICATE_OPERATION_METHOD',
-                message: 'Operation method already defined: ' + operation.method,
-                data: operation.method,
-                path: operationPath + '.method'
-              });
-            } else {
-              seenMethods.push(operation.method);
-            }
-          }
-
-          // Identify duplicate operation nicknames
-          if (operation.nickname) {
-            if (seenNicknames.indexOf(operation.nickname) > -1) {
-              errors.push({
-                code: 'DUPLICATE_OPERATION_NICKNAME',
-                message: 'Operation method already defined: ' + operation.nickname,
-                data: operation.nickname,
-                path: operationPath + '.nickname'
-              });
-            } else {
-              seenNicknames.push(operation.nickname);
-            }
-          }
-
-          // Identify duplicate operation responseMessage codes
-          if (operation.responseMessages && _.isArray(operation.responseMessages)) {
-            _.each(operation.responseMessages, function (responseMessage, index) {
-              if (responseMessage.code) {
-                if (seenResponseMessageCodes.indexOf(responseMessage.code) > -1) {
-                  errors.push({
-                    code: 'DUPLICATE_OPERATION_RESPONSEMESSAGE_CODE',
-                    message: 'Operation responseMessage code already defined: ' + responseMessage.code,
-                    data: responseMessage.code,
-                    path: operationPath + '.responseMessages[' + index + '].code'
-                  });
-                } else {
-                  seenResponseMessageCodes.push(responseMessage.code);
-                }
+        // Identify duplicate operation responseMessage codes
+        if (!_.isUndefined(operation.responseMessages)) {
+          _.each(operation.responseMessages, function (responseMessage, index) {
+            if (responseMessage.code) {
+              if (seenResponseMessageCodes.indexOf(responseMessage.code) > -1) {
+                errors.push({
+                  code: 'DUPLICATE_OPERATION_RESPONSEMESSAGE_CODE',
+                  message: 'Operation responseMessage code already defined: ' + responseMessage.code,
+                  data: responseMessage.code,
+                  path: operationPath + '.responseMessages[' + index + '].code'
+                });
+              } else {
+                seenResponseMessageCodes.push(responseMessage.code);
               }
-            });
-          }
+            }
+          });
+        }
 
-          // Identify operation summary greater than 120 characters
-          if (operation.summary && _.isString(operation.summary) && operation.summary.length > 120) {
-            warnings.push({
-              code: 'OPERATION_SUMMARY_LONG',
-              message: 'Operation summary is greater than 120 characters: ' + operation.summary.length,
-              data: operation.summary,
-              path: operationPath + '.summary'
-            });
-          }
-        });
+        // Identify operation summary greater than 120 characters
+        if (operation.summary && _.isString(operation.summary) && operation.summary.length > 120) {
+          warnings.push({
+            code: 'OPERATION_SUMMARY_LONG',
+            message: 'Operation summary is greater than 120 characters: ' + operation.summary.length,
+            data: operation.summary,
+            path: operationPath + '.summary'
+          });
+        }
       });
-    }
+    });
   }
 
   return {
@@ -747,23 +725,29 @@ Specification.prototype.validateApi = function (resourceList, resources) {
   };
   var seenAuthScopes = {};
   var seenResourcePaths = [];
-  var swaggerVersion = resourceList.swaggerVersion;
+  var skipFurtherValidation = false;
+
+  // Validate the resource listing (structural)
+  mergeResults(result.errors, result.warnings, this.validate(resourceList, 'resourceListing.json'));
+
+  // Quick return if validation has failed already
+  if (result.errors.length > 0) {
+    return result;
+  }
 
   // Generate list of declared API paths
   if (_.isArray(resourceList.apis)) {
     resourceList.apis.forEach(function (api, index) {
-      if (api.path) {
-        if (resourcePaths.indexOf(api.path) > -1) {
-          result.errors.push({
-            code: 'DUPLICATE_RESOURCE_PATH',
-            message: 'Resource path already defined: ' + api.path,
-            data: api.path,
-            path: '$.apis[' + index + '].path'
-          });
-        } else {
-          resourcePaths.push(api.path);
-          resourceRefs[api.path] = [];
-        }
+      if (resourcePaths.indexOf(api.path) > -1) {
+        result.errors.push({
+          code: 'DUPLICATE_RESOURCE_PATH',
+          message: 'Resource path already defined: ' + api.path,
+          data: api.path,
+          path: '$.apis[' + index + '].path'
+        });
+      } else {
+        resourcePaths.push(api.path);
+        resourceRefs[api.path] = [];
       }
     });
   }
@@ -774,7 +758,7 @@ Specification.prototype.validateApi = function (resourceList, resources) {
 
     authNames.push(name);
 
-    if (authorization.type === 'oauth2' && _.isArray(authorization.scopes)) {
+    if (authorization.type === 'oauth2') {
       scopes = _.map(authorization.scopes, function (scope) {
         return scope.scope;
       });
@@ -782,9 +766,6 @@ Specification.prototype.validateApi = function (resourceList, resources) {
 
     authScopes[name] = scopes;
   });
-
-  // Validate the resource listing (structural)
-  mergeResults(result.errors, result.warnings, this.validate(resourceList, 'resourceListing.json'));
 
   // Validate the resources
   resources.forEach(function (resource, index) {
@@ -796,7 +777,7 @@ Specification.prototype.validateApi = function (resourceList, resources) {
         seenAuthScopes[name] = [];
       }
 
-      // Identify missing models (referenced but not declared)
+      // Identify missing authorizations (referenced but not declared)
       if (_.isUndefined(scopes)) {
         vResult.errors.push({
           code: 'UNRESOLVABLE_AUTHORIZATION_REFERENCE',
@@ -804,7 +785,7 @@ Specification.prototype.validateApi = function (resourceList, resources) {
           data: authorization,
           path: path
         });
-      } else if (_.isArray(authorization) && authorization.length > 0) {
+      } else if (!_.isUndefined(authorization) && authorization.length > 0) {
         if (scopes.length > 0) {
           _.each(authorization, function (scope, index) {
             if (scopes.indexOf(scope.scope) === -1) {
@@ -824,24 +805,18 @@ Specification.prototype.validateApi = function (resourceList, resources) {
       }
     };
 
-    if (swaggerVersion && resource.swaggerVersion && swaggerVersion !== resource.swaggerVersion) {
-      vResult.warnings.push({
-        code: 'SWAGGER_VERSION_MISMATCH',
-        message: 'Swagger version differs from resource listing (' + swaggerVersion + '): ' + resource.swaggerVersion,
-        data: resource.swaggerVersion,
-        path: '$.swaggerVersion'
-      });
-    }
+    // Do not procede with semantic validation if the resource is structurally invalid
+    if (vResult.errors.length > 0) {
+      skipFurtherValidation = true;
+    } else {
+      // References in resource
+      if (!_.isUndefined(resource.authorizations)) {
+        _.each(resource.authorizations, function (authorization, name) {
+          recordAuth(authorization, name, '$.authorizations[\'' + name + ']');
+        });
+      }
 
-    // References in resource
-    if (_.isObject(resource.authorizations)) {
-      _.each(resource.authorizations, function (authorization, name) {
-        recordAuth(authorization, name, '$.authorizations[\'' + name + ']');
-      });
-    }
-
-    // References in resource operations
-    if (_.isArray(resource.apis)) {
+      // References in resource operations
       _.each(resource.apis, function (api, index) {
         var aPath = '$.apis[' + index + ']';
 
@@ -857,9 +832,7 @@ Specification.prototype.validateApi = function (resourceList, resources) {
           });
         }
       });
-    }
 
-    if (resource.resourcePath) {
       if (resourcePaths.indexOf(resource.resourcePath) === -1) {
         vResult.errors.push({
           code: 'UNRESOLVABLE_RESOURCEPATH_REFERENCE',
@@ -884,45 +857,50 @@ Specification.prototype.validateApi = function (resourceList, resources) {
     result.resources[index] = vResult;
   }.bind(this));
 
-  // Identify unused resources (declared but not referenced)
-  _.difference(resourcePaths, seenResourcePaths).forEach(function (unused) {
-    var index = _.map(resourceList.apis, function (api) { return api.path; }).indexOf(unused);
+  // If the structural validation of a resource fails, we will skip all semantic validation.  Due to this, untill all
+  // resource validate structurally, we cannot do this level of validation across the whole API.
 
-    result.errors.push({
-      code: 'UNUSED_RESOURCE',
-      message: 'Resource is defined but is not used: ' + unused,
-      data: resourceList.apis[index],
-      path: '$.apis[' + index + ']'
-    });
-  });
+  if (!skipFurtherValidation) {
+    // Identify unused resources (declared but not referenced)
+    _.difference(resourcePaths, seenResourcePaths).forEach(function (unused) {
+      var index = _.map(resourceList.apis, function (api) { return api.path; }).indexOf(unused);
 
-  // Identify unused authorizations (declared but not referenced)
-  _.difference(Object.keys(authScopes), Object.keys(seenAuthScopes)).forEach(function (unused) {
-    result.warnings.push({
-      code: 'UNUSED_AUTHORIZATION',
-      message: 'Authorization is defined but is not used: ' + unused,
-      data: resourceList.authorizations[unused],
-      path: '$.authorizations[\'' + unused + '\']'
-    });
-  });
-
-  _.each(authScopes, function (scopes, name) {
-    var path = '$.authorizations[\'' + name + '\']';
-
-    // Identify unused authorization scope (declared but not referenced)
-    _.difference(scopes, seenAuthScopes[name] || []).forEach(function (unused) {
-      var index = scopes.indexOf(unused);
-
-      result.warnings.push({
-        code: 'UNUSED_AUTHORIZATION_SCOPE',
-        message: 'Authorization scope is defined but is not used: ' + unused,
-        data: resourceList.authorizations[name].scopes[index],
-        path: path + '.scopes[' + index + ']'
+      result.errors.push({
+        code: 'UNUSED_RESOURCE',
+        message: 'Resource is defined but is not used: ' + unused,
+        data: resourceList.apis[index],
+        path: '$.apis[' + index + ']'
       });
     });
-  });
 
-  return result.errors.length + result.warnings.length + _.reduce(result.resources, function(count, resource) {
+    // Identify unused authorizations (declared but not referenced)
+    _.difference(Object.keys(authScopes), Object.keys(seenAuthScopes)).forEach(function (unused) {
+      result.warnings.push({
+        code: 'UNUSED_AUTHORIZATION',
+        message: 'Authorization is defined but is not used: ' + unused,
+        data: resourceList.authorizations[unused],
+        path: '$.authorizations[\'' + unused + '\']'
+      });
+    });
+
+    _.each(authScopes, function (scopes, name) {
+      var path = '$.authorizations[\'' + name + '\']';
+
+      // Identify unused authorization scope (declared but not referenced)
+      _.difference(scopes, seenAuthScopes[name] || []).forEach(function (unused) {
+        var index = scopes.indexOf(unused);
+
+        result.warnings.push({
+          code: 'UNUSED_AUTHORIZATION_SCOPE',
+          message: 'Authorization scope is defined but is not used: ' + unused,
+          data: resourceList.authorizations[name].scopes[index],
+          path: path + '.scopes[' + index + ']'
+        });
+      });
+    });
+  }
+
+  return result.errors.length + result.warnings.length + _.reduce(result.resources, function (count, resource) {
       return count +
         (_.isArray(resource.errors) ? resource.errors.length : 0) +
         (_.isArray(resource.warnings) ? resource.warnings.length : 0);
