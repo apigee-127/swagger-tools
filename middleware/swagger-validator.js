@@ -24,7 +24,6 @@ var dateTimeRegExp = /^([0-9]{2}):([0-9]{2}):([0-9]{2})(.[0-9]+)?(z|([+-][0-9]{2
 var parseurl = require('parseurl');
 var pathToRegexp = require('path-to-regexp');
 var spec = require('../').v1_2; // jshint ignore:line
-var validTypes = ['body', 'form', 'header', 'path', 'query'];
 
 var expressStylePath = function (api) {
   // Since all path parameters must be required, no need to do any fancy parsing
@@ -96,14 +95,14 @@ var isValid = function (val, type, format) {
 
   switch (type) {
   case 'boolean':
-    isValid = !_.isBoolean(val) || ['false', 'true'].indexOf(val) !== -1;
-
+    isValid = _.isBoolean(val) || ['false', 'true'].indexOf(val) !== -1;
+    break;
   case 'integer':
     isValid = !_.isNaN(parseInt(val, 10));
-
+    break;
   case 'number':
-    isValid = !_.isNaN(parseFloat(val))
-
+    isValid = !_.isNaN(parseFloat(val));
+    break;
   case 'string':
     if (!_.isUndefined(format)) {
       switch (format) {
@@ -115,6 +114,7 @@ var isValid = function (val, type, format) {
 
       }
     }
+    break;
   }
 
   return isValid;
@@ -124,8 +124,7 @@ var isValid = function (val, type, format) {
  * Middleware for using Swagger information to validate API requests prior to sending the request to the route handler.
  *
  * This middleware requires that you use the appropriate middleware to populate req.body and req.query before this
- * middleware.  This middleware also makes no assumptions about the validity of your resources and should handle even
- * malformed resources.
+ * middleware.  This middleware also makes no attempt to work around invalid Swagger documents.
  *
  * @param {object[]} resources - The array of resources
  *
@@ -142,79 +141,64 @@ exports = module.exports = function (resources) {
 
   // Gather the apis and resources
   _.each(resources, function (resource) {
-    if (_.isArray(resource.apis)) {
-      _.each(resource.apis, function (api) {
-        var keys = [];
-        var re = pathToRegexp(expressStylePath(api), keys);
-        var reStr = re.toString();
+    _.each(resource.apis, function (api) {
+      var keys = [];
+      var re = pathToRegexp(expressStylePath(api), keys);
+      var reStr = re.toString();
 
-        if (Object.keys(apis).indexOf(reStr) !== -1) {
-          throw new Error('Duplicate API path/pattern: ' + api.path);
+      if (Object.keys(apis).indexOf(reStr) !== -1) {
+        throw new Error('Duplicate API path/pattern: ' + api.path);
+      }
+
+      apis[reStr] = {
+        keys: keys,
+        re: re,
+        operations: {}
+      };
+
+      _.each(api.operations, function (operation) {
+        var method = operation.method;
+
+        if (!_.isUndefined(apis[reStr][method])) {
+          throw new Error('Duplicate API operation (' + api.path + ') method: ' + method);
         }
 
-        apis[reStr] = {
-          keys: keys,
-          re: re,
-          operations: {}
-        }
-
-        if (_.isArray(api.operations)) {
-          _.each(api.operations, function (operation) {
-            var method = operation.method;
-
-            if (!_.isUndefined(apis[reStr][method])) {
-              throw new Error('Duplicate API operation (' + api.path + ') method: ' + method);
-            }
-
-            apis[reStr].operations[method] = operation;
-          });
-        }
+        apis[reStr].operations[method] = operation;
       });
-    }
+    });
   });
 
-  return function swaggerValidatorMiddleware (req, res, next) {
+  return function swaggerValidator (req, res, next) {
     // http://www.w3.org/Protocols/rfc2616/rfc2616-sec7.html#sec7.2.1
     var contentType = req.headers['content-type'] || 'application/octet-stream';
-    var method = req.method;
     var path = parseurl(req).pathname;
     var match;
     var api = _.find(apis, function (api) {
       match = api.re.exec(path);
       return _.isArray(match);
     });
-    var operation = api.operations[method];
+    var operation = api.operations[req.method];
     var returnError = function (message, status) {
       res.status = _.isUndefined(status) ? 500 : status;
 
       return next(message);
     };
-    var params;
-    var consumes;
 
     if (!_.isUndefined(operation)) {
-      params = operation.parameters || [];
-      consumes = operation.consumes;
-
       // Validate content type (Only for POST/PUT per HTTP spec)
-      if (!_.isUndefined(consumes) && _.isArray(consumes) && ['POST', 'PUT'].indexOf(method) !== -1) {
-        if (consumes.indexOf(contentType) === -1) {
-          return returnError('Invalid content type (' + contentType + ').  These are valid: ' + consumes.join(', '));
+      if (!_.isUndefined(operation.consumes) && ['POST', 'PUT'].indexOf(req.method) !== -1) {
+        if (operation.consumes.indexOf(contentType) === -1) {
+          return returnError('Invalid content type (' + contentType + ').  These are valid: ' +
+                             operation.consumes.join(', '));
         }
       }
 
       // Validate the parameters
-      _.each(params, function (param) {
-        var enumValues = param.enum;
-        var format = param.format;
-        var itemsType = _.isObject(param.items) ? param.items.type : undefined; // Not sure how to handle models yet
+      _.each(operation.parameters || [], function (param) {
         var minimum = param.minimum;
         var maximum = param.maximum;
-        var name = param.name;
-        var type = param.type;
-        var invalidParamPrefix = 'Parameter (' + name + ') ';
+        var invalidParamPrefix = 'Parameter (' + param.name + ') ';
         var invalidTypePrefix = invalidParamPrefix + 'is not a valid ';
-        var required;
         var testVal;
         var val;
 
@@ -223,19 +207,19 @@ exports = module.exports = function (resources) {
         case 'body':
         case 'form':
           if (!req.body) {
-            return returnError('Server configuration error: req.body is not defined but is required')
+            return returnError('Server configuration error: req.body is not defined but is required');
           }
 
-          val = req.body[name];
+          val = req.body[param.name];
 
           break;
         case 'header':
-          val = req.headers[name];
+          val = req.headers[param.name];
 
           break;
         case 'path':
           _.each(api.keys, function (key, index) {
-            if (key.name === name && _.isUndefined(val)) {
+            if (key.name === param.name && _.isUndefined(val)) {
               val = match[index + 1];
             }
           });
@@ -243,111 +227,75 @@ exports = module.exports = function (resources) {
           break;
         case 'query':
           if (!req.query) {
-            return returnError('Server configuration error: req.query is not defined but is required')
+            return returnError('Server configuration error: req.query is not defined but is required');
           }
 
-          val = req.query[name];
+          val = req.query[param.name];
 
           break;
-        default:
-          return returnError('Invalid Swagger parameter type (' + param.paramType + ').  These are valid: ' +
-                             validTypes.join(', '));
         }
 
         // Use the default value when necessary
-        if (_.isUndefined(val) && param.defaultValue) {
+        if (_.isUndefined(val) && !_.isUndefined(param.defaultValue)) {
           val = param.defaultValue;
         }
 
         // Validate requiredness
         if (!_.isUndefined(param.required)) {
-          if (_.isBoolean(param.required)) {
-            required = param.required;
-          } else {
-            return returnError('Invalid Swagger document (Operation required must be a boolean): ' + param.required);
-          }
-
-          if (required && _.isUndefined(val)) {
+          if (param.required === true && _.isUndefined(val)) {
             return returnError(invalidParamPrefix + 'is required', 400);
           }
         }
 
         // Validate the value type/format
-        switch (type) {
-        case 'array':
-          if (_.isUndefined(param.items)) {
-            return returnError('Invalid Swagger document (Operation items is required for array type)');
-          } else if (!_.isObject(param.items)) {
-            return returnError('Invalid Swagger document (Operation items is must be an object)');
-          }
+        if (!isValid(val, param.type, param.format)) {
+          return returnError(invalidTypePrefix + (_.isUndefined(param.format) ? '' : param.format + ' ') + param.type +
+                             ': ' + val, 400);
+        }
 
-          break;
-
-        default:
-          if (!isValid(val, type, format)) {
-            return returnError(invalidTypePrefix + (_.isUndefined(format) ? '' : format + ' ') + type + ': ' + val,
-                               400);
-          }
-
-          if (type === 'integer') {
-            testVal = parseInt(val, 10);
-          } else if (type === 'number') {
-            testVal = parseFloat(val);
-          }
+        if (param.type === 'integer') {
+          testVal = parseInt(val, 10);
+        } else if (param.type === 'number') {
+          testVal = parseFloat(val);
         }
 
         // Validate enum
-        if (_.isArray(enumValues)) {
-          if (type !== 'string') {
-            return returnError('Invalid Swagger document (Operation enum is only valid for string type): ' + type);
+        if (!_.isUndefined(param.enum) && param.enum.indexOf(val) === -1) {
+          return returnError(invalidParamPrefix + 'is not an allowable value (' + param.enum.join(', ') + '): ' + val,
+                             400);
+        }
+
+        // Validate maximum
+        if (!_.isUndefined(maximum)) {
+          if (!_.isNumber(maximum)) {
+            maximum = parseFloat(maximum);
           }
 
-          if (enumValues.indexOf(val) === -1) {
-            return returnError(invalidParamPrefix + 'is not an allowable value (' + enumValues.join(', ') + '): ' + val,
-                               400);
+          if (testVal > maximum) {
+            return returnError(invalidParamPrefix + 'is greater than the configured maximum (' + param.maximum + '): ' +
+                               val, 400);
           }
         }
 
         // Validate minimum
         if (!_.isUndefined(minimum)) {
-          if (['integer', 'number'].indexOf(type) === -1) {
-            return returnError('Invalid Swagger document (Operation minimum is only valid for integer and number ' +
-                               'types): ' + type);
+          if (!_.isNumber(minimum)) {
+            minimum = parseFloat(minimum);
           }
 
-          minimum = parseFloat(minimum);
-
-          if (_.isNaN(minimum)) {
-            return returnError('Invalid Swagger document (Operation minimum is not a number): ' + param.minimum);
-          } else if (testVal < minimum) {
-            return returnError(invalidParamPrefix + 'is less than the configured minimum (' + param.minimum +
-                               '): ' + val, 400);
-          }
-        }
-
-        // Validate maximum
-        if (!_.isUndefined(maximum)) {
-          if (['integer', 'number'].indexOf(type) === -1) {
-            return returnError('Invalid Swagger document (Operation maximum is only valid for integer and number ' +
-                               'types): ' + type);
-          }
-
-          maximum = parseFloat(maximum);
-
-          if (_.isNaN(maximum)) {
-            return returnError('Invalid Swagger document (Operation maximum is not a number): ' + param.maximum);
-          } else if (testVal > maximum) {
-            return returnError(invalidParamPrefix + 'is greater than the configured maximum (' + param.maximum +
-                        '): ' + val, 400);
+          if (testVal < minimum) {
+            return returnError(invalidParamPrefix + 'is less than the configured minimum (' + param.minimum + '): ' +
+                               val, 400);
           }
         }
 
         // Validate array
-        if (type === 'array' && !_.isUndefined(itemsType)) {
+        if (param.type === 'array') {
           try {
-            (_.isArray(val) ? val : [val]).forEach(function (aVal, index) {
-              if (!isValid(aVal, itemsType, param.forEach)) {
-                throw Error(invalidParamPrefix + 'at index ' + index + ' is not a valid ' + itemsType + ': ' + aVal);
+            val.forEach(function (aVal, index) {
+              if (!isValid(aVal, param.items.type, param.format)) {
+                throw Error(invalidParamPrefix + 'at index ' + index + ' is not a valid ' + param.items.type + ': ' +
+                            aVal);
               }
             });
           } catch (err) {
@@ -356,13 +304,8 @@ exports = module.exports = function (resources) {
         }
 
         // Validate uniqueItems
-        if (_.isBoolean(param.uniqueItems)) {
-          if (type !== 'array') {
-            return returnError('Invalid Swagger document (Operation uniqueItems is only valid for array type): ' +
-                               type);
-          }
-
-          if (_.isArray(val) && _.uniq(val).length !== val.length) {
+        if (!_.isUndefined(param.uniqueItems)) {
+          if (_.uniq(val).length !== val.length) {
             return returnError(invalidParamPrefix + 'does not allow duplicate values: ' + val.join(', '), 400);
           }
         }

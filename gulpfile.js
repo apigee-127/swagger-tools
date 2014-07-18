@@ -24,6 +24,7 @@ gulp.task('lint', function () {
   return gulp.src([
       './index.js',
       './lib/*.js',
+      './middleware/*.js',
       './test/*.js',
       './gulpfile.js'
     ])

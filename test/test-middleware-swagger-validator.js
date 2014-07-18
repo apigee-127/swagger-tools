@@ -201,34 +201,6 @@ describe('Swagger Validator Middleware', function () {
       });
   });
 
-  it('should return an error for an invalid operation parameter type', function () {
-    request(createServer(middleware([
-        {apis: [{path: '/foo', operations: [
-          {method: 'POST', parameters: [{paramType: 'fake', name: 'test'}]}
-        ]}]}
-      ])))
-      .post('/foo')
-      .expect(500)
-      .end(function(err, res) { // jshint ignore:line
-        assert.equal(prepareText(res.text),
-                     'Invalid Swagger parameter type (fake).  These are valid: body, form, header, path, query');
-      });
-  });
-
-  it('should return an error for an invalid operation parameter required type', function () {
-    request(createServer(middleware([
-        {apis: [{path: '/foo', operations: [
-          {method: 'POST', parameters: [{paramType: 'body', name: 'test', required: 'fake'}]}
-        ]}]}
-      ])))
-      .post('/foo')
-      .expect(500)
-      .end(function(err, res) { // jshint ignore:line
-        assert.equal(prepareText(res.text),
-                     'Invalid Swagger document (Operation required must be a boolean): fake');
-      });
-  });
-
   it('should return an error for invalid parameter values based on type/format', function () {
     var argName = 'arg0';
     var badValue = 'fake';
@@ -244,9 +216,7 @@ describe('Swagger Validator Middleware', function () {
       {method: 'POST', parameters: [{paramType: 'query', name: argName, type: 'string', format: 'date-time'}]},
       {method: 'POST', parameters: [
         {paramType: 'query', name: argName, type: 'string', format: 'date-time', defaultValue: badValue}
-      ]},
-      {method: 'POST', parameters: [{paramType: 'body', name: argName, type: 'array'}]},
-      {method: 'POST', parameters: [{paramType: 'body', name: argName, type: 'array', items: 'fake'}]}
+      ]}
     ];
 
     _.each(operations, function (operation) {
@@ -276,20 +246,8 @@ describe('Swagger Validator Middleware', function () {
       }
 
       r.end(function(err, res) { // jshint ignore:line
-        var message;
-
-        if (param.type === 'array') {
-          if (_.isUndefined(param.items)) {
-            message = 'Invalid Swagger document (Operation items is required for array type)';
-          } else {
-            message = 'Invalid Swagger document (Operation items is must be an object)';
-          }
-        } else {
-          message = 'Parameter (' + argName + ') is not a valid ' + (_.isUndefined(param.format) ? '' : param.format +
-            ' ') + param.type + ': ' + badValue;
-        }
-
-        assert.equal(prepareText(res.text), message);
+        assert.equal(prepareText(res.text), 'Parameter (' + argName + ') is not a valid ' +
+                     (_.isUndefined(param.format) ? '' : param.format + ' ') + param.type + ': ' + badValue);
       });
     });
   });
@@ -298,59 +256,35 @@ describe('Swagger Validator Middleware', function () {
     var argName = 'arg0';
     var path = '/foo';
     var parameters = [
-      {paramType: 'body', name: argName, enum: ['1', '2', '3'], type: 'integer'},
       {paramType: 'body', name: argName, enum: ['1', '2', '3'], type: 'string'},
-      {paramType: 'body', name: argName, minimum: '101.0', type: 'string'},
-      {paramType: 'body', name: argName, minimum: 'fake', type: 'integer'},
       {paramType: 'body', name: argName, minimum: '1.0', type: 'integer'},
-      {paramType: 'body', name: argName, maximum: '101.0', type: 'string'},
-      {paramType: 'body', name: argName, maximum: 'fake', type: 'integer'},
       {paramType: 'body', name: argName, maximum: '1.0', type: 'integer'},
       {paramType: 'body', name: argName, type: 'string', required: true},
       {paramType: 'body', name: argName, type: 'array', items: {type: 'integer'}},
-      {paramType: 'body', name: argName, type: 'string', uniqueItems: true},
       {paramType: 'body', name: argName, type: 'array', items: {type: 'string'}, uniqueItems: true}
     ];
     var values = [
-      '1',
       'fake',
       '0',
-      '0',
-      '0',
-      '2',
-      '2',
       '2',
       undefined,
       ['1', 'fake'],
-      undefined,
       ['fake', 'fake']
     ];
     var errors = [
-      'Invalid Swagger document (Operation enum is only valid for string type): integer',
       'Parameter (' + argName + ') is not an allowable value (1, 2, 3): fake',
-      'Invalid Swagger document (Operation minimum is only valid for integer and number types): string',
-      'Invalid Swagger document (Operation minimum is not a number): fake',
       'Parameter (' + argName + ') is less than the configured minimum (1.0): 0',
-      'Invalid Swagger document (Operation maximum is only valid for integer and number types): string',
-      'Invalid Swagger document (Operation maximum is not a number): fake',
       'Parameter (' + argName + ') is greater than the configured maximum (1.0): 2',
       'Parameter (' + argName + ') is required',
       'Parameter (' + argName + ') at index 1 is not a valid integer: fake',
-      'Invalid Swagger document (Operation uniqueItems is only valid for array type): string',
       'Parameter (' + argName + ') does not allow duplicate values: fake, fake'
     ];
     var statuses = [
-      500,
-      400,
-      500,
-      500,
-      400,
-      500,
-      500,
       400,
       400,
       400,
-      500,
+      400,
+      400,
       400
     ];
 
