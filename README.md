@@ -50,7 +50,7 @@ var apiResults = spec.validateApi(rlJson, [petJson]);
 
 Here is an example of using the Swagger middleware for validating requests based on your Swagger resource documents:
 
-```
+```javascript
 var connect = require('connect');
 var petJson = require('./samples/1.2/pet.json');
 var storeJson = require('./samples/1.2/user.json');
