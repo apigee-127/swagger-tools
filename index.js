@@ -47,7 +47,7 @@ var mergeResults = function mergeResults (errors, warnings, results) {
   }
 };
 
-var throwUnsupportedVersion = function (version) {
+var throwUnsupportedVersion = function throwUnsupportedVersion (version) {
   throw new Error(version + ' is an unsupported Swagger specification version');
 };
 
@@ -198,8 +198,6 @@ var validateDefaultValue = function validateDefaultValue (data, path) {
   var parsedMaximumValue;
   var parsedMinimumValue;
 
-  // Should we return an error/warning when defaultValue is used without a type?
-
   if (!_.isUndefined(defaultValue)) {
     if (!_.isUndefined(data.enum) && data.enum.indexOf(defaultValue) === -1) {
       errors.push({
@@ -209,8 +207,6 @@ var validateDefaultValue = function validateDefaultValue (data, path) {
         path: path + '.defaultValue'
       });
     }
-
-    // Should we return an error/warning when minimum and/or maximum is used with for a non-integer/non-number?
 
     switch (type) {
       case 'integer':
@@ -291,7 +287,7 @@ var validateDefaultValue = function validateDefaultValue (data, path) {
 };
 
 var validateModels = function validateModels (spec, resource) {
-  var addModelRef = function (modelId, modelRef) {
+  var addModelRef = function addModelRef (modelId, modelRef) {
     if (Object.keys(modelRefs).indexOf(modelId) === -1) {
       modelRefs[modelId] = [];
     }
@@ -299,12 +295,12 @@ var validateModels = function validateModels (spec, resource) {
     modelRefs[modelId].push(modelRef);
   };
   var errors = [];
-  var identifyModelInheritanceIssues = function (modelDeps) {
+  var identifyModelInheritanceIssues = function identifyModelInheritanceIssues (modelDeps) {
     var circular = {};
     var composed = {};
     var resolved = {};
     var unresolved = {};
-    var addModelProps = function (parentModel, modelName) {
+    var addModelProps = function addModelProps (parentModel, modelName) {
       var model = models[modelName];
 
       if (model) {
@@ -322,7 +318,7 @@ var validateModels = function validateModels (spec, resource) {
         });
       }
     };
-    var getPath = function (parent, unresolved) {
+    var getPath = function getPath (parent, unresolved) {
       var parentVisited = false;
 
       return Object.keys(unresolved).filter(function (dep) {
@@ -332,7 +328,7 @@ var validateModels = function validateModels (spec, resource) {
         return parentVisited && unresolved[dep];
       });
     };
-    var resolver = function (id, deps, circular, resolved, unresolved) {
+    var resolver = function resolver (id, deps, circular, resolved, unresolved) {
       var model = models[id];
       var modelDeps = deps[id];
 
@@ -642,7 +638,7 @@ var validateOperations = function validateOperations (spec, resource) {
  *
  * @returns undefined if validation passes or an object containing errors and/or warnings
  */
-Specification.prototype.validate = function (data, schemaName) {
+Specification.prototype.validate = function validate (data, schemaName) {
   if (_.isUndefined(data)) {
     throw new Error('data is required');
   } else if (!_.isObject(data)) {
@@ -701,7 +697,7 @@ Specification.prototype.validate = function (data, schemaName) {
  *
  * @returns undefined if validation passes or an object containing errors and/or warnings
  */
-Specification.prototype.validateApi = function (resourceList, resources) {
+Specification.prototype.validateApi = function validateApi (resourceList, resources) {
   if (_.isUndefined(resourceList)) {
     throw new Error('resourceList is required');
   } else if (!_.isObject(resourceList)) {
@@ -770,7 +766,7 @@ Specification.prototype.validateApi = function (resourceList, resources) {
   // Validate the resources
   resources.forEach(function (resource, index) {
     var vResult = this.validate(resource) || {errors: [], warnings: []};
-    var recordAuth = function (authorization, name, path) {
+    var recordAuth = function recordAuth (authorization, name, path) {
       var scopes = authScopes[name];
 
       if (!_.isArray(seenAuthScopes[name])) {

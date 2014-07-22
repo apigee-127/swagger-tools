@@ -25,12 +25,12 @@ var parseurl = require('parseurl');
 var pathToRegexp = require('path-to-regexp');
 var spec = require('../').v1_2; // jshint ignore:line
 
-var expressStylePath = function (api) {
+var expressStylePath = function expressStylePath (api) {
   // Since all path parameters must be required, no need to do any fancy parsing
   return (api.path || '').replace(/{/g, ':').replace(/}/g, '');
 };
-var isValid = function (val, type, format) {
-  var isValidDate = function (date) {
+var isValid = function isValid (val, type, format) {
+  var isValidDate = function isValidDate (date) {
     var day;
     var matches;
     var month;
@@ -54,7 +54,7 @@ var isValid = function (val, type, format) {
 
     return true;
   };
-  var isValidDateTime = function (dateTime) {
+  var isValidDateTime = function isValidDateTime (dateTime) {
     var hour;
     var date;
     var time;
@@ -91,33 +91,33 @@ var isValid = function (val, type, format) {
 
     return true;
   };
-  var isValid = true;
+  var result = true;
 
   switch (type) {
   case 'boolean':
-    isValid = _.isBoolean(val) || ['false', 'true'].indexOf(val) !== -1;
+    result = _.isBoolean(val) || ['false', 'true'].indexOf(val) !== -1;
     break;
   case 'integer':
-    isValid = !_.isNaN(parseInt(val, 10));
+    result = !_.isNaN(parseInt(val, 10));
     break;
   case 'number':
-    isValid = !_.isNaN(parseFloat(val));
+    result = !_.isNaN(parseFloat(val));
     break;
   case 'string':
     if (!_.isUndefined(format)) {
       switch (format) {
       case 'date':
-        return isValidDate(val);
-
+        result = isValidDate(val);
+        break;
       case 'date-time':
-        return isValidDateTime(val);
-
+        result = isValidDateTime(val);
+        break;
       }
     }
     break;
   }
 
-  return isValid;
+  return result;
 };
 
 /**
@@ -130,7 +130,7 @@ var isValid = function (val, type, format) {
  *
  * @returns the middleware function
  */
-exports = module.exports = function (resources) {
+exports = module.exports = function swaggerValidatorMiddleware (resources) {
   if (_.isUndefined(resources)) {
     throw new Error('resources is required');
   } else if (!_.isArray(resources)) {
@@ -178,7 +178,7 @@ exports = module.exports = function (resources) {
       return _.isArray(match);
     });
     var operation = api.operations[req.method];
-    var returnError = function (message, status) {
+    var returnError = function returnError (message, status) {
       res.status = _.isUndefined(status) ? 500 : status;
 
       return next(message);
