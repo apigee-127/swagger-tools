@@ -23,20 +23,18 @@ process.env.NODE_ENV = 'test';
 
 var _ = require('lodash');
 var assert = require('assert');
-var bodyParser = require('body-parser');
-var connect = require('connect');
 var middleware = require('../middleware/swagger-validator');
-var parseurl = require('parseurl');
 var petJson = require('../samples/1.2/pet.json');
-var qs = require('qs');
 var request = require('supertest');
-var prepareText = function (text) {
-  return text.replace(/&nbsp;/g, ' ').replace(/\n/g, '');
-};
+var prepareText = require('./helpers').prepareText;
+
 var createServer = function (middleware, withBodyParser, withQuery) {
   var useBody = _.isBoolean(withBodyParser) ? withBodyParser : true;
   var useQuery = _.isBoolean(withQuery) ? withQuery : true;
-  var app = connect();
+  var app = require('connect')();
+  var bodyParser = require('body-parser');
+  var parseurl = require('parseurl');
+  var qs = require('qs');
 
   if (useBody) {
     app.use(bodyParser.json());
@@ -65,7 +63,7 @@ var createServer = function (middleware, withBodyParser, withQuery) {
 };
 
 describe('Swagger Validator Middleware', function () {
-  it('should throw Error when passed the wrong arguments', function () {
+  it('should throw Error when passed wrong arguments and swagger-metadata is not in use', function () {
     var errors = {
       'resources is required': [],
       'resources must be an array': [petJson]
@@ -78,6 +76,16 @@ describe('Swagger Validator Middleware', function () {
         assert.equal(message, err.message);
       }
     });
+  });
+
+  it('should return a function when passed the right arguments', function () {
+    try {
+      assert.ok(_.isFunction(middleware.apply(middleware, [
+        [petJson]
+      ])));
+    } catch (err) {
+      assert.fail(null, null, err.message);
+    }
   });
 
   it('should return a function when passed the right arguments', function () {
