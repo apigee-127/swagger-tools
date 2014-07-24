@@ -24,36 +24,29 @@ process.env.NODE_ENV = 'test';
 var _ = require('lodash');
 var assert = require('assert');
 var middleware = require('../middleware/swagger-validator');
-var petJson = require('../samples/1.2/pet.json');
 var request = require('supertest');
 var prepareText = require('./helpers').prepareText;
+var swaggerMetadata = require('../middleware/swagger-metadata');
 
-var createServer = function (middleware, withBodyParser, withQuery) {
-  var useBody = _.isBoolean(withBodyParser) ? withBodyParser : true;
-  var useQuery = _.isBoolean(withQuery) ? withQuery : true;
+var createServer = function (resourceList, resources) {
   var app = require('connect')();
   var bodyParser = require('body-parser');
   var parseurl = require('parseurl');
   var qs = require('qs');
 
-  if (useBody) {
-    app.use(bodyParser.json());
-    app.use(bodyParser.urlencoded({ extended: false }));
-  }
+  // Required middleware
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded({ extended: false }));
+  app.use(function (req, res, next) {
+    if (!req.query) {
+      req.query = req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
+    }
 
-  if (useQuery) {
-    app.use(function (req, res, next) {
-      if (!req.query) {
-        req.query = req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
-      }
+    next();
+  });
 
-      next();
-    });
-  }
-
-  if (_.isFunction(middleware)) {
-    app.use(middleware);
-  }
+  app.use(swaggerMetadata(resourceList, resources));
+  app.use(middleware());
 
   app.use(function(req, res){
     res.end('OK');
@@ -63,84 +56,18 @@ var createServer = function (middleware, withBodyParser, withQuery) {
 };
 
 describe('Swagger Validator Middleware', function () {
-  it('should throw Error when passed wrong arguments and swagger-metadata is not in use', function () {
-    var errors = {
-      'resources is required': [],
-      'resources must be an array': [petJson]
-    };
-
-    _.each(errors, function (args, message) {
-      try {
-        middleware.apply(middleware, args);
-      } catch (err) {
-        assert.equal(message, err.message);
-      }
-    });
-  });
-
   it('should return a function when passed the right arguments', function () {
     try {
-      assert.ok(_.isFunction(middleware.apply(middleware, [
-        [petJson]
-      ])));
+      assert.ok(_.isFunction(middleware()));
     } catch (err) {
       assert.fail(null, null, err.message);
-    }
-  });
-
-  it('should return a function when passed the right arguments', function () {
-    try {
-      assert.ok(_.isFunction(middleware.apply(middleware, [
-        [petJson]
-      ])));
-    } catch (err) {
-      assert.fail(null, null, err.message);
-    }
-  });
-
-  it('should throw Error when passed resource with duplicate API paths', function () {
-    var path1 = {path: '/foo'};
-    var path2 = {path: '/foo/{bar}'};
-    var path3 = {path: '/foo/{baz}'};
-
-    [
-      // Simple duplication, single resource
-      [{apis: [path1, path1]}],
-      // Complex duplication, single resource
-      [{apis: [path2, path3]}],
-      // Simple duplication, multiple resources
-      [{apis: [path1]}, {apis: [path1]}],
-      // Complex duplication, multiple resources
-      [{apis: [path2]}, {apis: [path3]}]
-    ].forEach(function (input, index) {
-      try {
-        middleware.apply(middleware, [input]);
-        assert.fail(null, null, 'Should had thrown an error');
-      } catch (err) {
-        if ([0, 2].indexOf(index) !== -1) {
-          assert.equal(err.message, 'Duplicate API path/pattern: ' + path1.path);
-        } else {
-          assert.equal(err.message, 'Duplicate API path/pattern: ' + path3.path);
-        }
-      }
-    });
-  });
-
-  it('should throw Error when passed resource with duplicate API operation methods', function () {
-    try {
-      middleware.apply(middleware, [
-        [{apis: [{path: '/foo', operations: [{method: 'GET'}, {method: 'GET'}]}]}]
-      ]);
-      assert.fail(null, null, 'Should had thrown an error');
-    } catch (err) {
-      assert.ok(err.message, 'Duplicate API operation (/foo) method: GET');
     }
   });
 
   it('should not validate request when there are no operations', function () {
-    request(createServer(middleware([
+    request(createServer({}, [
         {apis: [{path: '/foo'}]}
-      ])))
+      ]))
       .get('/foo')
       .expect(200)
       .end(function(err, res) { // jshint ignore:line
@@ -152,9 +79,9 @@ describe('Swagger Validator Middleware', function () {
   });
 
   it('should return an error for invalid request content type based on POST/PUT operation consumes', function () {
-    request(createServer(middleware([
+    request(createServer({}, [
         {apis: [{path: '/foo', operations: [{method: 'POST', consumes: ['application/json']}]}]}
-      ])))
+      ]))
       .post('/foo')
       .expect(400)
       .end(function(err, res) { // jshint ignore:line
@@ -164,11 +91,11 @@ describe('Swagger Validator Middleware', function () {
   });
 
   it('should not return an error for invalid request content type for non-POST/PUT', function () {
-    request(createServer(middleware([
+    request(createServer({}, [
         {apis: [{path: '/foo', operations: [
           {method: 'GET', consumes: ['application/json']}
         ]}]}
-      ])))
+      ]))
       .get('/foo')
       .expect(200)
       .end(function(err, res) { // jshint ignore:line
@@ -176,36 +103,6 @@ describe('Swagger Validator Middleware', function () {
           throw err;
         }
         assert.equal(prepareText(res.text), 'OK');
-      });
-  });
-
-  it('should return an error for an improperly configured server for body/form parameter validation', function () {
-    ['body', 'form'].forEach(function (type) {
-      request(createServer(middleware([
-          {apis: [{path: '/foo', operations: [
-            {method: 'POST', parameters: [{paramType: type, name: 'test'}]}
-          ]}]}
-        ]), false, false))
-        .post('/foo')
-        .expect(500)
-        .end(function(err, res) { // jshint ignore:line
-          assert.equal(prepareText(res.text),
-                       'Server configuration error: req.body is not defined but is required');
-        });
-    });
-  });
-
-  it('should return an error for an improperly configured server for query parameter validation', function () {
-    request(createServer(middleware([
-        {apis: [{path: '/foo', operations: [
-          {method: 'POST', parameters: [{paramType: 'query', name: 'test'}]}
-        ]}]}
-      ]), true, false))
-      .post('/foo')
-      .expect(500)
-      .end(function(err, res) { // jshint ignore:line
-        assert.equal(prepareText(res.text),
-                     'Server configuration error: req.query is not defined but is required');
       });
   });
 
@@ -231,9 +128,9 @@ describe('Swagger Validator Middleware', function () {
       var param = operation.parameters[0];
       var path = param.paramType === 'path' ? '/foo/{' + argName + '}' : '/foo';
       var content = {arg0: badValue};
-      var app = createServer(middleware([
+      var app = createServer({}, [
         {apis: [{path: path, operations: [operation]}]}
-      ]));
+      ]);
       var r = request(app)
         .post(path === '/foo' ? path : '/foo/' + (_.isUndefined(param.defaultValue) ? badValue : ''))
         .expect(400);
@@ -297,9 +194,9 @@ describe('Swagger Validator Middleware', function () {
     ];
 
     _.each(parameters, function (parameter, index) {
-      request(createServer(middleware([
+      request(createServer({}, [
           {apis: [{path: path, operations: [{method: 'POST', parameters: [parameter]}]}]}
-        ])))
+        ]))
         .post(path)
         .send({arg0: values[index]})
         .expect(statuses[index])

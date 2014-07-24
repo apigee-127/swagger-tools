@@ -21,14 +21,8 @@ var _ = require('lodash');
 var dateRegExp = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/;
 // http://tools.ietf.org/html/rfc3339#section-5.6
 var dateTimeRegExp = /^([0-9]{2}):([0-9]{2}):([0-9]{2})(.[0-9]+)?(z|([+-][0-9]{2}:[0-9]{2}))$/;
-var parseurl = require('parseurl');
-var pathToRegexp = require('path-to-regexp');
 var spec = require('../').v1_2; // jshint ignore:line
 
-var expressStylePath = function expressStylePath (api) {
-  // Since all path parameters must be required, no need to do any fancy parsing
-  return (api.path || '').replace(/{/g, ':').replace(/}/g, '');
-};
 var isValid = function isValid (val, type, format) {
   var isValidDate = function isValidDate (date) {
     var day;
@@ -124,65 +118,22 @@ var isValid = function isValid (val, type, format) {
  * Middleware for using Swagger information to validate API requests prior to sending the request to the route handler.
  *
  * This middleware requires that you use the appropriate middleware to populate req.body and req.query before this
- * middleware.  This middleware also makes no attempt to work around invalid Swagger documents.
- *
- * @param {object[]} resources - The array of resources
+ * middleware.  This middleware also requires that you use the swagger-metadata middleware before this middleware.  This
+ * middleware also makes no attempt to work around invalid Swagger documents.
  *
  * @returns the middleware function
  */
-exports = module.exports = function swaggerValidatorMiddleware (resources) {
-  if (_.isUndefined(resources)) {
-    throw new Error('resources is required');
-  } else if (!_.isArray(resources)) {
-    throw new TypeError('resources must be an array');
-  }
-
-  var apis = {};
-
-  // Gather the apis and resources
-  _.each(resources, function (resource) {
-    _.each(resource.apis, function (api) {
-      var keys = [];
-      var re = pathToRegexp(expressStylePath(api), keys);
-      var reStr = re.toString();
-
-      if (Object.keys(apis).indexOf(reStr) !== -1) {
-        throw new Error('Duplicate API path/pattern: ' + api.path);
-      }
-
-      apis[reStr] = {
-        keys: keys,
-        re: re,
-        operations: {}
-      };
-
-      _.each(api.operations, function (operation) {
-        var method = operation.method;
-
-        if (!_.isUndefined(apis[reStr][method])) {
-          throw new Error('Duplicate API operation (' + api.path + ') method: ' + method);
-        }
-
-        apis[reStr].operations[method] = operation;
-      });
-    });
-  });
+exports = module.exports = function swaggerValidatorMiddleware () {
 
   return function swaggerValidator (req, res, next) {
     // http://www.w3.org/Protocols/rfc2616/rfc2616-sec7.html#sec7.2.1
     var contentType = req.headers['content-type'] || 'application/octet-stream';
-    var path = parseurl(req).pathname;
-    var match;
-    var api = _.find(apis, function (api) {
-      match = api.re.exec(path);
-      return _.isArray(match);
-    });
-    var operation = api.operations[req.method];
     var returnError = function returnError (message, status) {
       res.status = _.isUndefined(status) ? 500 : status;
 
       return next(message);
     };
+    var operation = req.swagger ? req.swagger.operation : undefined;
 
     if (!_.isUndefined(operation)) {
       // Validate content type (Only for POST/PUT per HTTP spec)
@@ -200,45 +151,7 @@ exports = module.exports = function swaggerValidatorMiddleware (resources) {
         var invalidParamPrefix = 'Parameter (' + param.name + ') ';
         var invalidTypePrefix = invalidParamPrefix + 'is not a valid ';
         var testVal;
-        var val;
-
-        // Get the value to validate based on the operation parameter type
-        switch (param.paramType) {
-        case 'body':
-        case 'form':
-          if (!req.body) {
-            return returnError('Server configuration error: req.body is not defined but is required');
-          }
-
-          val = req.body[param.name];
-
-          break;
-        case 'header':
-          val = req.headers[param.name];
-
-          break;
-        case 'path':
-          _.each(api.keys, function (key, index) {
-            if (key.name === param.name && _.isUndefined(val)) {
-              val = match[index + 1];
-            }
-          });
-
-          break;
-        case 'query':
-          if (!req.query) {
-            return returnError('Server configuration error: req.query is not defined but is required');
-          }
-
-          val = req.query[param.name];
-
-          break;
-        }
-
-        // Use the default value when necessary
-        if (_.isUndefined(val) && !_.isUndefined(param.defaultValue)) {
-          val = param.defaultValue;
-        }
+        var val = req.swagger.params[param.name].value;
 
         // Validate requiredness
         if (!_.isUndefined(param.required)) {

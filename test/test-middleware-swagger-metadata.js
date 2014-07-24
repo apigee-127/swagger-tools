@@ -18,6 +18,9 @@
 
 'use strict';
 
+// Here to quiet down Connect logging errors
+process.env.NODE_ENV = 'test';
+
 var _ = require('lodash');
 var assert = require('assert');
 var middleware = require('../middleware/swagger-metadata');
@@ -138,6 +141,57 @@ describe('Swagger Metadata Middleware', function () {
           throw err;
         }
         assert.equal(prepareText(res.text), 'OK');
+      });
+  });
+
+
+  it('should return an error for an improperly configured server for body/form parameter validation', function () {
+    ['body', 'form'].forEach(function (type) {
+      var app = require('connect')();
+
+      app.use(middleware(resourceList, [
+        {apis: [{path: '/foo', operations: [
+          {method: 'POST', parameters: [{paramType: type, name: 'test'}]}
+        ]}]}
+      ]));
+
+      app.use(function(req, res){
+        res.end('OK');
+      });
+
+      request(app)
+        .post('/foo')
+        .expect(500)
+        .end(function(err, res) { // jshint ignore:line
+          assert.equal(prepareText(res.text),
+                       'Server configuration error: req.body is not defined but is required');
+        });
+    });
+  });
+
+  it('should return an error for an improperly configured server for query parameter validation', function () {
+    var app = require('connect')();
+    var bodyParser = require('body-parser');
+
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({ extended: false }));
+
+    app.use(middleware(resourceList, [
+      {apis: [{path: '/foo', operations: [
+        {method: 'POST', parameters: [{paramType: 'query', name: 'test'}]}
+      ]}]}
+    ]));
+
+    app.use(function(req, res){
+      res.end('OK');
+    });
+
+    request(app)
+      .post('/foo')
+      .expect(500)
+      .end(function(err, res) { // jshint ignore:line
+        assert.equal(prepareText(res.text),
+                     'Server configuration error: req.query is not defined but is required');
       });
   });
 
