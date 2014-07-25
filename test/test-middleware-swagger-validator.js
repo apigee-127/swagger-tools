@@ -25,35 +25,9 @@ var _ = require('lodash');
 var assert = require('assert');
 var middleware = require('../middleware/swagger-validator');
 var request = require('supertest');
-var prepareText = require('./helpers').prepareText;
-var swaggerMetadata = require('../middleware/swagger-metadata');
-
-var createServer = function (resourceList, resources) {
-  var app = require('connect')();
-  var bodyParser = require('body-parser');
-  var parseurl = require('parseurl');
-  var qs = require('qs');
-
-  // Required middleware
-  app.use(bodyParser.json());
-  app.use(bodyParser.urlencoded({ extended: false }));
-  app.use(function (req, res, next) {
-    if (!req.query) {
-      req.query = req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
-    }
-
-    next();
-  });
-
-  app.use(swaggerMetadata(resourceList, resources));
-  app.use(middleware());
-
-  app.use(function(req, res){
-    res.end('OK');
-  });
-
-  return app;
-};
+var helpers = require('./helpers');
+var createServer = helpers.createServer;
+var prepareText = helpers.prepareText;
 
 describe('Swagger Validator Middleware', function () {
   it('should return a function when passed the right arguments', function () {
@@ -67,7 +41,7 @@ describe('Swagger Validator Middleware', function () {
   it('should not validate request when there are no operations', function () {
     request(createServer({}, [
         {apis: [{path: '/foo'}]}
-      ]))
+      ], [middleware()]))
       .get('/foo')
       .expect(200)
       .end(function(err, res) { // jshint ignore:line
@@ -81,7 +55,7 @@ describe('Swagger Validator Middleware', function () {
   it('should return an error for invalid request content type based on POST/PUT operation consumes', function () {
     request(createServer({}, [
         {apis: [{path: '/foo', operations: [{method: 'POST', consumes: ['application/json']}]}]}
-      ]))
+      ], [middleware()]))
       .post('/foo')
       .expect(400)
       .end(function(err, res) { // jshint ignore:line
@@ -130,7 +104,7 @@ describe('Swagger Validator Middleware', function () {
       var content = {arg0: badValue};
       var app = createServer({}, [
         {apis: [{path: path, operations: [operation]}]}
-      ]);
+      ], [middleware()]);
       var r = request(app)
         .post(path === '/foo' ? path : '/foo/' + (_.isUndefined(param.defaultValue) ? badValue : ''))
         .expect(400);
@@ -196,7 +170,7 @@ describe('Swagger Validator Middleware', function () {
     _.each(parameters, function (parameter, index) {
       request(createServer({}, [
           {apis: [{path: path, operations: [{method: 'POST', parameters: [parameter]}]}]}
-        ]))
+        ], [middleware()]))
         .post(path)
         .send({arg0: values[index]})
         .expect(statuses[index])

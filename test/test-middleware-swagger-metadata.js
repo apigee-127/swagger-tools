@@ -67,6 +67,7 @@ describe('Swagger Metadata Middleware', function () {
     _.each(errors, function (args, message) {
       try {
         middleware.apply(middleware, args);
+        assert.fail(null, null, 'Should had thrown an error');
       } catch (err) {
         assert.equal(message, err.message);
       }

@@ -16,6 +16,43 @@
 
 'use strict';
 
+var _ = require('lodash');
+var swaggerMetadata = require('../middleware/swagger-metadata');
+
+module.exports.createServer = function createServer (resourceList, resources, middlewares, handler) {
+  var app = require('connect')();
+  var bodyParser = require('body-parser');
+  var parseurl = require('parseurl');
+  var qs = require('qs');
+
+  // Required middleware
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded({ extended: false }));
+  app.use(function (req, res, next) {
+    if (!req.query) {
+      req.query = req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
+    }
+
+    next();
+  });
+
+  app.use(swaggerMetadata(resourceList, resources));
+
+  _.each(middlewares || [], function (middleware) {
+    app.use(middleware);
+  });
+
+  if (handler) {
+    app.use(handler);
+  } else {
+    app.use(function(req, res){
+      res.end('OK');
+    });
+  }
+
+  return app;
+};
+
 module.exports.prepareText = function prepareText (text) {
   return text.replace(/&nbsp;/g, ' ').replace(/\n/g, '');
 };

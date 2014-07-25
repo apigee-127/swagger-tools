@@ -117,9 +117,8 @@ var isValid = function isValid (val, type, format) {
 /**
  * Middleware for using Swagger information to validate API requests prior to sending the request to the route handler.
  *
- * This middleware requires that you use the appropriate middleware to populate req.body and req.query before this
- * middleware.  This middleware also requires that you use the swagger-metadata middleware before this middleware.  This
- * middleware also makes no attempt to work around invalid Swagger documents.
+ * This middleware also requires that you use the swagger-metadata middleware before this middleware.  This middleware
+ * also makes no attempt to work around invalid Swagger documents.
  *
  * @returns the middleware function
  */

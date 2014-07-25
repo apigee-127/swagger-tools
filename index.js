@@ -32,7 +32,7 @@ var defaultOptions = {
 };
 
 var mergeResults = function mergeResults (errors, warnings, results) {
-  if (_.isObject(results)) {
+  if (_.isPlainObject(results)) {
     if (results.errors && _.isArray(results.errors) && _.isArray(errors)) {
       results.errors.forEach(function (error) {
         errors.push(error);
@@ -641,7 +641,7 @@ var validateOperations = function validateOperations (spec, resource) {
 Specification.prototype.validate = function validate (data, schemaName) {
   if (_.isUndefined(data)) {
     throw new Error('data is required');
-  } else if (!_.isObject(data)) {
+  } else if (!_.isPlainObject(data)) {
     throw new TypeError('data must be an object');
   }
 
@@ -700,7 +700,7 @@ Specification.prototype.validate = function validate (data, schemaName) {
 Specification.prototype.validateApi = function validateApi (resourceList, resources) {
   if (_.isUndefined(resourceList)) {
     throw new Error('resourceList is required');
-  } else if (!_.isObject(resourceList)) {
+  } else if (!_.isPlainObject(resourceList)) {
     throw new TypeError('resourceList must be an object');
   }
 
@@ -820,7 +820,7 @@ Specification.prototype.validateApi = function validateApi (resourceList, resour
           _.each(api.operations, function (operation, index) {
             var oPath = aPath + '.operations[' + index + ']';
 
-            if (_.isObject(operation.authorizations)) {
+            if (_.isPlainObject(operation.authorizations)) {
               _.each(operation.authorizations, function (authorization, name) {
                 recordAuth(authorization, name, oPath + '.authorizations[\'' + name + '\']');
               });
