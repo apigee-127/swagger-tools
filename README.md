@@ -12,7 +12,9 @@ see what issues we are aware of and what features/enhancements we are working on
 based on the [JSON Schema][json-schema] associated with that version of the specification
 * Semantic validation: Validates Swagger files individually and as a whole (resource listing combined with API
 declarations) _(See [Issue #1](https://github.com/apigee-127/swagger-tools/issues/1) for more details)_
-* Connect middleware for using Swagger resource documents for pre-route validation
+* Connect middleware for adding pertinent Swagger information to your requests (swagger-metadata)
+* Connect middleware for wiring request handlers to requests based on Swagger documentation (swagger-router)
+* Connect middleware for using Swagger resource documents for pre-route validation (swagger-validator)
     * Validate the request Content-Type based on the operation's `consumes` value(s)
     * Validate the request parameter types
     * Validate the request parameter values
@@ -53,12 +55,18 @@ Here is an example of using the Swagger middleware for validating requests based
 ```javascript
 var connect = require('connect');
 var petJson = require('./samples/1.2/pet.json');
+var resourceListing = require('./samples/1.2/resource-listing.json');
 var storeJson = require('./samples/1.2/user.json');
 var userJson = require('./samples/1.2/store.json');
+var swaggerMetadata = require('swagger-tools/middleware/swagger-metadata');
+var swaggerRouter = require('swagger-tools/middleware/swagger-router');
 var swaggerValidator = require('swagger-tools/middleware/swagger-validator');
 var app = connect();
 
-app.use(swaggerValidator([petJson, storeJson, userJson]));
+// More coming on this shortly
+app.use(swaggerMetadata(resourceListing, [petJson, storeJson, userJson]));
+app.use(swaggerRouter({useStubs: true, controllers: '/Users/jwhitlock/projects/awesome/api/controllers'}));
+app.use(swaggerValidator());
 
 // ...
 ```
