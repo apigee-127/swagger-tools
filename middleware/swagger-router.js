@@ -59,9 +59,12 @@ var stubHandler = function stubHandler (req, res) {
  * Middleware for using Swagger information to route requests to handlers.
  *
  * This middleware also requires that you use the swagger-metadata middleware before this middleware.  This middleware
- * also makes no attempt to work around invalid Swagger documents.  The routing works such that any Swagger operation is
- * expected to have a nickname like this: {ControllerName}#{methodName}.  We will then identify the controller by name
- * from the controllers path (configurable) and identify the route handler within the controller by name.
+ * also makes no attempt to work around invalid Swagger documents.  If you would like to validate your requests using
+ * the swagger-validator middleware, you must use it prior to using this middleware.
+ *
+ * The routing works such that any Swagger operation is expected to have a nickname like this:
+ * {ControllerName}#{methodName}.  We will then identify the controller by name from the controllers path (configurable)
+ * and identify the route handler within the controller by name.
  *
  * @param {object} [options] - The middleware options
  *

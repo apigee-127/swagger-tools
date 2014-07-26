@@ -19,6 +19,7 @@
 // Module dependencies
 var _ = require('lodash');
 var fs = require('fs');
+var path = require('path');
 var jjv = require('jjv');
 var jjve = require('jjve');
 
@@ -66,6 +67,7 @@ var throwUnsupportedVersion = function throwUnsupportedVersion (version) {
  * @constructor
  */
 var Specification = function Specification (version, options) {
+  var schemasPath = path.join(__dirname, 'schemas', version);
   var docsUrl;
   var primitives;
   var schemasUrl;
@@ -104,12 +106,12 @@ var Specification = function Specification (version, options) {
   // Load the schema files
   this.schemas = {};
 
-  fs.readdirSync('./schemas/' + version)
+  fs.readdirSync(schemasPath)
     .filter(function (name) {
       return name.match(/^(.*)\.json$/);
     })
     .forEach(function (name) {
-      this.schemas[name] = require('./schemas/' + version + '/' + name);
+      this.schemas[name] = require(path.join(schemasPath, name));
     }.bind(this));
 
   // Create the validators
