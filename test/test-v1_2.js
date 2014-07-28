@@ -80,14 +80,6 @@ fs.readdirSync(path.join(__dirname, '..', 'samples', '1.2'))
 describe('Specification v1.2', function () {
   describe('metadata', function () {
     it('should have proper docsUrl, primitives, options, schemasUrl and verison properties', function () {
-      assert.deepEqual(spec.options, {
-        validator: {
-          useDefault: false,
-          useCoerce: false,
-          checkRequired: true,
-          removeAdditional: false
-        }
-      });
       assert.strictEqual(spec.docsUrl, 'https://github.com/wordnik/swagger-spec/blob/master/versions/1.2.md');
       assert.deepEqual(spec.primitives, [
         'integer',
@@ -182,7 +174,7 @@ describe('Specification v1.2', function () {
           code: 'VALIDATION_FAILED',
           message: 'Validation error: enum',
           data: 'body',
-          path: '$.apis[1].operations[0].parameters[1].paramType'
+          path: ['apis', '1', 'operations', '0', 'parameters', '1', 'paramType']
         }
       ];
       var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
@@ -190,7 +182,7 @@ describe('Specification v1.2', function () {
         {
           code: 'VALIDATION_OBJECT_REQUIRED',
           message: 'Missing required property: apis',
-          path: '$.apis'
+          path: ['apis']
         }
       ];
       var storeJson = _.cloneDeep(allSampleFiles['store.json']);
@@ -199,7 +191,7 @@ describe('Specification v1.2', function () {
           code: 'VALIDATION_INVALID_TYPE',
           message: 'Invalid type: boolean should be string',
           data: false,
-          path: '$.models.Order.description'
+          path: ['models', 'Order', 'description']
         }
       ];
       var userJson = _.cloneDeep(allSampleFiles['user.json']);
@@ -208,7 +200,7 @@ describe('Specification v1.2', function () {
           code: 'VALIDATION_ADDITIONAL_PROPERTIES',
           message: 'Additional properties not allowed: extra',
           data: 'value',
-          path: '$.apis[0].operations[0].authorizations.oauth2[0].extra'
+          path: ['apis', '0', 'operations', '0', 'authorizations', 'oauth2', '0', 'extra']
         }
       ];
 
@@ -237,14 +229,14 @@ describe('Specification v1.2', function () {
     it('should return errors for missing model references in apiDeclaration files', function () {
       var result = spec.validate(invalidModelRefsJson);
       var expectedMissingModelRefs = {
-        'MissingParamRef': '$.apis[0].operations[0].parameters[0].type',
-        'MissingParamItemsRef': '$.apis[0].operations[0].parameters[1].items.$ref',
-        'MissingResponseMessageRef': '$.apis[0].operations[0].responseMessages[0].responseModel',
-        'MissingTypeRef': '$.apis[0].operations[0].type',
-        'MissingTypeItemsRef': '$.apis[1].operations[0].items.$ref',
-        'MissingPropertyItemsRef': '$.models[\'Animal\'].properties[\'breeds\'].items.$ref',
-        'MissingSubTypeRef': '$.models[\'Animal\'].subTypes[1]',
-        'MissingPropertyRef': '$.models[\'Cat\'].properties[\'address\'].$ref'
+        'MissingParamRef': ['apis', '0', 'operations', '0', 'parameters', '0', 'type'],
+        'MissingParamItemsRef': ['apis', '0', 'operations', '0', 'parameters', '1', 'items', '$ref'],
+        'MissingResponseMessageRef': ['apis', '0', 'operations', '0', 'responseMessages', '0', 'responseModel'],
+        'MissingTypeRef': ['apis', '0', 'operations', '0', 'type'],
+        'MissingTypeItemsRef': ['apis', '1', 'operations', '0', 'items', '$ref'],
+        'MissingPropertyItemsRef': ['models', 'Animal', 'properties', 'breeds', 'items', '$ref'],
+        'MissingSubTypeRef': ['models', 'Animal', 'subTypes', '1'],
+        'MissingPropertyRef': ['models', 'Cat', 'properties', 'address', '$ref']
       };
 
       assert.equal(result.errors.length, Object.keys(expectedMissingModelRefs).length);
@@ -252,7 +244,7 @@ describe('Specification v1.2', function () {
       result.errors.forEach(function (error) {
         assert.equal(error.code, 'UNRESOLVABLE_MODEL_REFERENCE');
         assert.equal(error.message, 'Model reference could not be resolved: ' + error.data);
-        assert.equal(error.path, expectedMissingModelRefs[error.data]);
+        assert.deepEqual(error.path, expectedMissingModelRefs[error.data]);
       });
     });
 
@@ -265,7 +257,7 @@ describe('Specification v1.2', function () {
         code: 'UNUSED_MODEL',
         message: 'Model is defined but is not used: Animal',
         data: 'Animal',
-        path: '$.models[\'Animal\']'
+        path: ['models', 'Animal']
       });
     });
 
@@ -278,7 +270,7 @@ describe('Specification v1.2', function () {
           code: 'DUPLICATE_MODEL_DEFINITION',
           message: 'Model already defined: A',
           data: 'A',
-          path: '$.models[\'J\'].id'
+          path: ['models', 'J', 'id']
         }
       ]);
     });
@@ -292,13 +284,13 @@ describe('Specification v1.2', function () {
           code: 'CYCLICAL_MODEL_INHERITANCE',
           message: 'Model has a circular inheritance: C -> A -> D -> C',
           data: ['D'],
-          path: '$.models[\'C\'].subTypes'
+          path: ['models', 'C', 'subTypes']
         },
         {
           code: 'CYCLICAL_MODEL_INHERITANCE',
           message: 'Model has a circular inheritance: H -> I -> H',
           data: ['I', 'I'],
-          path: '$.models[\'H\'].subTypes'
+          path: ['models', 'H', 'subTypes']
         }
       ]);
     });
@@ -312,7 +304,7 @@ describe('Specification v1.2', function () {
           code: 'MULTIPLE_MODEL_INHERITANCE',
           message: 'Child model is sub type of multiple models: A && E',
           data: invalidModelInheritanceJson.models.B,
-          path: '$.models[\'B\']'
+          path: ['models', 'B']
         }
       ]);
     });
@@ -326,7 +318,7 @@ describe('Specification v1.2', function () {
           code: 'CHILD_MODEL_REDECLARES_PROPERTY',
           message: 'Child model declares property already declared by ancestor: fId',
           data: invalidModelInheritanceJson.models.G.properties.fId,
-          path: '$.models[\'G\'].properties[\'fId\']'
+          path: ['models', 'G', 'properties', 'fId']
         }
       ]);
     });
@@ -340,7 +332,7 @@ describe('Specification v1.2', function () {
           code: 'DUPLICATE_MODEL_SUBTYPE_DEFINITION',
           message: 'Model already has subType defined: I',
           data: 'I',
-          path: '$.models[\'H\'].subTypes[1]'
+          path: ['models', 'H', 'subTypes', '1']
         }
       ]);
     });
@@ -354,7 +346,7 @@ describe('Specification v1.2', function () {
           code: 'INVALID_MODEL_DISCRIMINATOR',
           message: 'Model cannot have discriminator without subTypes: aId',
           data: 'aId',
-          path: '$.models[\'A\'].discriminator'
+          path: ['models', 'A', 'discriminator']
         }
       ]);
     });
@@ -368,7 +360,7 @@ describe('Specification v1.2', function () {
           'code': 'MISSING_REQUIRED_MODEL_PROPERTY',
           'message': 'Model requires property but it is not defined: bId',
           'data': 'bId',
-          'path': '$.models[\'A\'].required[1]'
+          'path': ['models', 'A', 'required', '1']
         }
       ]);
     });
@@ -382,7 +374,7 @@ describe('Specification v1.2', function () {
           code: 'DUPLICATE_OPERATION_METHOD',
           message: 'Operation method already defined: GET',
           data: 'GET',
-          path: '$.apis[0].operations[1].method'
+          path: ['apis', '0', 'operations', '1', 'method']
         }
       ]);
     });
@@ -396,7 +388,7 @@ describe('Specification v1.2', function () {
           code: 'DUPLICATE_OPERATION_NICKNAME',
           message: 'Operation method already defined: getGreeting',
           data: 'getGreeting',
-          path: '$.apis[0].operations[1].nickname'
+          path: ['apis', '0', 'operations', '1', 'nickname']
         }
       ]);
     });
@@ -410,7 +402,7 @@ describe('Specification v1.2', function () {
           code: 'DUPLICATE_OPERATION_RESPONSEMESSAGE_CODE',
           message: 'Operation responseMessage code already defined: 400',
           data: 400,
-          path: '$.apis[0].operations[0].responseMessages[1].code'
+          path: ['apis', '0', 'operations', '0', 'responseMessages', '1', 'code']
         }
       ]);
     });
@@ -431,7 +423,7 @@ describe('Specification v1.2', function () {
           code: 'OPERATION_SUMMARY_LONG',
           message: 'Operation summary is greater than 120 characters: 121',
           data: summary,
-          path: '$.apis[0].operations[1].summary'
+          path: ['apis', '0', 'operations', '1', 'summary']
         }
       ]);
     });
@@ -443,43 +435,43 @@ describe('Specification v1.2', function () {
           code: 'ENUM_MISMATCH',
           message: 'Default value is not within enum values (A, B): C',
           data: 'C',
-          path: '$.apis[0].operations[0].parameters[0].defaultValue'
+          path: ['apis', '0', 'operations', '0', 'parameters', '0', 'defaultValue']
         },
         {
           code: 'INVALID_TYPE',
           message: 'Invalid type (expected parseable number): NaN',
           data: 'NaN',
-          path: '$.apis[0].operations[0].parameters[1].defaultValue'
+          path: ['apis', '0', 'operations', '0', 'parameters', '1', 'defaultValue']
         },
         {
           code: 'INVALID_TYPE',
           message: 'Invalid type (expected parseable number): NaN',
           data: 'NaN',
-          path: '$.apis[0].operations[0].parameters[2].maximum'
+          path: ['apis', '0', 'operations', '0', 'parameters', '2', 'maximum']
         },
         {
           code: 'MAXIMUM',
           message: 'Default value is greater than maximum (1): 2',
           data: '2',
-          path: '$.apis[0].operations[0].parameters[3].defaultValue'
+          path: ['apis', '0', 'operations', '0', 'parameters', '3', 'defaultValue']
         },
         {
           code: 'INVALID_TYPE',
           message: 'Invalid type (expected parseable number): NaN',
           data: 'NaN',
-          path: '$.apis[0].operations[0].parameters[4].minimum'
+          path: ['apis', '0', 'operations', '0', 'parameters', '4', 'minimum']
         },
         {
           code: 'MINIMUM',
           message: 'Default value is less than minimum (2): 1',
           data: '1',
-          path: '$.apis[0].operations[0].parameters[5].defaultValue'
+          path: ['apis', '0', 'operations', '0', 'parameters', '5', 'defaultValue']
         },
         {
           code: 'INVALID_TYPE',
           message: 'Invalid type (expected parseable boolean): NaN',
           data: 'NaN',
-          path: '$.apis[0].operations[0].parameters[6].defaultValue'
+          path: ['apis', '0', 'operations', '0', 'parameters', '6', 'defaultValue']
         }
       ];
 
@@ -531,7 +523,7 @@ describe('Specification v1.2', function () {
           code: 'DUPLICATE_RESOURCE_PATH',
           message: 'Resource path already defined: /resource1',
           data: '/resource1',
-          path: '$.apis[2].path'
+          path: ['apis', '2', 'path']
         }
       ]);
     });
@@ -552,7 +544,7 @@ describe('Specification v1.2', function () {
             description: 'Operations about resource2',
             path: '/resource2'
           },
-          path: '$.apis[1]'
+          path: ['apis', '1']
         },
         {
           code: 'UNUSED_RESOURCE',
@@ -561,7 +553,7 @@ describe('Specification v1.2', function () {
             description: 'Operations about resource4',
             path: '/resource4'
           },
-          path: '$.apis[3]'
+          path: ['apis', '3']
         }
       ]);
     });
@@ -581,7 +573,7 @@ describe('Specification v1.2', function () {
           data: {
             type: 'basicAuth'
           },
-          path: '$.authorizations[\'unusedBasicAuth\']'
+          path: ['authorizations', 'unusedBasicAuth']
         }
       ]);
     });
@@ -601,7 +593,7 @@ describe('Specification v1.2', function () {
             description: 'Scope 2',
             scope: 'scope2'
           },
-          path: '$.authorizations[\'oauth2\'].scopes[1]'
+          path: ['authorizations', 'oauth2', 'scopes', '1']
         }
       ]);
     });
@@ -618,7 +610,7 @@ describe('Specification v1.2', function () {
           code: 'UNRESOLVABLE_AUTHORIZATION_REFERENCE',
           message: 'Authorization reference could not be resolved: missingAuth',
           data: [],
-          path: '$.apis[0].operations[0].authorizations[\'missingAuth\']'
+          path: ['apis', '0', 'operations', '0', 'authorizations', 'missingAuth']
         }
       ]);
     });
@@ -636,7 +628,7 @@ describe('Specification v1.2', function () {
           code: 'UNRESOLVABLE_AUTHORIZATION_SCOPE_REFERENCE',
           message: 'Authorization scope reference could not be resolved: missingScope',
           data: 'missingScope',
-          path: '$.apis[1].operations[0].authorizations[\'oauth2\'].scopes[1]'
+          path: ['apis', '1', 'operations', '0', 'authorizations', 'oauth2', 'scopes', '1']
         }
       ]);
     });
@@ -653,7 +645,7 @@ describe('Specification v1.2', function () {
           code: 'DUPLICATE_RESOURCE_PATH',
           message: 'Resource path already defined: /resource1',
           data: '/resource1',
-          path: '$.resourcePath'
+          path: ['resourcePath']
         }
       ]);
     });
@@ -670,7 +662,7 @@ describe('Specification v1.2', function () {
           code: 'UNRESOLVABLE_RESOURCEPATH_REFERENCE',
           message: 'Resource defined but not declared in resource listing: /resource3',
           data: '/resource3',
-          path: '$.resourcePath'
+          path: ['resourcePath']
         }
       ]);
     });

@@ -23,13 +23,14 @@ var path = require('path');
 var jjv = require('jjv');
 var jjve = require('jjve');
 
-var defaultOptions = {
-  validator: {
-    useDefault: false,
-    useCoerce: false,
-    checkRequired: true,
-    removeAdditional: false
-  }
+var jjvOptions = {
+  checkRequired: true,
+  removeAdditional: false,
+  useDefault: false,
+  useCoerce: false
+};
+var jjveOptions = {
+  formatPath: false
 };
 
 var mergeResults = function mergeResults (errors, warnings, results) {
@@ -56,23 +57,14 @@ var throwUnsupportedVersion = function throwUnsupportedVersion (version) {
  * Creates a new Swagger specification object.
  *
  * @param {string} version - The Swagger version
- * @param {object} [options] - The specification options
- * @param {boolean} [options.validator.useDefault=false] - If true it modifies the object to have the default values for
- *                                                         missing non-required fields
- * @param {boolean} [options.validator.useCoerce=false] - If true it enables type coercion where defined
- * @param {boolean} [options.validatorcheckRequired=true] - If true it reports missing required properties, otherwise it
- *                                                          allows missing required properties
- * @param {boolean} [options.validator.removeAdditional=false] - If true it removes all attributes of an object which
- *                                                               are not matched by the schema's specification
+ *
  * @constructor
  */
-var Specification = function Specification (version, options) {
+var Specification = function Specification (version) {
   var schemasPath = path.join(__dirname, 'schemas', version);
   var docsUrl;
   var primitives;
   var schemasUrl;
-
-  options = _.defaults(options || {}, defaultOptions);
 
   switch (version) {
   case '1.2':
@@ -98,7 +90,6 @@ var Specification = function Specification (version, options) {
   }
 
   this.docsUrl = docsUrl;
-  this.options = options;
   this.primitives = primitives;
   this.schemasUrl = schemasUrl;
   this.version = version;
@@ -120,7 +111,7 @@ var Specification = function Specification (version, options) {
   switch (version) {
   case '1.2':
     Object.keys(this.schemas).forEach(function (schemaName) {
-      var validator = jjv(this.options.validator);
+      var validator = jjv(jjvOptions);
       var toCompile = [];
 
       // Disable the 'uri' format checker as it's got issues: https://github.com/acornejo/jjv/issues/24
@@ -206,7 +197,7 @@ var validateDefaultValue = function validateDefaultValue (data, path) {
         code: 'ENUM_MISMATCH',
         message: 'Default value is not within enum values (' + data.enum.join(', ') + '): ' + defaultValue,
         data: defaultValue,
-        path: path + '.defaultValue'
+        path: path.concat(['defaultValue'])
       });
     }
 
@@ -221,7 +212,7 @@ var validateDefaultValue = function validateDefaultValue (data, path) {
               code: 'INVALID_TYPE',
               message: 'Invalid type (expected parseable number): ' + defaultValue,
               data: defaultValue,
-              path: path + '.defaultValue'
+              path: path.concat(['defaultValue'])
             });
           }
 
@@ -233,14 +224,14 @@ var validateDefaultValue = function validateDefaultValue (data, path) {
                 code: 'INVALID_TYPE',
                 message: 'Invalid type (expected parseable number): ' + data.maximum,
                 data: data.maximum,
-                path: path + '.maximum'
+                path: path.concat(['maximum'])
               });
             } else if (_.isNumber(parsedValue) && _.isNumber(parsedMaximumValue) && parsedValue > parsedMaximumValue) {
               errors.push({
                 code: 'MAXIMUM',
                 message: 'Default value is greater than maximum (' + data.maximum + '): ' + defaultValue,
                 data: defaultValue,
-                path: path + '.defaultValue'
+                path: path.concat(['defaultValue'])
               });
             }
           }
@@ -253,14 +244,14 @@ var validateDefaultValue = function validateDefaultValue (data, path) {
                 code: 'INVALID_TYPE',
                 message: 'Invalid type (expected parseable number): ' + data.minimum,
                 data: data.minimum,
-                path: path + '.minimum'
+                path: path.concat(['minimum'])
               });
             } else if (_.isNumber(parsedValue) && _.isNumber(parsedMinimumValue) && parsedValue < parsedMinimumValue) {
               errors.push({
                 code: 'MINIMUM',
                 message: 'Default value is less than minimum (' + data.minimum + '): ' + defaultValue,
                 data: defaultValue,
-                path: path + '.defaultValue'
+                path: path.concat(['defaultValue'])
               });
             }
           }
@@ -274,7 +265,7 @@ var validateDefaultValue = function validateDefaultValue (data, path) {
             code: 'INVALID_TYPE',
             message: 'Invalid type (expected parseable boolean): ' + defaultValue,
             data: defaultValue,
-            path: path + '.defaultValue'
+            path: path.concat(['defaultValue'])
           });
         }
 
@@ -312,7 +303,7 @@ var validateModels = function validateModels (spec, resource) {
               code: 'CHILD_MODEL_REDECLARES_PROPERTY',
               message: 'Child model declares property already declared by ancestor: ' + propName,
               data: prop,
-              path: '$.models[\'' + parentModel + '\'].properties[\'' + propName + '\']'
+              path: ['models', parentModel, 'properties', propName]
             });
           } else {
             composed[propName] = propName;
@@ -342,7 +333,7 @@ var validateModels = function validateModels (spec, resource) {
             code: 'MULTIPLE_MODEL_INHERITANCE',
             message: 'Child model is sub type of multiple models: ' + modelDeps.join(' && '),
             data: model,
-            path: '$.models[\'' + id + '\']'
+            path: ['models', id]
           });
         }
 
@@ -355,7 +346,7 @@ var validateModels = function validateModels (spec, resource) {
                 code: 'CYCLICAL_MODEL_INHERITANCE',
                 message: 'Model has a circular inheritance: ' + id + ' -> ' + circular[id].join(' -> '),
                 data: model.subTypes || [],
-                path: '$.models[\'' + id + '\'].subTypes'
+                path: ['models', id, 'subTypes']
               });
               return;
             }
@@ -389,31 +380,34 @@ var validateModels = function validateModels (spec, resource) {
   case '1.2':
     // Find references defined in the operations (Validation happens elsewhere but we have to be smart)
     _.each(resource.apis, function (api, index) {
-      var apiPath = '$.apis[' + index + ']';
+      var apiPath = ['apis', index.toString()];
 
       _.each(api.operations, function (operation, index) {
-        var operationPath = apiPath + '.operations[' + index + ']';
+        var operationPath = apiPath.concat(['operations', index.toString()]);
 
         // References in operation type
         if (operation.type === 'array' && operation.items.$ref) {
-          addModelRef(operation.items.$ref, operationPath + '.items.$ref');
+          addModelRef(operation.items.$ref, operationPath.concat(['items', '$ref']));
         } else if (primitives.indexOf(operation.type) === -1) {
-          addModelRef(operation.type, operationPath + '.type');
+          addModelRef(operation.type, operationPath.concat(['type']));
         }
 
         // References in operation parameters
         _.each(operation.parameters, function (parameter, index) {
+          var paramPath = operationPath.concat(['parameters', index.toString()]);
+
           if (primitives.indexOf(parameter.type) === -1) {
-            addModelRef(parameter.type, operationPath + '.parameters[' + index + '].type');
+            addModelRef(parameter.type, paramPath.concat(['type']));
           } else if (parameter.type === 'array' && parameter.items.$ref) {
-            addModelRef(parameter.items.$ref, operationPath + '.parameters[' + index + '].items.$ref');
+            addModelRef(parameter.items.$ref, paramPath.concat(['items', '$ref']));
           }
         });
 
         // References in response messages
         _.each(operation.responseMessages, function (message, index) {
           if (message.responseModel) {
-            addModelRef(message.responseModel, operationPath + '.responseMessages[' + index + '].responseModel');
+            addModelRef(message.responseModel,
+                        operationPath.concat(['responseMessages', index.toString(), 'responseModel']));
           }
         });
       });
@@ -422,7 +416,7 @@ var validateModels = function validateModels (spec, resource) {
     // Find references defined in the models themselves (Validation happens elsewhere but we have to be smart)
     if (!_.isUndefined(models)) {
       _.each(models, function (model, name) {
-        var modelPath = '$.models[\'' + name + '\']'; // Always use bracket notation just to be safe
+        var modelPath = ['models', name];
         var modelId = model.id;
         var seenSubTypes = [];
 
@@ -432,7 +426,7 @@ var validateModels = function validateModels (spec, resource) {
             code: 'DUPLICATE_MODEL_DEFINITION',
             message: 'Model already defined: ' + modelId,
             data: modelId,
-            path: '$.models[\'' + name + '\'].id'
+            path: modelPath.concat(['id'])
           });
         } else {
           modelIds.push(modelId);
@@ -448,7 +442,7 @@ var validateModels = function validateModels (spec, resource) {
                   code: 'DUPLICATE_MODEL_SUBTYPE_DEFINITION',
                   message: 'Model already has subType defined: ' + subType,
                   data: subType,
-                  path: '$.models[\'' + name + '\'].subTypes[' + index + ']'
+                  path: modelPath.concat(['subTypes', index.toString()])
                 });
               } else {
                 modelDeps[subType].push(name);
@@ -463,12 +457,12 @@ var validateModels = function validateModels (spec, resource) {
 
         // References in model properties
         _.each(model.properties, function (property, name) {
-          var propPath = modelPath + '.properties[\'' + name + '\']'; // Always use bracket notation just to be safe
+          var propPath = modelPath.concat(['properties', name]);
 
           if (property.$ref) {
-            addModelRef(property.$ref, propPath + '.$ref');
+            addModelRef(property.$ref, propPath.concat(['$ref']));
           } else if (property.type === 'array' && property.items.$ref) {
-            addModelRef(property.items.$ref, propPath + '.items.$ref');
+            addModelRef(property.items.$ref, propPath.concat(['items', '$ref']));
           } else {
             mergeResults(errors, warnings, validateDefaultValue(property, propPath));
           }
@@ -477,7 +471,7 @@ var validateModels = function validateModels (spec, resource) {
         // References in model subTypes
         if (!_.isUndefined(model.subTypes)) {
           _.each(model.subTypes, function (name, index) {
-            addModelRef(name, modelPath + '.subTypes[' + index + ']');
+            addModelRef(name, modelPath.concat(['subTypes', index.toString()]));
           });
         }
 
@@ -486,7 +480,7 @@ var validateModels = function validateModels (spec, resource) {
             code: 'INVALID_MODEL_DISCRIMINATOR',
             message: 'Model cannot have discriminator without subTypes: ' + model.discriminator,
             data: model.discriminator,
-            path: '$.models[\'' + name + '\'].discriminator'
+            path: modelPath.concat(['discriminator'])
           });
         }
 
@@ -499,7 +493,7 @@ var validateModels = function validateModels (spec, resource) {
                 code: 'MISSING_REQUIRED_MODEL_PROPERTY',
                 message: 'Model requires property but it is not defined: ' + propName,
                 data: propName,
-                path: '$.models[\'' + name + '\'].required[' + index + ']'
+                path: modelPath.concat(['required', index.toString()])
               });
             }
           });
@@ -530,7 +524,7 @@ var validateModels = function validateModels (spec, resource) {
       code: 'UNUSED_MODEL',
       message: 'Model is defined but is not used: ' + unused,
       data: unused,
-      path: '$.models[\'' + unused + '\']'
+      path: ['models', unused]
     });
   });
 
@@ -553,7 +547,7 @@ var validateOperations = function validateOperations (spec, resource) {
   switch (spec.version) {
   case '1.2':
     _.each(resource.apis, function (api, index) {
-      var apiPath = '$.apis[' + index + ']';
+      var apiPath = ['apis', index.toString()];
       var seenMethods = [];
       var seenNicknames = [];
 
@@ -562,13 +556,13 @@ var validateOperations = function validateOperations (spec, resource) {
       }
 
       _.each(api.operations, function (operation, index) {
-        var operationPath = apiPath + '.operations[' + index + ']';
+        var operationPath = apiPath.concat(['operations', index.toString()]);
         var seenResponseMessageCodes = [];
 
         // Validate the default value when necessary
         _.each(operation.parameters, function (parameter, index) {
           mergeResults(errors, warnings,
-                       validateDefaultValue(parameter, operationPath + '.parameters[' + index + ']'));
+                       validateDefaultValue(parameter, operationPath.concat(['parameters', index.toString()])));
         });
 
         // Identify duplicate operation methods
@@ -577,7 +571,7 @@ var validateOperations = function validateOperations (spec, resource) {
             code: 'DUPLICATE_OPERATION_METHOD',
             message: 'Operation method already defined: ' + operation.method,
             data: operation.method,
-            path: operationPath + '.method'
+            path: operationPath.concat(['method'])
           });
         } else {
           seenMethods.push(operation.method);
@@ -589,7 +583,7 @@ var validateOperations = function validateOperations (spec, resource) {
             code: 'DUPLICATE_OPERATION_NICKNAME',
             message: 'Operation method already defined: ' + operation.nickname,
             data: operation.nickname,
-            path: operationPath + '.nickname'
+            path: operationPath.concat(['nickname'])
           });
         } else {
           seenNicknames.push(operation.nickname);
@@ -604,7 +598,7 @@ var validateOperations = function validateOperations (spec, resource) {
                   code: 'DUPLICATE_OPERATION_RESPONSEMESSAGE_CODE',
                   message: 'Operation responseMessage code already defined: ' + responseMessage.code,
                   data: responseMessage.code,
-                  path: operationPath + '.responseMessages[' + index + '].code'
+                  path: operationPath.concat(['responseMessages', index.toString(), 'code'])
                 });
               } else {
                 seenResponseMessageCodes.push(responseMessage.code);
@@ -619,7 +613,7 @@ var validateOperations = function validateOperations (spec, resource) {
             code: 'OPERATION_SUMMARY_LONG',
             message: 'Operation summary is greater than 120 characters: ' + operation.summary.length,
             data: operation.summary,
-            path: operationPath + '.summary'
+            path: operationPath.concat(['summary'])
           });
         }
       });
@@ -675,7 +669,7 @@ Specification.prototype.validate = function validate (data, schemaName) {
   result = validator.validate(schema, data);
 
   if (result) {
-    errors = validator.je(schema, data, result);
+    errors = validator.je(schema, data, result, jjveOptions);
   }
 
   // Do semantic validation
@@ -741,7 +735,7 @@ Specification.prototype.validateApi = function validateApi (resourceList, resour
           code: 'DUPLICATE_RESOURCE_PATH',
           message: 'Resource path already defined: ' + api.path,
           data: api.path,
-          path: '$.apis[' + index + '].path'
+          path: ['apis', index.toString(), 'path']
         });
       } else {
         resourcePaths.push(api.path);
@@ -791,7 +785,7 @@ Specification.prototype.validateApi = function validateApi (resourceList, resour
                 code: 'UNRESOLVABLE_AUTHORIZATION_SCOPE_REFERENCE',
                 message: 'Authorization scope reference could not be resolved: ' + scope.scope,
                 data: scope.scope,
-                path: path + '.scopes[' + index + ']'
+                path: path.concat(['scopes', index.toString()])
               });
             } else {
               if (seenAuthScopes[name].indexOf(scope.scope) === -1) {
@@ -810,21 +804,21 @@ Specification.prototype.validateApi = function validateApi (resourceList, resour
       // References in resource
       if (!_.isUndefined(resource.authorizations)) {
         _.each(resource.authorizations, function (authorization, name) {
-          recordAuth(authorization, name, '$.authorizations[\'' + name + ']');
+          recordAuth(authorization, name, ['authorizations', name]);
         });
       }
 
       // References in resource operations
       _.each(resource.apis, function (api, index) {
-        var aPath = '$.apis[' + index + ']';
+        var aPath = ['apis', index.toString()];
 
         if (_.isArray(api.operations)) {
           _.each(api.operations, function (operation, index) {
-            var oPath = aPath + '.operations[' + index + ']';
+            var oPath = aPath.concat(['operations', index.toString()]);
 
             if (_.isPlainObject(operation.authorizations)) {
               _.each(operation.authorizations, function (authorization, name) {
-                recordAuth(authorization, name, oPath + '.authorizations[\'' + name + '\']');
+                recordAuth(authorization, name, oPath.concat(['authorizations', name]));
               });
             }
           });
@@ -836,14 +830,14 @@ Specification.prototype.validateApi = function validateApi (resourceList, resour
           code: 'UNRESOLVABLE_RESOURCEPATH_REFERENCE',
           message: 'Resource defined but not declared in resource listing: ' + resource.resourcePath,
           data: resource.resourcePath,
-          path: '$.resourcePath'
+          path: ['resourcePath']
         });
       } else if (seenResourcePaths.indexOf(resource.resourcePath) > -1) {
         vResult.errors.push({
           code: 'DUPLICATE_RESOURCE_PATH',
           message: 'Resource path already defined: ' + resource.resourcePath,
           data: resource.resourcePath,
-          path: '$.resourcePath'
+          path: ['resourcePath']
         });
       } else {
         if (seenResourcePaths.indexOf(resource.resourcePath) === -1) {
@@ -867,7 +861,7 @@ Specification.prototype.validateApi = function validateApi (resourceList, resour
         code: 'UNUSED_RESOURCE',
         message: 'Resource is defined but is not used: ' + unused,
         data: resourceList.apis[index],
-        path: '$.apis[' + index + ']'
+        path: ['apis', index.toString()]
       });
     });
 
@@ -877,12 +871,12 @@ Specification.prototype.validateApi = function validateApi (resourceList, resour
         code: 'UNUSED_AUTHORIZATION',
         message: 'Authorization is defined but is not used: ' + unused,
         data: resourceList.authorizations[unused],
-        path: '$.authorizations[\'' + unused + '\']'
+        path: ['authorizations', unused]
       });
     });
 
     _.each(authScopes, function (scopes, name) {
-      var path = '$.authorizations[\'' + name + '\']';
+      var path = ['authorizations', name];
 
       // Identify unused authorization scope (declared but not referenced)
       _.difference(scopes, seenAuthScopes[name] || []).forEach(function (unused) {
@@ -892,7 +886,7 @@ Specification.prototype.validateApi = function validateApi (resourceList, resour
           code: 'UNUSED_AUTHORIZATION_SCOPE',
           message: 'Authorization scope is defined but is not used: ' + unused,
           data: resourceList.authorizations[name].scopes[index],
-          path: path + '.scopes[' + index + ']'
+          path: path.concat(['scopes', index.toString()])
         });
       });
     });
