@@ -2,10 +2,16 @@ The project provides various tools for integrating and interacting with Swagger.
 what is within the repository should be fully tested and reusable.  Please visit the [issue tracker][project-issues] to
 see what issues we are aware of and what features/enhancements we are working on.
 
+## Project Version
+
+* GitHub Release: [![GitHub Release](http://img.shields.io/github/release/apigee-127/swagger-tools.svg)](https://github.com/apigee-127/swagger-tools/releases)
+* NPM Version: [![NPM Version](http://img.shields.io/npm/dm/swagger-tools.svg)](https://www.npmjs.org/package/swagger-tools)
+
 ## Project Badges
-* [Travis](https://travis-ci.org/) build status: [![Build Status](https://img.shields.io/travis/apigee-127/swagger-tools.svg)](https://travis-ci.org/apigee-127/swagger-tools)
-* [NPM](https://www.npmjs.org) dependencies: [![Dependencies](http://img.shields.io/david/apigee-127/swagger-tools.svg)](https://david-dm.org/apigee-127/swagger-tools)
-* [NPM](https://www.npmjs.org) developer dependencies: [![Dev Dependencies](http://img.shields.io/david/dev/apigee-127/swagger-tools.svg)](https://david-dm.org/apigee-127/swagger-tools#info=devDependencies&view=table)
+
+* Build status: [![Build Status](https://img.shields.io/travis/apigee-127/swagger-tools.svg)](https://travis-ci.org/apigee-127/swagger-tools)
+* Dependencies: [![Dependencies](http://img.shields.io/david/apigee-127/swagger-tools.svg)](https://david-dm.org/apigee-127/swagger-tools)
+* Developer dependencies: [![Dev Dependencies](http://img.shields.io/david/dev/apigee-127/swagger-tools.svg)](https://david-dm.org/apigee-127/swagger-tools#info=devDependencies&view=table)
 
 ## Supported Swagger Versions
 
