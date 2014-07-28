@@ -127,101 +127,98 @@ exports = module.exports = function swaggerValidatorMiddleware () {
   return function swaggerValidator (req, res, next) {
     // http://www.w3.org/Protocols/rfc2616/rfc2616-sec7.html#sec7.2.1
     var contentType = req.headers['content-type'] || 'application/octet-stream';
-    var returnError = function returnError (message, status) {
-      res.status = _.isUndefined(status) ? 500 : status;
-
-      return next(message);
-    };
     var operation = req.swagger ? req.swagger.operation : undefined;
 
     if (!_.isUndefined(operation)) {
       // Validate content type (Only for POST/PUT per HTTP spec)
       if (!_.isUndefined(operation.consumes) && ['POST', 'PUT'].indexOf(req.method) !== -1) {
         if (operation.consumes.indexOf(contentType) === -1) {
-          return returnError('Invalid content type (' + contentType + ').  These are valid: ' +
-                             operation.consumes.join(', '));
+          return next('Invalid content type (' + contentType + ').  These are valid: ' + operation.consumes.join(', '));
         }
       }
 
       // Validate the parameters
-      _.each(operation.parameters || [], function (param) {
-        var minimum = param.minimum;
-        var maximum = param.maximum;
-        var invalidParamPrefix = 'Parameter (' + param.name + ') ';
-        var invalidTypePrefix = invalidParamPrefix + 'is not a valid ';
-        var testVal;
-        var val = req.swagger.params[param.name].value;
+      try {
+        _.each(operation.parameters || [], function (param) {
+          var minimum = param.minimum;
+          var maximum = param.maximum;
+          var invalidParamPrefix = 'Parameter (' + param.name + ') ';
+          var invalidTypePrefix = invalidParamPrefix + 'is not a valid ';
+          var testVal;
+          var val = req.swagger.params[param.name].value;
 
-        // Validate requiredness
-        if (!_.isUndefined(param.required)) {
-          if (param.required === true && _.isUndefined(val)) {
-            return returnError(invalidParamPrefix + 'is required', 400);
-          }
-        }
-
-        // Validate the value type/format
-        if (!isValid(val, param.type, param.format)) {
-          return returnError(invalidTypePrefix + (_.isUndefined(param.format) ? '' : param.format + ' ') + param.type +
-                             ': ' + val, 400);
-        }
-
-        if (param.type === 'integer') {
-          testVal = parseInt(val, 10);
-        } else if (param.type === 'number') {
-          testVal = parseFloat(val);
-        }
-
-        // Validate enum
-        if (!_.isUndefined(param.enum) && param.enum.indexOf(val) === -1) {
-          return returnError(invalidParamPrefix + 'is not an allowable value (' + param.enum.join(', ') + '): ' + val,
-                             400);
-        }
-
-        // Validate maximum
-        if (!_.isUndefined(maximum)) {
-          if (!_.isNumber(maximum)) {
-            maximum = parseFloat(maximum);
+          // Validate requiredness
+          if (!_.isUndefined(param.required)) {
+            if (param.required === true && _.isUndefined(val)) {
+              throw new Error(invalidParamPrefix + 'is required');
+            }
           }
 
-          if (testVal > maximum) {
-            return returnError(invalidParamPrefix + 'is greater than the configured maximum (' + param.maximum + '): ' +
-                               val, 400);
-          }
-        }
-
-        // Validate minimum
-        if (!_.isUndefined(minimum)) {
-          if (!_.isNumber(minimum)) {
-            minimum = parseFloat(minimum);
+          // Validate the value type/format
+          if (!isValid(val, param.type, param.format)) {
+            throw new Error(invalidTypePrefix + (_.isUndefined(param.format) ? '' : param.format + ' ') +
+                               param.type + ': ' + val);
           }
 
-          if (testVal < minimum) {
-            return returnError(invalidParamPrefix + 'is less than the configured minimum (' + param.minimum + '): ' +
-                               val, 400);
+          if (param.type === 'integer') {
+            testVal = parseInt(val, 10);
+          } else if (param.type === 'number') {
+            testVal = parseFloat(val);
           }
-        }
 
-        // Validate array
-        if (param.type === 'array') {
-          try {
-            val.forEach(function (aVal, index) {
-              if (!isValid(aVal, param.items.type, param.format)) {
-                throw Error(invalidParamPrefix + 'at index ' + index + ' is not a valid ' + param.items.type + ': ' +
-                            aVal);
-              }
-            });
-          } catch (err) {
-            return returnError(err.message);
+          // Validate enum
+          if (!_.isUndefined(param.enum) && param.enum.indexOf(val) === -1) {
+            throw new Error(invalidParamPrefix + 'is not an allowable value (' + param.enum.join(', ') + '): ' + val);
           }
-        }
 
-        // Validate uniqueItems
-        if (!_.isUndefined(param.uniqueItems)) {
-          if (_.uniq(val).length !== val.length) {
-            return returnError(invalidParamPrefix + 'does not allow duplicate values: ' + val.join(', '), 400);
+          // Validate maximum
+          if (!_.isUndefined(maximum)) {
+            if (!_.isNumber(maximum)) {
+              maximum = parseFloat(maximum);
+            }
+
+            if (testVal > maximum) {
+              throw new Error(invalidParamPrefix + 'is greater than the configured maximum (' + param.maximum +
+                                 '): ' + val);
+            }
           }
-        }
-      });
+
+          // Validate minimum
+          if (!_.isUndefined(minimum)) {
+            if (!_.isNumber(minimum)) {
+              minimum = parseFloat(minimum);
+            }
+
+            if (testVal < minimum) {
+              throw new Error(invalidParamPrefix + 'is less than the configured minimum (' + param.minimum + '): ' +
+                                 val);
+            }
+          }
+
+          // Validate array
+          if (param.type === 'array') {
+            try {
+              val.forEach(function (aVal, index) {
+                if (!isValid(aVal, param.items.type, param.format)) {
+                  throw Error(invalidParamPrefix + 'at index ' + index + ' is not a valid ' + param.items.type + ': ' +
+                              aVal);
+                }
+              });
+            } catch (err) {
+              throw new Error(err.message);
+            }
+          }
+
+          // Validate uniqueItems
+          if (!_.isUndefined(param.uniqueItems)) {
+            if (_.uniq(val).length !== val.length) {
+              throw new Error(invalidParamPrefix + 'does not allow duplicate values: ' + val.join(', '));
+            }
+          }
+        });
+      } catch (err) {
+        return next(err.message);
+      }
     }
 
     return next();

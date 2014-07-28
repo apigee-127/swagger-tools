@@ -33,7 +33,7 @@ module.exports.createServer = function createServer (resourceList, resources, mi
       req.query = req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
     }
 
-    next();
+    return next();
   });
 
   app.use(swaggerMetadata(resourceList, resources));

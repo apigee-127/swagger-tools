@@ -46,7 +46,7 @@ var expressStylePath = function expressStylePath (api) {
  *
  * @returns the middleware function
  */
-exports = module.exports = function swaggerMiddleware (resourceList, resources) {
+exports = module.exports = function swaggerMetadataMiddleware (resourceList, resources) {
   if (_.isUndefined(resourceList)) {
     throw new Error('resourceList is required');
   } else if (!_.isPlainObject(resourceList)) {
@@ -109,55 +109,59 @@ exports = module.exports = function swaggerMiddleware (resourceList, resources) 
 
     // Collect the parameter values
     if (!_.isUndefined(swaggerMetadata.operation)) {
-      _.each(swaggerMetadata.operation.parameters, function (param) {
-        var val;
+      try {
+        _.each(swaggerMetadata.operation.parameters, function (param) {
+          var val;
 
-        // Get the value to validate based on the operation parameter type
-        switch (param.paramType) {
-        case 'body':
-        case 'form':
-          if (!req.body) {
-            return next('Server configuration error: req.body is not defined but is required');
-          }
-
-          val = req.body[param.name];
-
-          break;
-        case 'header':
-          val = req.headers[param.name];
-
-          break;
-        case 'path':
-          _.each(api.keys, function (key, index) {
-            if (key.name === param.name) {
-              val = match[index + 1];
+          // Get the value to validate based on the operation parameter type
+          switch (param.paramType) {
+          case 'body':
+          case 'form':
+            if (!req.body) {
+              throw new Error('Server configuration error: req.body is not defined but is required');
             }
-          });
 
-          break;
-        case 'query':
-          if (!req.query) {
-            return next('Server configuration error: req.query is not defined but is required');
+            val = req.body[param.name];
+
+            break;
+          case 'header':
+            val = req.headers[param.name];
+
+            break;
+          case 'path':
+            _.each(api.keys, function (key, index) {
+              if (key.name === param.name) {
+                val = match[index + 1];
+              }
+            });
+
+            break;
+          case 'query':
+            if (!req.query) {
+              throw new Error('Server configuration error: req.query is not defined but is required');
+            }
+
+            val = req.query[param.name];
+
+            break;
           }
 
-          val = req.query[param.name];
+          // Use the default value when necessary
+          if (_.isUndefined(val) && !_.isUndefined(param.defaultValue)) {
+            val = param.defaultValue;
+          }
 
-          break;
-        }
+          swaggerMetadata.params[param.name] = {
+            schema: param,
+            value: val
+          };
+        });
 
-        // Use the default value when necessary
-        if (_.isUndefined(val) && !_.isUndefined(param.defaultValue)) {
-          val = param.defaultValue;
-        }
-
-        swaggerMetadata.params[param.name] = {
-          schema: param,
-          value: val
-        };
-      });
-
-      // Attach Swagger metadata to the request
-      req.swagger = swaggerMetadata;
+        // Attach Swagger metadata to the request
+        req.swagger = swaggerMetadata;
+      } catch (err) {
+        return next(err.message);
+      }
     }
 
     return next();

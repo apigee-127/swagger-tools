@@ -3,7 +3,9 @@ what is within the repository should be fully tested and reusable.  Please visit
 see what issues we are aware of and what features/enhancements we are working on.
 
 ## Project Badges
-[![Build Status](https://img.shields.io/travis/apigee-127/swagger-tools.svg)](https://travis-ci.org/apigee-127/swagger-tools)
+* [Travis](https://travis-ci.org/) build status: [![Build Status](https://img.shields.io/travis/apigee-127/swagger-tools.svg)](https://travis-ci.org/apigee-127/swagger-tools)
+* [NPM](https://www.npmjs.org) dependencies: [![Dependencies](http://img.shields.io/david/apigee-127/swagger-tools.svg)](https://david-dm.org/apigee-127/swagger-tools)
+* [NPM](https://www.npmjs.org) developer dependencies: [![Dev Dependencies](http://img.shields.io/david/dev/apigee-127/swagger-tools.svg)](https://david-dm.org/apigee-127/swagger-tools#info=devDependencies&view=table)
 
 ## Supported Swagger Versions
 
