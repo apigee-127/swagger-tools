@@ -5,13 +5,14 @@ see what issues we are aware of and what features/enhancements we are working on
 ## Project Version
 
 * GitHub Release: [![GitHub Release](http://img.shields.io/github/release/apigee-127/swagger-tools.svg)](https://github.com/apigee-127/swagger-tools/releases)
-* NPM Version: [![NPM Version](http://img.shields.io/npm/dm/swagger-tools.svg)](https://www.npmjs.org/package/swagger-tools)
+* NPM Version: [![NPM Version](http://img.shields.io/npm/v/swagger-tools.svg)](https://www.npmjs.org/package/swagger-tools)
 
 ## Project Badges
 
 * Build status: [![Build Status](https://img.shields.io/travis/apigee-127/swagger-tools.svg)](https://travis-ci.org/apigee-127/swagger-tools)
 * Dependencies: [![Dependencies](http://img.shields.io/david/apigee-127/swagger-tools.svg)](https://david-dm.org/apigee-127/swagger-tools)
 * Developer dependencies: [![Dev Dependencies](http://img.shields.io/david/dev/apigee-127/swagger-tools.svg)](https://david-dm.org/apigee-127/swagger-tools#info=devDependencies&view=table)
+* Downloads: [![NPM Downloads Per Month](http://img.shields.io/npm/dm/swagger-tools.svg)](https://www.npmjs.org/package/swagger-tools)
 
 ## Supported Swagger Versions
 
