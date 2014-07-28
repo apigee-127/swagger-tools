@@ -34,7 +34,7 @@ var handlerCacheFromDir = function handlerCacheFromDir (dir) {
     var controller;
 
     if (file.match(jsFileRegex)) {
-      controller = require(dir + path.delimiter + controllerName);
+      controller = require(path.resolve(path.join(dir, controllerName)));
 
       if (!_.isPlainObject(controller)) {
         throw new Error('Controller module expected to export an object: ' + path.join(dir, file));
