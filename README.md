@@ -4,9 +4,9 @@ see what issues we are aware of and what features/enhancements we are working on
 
 ## Project Badges
 
-* Build status: [![Build Status](https://img.shields.io/travis/apigee-127/swagger-tools.svg)](https://travis-ci.org/apigee-127/swagger-tools)
-* Dependencies: [![Dependencies](http://img.shields.io/david/apigee-127/swagger-tools.svg)](https://david-dm.org/apigee-127/swagger-tools)
-* Developer dependencies: [![Dev Dependencies](http://img.shields.io/david/dev/apigee-127/swagger-tools.svg)](https://david-dm.org/apigee-127/swagger-tools#info=devDependencies&view=table)
+* Build status: [![Build Status](https://travis-ci.org/apigee-127/swagger-tools.svg)](https://travis-ci.org/apigee-127/swagger-tools)
+* Dependencies: [![Dependencies](https://david-dm.org/apigee-127/swagger-tools.svg)](https://david-dm.org/apigee-127/swagger-tools)
+* Developer dependencies: [![Dev Dependencies](https://david-dm.org/apigee-127/swagger-tools/dev-status.svg)](https://david-dm.org/apigee-127/swagger-tools#info=devDependencies&view=table)
 * Downloads: [![NPM Downloads Per Month](http://img.shields.io/npm/dm/swagger-tools.svg)](https://www.npmjs.org/package/swagger-tools)
 * Version: [![NPM Version](http://img.shields.io/npm/v/swagger-tools.svg)](https://www.npmjs.org/package/swagger-tools)
 
