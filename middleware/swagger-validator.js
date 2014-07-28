@@ -21,7 +21,6 @@ var _ = require('lodash');
 var dateRegExp = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/;
 // http://tools.ietf.org/html/rfc3339#section-5.6
 var dateTimeRegExp = /^([0-9]{2}):([0-9]{2}):([0-9]{2})(.[0-9]+)?(z|([+-][0-9]{2}:[0-9]{2}))$/;
-var spec = require('../').v1_2; // jshint ignore:line
 
 var isValid = function isValid (val, type, format) {
   var isValidDate = function isValidDate (date) {

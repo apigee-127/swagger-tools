@@ -899,4 +899,4 @@ Specification.prototype.validateApi = function validateApi (resourceList, resour
     }, 0) > 0 ? result : undefined;
 };
 
-var v1_2 = module.exports.v1_2 = new Specification('1.2'); // jshint ignore:line
+module.exports.v1_2 = new Specification('1.2'); // jshint ignore:line
