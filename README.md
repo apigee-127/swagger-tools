@@ -4,8 +4,7 @@ see what issues we are aware of and what features/enhancements we are working on
 
 ## Project Version
 
-* GitHub Release: [![GitHub Release](http://img.shields.io/github/release/apigee-127/swagger-tools.svg)](https://github.com/apigee-127/swagger-tools/releases)
-* NPM Version: [![NPM Version](http://img.shields.io/npm/v/swagger-tools.svg)](https://www.npmjs.org/package/swagger-tools)
+[![NPM Version](http://img.shields.io/npm/v/swagger-tools.svg)](https://www.npmjs.org/package/swagger-tools)
 
 ## Project Badges
 
