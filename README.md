@@ -65,7 +65,7 @@ var app = connect();
 
 // More coming on this shortly
 app.use(swaggerMetadata(resourceListing, [petJson, storeJson, userJson]));
-app.use(swaggerRouter({useStubs: true, controllers: '/Users/jwhitlock/projects/awesome/api/controllers'}));
+app.use(swaggerRouter({useStubs: true, controllers: './controllers'}));
 app.use(swaggerValidator());
 
 // ...
