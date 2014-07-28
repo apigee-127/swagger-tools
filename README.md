@@ -2,6 +2,9 @@ The project provides various tools for integrating and interacting with Swagger.
 what is within the repository should be fully tested and reusable.  Please visit the [issue tracker][project-issues] to
 see what issues we are aware of and what features/enhancements we are working on.
 
+## Project Badges
+[![Build Status](https://img.shields.io/travis/apigee-127/swagger-tools.svg)](https://travis-ci.org/apigee-127/swagger-tools)
+
 ## Supported Swagger Versions
 
 * [1.2][swagger-docs-v1_2]

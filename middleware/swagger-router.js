@@ -51,8 +51,10 @@ var handlerCacheFromDir = function handlerCacheFromDir (dir) {
   return handlerCache;
 };
 
-var stubHandler = function stubHandler (req, res) {
-  res.end('OK');
+var createStubHandler = function createStubHandler (req, res, msg) {
+  return function stubHandler (req, res) {
+    res.end(msg);
+  };
 };
 
 /**
@@ -98,7 +100,8 @@ exports = module.exports = function swaggerRouterMiddleware (options) {
       handler = handlerCache[operation.nickname];
 
       if (_.isUndefined(handler) && options.useStubs === true) {
-        handler = handlerCache[operation.nickname] = stubHandler;
+        handler = handlerCache[operation.nickname] = createStubHandler(req, res,
+                                                                       'Stubbed response for ' + operation.nickname);
       }
 
       if (!_.isUndefined(handler)) {

@@ -167,7 +167,7 @@ describe('Swagger Router Middleware', function () {
         if (err) {
           throw err;
         }
-        assert.equal(prepareText(res.text), 'OK');
+        assert.equal(prepareText(res.text), 'Stubbed response for Pets#getById');
       });
   });
 });
