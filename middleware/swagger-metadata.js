@@ -16,6 +16,7 @@
 
 'use strict';
 
+var url = require('url');
 var _ = require('lodash');
 var parseurl = require('parseurl');
 var pathToRegexp = require('path-to-regexp');
@@ -63,9 +64,10 @@ exports = module.exports = function swaggerMiddleware (resourceList, resources) 
 
   // Gather the apis, their path regex patterns and the corresponding operations
   _.each(resources, function (resource, index) {
+    var basePrefix = (resource && resource.basePath) ? url.parse(resource.basePath).pathname : '';
     _.each(resource.apis, function (api) {
       var keys = [];
-      var re = pathToRegexp(expressStylePath(api), keys);
+      var re = pathToRegexp(basePrefix + expressStylePath(api), keys);
       var reStr = re.toString();
 
       if (Object.keys(apis).indexOf(reStr) !== -1) {
