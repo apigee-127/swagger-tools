@@ -216,13 +216,12 @@ describe('Swagger Metadata Middleware', function () {
             }
           });
         } catch (err) {
-          console.log(err);
           return next(err.message);
         }
 
         res.end('OK');
       }))
-      .get('/pet/1')
+      .get('/api/pet/1')
       .expect(200)
       .end(function(err, res) {
         if (err) {

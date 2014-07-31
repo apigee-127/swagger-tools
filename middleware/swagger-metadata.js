@@ -20,9 +20,26 @@ var _ = require('lodash');
 var parseurl = require('parseurl');
 var pathToRegexp = require('path-to-regexp');
 
-var expressStylePath = function expressStylePath (api) {
-  // Since all path parameters must be required, no need to do any fancy parsing
-  return (api.path || '').replace(/{/g, ':').replace(/}/g, '');
+var expressStylePath = function expressStylePath (basePath, apiPath) {
+  basePath = parseurl({url: basePath || '/'}).pathname || '/';
+
+  // Make sure the base path starts with '/'
+  if (basePath.charAt(0) !== '/') {
+    basePath = '/' + basePath;
+  }
+
+  // Make sure the base path ends with '/'
+  if (basePath.charAt(basePath.length - 1) !== '/') {
+    basePath = basePath + '/';
+  }
+
+  // Make sure the api path does not start with '/' since the base path will end with '/'
+  if (apiPath.charAt(0) === '/') {
+    apiPath = apiPath.substring(1);
+  }
+
+  // Replace Swagger syntax for path parameters with Express' version (All Swagger path parameters are required)
+  return (basePath + apiPath).replace(/{/g, ':').replace(/}/g, '');
 };
 
 /**
@@ -65,7 +82,7 @@ exports = module.exports = function swaggerMetadataMiddleware (resourceList, res
   _.each(resources, function (resource, index) {
     _.each(resource.apis, function (api) {
       var keys = [];
-      var re = pathToRegexp(expressStylePath(api), keys);
+      var re = pathToRegexp(expressStylePath(resource.basePath, api.path), keys);
       var reStr = re.toString();
 
       if (Object.keys(apis).indexOf(reStr) !== -1) {

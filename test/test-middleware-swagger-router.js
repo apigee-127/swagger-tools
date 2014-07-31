@@ -55,6 +55,32 @@ var testResources = [
         ]
       }
     ]
+  },
+  // Duplicate of the previous resource but with a basePath
+  {
+    apis: [
+      {
+        path: '/users/{id}',
+        operations: [
+          {
+            method: 'GET',
+            nickname: 'Users#getById',
+            type: 'string'
+          }
+        ]
+      },
+      {
+        path: '/pets/{id}',
+        operations: [
+          {
+            method: 'GET',
+            nickname: 'Pets#getById',
+            type: 'string'
+          }
+        ]
+      }
+    ],
+    basePath: 'http://localhost/api/v1'
   }
 ];
 var optionsWithControllersDir = {
@@ -97,60 +123,68 @@ describe('Swagger Router Middleware', function () {
   });
 
   it('should not do any routing when there are no operations', function () {
-    request(createServer(testResourceList, testResources, [middleware(optionsWithControllersDir)]))
-      .get('/foo')
-      .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        if (err) {
-          throw err;
-        }
-        assert.equal(prepareText(res.text), 'OK');
-      });
+    ['', '/api/v1'].forEach(function (basePath) {
+      request(createServer(testResourceList, testResources, [middleware(optionsWithControllersDir)]))
+        .get(basePath + '/foo')
+        .expect(200)
+        .end(function(err, res) { // jshint ignore:line
+          if (err) {
+            throw err;
+          }
+          assert.equal(prepareText(res.text), 'OK');
+        });
+    });
   });
 
   it('should do routing when options.controllers is a valid directory path', function () {
-    request(createServer(testResourceList, testResources, [middleware(optionsWithControllersDir)]))
-      .get('/users/1')
-      .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        if (err) {
-          throw err;
-        }
-        assert.equal(prepareText(res.text), require('./controllers/Users').response);
-      });
+    ['', '/api/v1'].forEach(function (basePath) {
+      request(createServer(testResourceList, testResources, [middleware(optionsWithControllersDir)]))
+        .get(basePath + '/users/1')
+        .expect(200)
+        .end(function(err, res) { // jshint ignore:line
+          if (err) {
+            throw err;
+          }
+          assert.equal(prepareText(res.text), require('./controllers/Users').response);
+        });
+    });
   });
 
   it('should do routing when options.controllers is a valid controller map', function () {
     var controller = require('./controllers/Users');
 
-    request(createServer(testResourceList, testResources, [middleware({
-      controllers: {
-        'Users#getById': controller.getById
-      }
-    })]))
-      .get('/users/1')
-      .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        if (err) {
-          throw err;
+    ['', '/api/v1'].forEach(function (basePath) {
+      request(createServer(testResourceList, testResources, [middleware({
+        controllers: {
+          'Users#getById': controller.getById
         }
-        assert.equal(prepareText(res.text), require('./controllers/Users').response);
-      });
+      })]))
+        .get(basePath + '/users/1')
+        .expect(200)
+        .end(function(err, res) { // jshint ignore:line
+          if (err) {
+            throw err;
+          }
+          assert.equal(prepareText(res.text), require('./controllers/Users').response);
+        });
+    });
   });
 
   it('should not do any routing when there is no controller and use of stubs is off', function () {
-    request(createServer(testResourceList, testResources, [middleware(optionsWithControllersDir)],
-            function (req, res) {
-              res.end('NOT OK');
-            }))
-      .get('/pets/1')
-      .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        if (err) {
-          throw err;
-        }
-        assert.equal(prepareText(res.text), 'NOT OK');
-      });
+    ['', '/api/v1'].forEach(function (basePath) {
+      request(createServer(testResourceList, testResources, [middleware(optionsWithControllersDir)],
+              function (req, res) {
+                res.end('NOT OK');
+              }))
+        .get(basePath + '/pets/1')
+        .expect(200)
+        .end(function(err, res) { // jshint ignore:line
+          if (err) {
+            throw err;
+          }
+          assert.equal(prepareText(res.text), 'NOT OK');
+        });
+    });
   });
 
   it('should do routing when there is no controller and use of stubs is on', function () {
@@ -158,16 +192,18 @@ describe('Swagger Router Middleware', function () {
 
     options.useStubs = true;
 
-    request(createServer(testResourceList, testResources, [middleware(options)], function (req, res) {
-      res.end('NOT OK');
-    }))
-      .get('/pets/1')
-      .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        if (err) {
-          throw err;
-        }
-        assert.equal(prepareText(res.text), 'Stubbed response for Pets#getById');
-      });
+    ['', '/api/v1'].forEach(function (basePath) {
+      request(createServer(testResourceList, testResources, [middleware(options)], function (req, res) {
+        res.end('NOT OK');
+      }))
+        .get(basePath + '/pets/1')
+        .expect(200)
+        .end(function(err, res) { // jshint ignore:line
+          if (err) {
+            throw err;
+          }
+          assert.equal(prepareText(res.text), 'Stubbed response for Pets#getById');
+        });
+    });
   });
 });
