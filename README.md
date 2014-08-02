@@ -71,10 +71,14 @@ var swaggerRouter = require('swagger-tools/middleware/swagger-router');
 var swaggerValidator = require('swagger-tools/middleware/swagger-validator');
 var app = connect();
 
-// More coming on this shortly
+// Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
 app.use(swaggerMetadata(resourceListing, [petJson, storeJson, userJson]));
-app.use(swaggerRouter({useStubs: true, controllers: './controllers'}));
+
+// Validate Swagger requests
 app.use(swaggerValidator());
+
+// Route validated requests to appropriate controller
+app.use(swaggerRouter({useStubs: true, controllers: './controllers'}));
 
 // ...
 ```
