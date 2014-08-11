@@ -147,10 +147,13 @@ exports = module.exports = function swaggerValidatorMiddleware () {
           var val = req.swagger.params[param.name].value;
 
           // Validate requiredness
-          if (!_.isUndefined(param.required)) {
-            if (param.required === true && _.isUndefined(val)) {
-              throw new Error(invalidParamPrefix + 'is required');
-            }
+          if (!_.isUndefined(param.required) && param.required === true && _.isUndefined(val)) {
+            throw new Error(invalidParamPrefix + 'is required');
+          }
+
+          // Quick return if the value is not present
+          if (_.isUndefined(val)) {
+            return;
           }
 
           // Validate the value type/format
