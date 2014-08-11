@@ -39,7 +39,7 @@ var testResources = [
         operations: [
           {
             method: 'GET',
-            nickname: 'Users#getById',
+            nickname: 'Users_getById',
             type: 'string'
           }
         ]
@@ -49,7 +49,7 @@ var testResources = [
         operations: [
           {
             method: 'GET',
-            nickname: 'Pets#getById',
+            nickname: 'Pets_getById',
             type: 'string'
           }
         ]
@@ -64,7 +64,7 @@ var testResources = [
         operations: [
           {
             method: 'GET',
-            nickname: 'Users#getById',
+            nickname: 'Users_getById',
             type: 'string'
           }
         ]
@@ -74,7 +74,7 @@ var testResources = [
         operations: [
           {
             method: 'GET',
-            nickname: 'Pets#getById',
+            nickname: 'Pets_getById',
             type: 'string'
           }
         ]
@@ -92,7 +92,7 @@ describe('Swagger Router Middleware', function () {
     var errors = {
       'options.controllers values must be functions': {
         controllers: {
-          'Users#getById': 'NotAFunction'
+          'Users_getById': 'NotAFunction'
         }
       }
     };
@@ -156,7 +156,7 @@ describe('Swagger Router Middleware', function () {
     ['', '/api/v1'].forEach(function (basePath) {
       request(createServer(testResourceList, testResources, [middleware({
         controllers: {
-          'Users#getById': controller.getById
+          'Users_getById': controller.getById
         }
       })]))
         .get(basePath + '/users/1')
@@ -202,8 +202,33 @@ describe('Swagger Router Middleware', function () {
           if (err) {
             throw err;
           }
-          assert.equal(prepareText(res.text), 'Stubbed response for Pets#getById');
+          assert.equal(prepareText(res.text), 'Stubbed response for Pets_getById');
         });
     });
+  });
+
+  it('should do routing when controller method starts with an underscore', function () {
+    request(createServer(testResourceList, [{
+      apis: [
+        {
+          path: '/users/{id}',
+          operations: [
+            {
+              method: 'GET',
+              nickname: 'Users__getById',
+              type: 'string'
+            }
+          ]
+        }
+      ]
+    }], [middleware(optionsWithControllersDir)]))
+      .get('/users/1')
+      .expect(200)
+      .end(function(err, res) { // jshint ignore:line
+        if (err) {
+          throw err;
+        }
+        assert.equal(prepareText(res.text), require('./controllers/Users').response);
+      });
   });
 });

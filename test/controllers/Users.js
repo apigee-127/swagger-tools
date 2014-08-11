@@ -18,6 +18,6 @@
 
 var response = module.exports.response = 'swagger-router OK';
 
-module.exports.getById = function getById (req, res, next) {
+module.exports.getById = module.exports._getById = function getById (req, res, next) {
   res.end(response);
 };

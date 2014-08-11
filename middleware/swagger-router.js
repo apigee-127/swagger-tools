@@ -42,7 +42,7 @@ var handlerCacheFromDir = function handlerCacheFromDir (dir) {
 
       _.each(controller, function (value, name) {
         if (_.isFunction(value)) {
-          handlerCache[controllerName + '#' + name] = value;
+          handlerCache[controllerName + '_' + name] = value;
         }
       });
     }
@@ -65,7 +65,7 @@ var createStubHandler = function createStubHandler (req, res, msg) {
  * the swagger-validator middleware, you must use it prior to using this middleware.
  *
  * The routing works such that any Swagger operation is expected to have a nickname like this:
- * {ControllerName}#{methodName}.  We will then identify the controller by name from the controllers path (configurable)
+ * {ControllerName}_{methodName}.  We will then identify the controller by name from the controllers path (configurable)
  * and identify the route handler within the controller by name.
  *
  * @param {object} [options] - The middleware options
