@@ -30,9 +30,9 @@
     "swagger"
   ],
   "files": [
-    "bin",
     "index.js",
     "LICENSE",
+    "lib",
     "middleware",
     "schemas"
   ],

@@ -13,13 +13,13 @@ see what issues we are aware of and what features/enhancements we are working on
 ## Supported Swagger Versions
 
 * [1.2][swagger-docs-v1_2]
+* [2.0 (WIP)][swagger-docs-v2_0]
 
 ## Features
 
 * Schema validation: For the file(s) supported by the Swagger specification, ensure they pass structural validation
 based on the [JSON Schema][json-schema] associated with that version of the specification
-* Semantic validation: Validates Swagger files individually and as a whole (resource listing combined with API
-declarations) _(See [Issue #1](https://github.com/apigee-127/swagger-tools/issues/1) for more details)_
+* ~~Semantic validation: Validates Swagger files above and beyond the structure of the file~~ _(Coming back shortly)_
 * Connect middleware for adding pertinent Swagger information to your requests (swagger-metadata)
 * Connect middleware for wiring request handlers to requests based on Swagger documentation (swagger-router)
 * Connect middleware for using Swagger resource documents for pre-route validation (swagger-validator)
@@ -41,10 +41,8 @@ following structure:
 * `version`: This is the Swagger specification version
 * `schemas`: This is an object where the keys are the Swagger JSON Schema file names and the object is the loaded schema
 contents
-* `validate`: This is a function used to validate a Swagger document, as a JavaScript object, against a Swagger schema
-file
-* `validateApi`: This is a function used to validate a "full API" of Swagger documents including a resource listing and
-an array of API declarations
+* `validate`: This is a function used to validate your Swagger document(s) based on the schema(s) for that
+specifications schemas ~~and semantically~~ _(Coming back soon)_
 
 Here is an example showing how to use both versions of the `validate` function *(For more details, the sources are
 documented)*:
@@ -53,9 +51,7 @@ documented)*:
 var spec = require('swagger-tools').v1_2;
 var petJson = require('./samples/1.2/pet.json');
 var rlJson = require('./samples/1.2/resource-listing.json');
-var petResults = spec.validate(petJson); // The default schema used is 'apiDeclaration.json'
-var rlResults = spec.validate(rlJson, 'resourceListing.json');
-var apiResults = spec.validateApi(rlJson, [petJson]);
+var results = spec.validate(rlJson, [petJson]);
 ```
 
 Here is an example of using the Swagger middleware for validating requests based on your Swagger resource documents:
@@ -94,3 +90,4 @@ project root will lint check the source code and run the unit tests.
 [project-issues]: https://github.com/apigee/swagger-tools/issues
 [swagger]: https://helloreverb.com/developers/swagger
 [swagger-docs-v1_2]: https://github.com/wordnik/swagger-spec/blob/master/versions/1.2.md
+[swagger-docs-v2_0]: https://github.com/reverb/swagger-spec/blob/master/versions/2.0.md
