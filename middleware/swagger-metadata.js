@@ -109,14 +109,14 @@ exports = module.exports = function swaggerMetadataMiddleware (resourceList, res
     });
   });
 
-  return function swagger (req, res, next) {
+  return function swaggerMetadata (req, res, next) {
     var path = parseurl(req).pathname;
     var match;
     var api = _.find(apis, function (api) {
       match = api.re.exec(path);
       return _.isArray(match);
     });
-    var swaggerMetadata = {
+    var metadata = {
       api: api ? api.api : undefined,
       authorizations: resourceList.authorizations || {},
       models: api ? resources[api.resourceIndex].models || {} : {},
@@ -125,9 +125,9 @@ exports = module.exports = function swaggerMetadataMiddleware (resourceList, res
     };
 
     // Collect the parameter values
-    if (!_.isUndefined(swaggerMetadata.operation)) {
+    if (!_.isUndefined(metadata.operation)) {
       try {
-        _.each(swaggerMetadata.operation.parameters, function (param) {
+        _.each(metadata.operation.parameters, function (param) {
           var val;
 
           // Get the value to validate based on the operation parameter type
@@ -168,14 +168,14 @@ exports = module.exports = function swaggerMetadataMiddleware (resourceList, res
             val = param.defaultValue;
           }
 
-          swaggerMetadata.params[param.name] = {
+          metadata.params[param.name] = {
             schema: param,
             value: val
           };
         });
 
         // Attach Swagger metadata to the request
-        req.swagger = swaggerMetadata;
+        req.swagger = metadata;
       } catch (err) {
         return next(err.message);
       }

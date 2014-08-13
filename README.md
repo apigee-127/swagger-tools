@@ -48,10 +48,18 @@ Here is an example showing how to use both versions of the `validate` function *
 documented)*:
 
 ```javascript
-var spec = require('swagger-tools').v1_2;
+var swagger = require('swagger-tools');
+
+// 1.2 Example
+var spec1 = swagger.specs.v1_2;
 var petJson = require('./samples/1.2/pet.json');
 var rlJson = require('./samples/1.2/resource-listing.json');
-var results = spec.validate(rlJson, [petJson]);
+var results1 = spec1.validate(rlJson, [petJson]);
+
+// 2.0 Example
+var petStoreJson = require('./samples/2.0/petstore.json');
+var spec2 = swagger.specs.v2_0;
+var results2 = spec2.validate(petStoreJson);
 ```
 
 Here is an example of using the Swagger middleware for validating requests based on your Swagger resource documents:
