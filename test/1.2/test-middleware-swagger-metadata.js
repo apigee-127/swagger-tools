@@ -23,11 +23,11 @@ process.env.NODE_ENV = 'test';
 
 var _ = require('lodash');
 var assert = require('assert');
-var middleware = require('../middleware/swagger-metadata');
-var petJson = require('../samples/1.2/pet.json');
-var prepareText = require('./helpers').prepareText;
+var middleware = require('../../').middleware.v1_2.swaggerMetadata; // jshint ignore:line
+var petJson = require('../../samples/1.2/pet.json');
+var prepareText = require('../helpers').prepareText;
 var request = require('supertest');
-var resourceList = require('../samples/1.2/resource-listing.json');
+var resourceList = require('../../samples/1.2/resource-listing.json');
 
 var createServer = function (middleware, handler) {
   var app = require('connect')();
@@ -55,7 +55,7 @@ var createServer = function (middleware, handler) {
   return app;
 };
 
-describe('Swagger Metadata Middleware', function () {
+describe('Swagger Metadata Middleware v1.2', function () {
   it('should throw Error when passed the wrong arguments', function () {
     var errors = {
       'resourceList is required': [],

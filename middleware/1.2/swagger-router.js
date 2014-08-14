@@ -17,44 +17,13 @@
 'use strict';
 
 var _ = require('lodash');
-var fs = require('fs');
-var path = require('path');
+var helpers = require('../helpers');
+var handlerCacheFromDir = helpers.handlerCacheFromDir;
+var createStubHandler = helpers.createStubHandler;
 
 var defaultOptions = {
   controllers: {},
   useStubs: false // Should we set this automatically based on process.env.NODE_ENV?
-};
-
-var handlerCacheFromDir = function handlerCacheFromDir (dir) {
-  var handlerCache = {};
-  var jsFileRegex = /\.js$/;
-
-  _.each(fs.readdirSync(dir), function (file) {
-    var controllerName = file.replace(jsFileRegex, '');
-    var controller;
-
-    if (file.match(jsFileRegex)) {
-      controller = require(path.resolve(path.join(dir, controllerName)));
-
-      if (!_.isPlainObject(controller)) {
-        throw new Error('Controller module expected to export an object: ' + path.join(dir, file));
-      }
-
-      _.each(controller, function (value, name) {
-        if (_.isFunction(value)) {
-          handlerCache[controllerName + '_' + name] = value;
-        }
-      });
-    }
-  });
-
-  return handlerCache;
-};
-
-var createStubHandler = function createStubHandler (req, res, msg) {
-  return function stubHandler (req, res) {
-    res.end(msg);
-  };
 };
 
 /**

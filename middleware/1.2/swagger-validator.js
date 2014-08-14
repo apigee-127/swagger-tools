@@ -17,6 +17,8 @@
 'use strict';
 
 var _ = require('lodash');
+var validators = require('../validators');
+
 // http://tools.ietf.org/html/rfc3339#section-5.6
 var dateRegExp = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/;
 // http://tools.ietf.org/html/rfc3339#section-5.6
@@ -124,20 +126,14 @@ var isValid = function isValid (val, type, format) {
 exports = module.exports = function swaggerValidatorMiddleware () {
 
   return function swaggerValidator (req, res, next) {
-    // http://www.w3.org/Protocols/rfc2616/rfc2616-sec7.html#sec7.2.1
-    var contentType = req.headers['content-type'] || 'application/octet-stream';
     var operation = req.swagger ? req.swagger.operation : undefined;
 
     if (!_.isUndefined(operation)) {
-      // Validate content type (Only for POST/PUT per HTTP spec)
-      if (!_.isUndefined(operation.consumes) && ['POST', 'PUT'].indexOf(req.method) !== -1) {
-        if (operation.consumes.indexOf(contentType) === -1) {
-          return next('Invalid content type (' + contentType + ').  These are valid: ' + operation.consumes.join(', '));
-        }
-      }
-
-      // Validate the parameters
+      // Validate the request
       try {
+        // Validate the content type
+        validators.validateContentType(req.swagger.api.consumes, operation.consumes, req);
+
         _.each(operation.parameters || [], function (param) {
           var minimum = param.minimum;
           var maximum = param.maximum;
@@ -147,9 +143,7 @@ exports = module.exports = function swaggerValidatorMiddleware () {
           var val = req.swagger.params[param.name].value;
 
           // Validate requiredness
-          if (!_.isUndefined(param.required) && param.required === true && _.isUndefined(val)) {
-            throw new Error(invalidParamPrefix + 'is required');
-          }
+          validators.validateRequiredness(param.name, val, param.required);
 
           // Quick return if the value is not present
           if (_.isUndefined(val)) {

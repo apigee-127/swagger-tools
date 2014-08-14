@@ -23,17 +23,17 @@ var _ = require('lodash');
 var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
-var spec = require('../').specs.v1_2; // jshint ignore:line
+var spec = require('../../').specs.v1_2; // jshint ignore:line
 
 var allSampleFiles = {};
 
 // Load the sample files from disk
-fs.readdirSync(path.join(__dirname, '..', 'samples', '1.2'))
+fs.readdirSync(path.join(__dirname, '..', '..', 'samples', '1.2'))
   .filter(function (name) {
     return name.match(/^(.*)\.json$/);
   })
   .forEach(function (name) {
-    allSampleFiles[name] = require('../samples/1.2/' + name);
+    allSampleFiles[name] = require('../../samples/1.2/' + name);
   });
 
 describe('Specification v1.2', function () {

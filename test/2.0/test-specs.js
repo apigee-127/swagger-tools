@@ -21,7 +21,9 @@
 // Module requirements
 var _ = require('lodash');
 var assert = require('assert');
-var spec = require('../').specs.v2_0; // jshint ignore:line
+var spec = require('../../').specs.v2_0; // jshint ignore:line
+
+var petStoreJson = require('../../samples/2.0/petstore.json');
 
 describe('Specification v2.0', function () {
   describe('metadata', function () {
@@ -63,6 +65,79 @@ describe('Specification v2.0', function () {
           assert.equal(message, err.message);
         }
       });
+    });
+
+    it('should return true for valid JSON files', function () {
+      assert.ok(_.isUndefined(spec.validate(petStoreJson)));
+    });
+
+    it('should return errors for structurally invalid JSON files', function () {
+      var errors = [
+        {
+          code: 'VALIDATION_FAILED',
+          message: 'Validation error: enum',
+          data: 'fake',
+          path: ['paths', '/pets/{id}', 'parameters', '0', 'in']
+        },
+        {
+          code: 'VALIDATION_OBJECT_REQUIRED',
+          message: 'Missing required property: paths',
+          path: ['paths']
+        },
+        {
+          code: 'VALIDATION_INVALID_TYPE',
+          message: 'Invalid type: boolean should be string',
+          data: false,
+          path: ['info', 'contact', 'name']
+        },
+        {
+          code: 'VALIDATION_ADDITIONAL_PROPERTIES',
+          message: 'Additional properties not allowed: extra',
+          data: 'value',
+          path: ['paths', '/pets', 'get', 'extra']
+        }
+      ];
+      var i = 0;
+      var json;
+      var error;
+      var result;
+
+      for (i; i < errors.length; i++) {
+        json = _.cloneDeep(petStoreJson);
+        error = errors[i];
+
+        switch (i) {
+        case 0:
+          // Wrong enum value
+          json.paths['/pets/{id}'].parameters[0].in = 'fake';
+
+          break;
+
+        case 1:
+          // Missing required
+          delete json.paths;
+
+          break;
+
+        case 2:
+          // Wrong type
+          json.info.contact.name = false;
+
+          break;
+
+        case 3:
+          // Extra property
+          json.paths['/pets'].get.extra = 'value';
+
+          break;
+        }
+      }
+
+      result = spec.validate(json);
+
+      // Validate the invalid API Declarations
+      assert.deepEqual(result.errors, [error]);
+      assert.equal(result.warnings.length, 0);
     });
   });
 });

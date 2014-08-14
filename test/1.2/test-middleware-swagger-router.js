@@ -23,71 +23,57 @@ process.env.NODE_ENV = 'test';
 
 var _ = require('lodash');
 var assert = require('assert');
-var middleware = require('../middleware/swagger-router');
+var middleware = require('../../').middleware.v1_2.swaggerRouter; // jshint ignore:line
 var path = require('path');
 var request = require('supertest');
-var helpers = require('./helpers');
+var helpers = require('../helpers');
 var createServer = helpers.createServer;
 var prepareText = helpers.prepareText;
 
-var testResourceList = {};
-var testResources = [
-  {
-    apis: [
-      {
-        path: '/users/{id}',
-        operations: [
-          {
-            method: 'GET',
-            nickname: 'Users_getById',
-            type: 'string'
-          }
-        ]
-      },
-      {
-        path: '/pets/{id}',
-        operations: [
-          {
-            method: 'GET',
-            nickname: 'Pets_getById',
-            type: 'string'
-          }
-        ]
-      }
-    ]
-  },
-  // Duplicate of the previous resource but with a basePath
-  {
-    apis: [
-      {
-        path: '/users/{id}',
-        operations: [
-          {
-            method: 'GET',
-            nickname: 'Users_getById',
-            type: 'string'
-          }
-        ]
-      },
-      {
-        path: '/pets/{id}',
-        operations: [
-          {
-            method: 'GET',
-            nickname: 'Pets_getById',
-            type: 'string'
-          }
-        ]
-      }
-    ],
-    basePath: 'http://localhost/api/v1'
-  }
-];
+
+var rlJson = require('../../samples/1.2/resource-listing.json');
+var petJson = require('../../samples/1.2/pet.json');
+var userJson = require('../../samples/1.2/user.json');
 var optionsWithControllersDir = {
-  controllers: path.join(__dirname, 'controllers')
+  controllers: path.join(__dirname, '..', 'controllers')
 };
 
-describe('Swagger Router Middleware', function () {
+var testScenarios = {};
+
+_.each(['', '/api/v1'], function (basePath) {
+  var clonedRL = _.cloneDeep(rlJson);
+  var clonedP = _.cloneDeep(petJson);
+  var clonedU = _.cloneDeep(userJson);
+
+  // Add nicknames the router understands for the operations we're testing
+  clonedP.apis[0].operations[0].nickname = 'Pets_getById';
+  clonedU.apis[0].operations[2].nickname = 'Users_getById';
+
+  // Setup the proper basePath
+  switch (basePath) {
+  case '':
+    delete clonedP.basePath;
+    delete clonedU.basePath;
+
+    break;
+
+  case '/api/v1':
+    clonedP.basePath = 'http://localhost/api/v1';
+    clonedU.basePath = 'http://localhost/api/v1';
+
+    break;
+  }
+
+  testScenarios[basePath] = {
+    resourceListing: clonedRL,
+    apiDeclarations: [
+      clonedP,
+      clonedU
+    ]
+  };
+});
+
+describe('Swagger Router Middleware v1.2', function () {
   it('should throw Error when passed the wrong arguments', function () {
     var errors = {
       'options.controllers values must be functions': {
@@ -96,7 +82,7 @@ describe('Swagger Router Middleware', function () {
         }
       }
     };
-    var controllersPath = path.join(__dirname, 'bad-controllers');
+    var controllersPath = path.join(__dirname, '..', 'bad-controllers');
     var usersControllerPath = path.join(controllersPath, 'Users.js');
 
     // Since we're using a computed key, we have to do it this way
@@ -124,7 +110,10 @@ describe('Swagger Router Middleware', function () {
 
   it('should not do any routing when there are no operations', function () {
     ['', '/api/v1'].forEach(function (basePath) {
-      request(createServer(testResourceList, testResources, [middleware(optionsWithControllersDir)]))
+      var testResourceList = testScenarios[basePath].resourceListing;
+      var testResources = testScenarios[basePath].apiDeclarations;
+
+      request(createServer([testResourceList, testResources], [middleware(optionsWithControllersDir)]))
         .get(basePath + '/foo')
         .expect(200)
         .end(function(err, res) { // jshint ignore:line
@@ -138,45 +127,54 @@ describe('Swagger Router Middleware', function () {
 
   it('should do routing when options.controllers is a valid directory path', function () {
     ['', '/api/v1'].forEach(function (basePath) {
-      request(createServer(testResourceList, testResources, [middleware(optionsWithControllersDir)]))
-        .get(basePath + '/users/1')
+      var testResourceList = testScenarios[basePath].resourceListing;
+      var testResources = testScenarios[basePath].apiDeclarations;
+
+      request(createServer([testResourceList, testResources], [middleware(optionsWithControllersDir)]))
+        .get(basePath + '/user/1')
         .expect(200)
         .end(function(err, res) { // jshint ignore:line
           if (err) {
             throw err;
           }
-          assert.equal(prepareText(res.text), require('./controllers/Users').response);
+          assert.equal(prepareText(res.text), require('../controllers/Users').response);
         });
     });
   });
 
   it('should do routing when options.controllers is a valid controller map', function () {
-    var controller = require('./controllers/Users');
+    var controller = require('../controllers/Users');
 
     ['', '/api/v1'].forEach(function (basePath) {
-      request(createServer(testResourceList, testResources, [middleware({
+      var testResourceList = testScenarios[basePath].resourceListing;
+      var testResources = testScenarios[basePath].apiDeclarations;
+
+      request(createServer([testResourceList, testResources], [middleware({
         controllers: {
           'Users_getById': controller.getById
         }
       })]))
-        .get(basePath + '/users/1')
+        .get(basePath + '/user/1')
         .expect(200)
         .end(function(err, res) { // jshint ignore:line
           if (err) {
             throw err;
           }
-          assert.equal(prepareText(res.text), require('./controllers/Users').response);
+          assert.equal(prepareText(res.text), controller.response);
         });
     });
   });
 
   it('should not do any routing when there is no controller and use of stubs is off', function () {
     ['', '/api/v1'].forEach(function (basePath) {
-      request(createServer(testResourceList, testResources, [middleware(optionsWithControllersDir)],
+      var testResourceList = testScenarios[basePath].resourceListing;
+      var testResources = testScenarios[basePath].apiDeclarations;
+
+      request(createServer([testResourceList, testResources], [middleware(optionsWithControllersDir)],
               function (req, res) {
                 res.end('NOT OK');
               }))
-        .get(basePath + '/pets/1')
+        .get(basePath + '/pet/1')
         .expect(200)
         .end(function(err, res) { // jshint ignore:line
           if (err) {
@@ -193,10 +191,13 @@ describe('Swagger Router Middleware', function () {
     options.useStubs = true;
 
     ['', '/api/v1'].forEach(function (basePath) {
-      request(createServer(testResourceList, testResources, [middleware(options)], function (req, res) {
+      var testResourceList = testScenarios[basePath].resourceListing;
+      var testResources = testScenarios[basePath].apiDeclarations;
+
+      request(createServer([testResourceList, testResources], [middleware(options)], function (req, res) {
         res.end('NOT OK');
       }))
-        .get(basePath + '/pets/1')
+        .get(basePath + '/pet/1')
         .expect(200)
         .end(function(err, res) { // jshint ignore:line
           if (err) {
@@ -208,27 +209,21 @@ describe('Swagger Router Middleware', function () {
   });
 
   it('should do routing when controller method starts with an underscore', function () {
-    request(createServer(testResourceList, [{
-      apis: [
-        {
-          path: '/users/{id}',
-          operations: [
-            {
-              method: 'GET',
-              nickname: 'Users__getById',
-              type: 'string'
-            }
-          ]
-        }
-      ]
-    }], [middleware(optionsWithControllersDir)]))
-      .get('/users/1')
-      .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        if (err) {
-          throw err;
-        }
-        assert.equal(prepareText(res.text), require('./controllers/Users').response);
-      });
+    ['', '/api/v1'].forEach(function (basePath) {
+      var testResourceList = testScenarios[basePath].resourceListing;
+      var testResources = _.cloneDeep(testScenarios[basePath].apiDeclarations);
+
+      testResources[1].apis[0].operations[2].nickname = 'Users__getById';
+
+      request(createServer([testResourceList, testResources], [middleware(optionsWithControllersDir)]))
+        .get(basePath + '/user/1')
+        .expect(200)
+        .end(function(err, res) { // jshint ignore:line
+          if (err) {
+            throw err;
+          }
+          assert.equal(prepareText(res.text), require('../controllers/Users').response);
+        });
+    });
   });
 });

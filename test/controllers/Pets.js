@@ -16,27 +16,17 @@
 
 'use strict';
 
-var gulp = require('gulp');
-var jshint = require('gulp-jshint');
-var mocha = require('gulp-mocha');
+var response = module.exports.response = 'swagger-router OK';
 
-gulp.task('lint', function () {
-  return gulp.src([
-      './index.js',
-      './lib/**/*.js',
-      './middleware/**/*.js',
-      './test/1.2/*.js',
-      './test/2.0/*.js',
-      './gulpfile.js'
-    ])
-    .pipe(jshint())
-    .pipe(jshint.reporter('jshint-stylish'))
-    .pipe(jshint.reporter('fail'));
-});
+module.exports.delete = function deletePet (req, res, next) {
+  res.writeHead(204);
+  res.end();
+};
 
-gulp.task('test', function () {
-    return gulp.src('test/**/test-*.js')
-        .pipe(mocha({reporter: 'list'}));
-});
+module.exports.getAllPets = module.exports._getAllPets = function getAllPets (req, res, next) {
+  res.end(response);
+};
 
-gulp.task('default', ['lint', 'test']);
+module.exports.getPetById = module.exports._getPetById = function getPetById (req, res, next) {
+  res.end(response);
+};

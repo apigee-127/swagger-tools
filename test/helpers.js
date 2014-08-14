@@ -17,13 +17,27 @@
 'use strict';
 
 var _ = require('lodash');
-var swaggerMetadata = require('../middleware/swagger-metadata');
+var swagger = require('../');
 
-module.exports.createServer = function createServer (resourceList, resources, middlewares, handler) {
+module.exports.createServer = function createServer (middlewareArgs, middlewares, handler) {
+  var swaggerMetadata;
   var app = require('connect')();
   var bodyParser = require('body-parser');
   var parseurl = require('parseurl');
   var qs = require('qs');
+
+  switch (middlewareArgs.length) {
+  case 2:
+    swaggerMetadata = swagger.middleware.v1_2.swaggerMetadata; // jshint ignore:line
+    break;
+
+  case 1:
+    swaggerMetadata = swagger.middleware.v2_0.swaggerMetadata; // jshint ignore:line
+    break;
+
+  default:
+    throw new Error('Unsupported version: ' + version);
+  }
 
   // Required middleware
   app.use(bodyParser.json());
@@ -36,7 +50,7 @@ module.exports.createServer = function createServer (resourceList, resources, mi
     return next();
   });
 
-  app.use(swaggerMetadata(resourceList, resources));
+  app.use(swaggerMetadata.apply(swaggerMetadata, middlewareArgs));
 
   _.each(middlewares || [], function (middleware) {
     app.use(middleware);

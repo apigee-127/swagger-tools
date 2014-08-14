@@ -23,13 +23,13 @@ process.env.NODE_ENV = 'test';
 
 var _ = require('lodash');
 var assert = require('assert');
-var middleware = require('../middleware/swagger-validator');
+var middleware = require('../../').middleware.v1_2.swaggerValidator; // jshint ignore:line
 var request = require('supertest');
-var helpers = require('./helpers');
+var helpers = require('../helpers');
 var createServer = helpers.createServer;
 var prepareText = helpers.prepareText;
 
-describe('Swagger Validator Middleware', function () {
+describe('Swagger Validator Middleware v1.2', function () {
   it('should return a function when passed the right arguments', function () {
     try {
       assert.ok(_.isFunction(middleware()));
@@ -39,9 +39,9 @@ describe('Swagger Validator Middleware', function () {
   });
 
   it('should not validate request when there are no operations', function () {
-    request(createServer({}, [
+    request(createServer([{}, [
         {apis: [{path: '/foo'}]}
-      ], [middleware()]))
+      ]], [middleware()]))
       .get('/foo')
       .expect(200)
       .end(function(err, res) { // jshint ignore:line
@@ -53,9 +53,9 @@ describe('Swagger Validator Middleware', function () {
   });
 
   it('should return an error for invalid request content type based on POST/PUT operation consumes', function () {
-    request(createServer({}, [
+    request(createServer([{}, [
         {apis: [{path: '/foo', operations: [{method: 'POST', consumes: ['application/json']}]}]}
-      ], [middleware()]))
+      ]], [middleware()]))
       .post('/foo')
       .expect(400)
       .end(function(err, res) { // jshint ignore:line
@@ -65,11 +65,11 @@ describe('Swagger Validator Middleware', function () {
   });
 
   it('should not return an error for invalid request content type for non-POST/PUT', function () {
-    request(createServer({}, [
+    request(createServer([{}, [
         {apis: [{path: '/foo', operations: [
           {method: 'GET', consumes: ['application/json']}
         ]}]}
-      ]))
+      ]]))
       .get('/foo')
       .expect(200)
       .end(function(err, res) { // jshint ignore:line
@@ -78,6 +78,10 @@ describe('Swagger Validator Middleware', function () {
         }
         assert.equal(prepareText(res.text), 'OK');
       });
+  });
+
+  it('should return an error for missing required parameters', function () {
+    
   });
 
   it('should return an error for invalid parameter values based on type/format', function () {
@@ -102,9 +106,9 @@ describe('Swagger Validator Middleware', function () {
       var param = operation.parameters[0];
       var path = param.paramType === 'path' ? '/foo/{' + argName + '}' : '/foo';
       var content = {arg0: badValue};
-      var app = createServer({}, [
+      var app = createServer([{}, [
         {apis: [{path: path, operations: [operation]}]}
-      ], [middleware()]);
+      ]], [middleware()]);
       var r = request(app)
         .post(path === '/foo' ? path : '/foo/' + (_.isUndefined(param.defaultValue) ? badValue : ''))
         .expect(400);
@@ -168,9 +172,9 @@ describe('Swagger Validator Middleware', function () {
     ];
 
     _.each(parameters, function (parameter, index) {
-      request(createServer({}, [
+      request(createServer([{}, [
           {apis: [{path: path, operations: [{method: 'POST', parameters: [parameter]}]}]}
-        ], [middleware()]))
+        ]], [middleware()]))
         .post(path)
         .send({arg0: values[index]})
         .expect(statuses[index])
