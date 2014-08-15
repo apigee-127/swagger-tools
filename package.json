@@ -15,12 +15,7 @@
     "url": "https://github.com/apigee/connect-swagger/issues"
   },
   "homepage": "https://github.com/apigee/connect-swagger",
-  "licenses": [
-    {
-      "type": "Apache-2.0",
-      "url": "http://www.apache.org/licenses/LICENSE-2.0"
-    }
-  ],
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git://github.com/apigee/connect-swagger.git"
