@@ -38,9 +38,9 @@ exports = module.exports = function swaggerValidatorMiddleware () {
       // Validate the request
       try {
         // Validate the content type
-        validators.validateContentType(req.swagger.api.consumes, operation.consumes, req);
+        validators.validateContentType(req.swagger.swaggerObject.consumes, operation.consumes, req);
 
-        _.each(operation.parameters || [], function (param) {
+        _.each(_.union(req.swagger.path.parameters, operation.parameters), function (param) {
           var paramName = param.name;
           var val = req.swagger.params[paramName].value;
 
@@ -50,6 +50,11 @@ exports = module.exports = function swaggerValidatorMiddleware () {
           // Quick return if the value is not present
           if (_.isUndefined(val)) {
             return;
+          }
+
+          // Constraints can appear in the parameter itself (type/format) and in the parameter's schema (if available)
+          if (param.schema) {
+            param = param.schema;
           }
 
           // Validate the value type/format
@@ -63,10 +68,25 @@ exports = module.exports = function swaggerValidatorMiddleware () {
           validators.validateEnum(paramName, val, param.enum);
 
           // Validate maximum
-          validators.validateMaximum(paramName, val, param.maximum, param.type);
+          validators.validateMaximum(paramName, val, param.maximum, param.type, param.exclusiveMaximum);
+
+          // Validate maximum items
+          validators.validateMaxItems(paramName, val, param.maxItems);
+
+          // Validate maximum length
+          validators.validateMaxLength(paramName, val, param.maxLength);
 
           // Validate minimum
-          validators.validateMinimum(paramName, val, param.minimum, param.type);
+          validators.validateMinimum(paramName, val, param.minimum, param.type, param.exclusiveMinimum);
+
+          // Validate minimum items
+          validators.validateMinItems(paramName, val, param.minItems);
+
+          // Validate minimum length
+          validators.validateMinLength(paramName, val, param.minLength);
+
+          // Validate pattern
+          validators.validatePattern(paramName, val, param.pattern);
 
           // Validate uniqueItems
           validators.validateUniqueItems(paramName, val, param.uniqueItems);

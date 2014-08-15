@@ -16,15 +16,14 @@
 
 'use strict';
 
-module.exports = {
-  v1_2: { // jshint ignore:line
-    swaggerMetadata: require('./1.2/swagger-metadata'),
-    swaggerRouter: require('./1.2/swagger-router'),
-    swaggerValidator: require('./1.2/swagger-validator')
-  },
-  v2_0: { // jshint ignore:line
-    swaggerMetadata: require('./2.0/swagger-metadata'),
-    swaggerRouter: require('./2.0/swagger-router'),
-    // swaggerValidator: require('./2.0/swagger-validator')
-  }
+module.exports.v1 = module.exports.v1_2 = { // jshint ignore:line
+  swaggerMetadata: require('./1.2/swagger-metadata'),
+  swaggerRouter: require('./1.2/swagger-router'),
+  swaggerValidator: require('./1.2/swagger-validator')
+};
+
+module.exports.v2 = module.exports.v2_0 = { // jshint ignore:line
+  swaggerMetadata: require('./2.0/swagger-metadata'),
+  swaggerRouter: require('./2.0/swagger-router'),
+  swaggerValidator: require('./2.0/swagger-validator')
 };

@@ -36,7 +36,7 @@ gulp.task('lint', function () {
 
 gulp.task('test', function () {
     return gulp.src('test/**/test-*.js')
-        .pipe(mocha({reporter: 'list'}));
+        .pipe(mocha({reporter: 'spec'}));
 });
 
 gulp.task('default', ['lint', 'test']);

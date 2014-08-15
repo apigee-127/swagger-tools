@@ -47,36 +47,72 @@ specifications schemas ~~and semantically~~ _(Coming back soon)_
 Here is an example showing how to use both versions of the `validate` function *(For more details, the sources are
 documented)*:
 
+**Swagger 1.2 (v1) Example**
+
 ```javascript
 var swagger = require('swagger-tools');
 
-// 1.2 Example
-var spec1 = swagger.specs.v1_2;
+var spec = swagger.specs.v1_2; // Could also use 'swagger.specs.v1'
 var petJson = require('./samples/1.2/pet.json');
 var rlJson = require('./samples/1.2/resource-listing.json');
-var results1 = spec1.validate(rlJson, [petJson]);
+var results = spec.validate(rlJson, [petJson]);
+```
 
-// 2.0 Example
+**Swagger 2.0 (v2) Example**
+
+```javascript
+var swagger = require('swagger-tools');
+
+var spec = swagger.specs.v2_0; // Could also use 'swagger.specs.v2'
 var petStoreJson = require('./samples/2.0/petstore.json');
-var spec2 = swagger.specs.v2_0;
-var results2 = spec2.validate(petStoreJson);
+var results = spec.validate(petStoreJson);
 ```
 
 Here is an example of using the Swagger middleware for validating requests based on your Swagger resource documents:
 
+**Swagger 1.2 (v1) Example**
+
 ```javascript
-var connect = require('connect');
+var swagger = require('swagger-tools');
+
 var petJson = require('./samples/1.2/pet.json');
 var resourceListing = require('./samples/1.2/resource-listing.json');
 var storeJson = require('./samples/1.2/user.json');
 var userJson = require('./samples/1.2/store.json');
-var swaggerMetadata = require('swagger-tools/middleware/swagger-metadata');
-var swaggerRouter = require('swagger-tools/middleware/swagger-router');
-var swaggerValidator = require('swagger-tools/middleware/swagger-validator');
+var swaggerMetadata = swagger.middleware.v1_2.swaggerMetadata; // Could also use 'swagger.metadata.v1.swaggerMetadata'
+var swaggerRouter = swagger.middleware.v1_2.swaggerRouter; // Could also use 'swagger.metadata.v1.swaggerRouter'
+var swaggerValidator = swagger.middleware.v1_2.swaggerValidator; // Could also use 'swagger.metadata.v1.swaggerValidator'
+
+var connect = require('connect');
 var app = connect();
 
 // Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
 app.use(swaggerMetadata(resourceListing, [petJson, storeJson, userJson]));
+
+// Validate Swagger requests
+app.use(swaggerValidator());
+
+// Route validated requests to appropriate controller
+app.use(swaggerRouter({useStubs: true, controllers: './controllers'}));
+
+// ...
+```
+
+**Swagger 2.0 (v2) Example**
+
+```javascript
+var swagger = require('swagger-tools');
+
+var swaggerObject = require('./samples/2.0/petstore.json');
+var swaggerMetadata = swagger.middleware.v2_0.swaggerMetadata; // Could also use 'swagger.metadata.v2.swaggerMetadata'
+var swaggerRouter = swagger.middleware.v2_0.swaggerRouter; // Could also use 'swagger.metadata.v2.swaggerRouter'
+var swaggerValidator = swagger.middleware.v2_0.swaggerValidator; // Could also use 'swagger.metadata.v2.swaggerValidator'
+
+var connect = require('connect');
+var app = connect();
+
+// Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
+app.use(swaggerMetadata(swaggerObject));
 
 // Validate Swagger requests
 app.use(swaggerValidator());

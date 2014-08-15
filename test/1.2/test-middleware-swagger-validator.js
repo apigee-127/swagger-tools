@@ -23,9 +23,11 @@ process.env.NODE_ENV = 'test';
 
 var _ = require('lodash');
 var assert = require('assert');
-var middleware = require('../../').middleware.v1_2.swaggerValidator; // jshint ignore:line
-var request = require('supertest');
 var helpers = require('../helpers');
+var middleware = require('../../').middleware.v1_2.swaggerValidator; // jshint ignore:line
+var petJson = require('../../samples/1.2/pet.json');
+var request = require('supertest');
+var rlJson = require('../../samples/1.2/resource-listing.json');
 var createServer = helpers.createServer;
 var prepareText = helpers.prepareText;
 
@@ -39,10 +41,8 @@ describe('Swagger Validator Middleware v1.2', function () {
   });
 
   it('should not validate request when there are no operations', function () {
-    request(createServer([{}, [
-        {apis: [{path: '/foo'}]}
-      ]], [middleware()]))
-      .get('/foo')
+    request(createServer([rlJson, [petJson]], [middleware()]))
+      .get('/api/foo')
       .expect(200)
       .end(function(err, res) { // jshint ignore:line
         if (err) {
@@ -53,24 +53,24 @@ describe('Swagger Validator Middleware v1.2', function () {
   });
 
   it('should return an error for invalid request content type based on POST/PUT operation consumes', function () {
-    request(createServer([{}, [
-        {apis: [{path: '/foo', operations: [{method: 'POST', consumes: ['application/json']}]}]}
-      ]], [middleware()]))
-      .post('/foo')
+    request(createServer([rlJson, [petJson]], [middleware()]))
+      .post('/api/pet/1')
       .expect(400)
       .end(function(err, res) { // jshint ignore:line
         assert.equal(prepareText(res.text),
-                     'Invalid content type (application/octet-stream).  These are valid: application/json');
+                     'Invalid content type (application/octet-stream).  These are valid: ' +
+                       'application/x-www-form-urlencoded');
       });
   });
 
   it('should not return an error for invalid request content type for non-POST/PUT', function () {
-    request(createServer([{}, [
-        {apis: [{path: '/foo', operations: [
-          {method: 'GET', consumes: ['application/json']}
-        ]}]}
-      ]]))
-      .get('/foo')
+    var clonedRl = _.cloneDeep(rlJson);
+    var clonedAd = _.cloneDeep(petJson);
+
+    clonedAd.consumes = ['application/json'];
+
+    request(createServer([clonedRl, [clonedAd]]))
+      .get('/api/pet/1')
       .expect(200)
       .end(function(err, res) { // jshint ignore:line
         if (err) {
@@ -80,106 +80,232 @@ describe('Swagger Validator Middleware v1.2', function () {
       });
   });
 
+  it('should not return an error for valid request content type', function () {
+    request(createServer([rlJson, [petJson]], [middleware()]))
+      .post('/api/pet/1')
+      .set('Content-Type', 'application/x-www-form-urlencoded')
+      .expect(200)
+      .end(function(err, res) { // jshint ignore:line
+        assert.equal(prepareText(res.text), 'OK');
+      });
+  });
+
   it('should return an error for missing required parameters', function () {
-    
+    var clonedAd = _.cloneDeep(petJson);
+
+    clonedAd.apis[0].operations[0].parameters.push({
+      description: 'Whether or not to use mock mode',
+      name: 'mock',
+      paramType: 'query',
+      required: true,
+      type: 'boolean'
+    });
+
+    request(createServer([rlJson, [clonedAd]], [middleware()]))
+      .get('/api/pet/1')
+      .expect(400)
+      .end(function(err, res) { // jshint ignore:line
+        assert.equal(prepareText(res.text), 'Parameter (mock) is required');
+      });
+  });
+
+  it('should not return an error for missing required parameters with defaultValue', function () {
+    var clonedAd = _.cloneDeep(petJson);
+
+    clonedAd.apis[0].operations[0].parameters.push({
+      description: 'Whether or not to use mock mode',
+      name: 'mock',
+      paramType: 'query',
+      required: true,
+      defaultValue: 'false'
+    });
+
+    request(createServer([rlJson, [clonedAd]], [middleware()]))
+      .get('/api/pet/1')
+      .expect(200)
+      .end(function(err, res) { // jshint ignore:line
+        assert.equal(prepareText(res.text), 'OK');
+      });
+  });
+
+  it('should not return an error for provided required parameters', function () {
+    var clonedAd = _.cloneDeep(petJson);
+
+    clonedAd.apis[0].operations[0].parameters.push({
+      description: 'Whether or not to use mock mode',
+      name: 'mock',
+      paramType: 'query',
+      required: true,
+      type: 'boolean'
+    });
+
+    request(createServer([rlJson, [clonedAd]], [middleware()]))
+      .get('/api/pet/1')
+      .query({mock: 'true'})
+      .expect(200)
+      .end(function(err, res) { // jshint ignore:line
+        assert.equal(prepareText(res.text), 'OK');
+      });
   });
 
   it('should return an error for invalid parameter values based on type/format', function () {
     var argName = 'arg0';
     var badValue = 'fake';
-    var operations = [
-      {method: 'POST', parameters: [{paramType: 'body', name: argName, type: 'boolean'}]},
-      {method: 'POST', parameters: [{paramType: 'body', name: argName, type: 'boolean', defaultValue: badValue}]},
-      {method: 'POST', parameters: [{paramType: 'form', name: argName, type: 'number'}]},
-      {method: 'POST', parameters: [{paramType: 'form', name: argName, type: 'number', defaultValue: badValue}]},
-      {method: 'POST', parameters: [{paramType: 'header', name: argName, type: 'number'}]},
-      {method: 'POST', parameters: [{paramType: 'header', name: argName, type: 'number', defaultValue: badValue}]},
-      {method: 'POST', parameters: [{paramType: 'path', name: argName, type: 'string', format: 'date'}]},
-      // You can't test default value for path parameters as the URL will not match
-      {method: 'POST', parameters: [{paramType: 'query', name: argName, type: 'string', format: 'date-time'}]},
-      {method: 'POST', parameters: [
-        {paramType: 'query', name: argName, type: 'string', format: 'date-time', defaultValue: badValue}
-      ]}
+    var testScenarios = [
+      {paramType: 'query', name: argName, type: 'boolean'},
+      {paramType: 'query', name: argName, type: 'integer'},
+      {paramType: 'query', name: argName, type: 'number'},
+      {paramType: 'query', name: argName, type: 'string', format: 'date'},
+      {paramType: 'query', name: argName, type: 'string', format: 'date-time'},
+      {paramType: 'query', name: argName, type: 'array', items: {type: 'integer'}}
     ];
 
-    _.each(operations, function (operation) {
-      var param = operation.parameters[0];
-      var path = param.paramType === 'path' ? '/foo/{' + argName + '}' : '/foo';
-      var content = {arg0: badValue};
-      var app = createServer([{}, [
-        {apis: [{path: path, operations: [operation]}]}
-      ]], [middleware()]);
-      var r = request(app)
-        .post(path === '/foo' ? path : '/foo/' + (_.isUndefined(param.defaultValue) ? badValue : ''))
-        .expect(400);
+    _.each(testScenarios, function (scenario) {
+      _.times(2, function (n) {
+        var clonedAd = _.cloneDeep(petJson);
+        var clonedS = _.cloneDeep(scenario);
+        var content = {};
+        var app;
+        var r;
 
-      if (_.isUndefined(param.defaultValue)) {
-        switch (param.paramType) {
-        case 'body':
-        case 'form':
-          r.send(content);
-          break;
-        case 'header':
-          r.set(argName, badValue);
-          break;
-        case 'query':
-          r.query(content);
-          break;
+        // We don't test default value with arrays
+        if (n === 0) {
+          content = {arg0: scenario.type === 'array' ? [1, 'fake'] : badValue};
+        } else if (n === 1) {
+          if (scenario.type === 'array') {
+            return;
+          } else {
+            clonedS.defaultValue = badValue;
+          }
         }
-      }
 
-      r.end(function(err, res) { // jshint ignore:line
-        assert.equal(prepareText(res.text), 'Parameter (' + argName + ') is not a valid ' +
-                     (_.isUndefined(param.format) ? '' : param.format + ' ') + param.type + ': ' + badValue);
+        clonedAd.apis[0].operations[0].parameters.push(clonedS);
+
+        app = createServer([rlJson, [clonedAd]], [middleware()]);
+        r = request(app)
+          .get('/api/pet/1')
+          .query(content)
+          .expect(400);
+
+        r.end(function(err, res) { // jshint ignore:line
+          var message;
+          if (scenario.type === 'array') {
+            message = 'Parameter (' + argName + ') at index 1 is not a valid integer: fake';
+          } else {
+            message = 'Parameter (' + scenario.name + ') is not a valid ' +
+                         (_.isUndefined(scenario.format) ? '' : scenario.format + ' ') + scenario.type + ': ' +
+                         badValue;
+          }
+
+          assert.equal(prepareText(res.text), message);
+        });
+      });
+    });
+  });
+
+  it('should not return an error for valid parameter values based on type/format', function () {
+    var argName = 'arg0';
+    var testScenarios = [
+      {paramType: 'query', name: argName, type: 'boolean', defaultValue: 'true'},
+      {paramType: 'query', name: argName, type: 'integer', defaultValue: '1'},
+      {paramType: 'query', name: argName, type: 'number', defaultValue: '1.1'},
+      {paramType: 'query', name: argName, type: 'string', format: 'date', defaultValue: '1981-03-12'},
+      {
+        paramType: 'query',
+        name: argName,
+        type: 'string',
+        format: 'date-time',
+        defaultValue: '1981-03-12T08:16:00-04:00'
+      },
+    ];
+
+    _.each(testScenarios, function (scenario) {
+      var clonedAd = _.cloneDeep(petJson);
+
+      clonedAd.apis[0].operations[0].parameters.push(scenario);
+
+      _.times(2, function (n) {
+        var clonedS = _.cloneDeep(scenario);
+        var content = {};
+
+        if (n === 0) {
+          delete clonedS.defaultValue;
+
+          content = {arg0: scenario.defaultValue};
+        }
+
+        request(createServer([rlJson, [clonedAd]], [middleware()]))
+          .get('/api/pet/1')
+          .query(content)
+          .expect(200)
+          .end(function(err, res) { // jshint ignore:line
+            assert.equal(prepareText(res.text), 'OK');
+          });
       });
     });
   });
 
   it('should return an error for invalid parameter values not based on type/format', function () {
     var argName = 'arg0';
-    var path = '/foo';
-    var parameters = [
-      {paramType: 'body', name: argName, enum: ['1', '2', '3'], type: 'string'},
-      {paramType: 'body', name: argName, minimum: '1.0', type: 'integer'},
-      {paramType: 'body', name: argName, maximum: '1.0', type: 'integer'},
-      {paramType: 'body', name: argName, type: 'string', required: true},
-      {paramType: 'body', name: argName, type: 'array', items: {type: 'integer'}},
-      {paramType: 'body', name: argName, type: 'array', items: {type: 'string'}, uniqueItems: true}
+    var testScenarios = [
+      {paramType: 'query', name: argName, enum: ['1', '2', '3'], type: 'string'},
+      {paramType: 'query', name: argName, minimum: '1.0', type: 'integer'},
+      {paramType: 'query', name: argName, maximum: '1.0', type: 'integer'},
+      {paramType: 'query', name: argName, type: 'array', items: {type: 'string'}, uniqueItems: true}
     ];
     var values = [
       'fake',
       '0',
       '2',
-      undefined,
-      ['1', 'fake'],
       ['fake', 'fake']
     ];
     var errors = [
       'Parameter (' + argName + ') is not an allowable value (1, 2, 3): fake',
       'Parameter (' + argName + ') is less than the configured minimum (1.0): 0',
       'Parameter (' + argName + ') is greater than the configured maximum (1.0): 2',
-      'Parameter (' + argName + ') is required',
-      'Parameter (' + argName + ') at index 1 is not a valid integer: fake',
       'Parameter (' + argName + ') does not allow duplicate values: fake, fake'
     ];
-    var statuses = [
-      400,
-      400,
-      400,
-      400,
-      400,
-      400
-    ];
 
-    _.each(parameters, function (parameter, index) {
-      request(createServer([{}, [
-          {apis: [{path: path, operations: [{method: 'POST', parameters: [parameter]}]}]}
-        ]], [middleware()]))
-        .post(path)
-        .send({arg0: values[index]})
-        .expect(statuses[index])
+    _.each(testScenarios, function (scenario, index) {
+      var clonedAd = _.cloneDeep(petJson);
+
+      clonedAd.apis[0].operations[0].parameters.push(scenario);
+
+      request(createServer([rlJson, [clonedAd]], [middleware()]))
+        .get('/api/pet/1')
+        .query({arg0: values[index]})
+        .expect(400)
         .end(function(err, res) { // jshint ignore:line
           assert.equal(prepareText(res.text), errors[index]);
+        });
+    });
+  });
+
+  it('should not return an error for valid parameter values not based on type/format', function () {
+    var argName = 'arg0';
+    var testScenarios = [
+      {paramType: 'query', name: argName, enum: ['1', '2', '3'], type: 'string'},
+      {paramType: 'query', name: argName, minimum: '1.0', type: 'integer'},
+      {paramType: 'query', name: argName, maximum: '1.0', type: 'integer'},
+      {paramType: 'query', name: argName, type: 'array', items: {type: 'string'}, uniqueItems: true}
+    ];
+    var values = [
+      '1',
+      '2',
+      '1',
+      ['fake', 'fake1']
+    ];
+    _.each(testScenarios, function (scenario, index) {
+      var clonedAd = _.cloneDeep(petJson);
+
+      clonedAd.apis[0].operations[0].parameters.push(scenario);
+
+      request(createServer([rlJson, [clonedAd]], [middleware()]))
+        .get('/api/pet/1')
+        .query({arg0: values[index]})
+        .expect(200)
+        .end(function(err, res) { // jshint ignore:line
+          assert.equal(prepareText(res.text), 'OK');
         });
     });
   });

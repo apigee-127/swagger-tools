@@ -215,4 +215,6 @@ describe('Swagger Metadata Middleware v2.0', function () {
       assert.equal(prepareText(res.text), 'OK');
     });
   });
+
+  // TODO: Add tests to ensure parameters are located properly (And handle default values)
 });

@@ -130,7 +130,7 @@ exports = module.exports = function swaggerMetadataMiddleware (swaggerObject) {
 
           // Use the default value when necessary
           if (_.isUndefined(val) && !_.isUndefined(param.schema) && !_.isUndefined(param.schema.default)) {
-            val = param.default;
+            val = param.schema.default;
           }
 
           metadata.params[param.name] = {
