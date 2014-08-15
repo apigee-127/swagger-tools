@@ -109,6 +109,9 @@ module.exports.validateContentType = function validateContentType (gConsumes, oC
   var contentType = req.headers['content-type'] || 'application/octet-stream';
   var consumes = _.union(oConsumes, gConsumes);
 
+  // Get only the content type
+  contentType = contentType.split(';')[0];
+
   // Validate content type (Only for POST/PUT per HTTP spec)
   if (consumes.length > 0 && ['POST', 'PUT'].indexOf(req.method) !== -1 && consumes.indexOf(contentType) === -1) {
     throw new Error('Invalid content type (' + contentType + ').  These are valid: ' + consumes.join(', '));

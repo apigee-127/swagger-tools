@@ -98,6 +98,16 @@ describe('Swagger Validator Middleware v1.2', function () {
       });
   });
 
+  it('should not return an error for valid request content type with charset', function () {
+    request(createServer([rlJson, [petJson]], [middleware()]))
+      .post('/api/pet/1')
+      .set('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8')
+      .expect(200)
+      .end(function(err, res) { // jshint ignore:line
+        assert.equal(prepareText(res.text), 'OK');
+      });
+  });
+
   it('should return an error for missing required parameters', function () {
     var clonedAd = _.cloneDeep(petJson);
 

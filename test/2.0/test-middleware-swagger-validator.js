@@ -105,6 +105,21 @@ describe('Swagger Validator Middleware v2.0', function () {
       });
   });
 
+  it('should not return an error for valid request content type with charset', function () {
+    var swaggerObject = _.cloneDeep(petStoreJson);
+
+    swaggerObject.consumes = ['application/json'];
+
+    request(createServer([swaggerObject], [middleware()]))
+      .post('/api/pets/1')
+      .set('Content-Type', 'application/json; charset=utf-8')
+      .send({})
+      .expect(200)
+      .end(function(err, res) { // jshint ignore:line
+        assert.equal(prepareText(res.text), 'OK');
+      });
+  });
+
   it('should return an error for missing required parameters', function () {
     var swaggerObject = _.cloneDeep(petStoreJson);
 
