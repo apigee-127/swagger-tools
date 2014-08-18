@@ -12,13 +12,13 @@
     "url": "https://github.com/whitlockjc"
   },
   "bugs": {
-    "url": "https://github.com/apigee/connect-swagger/issues"
+    "url": "https://github.com/apigee-127/swagger-tools/issues"
   },
-  "homepage": "https://github.com/apigee/connect-swagger",
+  "homepage": "https://github.com/apigee-127/swagger-tools",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git://github.com/apigee/connect-swagger.git"
+    "url": "git://github.com/apigee-127/swagger-tools.git"
   },
   "keywords": [
     "connect",
