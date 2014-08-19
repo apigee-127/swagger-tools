@@ -31,7 +31,7 @@ var handlerCacheFromDir = helpers.handlerCacheFromDir;
 var createStubHandler = helpers.createStubHandler;
 
 var defaultOptions = {
-  controllers: path.join(process.cwd(), 'controllers'), // Default to a 'controllers' directory in the current directory
+  controllers: {},
   useStubs: false // Should we set this automatically based on process.env.NODE_ENV?
 };
 

@@ -95,16 +95,6 @@ describe('Swagger Router Middleware v2.0', function () {
     });
   });
 
-  it('should throw an Error when using default options but no controllers directory', function () {
-    try {
-      middleware();
-      assert.fail(null, null, 'Should had thrown an error');
-    } catch (err) {
-      assert.equal('ENOENT', err.code);
-      assert.ok(err.path.substring(err.path.lastIndexOf('/')), 'controllers');
-    }
-  });
-
   it('should return a function when passed the right arguments', function () {
     try {
       assert.ok(_.isFunction(middleware(optionsWithControllersDir)));
