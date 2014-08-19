@@ -95,9 +95,19 @@ describe('Swagger Router Middleware v2.0', function () {
     });
   });
 
+  it('should throw an Error when using default options but no controllers directory', function () {
+    try {
+      middleware();
+      assert.fail(null, null, 'Should had thrown an error');
+    } catch (err) {
+      assert.equal('ENOENT', err.code);
+      assert.ok(err.path.substring(err.path.lastIndexOf('/')), 'controllers');
+    }
+  });
+
   it('should return a function when passed the right arguments', function () {
     try {
-      assert.ok(_.isFunction(middleware()));
+      assert.ok(_.isFunction(middleware(optionsWithControllersDir)));
     } catch (err) {
       assert.fail(null, null, err.message);
     }
@@ -230,6 +240,54 @@ describe('Swagger Router Middleware v2.0', function () {
           }
           assert.equal(prepareText(res.text), '');
         });
+    });
+  });
+
+  it('should do routing when controller is provided but operationId is missing', function () {
+    ['', '/api/v1'].forEach(function (basePath) {
+      var swaggerObject = testScenarios[basePath];
+
+      delete swaggerObject.paths['/pets/{id}'].delete.operationId;
+
+      request(createServer([swaggerObject], [middleware(optionsWithControllersDir)]))
+        .delete(basePath + '/pets/1')
+        .expect(204)
+        .end(function(err, res) { // jshint ignore:line
+          if (err) {
+            throw err;
+          }
+          assert.equal(prepareText(res.text), '');
+        });
+    });
+  });
+
+  it('should do indicate whether or not useStubs is on or not', function () {  
+    ['', '/api/v1'].forEach(function (basePath) {
+      _.times(2, function (n) {
+        var useStubs = n === 1 ? true : false;
+        var options = {
+          controllers: {
+            'Pets_getPetById': function (req, res) {
+              if (useStubs === req.swagger.useStubs) {
+                res.end('OK');
+              } else {
+                res.end('NOT OK');
+              }
+            }
+          },
+          useStubs: useStubs
+        };
+
+        request(createServer([testScenarios[basePath]], [middleware(options)]))
+          .get(basePath + '/pets/1')
+          .expect(200)
+          .end(function(err, res) { // jshint ignore:line
+            if (err) {
+              throw err;
+            }
+            assert.equal(prepareText(res.text), 'OK');
+          });
+      });
     });
   });
 });

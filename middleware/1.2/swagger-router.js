@@ -26,11 +26,12 @@
 
 var _ = require('lodash');
 var helpers = require('../helpers');
+var path = require('path');
 var handlerCacheFromDir = helpers.handlerCacheFromDir;
 var createStubHandler = helpers.createStubHandler;
 
 var defaultOptions = {
-  controllers: {},
+  controllers: path.join(process.cwd(), 'controllers'), // Default to a 'controllers' directory in the current directory
   useStubs: false // Should we set this automatically based on process.env.NODE_ENV?
 };
 
@@ -46,6 +47,10 @@ var defaultOptions = {
  * and identify the route handler within the controller by name.
  *
  * @param {object} [options] - The middleware options
+ * @param {(string|object) [options.controllers=./controllers] - If this is a string, this is the path to the
+ *                         controllers directory.  If it's an object, the keys are the controller "name" (as described
+ *                         above) and the value is a function.
+ * @param {boolean} [options.useStubs=false] - Whether or not to stub missing controllers and methods
  *
  * @returns the middleware function
  */
@@ -70,8 +75,13 @@ exports = module.exports = function swaggerRouterMiddleware (options) {
   }
 
   return function swaggerRouter (req, res, next) {
-    var operation = req.swagger ? req.swagger.operation : undefined;
     var handler;
+    var operation;
+
+    if (req.swagger) {
+      operation = req.swagger.operation;
+      req.swagger.useStubs = options.useStubs;
+    }
 
     if (!_.isUndefined(operation)) {
       handler = handlerCache[operation.nickname];
