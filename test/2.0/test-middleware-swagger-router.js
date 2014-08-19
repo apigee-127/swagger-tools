@@ -69,32 +69,6 @@ _.each(['', '/api/v1'], function (basePath) {
 });
 
 describe('Swagger Router Middleware v2.0', function () {
-  it('should throw Error when passed the wrong arguments', function () {
-    var errors = {
-      'options.controllers values must be functions': {
-        controllers: {
-          'Pets_getPetById': 'NotAFunction'
-        }
-      }
-    };
-    var controllersPath = path.join(__dirname, '..', 'bad-controllers');
-    var badController = path.join(controllersPath, 'Users.js');
-
-    // Since we're using a computed key, we have to do it this way
-    errors['Controller module expected to export an object: ' + badController] = {
-      controllers: controllersPath
-    };
-
-    _.each(errors, function (args, message) {
-      try {
-        middleware.apply(middleware, [args]);
-        assert.fail(null, null, 'Should had thrown an error');
-      } catch (err) {
-        assert.equal(message, err.message);
-      }
-    });
-  });
-
   it('should return a function when passed the right arguments', function () {
     try {
       assert.ok(_.isFunction(middleware(optionsWithControllersDir)));
@@ -128,6 +102,26 @@ describe('Swagger Router Middleware v2.0', function () {
             throw err;
           }
           assert.equal(prepareText(res.text), require('../controllers/Pets').response);
+        });
+    });
+  });
+
+  it('should do routing when options.controllers is a valid directory path', function () {
+    ['', '/api/v1'].forEach(function (basePath) {
+      request(createServer([testScenarios[basePath]], [middleware({
+        controllers: [
+          path.join(__dirname, '..', 'controllers'),
+          path.join(__dirname, '..', 'controllers2')
+        ]
+      })]))
+        .post(basePath + '/pets')
+        .send({})
+        .expect(200)
+        .end(function(err, res) { // jshint ignore:line
+          if (err) {
+            throw err;
+          }
+          assert.equal(prepareText(res.text), require('../controllers2/Pets').response);
         });
     });
   });

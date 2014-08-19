@@ -48,9 +48,11 @@ var defaultOptions = {
  * the controller by name.
  *
  * @param {object} [options] - The middleware options
- * @param {(string|object) [options.controllers=./controllers] - If this is a string, this is the path to the
- *                         controllers directory.  If it's an object, the keys are the controller "name" (as described
- *                         above) and the value is a function.
+ * @param {(string|object|string[]) [options.controllers=./controllers] - If this is a string or string array, this is
+ *                                                                        the path, or paths, to find the controllers
+ *                                                                        in.  If it's an object, the keys are the
+ *                                                                        controller "name" (as described above) and the
+ *                                                                        value is a function.
  * @param {boolean} [options.useStubs=false] - Whether or not to stub missing controllers and methods
  *
  * @returns the middleware function

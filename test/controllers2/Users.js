@@ -24,4 +24,8 @@
 
 'use strict';
 
-exports = module.exports = function () {};
+var response = module.exports.response = 'controllers2/Users swagger-router OK';
+
+module.exports.getById = module.exports._getById = function getById (req, res, next) {
+  res.end(response);
+};

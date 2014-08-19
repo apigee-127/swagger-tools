@@ -24,7 +24,7 @@
 
 'use strict';
 
-var response = module.exports.response = 'swagger-router OK';
+var response = module.exports.response = 'controllers/Pets swagger-router OK';
 
 module.exports.delete = function deletePet (req, res, next) {
   res.writeHead(204);

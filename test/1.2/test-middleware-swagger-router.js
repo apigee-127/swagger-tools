@@ -82,32 +82,6 @@ _.each(['', '/api/v1'], function (basePath) {
 });
 
 describe('Swagger Router Middleware v1.2', function () {
-  it('should throw Error when passed the wrong arguments', function () {
-    var errors = {
-      'options.controllers values must be functions': {
-        controllers: {
-          'Users_getById': 'NotAFunction'
-        }
-      }
-    };
-    var controllersPath = path.join(__dirname, '..', 'bad-controllers');
-    var usersControllerPath = path.join(controllersPath, 'Users.js');
-
-    // Since we're using a computed key, we have to do it this way
-    errors['Controller module expected to export an object: ' + usersControllerPath] = {
-      controllers: controllersPath
-    };
-
-    _.each(errors, function (args, message) {
-      try {
-        middleware.apply(middleware, [args]);
-        assert.fail(null, null, 'Should had thrown an error');
-      } catch (err) {
-        assert.equal(message, err.message);
-      }
-    });
-  });
-
   it('should return a function when passed the right arguments', function () {
     try {
       assert.ok(_.isFunction(middleware(optionsWithControllersDir)));
@@ -146,6 +120,31 @@ describe('Swagger Router Middleware v1.2', function () {
             throw err;
           }
           assert.equal(prepareText(res.text), require('../controllers/Users').response);
+        });
+    });
+  });
+
+  it('should do routing when options.controllers is a valid array of directory paths', function () {
+    ['', '/api/v1'].forEach(function (basePath) {
+      var testResourceList = testScenarios[basePath].resourceListing;
+      var testResources = _.cloneDeep(testScenarios[basePath].apiDeclarations);
+
+      testResources[0].apis[2].operations[0].nickname = 'Pets_createPet';
+
+      request(createServer([testResourceList, testResources], [middleware({
+        controllers: [
+          path.join(__dirname, '..', 'controllers'),
+          path.join(__dirname, '..', 'controllers2')
+        ]
+      })]))
+        .post(basePath + '/pet')
+        .send({})
+        .expect(200)
+        .end(function(err, res) { // jshint ignore:line
+          if (err) {
+            throw err;
+          }
+          assert.equal(prepareText(res.text), require('../controllers2/Pets').response);
         });
     });
   });
@@ -253,7 +252,7 @@ describe('Swagger Router Middleware v1.2', function () {
         };
 
         request(createServer([testScenarios[basePath]], [middleware(options)]))
-          .get(basePath + '/pets/1')
+          .get(basePath + '/pet/1')
           .expect(200)
           .end(function(err, res) { // jshint ignore:line
             if (err) {

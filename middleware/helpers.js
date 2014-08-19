@@ -29,27 +29,38 @@ var fs = require('fs');
 var parseurl = require('parseurl');
 var path = require('path');
 
-module.exports.handlerCacheFromDir = function handlerCacheFromDir (dir) {
+module.exports.handlerCacheFromDir = function handlerCacheFromDir (dirOrDirs) {
   var handlerCache = {};
   var jsFileRegex = /\.js$/;
+  var dirs = [];
 
-  _.each(fs.readdirSync(dir), function (file) {
-    var controllerName = file.replace(jsFileRegex, '');
-    var controller;
+  if (_.isArray(dirOrDirs)) {
+    dirs = dirOrDirs;
+  } else {
+    dirs.push(dirOrDirs);
+  }
 
-    if (file.match(jsFileRegex)) {
-      controller = require(path.resolve(path.join(dir, controllerName)));
+  _.each(dirs, function (dir) {
+    _.each(fs.readdirSync(dir), function (file) {
+      var controllerName = file.replace(jsFileRegex, '');
+      var controller;
 
-      if (!_.isPlainObject(controller)) {
-        throw new Error('Controller module expected to export an object: ' + path.join(dir, file));
-      }
+      if (file.match(jsFileRegex)) {
+        controller = require(path.resolve(path.join(dir, controllerName)));
 
-      _.each(controller, function (value, name) {
-        if (_.isFunction(value)) {
-          handlerCache[controllerName + '_' + name] = value;
+        if (_.isPlainObject(controller)) {
+          _.each(controller, function (value, name) {
+            var handlerId = controllerName + '_' + name;
+
+            // TODO: Log this situation
+
+            if (_.isFunction(value) && !handlerCache[handlerId]) {
+              handlerCache[handlerId] = value;
+            }
+          });
         }
-      });
-    }
+      }
+    });
   });
 
   return handlerCache;
