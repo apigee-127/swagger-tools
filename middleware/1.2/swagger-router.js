@@ -26,7 +26,6 @@
 
 var _ = require('lodash');
 var helpers = require('../helpers');
-var path = require('path');
 var handlerCacheFromDir = helpers.handlerCacheFromDir;
 var createStubHandler = helpers.createStubHandler;
 
