@@ -16,7 +16,7 @@
         },
         "url": {
           "type": "string",
-          "format": "url"
+          "format": "uri"
         }
       }
     },
@@ -163,6 +163,51 @@
           "items": {
             "type": "string",
             "enum": [ "http", "https", "ws", "wss" ]
+          }
+        },
+        "security": {
+          "$ref": "#/definitions/security"
+        }
+      }
+    },
+    "pathItem": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": {
+          "$ref": "#/definitions/vendorExtension"
+        }
+      },
+      "properties": {
+        "$ref": {
+          "type": "string"
+        },
+        "get": {
+          "$ref": "#/definitions/operation"
+        },
+        "put": {
+          "$ref": "#/definitions/operation"
+        },
+        "post": {
+          "$ref": "#/definitions/operation"
+        },
+        "delete": {
+          "$ref": "#/definitions/operation"
+        },
+        "options": {
+          "$ref": "#/definitions/operation"
+        },
+        "head": {
+          "$ref": "#/definitions/operation"
+        },
+        "patch": {
+          "$ref": "#/definitions/operation"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/parameter"
           }
         }
       }
@@ -364,6 +409,10 @@
         }
       }
     },
+    "security": {
+      "type": "array",
+      "description": "defines security requirements"
+    },
     "xml": {
       "properties": {
         "name": { "type": "string"},
@@ -433,51 +482,12 @@
       "patternProperties": {
         "^x-": {
           "$ref": "#/definitions/vendorExtension"
+        },
+        "^/.*[^\/]$": {
+          "$ref": "#/definitions/pathItem"
         }
       },
-
-      "additionalProperties": {
-        "type": "object",
-        "minProperties": 1,
-        "additionalProperties": false,
-        "patternProperties": {
-          "^x-": {
-            "$ref": "#/definitions/vendorExtension"
-          }
-        },
-        "properties": {
-          "$ref": {
-            "type": "string"
-          },
-          "get": {
-            "$ref": "#/definitions/operation"
-          },
-          "put": {
-            "$ref": "#/definitions/operation"
-          },
-          "post": {
-            "$ref": "#/definitions/operation"
-          },
-          "delete": {
-            "$ref": "#/definitions/operation"
-          },
-          "options": {
-            "$ref": "#/definitions/operation"
-          },
-          "head": {
-            "$ref": "#/definitions/operation"
-          },
-          "patch": {
-            "$ref": "#/definitions/operation"
-          },
-          "parameters": {
-            "type": "array",
-            "items": {
-              "$ref": "#/definitions/parameter"
-            }
-          }
-        }
-      }
+      "additionalProperties": false
     },
     "definitions": {
       "type": "object",
@@ -487,7 +497,7 @@
       }
     },
     "security": {
-      "type": "array"
+      "$ref": "#/definitions/security"
     }
   }
 }
