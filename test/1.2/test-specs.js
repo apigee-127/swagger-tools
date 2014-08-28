@@ -182,7 +182,7 @@ describe('Specification v1.2', function () {
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var result;
 
-        petJson.apis[1].operations[0].parameters[1].paramType = 'body';
+        petJson.apis[1].operations[0].parameters[1].paramType = 'fake';
 
         result = spec.validate(rlJson, [petJson]);
 
@@ -190,7 +190,7 @@ describe('Specification v1.2', function () {
           {
             code: 'VALIDATION_FAILED',
             message: 'Validation error: enum',
-            data: 'body',
+            data: 'fake',
             path: ['apis', '1', 'operations', '0', 'parameters', '1', 'paramType']
           }
         ]);
