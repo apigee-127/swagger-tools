@@ -25,7 +25,7 @@
 'use strict';
 
 var _ = require('lodash');
-var validators = require('../validators');
+var validators = require('../../lib/validators');
 
 /**
  * Middleware for using Swagger information to validate API requests prior to sending the request to the route handler.

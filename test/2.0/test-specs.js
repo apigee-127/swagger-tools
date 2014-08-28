@@ -79,73 +79,200 @@ describe('Specification v2.0', function () {
       assert.ok(_.isUndefined(spec.validate(petStoreJson)));
     });
 
-    it('should return errors for structurally invalid JSON files', function () {
-      var errors = [
-        {
-          code: 'VALIDATION_FAILED',
-          message: 'Validation error: enum',
-          data: 'fake',
-          path: ['paths', '/pets/{id}', 'parameters', '0', 'in']
-        },
-        {
-          code: 'VALIDATION_OBJECT_REQUIRED',
-          message: 'Missing required property: paths',
-          path: ['paths']
-        },
-        {
-          code: 'VALIDATION_INVALID_TYPE',
-          message: 'Invalid type: boolean should be string',
-          data: false,
-          path: ['info', 'contact', 'name']
-        },
-        {
-          code: 'VALIDATION_ADDITIONAL_PROPERTIES',
-          message: 'Additional properties not allowed: extra',
-          data: 'value',
-          path: ['paths', '/pets', 'get', 'extra']
-        }
-      ];
-      var i = 0;
-      var json;
-      var error;
-      var result;
+    describe('should return errors for structurally invalid JSON files', function () {
+      it('extra property', function() {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
 
-      for (i; i < errors.length; i++) {
-        json = _.cloneDeep(petStoreJson);
-        error = errors[i];
+        swaggerObject.paths['/pets'].get.extra = 'value';
 
-        switch (i) {
-        case 0:
-          // Wrong enum value
-          json.paths['/pets/{id}'].parameters[0].in = 'fake';
+        result = spec.validate(swaggerObject);
 
-          break;
+        assert.deepEqual(result.errors, [
+          {
+            code: 'VALIDATION_ADDITIONAL_PROPERTIES',
+            message: 'Additional properties not allowed: extra',
+            data: 'value',
+            path: ['paths', '/pets', 'get', 'extra']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+      });
 
-        case 1:
-          // Missing required
-          delete json.paths;
+      it('invalid type', function() {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
 
-          break;
+        swaggerObject.info.contact.name = false;
 
-        case 2:
-          // Wrong type
-          json.info.contact.name = false;
+        result = spec.validate(swaggerObject);
 
-          break;
+        assert.deepEqual(result.errors, [
+          {
+            code: 'VALIDATION_INVALID_TYPE',
+            message: 'Invalid type: boolean should be string',
+            data: false,
+            path: ['info', 'contact', 'name']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+      });
 
-        case 3:
-          // Extra property
-          json.paths['/pets'].get.extra = 'value';
+      it('missing required value', function() {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
 
-          break;
-        }
-      }
+        delete swaggerObject.paths;
 
-      result = spec.validate(json);
+        result = spec.validate(swaggerObject);
 
-      // Validate the invalid API Declarations
-      assert.deepEqual(result.errors, [error]);
-      assert.equal(result.warnings.length, 0);
+        assert.deepEqual(result.errors, [
+          {
+            code: 'VALIDATION_OBJECT_REQUIRED',
+            message: 'Missing required property: paths',
+            path: ['paths']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+      });
+
+      it('wrong enum value', function() {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
+
+        swaggerObject.schemes.push('fake');
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'VALIDATION_ENUM_MISMATCH',
+            message: 'No enum match (fake), expects: http, https, ws, wss',
+            data: 'fake',
+            path: ['schemes', '1']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+      });
+    });
+
+    describe('should return errors for semantically invalid JSON files', function () {
+      it('duplicate global consumes', function () {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
+
+        swaggerObject.consumes = ['application/json', 'application/xml', 'application/json'];
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.warnings, [
+          {
+            code: 'DUPLICATE_API_CONSUMES',
+            message: 'API consumes has duplicate items',
+            data: swaggerObject.consumes,
+            path: ['consumes']
+          }
+        ]);
+        assert.equal(result.errors.length, 0);
+      });
+
+      it('duplicate global produces', function () {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
+
+        swaggerObject.produces = ['application/json', 'application/xml', 'application/json'];
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.warnings, [
+          {
+            code: 'DUPLICATE_API_PRODUCES',
+            message: 'API produces has duplicate items',
+            data: swaggerObject.produces,
+            path: ['produces']
+          }
+        ]);
+        assert.equal(result.errors.length, 0);
+      });
+
+      it('duplicate global schemes', function () {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
+
+        swaggerObject.schemes.push('http');
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.warnings, [
+          {
+            code: 'DUPLICATE_API_SCHEMES',
+            message: 'API schemes has duplicate items',
+            data: swaggerObject.schemes,
+            path: ['schemes']
+          }
+        ]);
+        assert.equal(result.errors.length, 0);
+      });
+
+      // Should we be writing tests for the operation parameter constraints (default values) even though the same code
+      // to validate them is the same one for swagger-validator which is already tested?
+
+      it('duplicate operation consumes', function () {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
+
+        swaggerObject.paths['/pets'].get.consumes = ['application/json', 'application/xml', 'application/json'];
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.warnings, [
+          {
+            code: 'DUPLICATE_OPERATION_CONSUMES',
+            message: 'Operation consumes has duplicate items',
+            data: swaggerObject.paths['/pets'].get.consumes,
+            path: ['paths', '/pets', 'get', 'consumes']
+          }
+        ]);
+        assert.equal(result.errors.length, 0);
+      });
+
+      it('duplicate operation produces', function () {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
+
+        swaggerObject.paths['/pets'].get.produces = ['application/json', 'application/xml', 'application/json'];
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.warnings, [
+          {
+            code: 'DUPLICATE_OPERATION_PRODUCES',
+            message: 'Operation produces has duplicate items',
+            data: swaggerObject.paths['/pets'].get.produces,
+            path: ['paths', '/pets', 'get', 'produces']
+          }
+        ]);
+        assert.equal(result.errors.length, 0);
+      });
+
+      it('duplicate operation schemes', function () {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
+
+        swaggerObject.paths['/pets'].get.schemes = ['http', 'http'];
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.warnings, [
+          {
+            code: 'DUPLICATE_OPERATION_SCHEMES',
+            message: 'Operation schemes has duplicate items',
+            data: swaggerObject.paths['/pets'].get.schemes,
+            path: ['paths', '/pets', 'get', 'schemes']
+          }
+        ]);
+        assert.equal(result.errors.length, 0);
+      });
     });
   });
 });

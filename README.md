@@ -20,7 +20,7 @@ see what issues we are aware of and what features/enhancements we are working on
 
 * Schema validation: For the file(s) supported by the Swagger specification, ensure they pass structural validation
 based on the [JSON Schema][json-schema] associated with that version of the specification
-* ~~Semantic validation: Validates Swagger files above and beyond the structure of the file~~ _(Coming back shortly)_
+* Semantic validation: Validates Swagger files above and beyond the structure of the file
 * Connect middleware for adding pertinent Swagger information to your requests (swagger-metadata)
 * Connect middleware for wiring request handlers to requests based on Swagger documentation (swagger-router)
 * Connect middleware for using Swagger resource documents for pre-route validation (swagger-validator)
@@ -43,7 +43,7 @@ following structure:
 * `schemas`: This is an object where the keys are the Swagger JSON Schema file names and the object is the loaded schema
 contents
 * `validate`: This is a function used to validate your Swagger document(s) based on the schema(s) for that
-specifications schemas ~~and semantically~~ _(Coming back soon)_
+specifications schemas and semantically
 
 Here is an example showing how to use both versions of the `validate` function *(For more details, the sources are
 documented)*:

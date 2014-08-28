@@ -43,6 +43,10 @@
         {
           "description": "Read your pets",
           "scope": "read:pets"
+        },
+        {
+          "description": "Anything (testing)",
+          "scope": "test:anything"
         }
       ],
       "type": "oauth2"
