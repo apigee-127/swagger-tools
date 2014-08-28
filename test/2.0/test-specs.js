@@ -222,6 +222,8 @@ describe('Specification v2.0', function () {
         var result;
 
         swaggerObject.paths['/pets/{petId}'] = _.cloneDeep(swaggerObject.paths['/pets/{id}']);
+        swaggerObject.paths['/pets/{petId}'].parameters[0].name = 'petId';
+        swaggerObject.paths['/pets/{petId}'].delete.parameters[0].name = 'petId';
 
         result = spec.validate(swaggerObject);
 
@@ -291,6 +293,110 @@ describe('Specification v2.0', function () {
           }
         ]);
         assert.equal(result.errors.length, 0);
+      });
+
+      it('duplicate API parameter', function () {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
+
+        swaggerObject.paths['/pets/{id}'].parameters.push(swaggerObject.paths['/pets/{id}'].parameters[0]);
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'DUPLICATE_API_PARAMETER',
+            message: 'API parameter already defined: id',
+            data: 'id',
+            path: ['paths', '/pets/{id}', 'parameters', '1', 'name']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+      });
+
+      it('unresolvable API parameter', function () {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var newParam = _.cloneDeep(swaggerObject.paths['/pets/{id}'].parameters[0]);
+        var result;
+
+        newParam.name = 'petId';
+
+        swaggerObject.paths['/pets/{id}'].parameters.push(newParam);
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'UNRESOLVABLE_API_PATH_PARAMETER',
+            message: 'API path parameter could not be resolved: ' + newParam.name,
+            data: newParam.name,
+            path: ['paths', '/pets/{id}', 'parameters', '1', 'name']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+      });
+
+      it('duplicate operation parameter', function () {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
+
+        swaggerObject.paths['/pets/{id}'].delete.parameters.push(
+          swaggerObject.paths['/pets/{id}'].delete.parameters[0]
+        );
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'DUPLICATE_OPERATION_PARAMETER',
+            message: 'Operation parameter already defined: id',
+            data: 'id',
+            path: ['paths', '/pets/{id}', 'delete', 'parameters', '1', 'name']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+      });
+
+      it('unresolvable operation parameter', function () {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var newParam = _.cloneDeep(swaggerObject.paths['/pets/{id}'].delete.parameters[0]);
+        var result;
+
+        newParam.name = 'petId';
+
+        swaggerObject.paths['/pets/{id}'].delete.parameters.push(newParam);
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'UNRESOLVABLE_API_PATH_PARAMETER',
+            message: 'API path parameter could not be resolved: ' + newParam.name,
+            data: newParam.name,
+            path: ['paths', '/pets/{id}', 'delete', 'parameters', '1', 'name']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+      });
+
+      it('missing API parameter', function () {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
+
+        delete swaggerObject.paths['/pets/{id}'].parameters;
+        delete swaggerObject.paths['/pets/{id}'].delete.parameters;
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'MISSING_API_PATH_PARAMETER',
+            message: 'API requires path parameter but it is not defined: id',
+            data: '/pets/{id}',
+            path: ['paths', '/pets/{id}']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
       });
     });
   });

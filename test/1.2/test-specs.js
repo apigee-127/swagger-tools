@@ -340,9 +340,10 @@ describe('Specification v1.2', function () {
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var newPath = _.cloneDeep(petJson.apis[0]);
         var result;
 
-        petJson.apis[1].path = petJson.apis[0].path;
+        petJson.apis.push(newPath);
 
         result = spec.validate(rlJson, [petJson, storeJson, userJson]);
 
@@ -350,8 +351,8 @@ describe('Specification v1.2', function () {
           {
             code: 'DUPLICATE_API_PATH',
             message: 'API path (or equivalent) already defined: /pet/{petId}',
-            data: petJson.apis[1].path,
-            path: ['apis', '1', 'path']
+            data: newPath.path,
+            path: ['apis', petJson.apis.length - 1, 'path']
           }
         ]);
         assert.equal(result.apiDeclarations[0].warnings.length, 0);
@@ -366,6 +367,14 @@ describe('Specification v1.2', function () {
         var result;
 
         newPath.path = newPath.path.replace(/petId/, 'id');
+
+        _.each(newPath.operations, function (operation) {
+          _.each(operation.parameters, function (parameter) {
+            if (parameter.paramType === 'path' && parameter.name === 'petId') {
+              parameter.name = 'id';
+            }
+          });
+        });
 
         petJson.apis.push(newPath);
 
@@ -792,6 +801,75 @@ describe('Specification v1.2', function () {
             message: 'Model has a circular inheritance: Bar -> Baz -> Bar',
             data: ['Baz'],
             path: ['models', 'Bar', 'subTypes']
+          }
+        ]);
+        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+      });
+
+      it('duplicate operation parameter in API declaration', function() {
+        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var result;
+
+        petJson.apis[0].operations[0].parameters.push(petJson.apis[0].operations[0].parameters[0]);
+
+        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
+
+        assert.deepEqual(result.apiDeclarations[0].errors, [
+          {
+            code: 'DUPLICATE_OPERATION_PARAMETER',
+            message: 'Operation parameter already defined: petId',
+            data: 'petId',
+            path: ['apis', '0', 'operations', '0', 'parameters', '1', 'name']
+          }
+        ]);
+        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+      });
+
+      it('unresolvable operation path parameter in API declaration', function() {
+        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var newParam = _.cloneDeep(petJson.apis[0].operations[0].parameters[0]);
+        var result;
+
+        newParam.name = 'fake';
+
+        petJson.apis[0].operations[0].parameters.push(newParam);
+
+        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
+
+        assert.deepEqual(result.apiDeclarations[0].errors, [
+          {
+            code: 'UNRESOLVABLE_API_PATH_PARAMETER',
+            message: 'API path parameter could not be resolved: ' + newParam.name,
+            data: newParam.name,
+            path: ['apis', '0', 'operations', '0', 'parameters', '1', 'name']
+          }
+        ]);
+        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+      });
+
+      it('missing operation path parameter in API declaration', function() {
+        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var result;
+
+        petJson.apis[0].operations[0].parameters = [];
+
+        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
+
+        assert.deepEqual(result.apiDeclarations[0].errors, [
+          {
+            code: 'MISSING_API_PATH_PARAMETER',
+            message: 'API requires path parameter but it is not defined: petId',
+            data: petJson.apis[0].path,
+            path: ['apis', '0', 'path']
           }
         ]);
         assert.equal(result.apiDeclarations[0].warnings.length, 0);
