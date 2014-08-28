@@ -217,6 +217,25 @@ describe('Specification v2.0', function () {
       // Should we be writing tests for the operation parameter constraints (default values) even though the same code
       // to validate them is the same one for swagger-validator which is already tested?
 
+      it('duplicate api path (equivalent)', function () {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
+
+        swaggerObject.paths['/pets/{petId}'] = _.cloneDeep(swaggerObject.paths['/pets/{id}']);
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'DUPLICATE_API_PATH',
+            message: 'API path (or equivalent) already defined: /pets/{petId}',
+            data: '/pets/{petId}',
+            path: ['paths', '/pets/{petId}']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+      });
+
       it('duplicate operation consumes', function () {
         var swaggerObject = _.cloneDeep(petStoreJson);
         var result;

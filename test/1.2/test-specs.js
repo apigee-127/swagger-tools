@@ -335,7 +335,7 @@ describe('Specification v1.2', function () {
         assert.equal(result.apiDeclarations[2].warnings.length, 0);
       });
 
-      it('duplicate api paths in API declaration', function() {
+      it('duplicate api paths (verbatim) in API declaration', function() {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
@@ -349,9 +349,34 @@ describe('Specification v1.2', function () {
         assert.deepEqual(result.apiDeclarations[0].errors, [
           {
             code: 'DUPLICATE_API_PATH',
-            message: 'API path already defined: /pet/{petId}',
+            message: 'API path (or equivalent) already defined: /pet/{petId}',
             data: petJson.apis[1].path,
             path: ['apis', '1', 'path']
+          }
+        ]);
+        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+      });
+
+      it('duplicate api paths (equivalent) in API declaration', function() {
+        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var newPath = petJson.apis[0];
+        var result;
+
+        newPath.path = newPath.path.replace(/petId/, 'id');
+
+        petJson.apis.push(newPath);
+
+        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
+
+        assert.deepEqual(result.apiDeclarations[0].errors, [
+          {
+            code: 'DUPLICATE_API_PATH',
+            message: 'API path (or equivalent) already defined: /pet/{id}',
+            data: newPath.path,
+            path: ['apis', petJson.apis.length - 1, 'path']
           }
         ]);
         assert.equal(result.apiDeclarations[0].warnings.length, 0);
