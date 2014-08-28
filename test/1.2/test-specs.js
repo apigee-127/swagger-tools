@@ -112,7 +112,6 @@ describe('Specification v1.2', function () {
       var petJson = _.cloneDeep(allSampleFiles['pet.json']);
       var storeJson = _.cloneDeep(allSampleFiles['store.json']);
       var userJson = _.cloneDeep(allSampleFiles['user.json']);
-      var auths = _.cloneDeep(rlJson.authorizations);
 
       assert.ok(_.isUndefined(spec.validate(rlJson, [petJson, storeJson, userJson])));
     });
@@ -600,7 +599,7 @@ describe('Specification v1.2', function () {
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
         var result;
 
-        petJson.apis[0].operations[0].type = 'Fake'
+        petJson.apis[0].operations[0].type = 'Fake';
 
         result = spec.validate(rlJson, [petJson, storeJson, userJson]);
 
