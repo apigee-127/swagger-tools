@@ -768,8 +768,6 @@ describe('Specification v1.2', function () {
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
         var result;
 
-        // Foo -> Bar -> Baz -> Foo
-
         _.merge(petJson.models, {
           Bar: {
             id: 'Bar',
@@ -798,9 +796,9 @@ describe('Specification v1.2', function () {
         assert.deepEqual(result.apiDeclarations[0].errors, [
           {
             code: 'CYCLICAL_MODEL_INHERITANCE',
-            message: 'Model has a circular inheritance: Bar -> Baz -> Bar',
-            data: ['Baz'],
-            path: ['models', 'Bar', 'subTypes']
+            message: 'Model has a circular inheritance: Baz -> Bar -> Baz',
+            data: ['Bar'],
+            path: ['models', 'Baz', 'subTypes']
           }
         ]);
         assert.equal(result.apiDeclarations[0].warnings.length, 0);
@@ -873,6 +871,113 @@ describe('Specification v1.2', function () {
           }
         ]);
         assert.equal(result.apiDeclarations[0].warnings.length, 0);
+      });
+    });
+  });
+
+  describe('#composeModel', function () {
+    it('should fail when passed the wrong arguments', function () {
+      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+      var errors = {
+        'apiDeclaration is required': [],
+        'apiDeclaration must be an object': ['wrongType'],
+        'modelId is required': [petJson]
+      };
+
+      _.each(errors, function (args, message) {
+        try {
+          spec.composeModel.apply(spec, args);
+        } catch (err) {
+          assert.equal(message, err.message);
+        }
+      });
+    });
+
+    it('should return undefined for unresolvable model', function () {
+      assert.ok(_.isUndefined(spec.composeModel(_.cloneDeep(allSampleFiles['pet.json']), 'Liger')));
+    });
+
+    it('should throw an Error for an API Declaration that has invalid models', function () {
+      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+
+      petJson.models.Person = {
+        id: 'Person',
+        properties: {
+          age: {
+            type: 'integer'
+          },
+          name: {
+            type: 'string'
+          }
+        }
+      };
+
+      petJson.models.Tag.discriminator = 'name';
+      petJson.models.Tag.subTypes = ['Person'];
+
+      try {
+        spec.composeModel(petJson, 'Person');
+        assert.fail(null, null, 'Should had failed above');
+      } catch (err) {
+        assert.equal('The models are invalid and model composition is not possible', err.message);
+        assert.equal(1, err.errors.length);
+        assert.equal(0, err.warnings.length);
+        assert.deepEqual({
+          code: 'CHILD_MODEL_REDECLARES_PROPERTY',
+          message: 'Child model declares property already declared by ancestor: name',
+          data: petJson.models.Person.properties.name,
+          path: ['models', 'Person', 'properties', 'name']
+        }, err.errors[0]);
+      }
+    });
+
+    it('should return a valid composed model', function () {
+      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+
+      petJson.models.Person = {
+        id: 'Person',
+        properties: {
+          age: {
+            type: 'integer'
+          },
+          name: {
+            type: 'string'
+          }
+        },
+        required: ['name'],
+        discriminator: 'name',
+        subTypes: ['Employee']
+      };
+
+      petJson.models.Employee = {
+        id: 'Employee',
+        properties: {
+          company: {
+            type: 'string'
+          },
+          email: {
+            type: 'string'
+          }
+        },
+        required: ['company', 'email']
+      };
+
+      // Add a reference so an error isn't thrown for a missing reference
+      petJson.apis[0].operations[0].type = 'Person';
+
+      assert.deepEqual(spec.composeModel(petJson, 'Employee'), {
+        title: 'Composed Employee',
+        type: 'object',
+        properties: _.merge(_.cloneDeep(petJson.models.Person.properties),
+                            _.cloneDeep(petJson.models.Employee.properties)),
+        required: _.uniq([].concat(petJson.models.Person.required, petJson.models.Employee.required))
+      });
+
+      assert.deepEqual(spec.composeModel(petJson, 'Person'), {
+        title: 'Composed Person',
+        type: 'object',
+        properties: petJson.models.Person.properties,
+        required: petJson.models.Person.required
       });
     });
   });
