@@ -545,4 +545,117 @@ describe('Specification v2.0', function () {
       });
     });
   });
+
+  describe('#composeModel', function () {
+    it('should fail when passed the wrong arguments', function () {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+      var errors = {
+        'swaggerObject is required': [],
+        'swaggerObject must be an object': ['wrongType'],
+        'modelIdOrPath is required': [swaggerObject]
+      };
+
+      _.each(errors, function (args, message) {
+        try {
+          spec.composeModel.apply(spec, args);
+        } catch (err) {
+          assert.equal(message, err.message);
+        }
+      });
+    });
+
+    it('should return undefined for unresolvable model', function () {
+      assert.ok(_.isUndefined(spec.composeModel(_.cloneDeep(petStoreJson), 'Liger')));
+    });
+
+    it('should throw an Error for an API Declaration that has invalid models', function () {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.definitions.Person = {
+        allOf: [
+          {
+            $ref: 'Pet'
+          }
+        ],
+        properties: {
+          age: {
+            type: 'integer'
+          },
+          name: {
+            type: 'string'
+          }
+        }
+      };
+
+      swaggerObject.paths['/pets'].get.responses.default.schema.$ref = '#/definitions/Person';
+
+      try {
+        spec.composeModel(swaggerObject, 'Pet');
+        assert.fail(null, null, 'Should had failed above');
+      } catch (err) {
+        assert.equal('The models are invalid and model composition is not possible', err.message);
+        assert.equal(1, err.errors.length);
+        assert.equal(0, err.warnings.length);
+        assert.deepEqual({
+          code: 'CHILD_MODEL_REDECLARES_PROPERTY',
+          message: 'Child model declares property already declared by ancestor: name',
+          data: swaggerObject.definitions.Person.properties.name,
+          path: ['definitions', 'Person', 'properties', 'name']
+        }, err.errors[0]);
+      }
+    });
+
+    it('should return a valid composed model', function () {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.definitions.Person = {
+        properties: {
+          age: {
+            type: 'integer'
+          },
+          name: {
+            type: 'string'
+          }
+        },
+        required: ['name'],
+        discriminator: 'name'
+      };
+
+      swaggerObject.definitions.Employee = {
+        allOf: [
+          {
+            $ref: 'Person'
+          }
+        ],
+        properties: {
+          company: {
+            type: 'string'
+          },
+          email: {
+            type: 'string'
+          }
+        },
+        required: ['company', 'email']
+      };
+
+      // Add a reference so an error isn't thrown for a missing reference
+      swaggerObject.paths['/pets'].get.responses.default.schema.$ref = 'Person';
+
+      assert.deepEqual(spec.composeModel(swaggerObject, 'Employee'), {
+        title: 'Composed #/definitions/Employee',
+        type: 'object',
+        properties: _.merge(_.cloneDeep(swaggerObject.definitions.Person.properties),
+                            _.cloneDeep(swaggerObject.definitions.Employee.properties)),
+        required: _.uniq([].concat(swaggerObject.definitions.Person.required,
+                                   swaggerObject.definitions.Employee.required))
+      });
+
+      assert.deepEqual(spec.composeModel(swaggerObject, 'Person'), {
+        title: 'Composed #/definitions/Person',
+        type: 'object',
+        properties: swaggerObject.definitions.Person.properties,
+        required: swaggerObject.definitions.Person.required
+      });
+    });
+  });
 });
