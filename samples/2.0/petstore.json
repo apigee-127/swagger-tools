@@ -93,7 +93,7 @@
           "default": {
             "description": "unexpected error",
             "schema": {
-              "$ref": "#/schemas/errorModel"
+              "$ref": "#/definitions/Error"
             }
           }
         }

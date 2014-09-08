@@ -398,6 +398,151 @@ describe('Specification v2.0', function () {
         ]);
         assert.equal(result.warnings.length, 0);
       });
+
+      it('missing required model property', function() {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
+
+        delete swaggerObject.definitions.Pet.properties.name;
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'MISSING_REQUIRED_MODEL_PROPERTY',
+            message: 'Model requires property but it is not defined: name',
+            data: 'name',
+            path: ['definitions', 'Pet', 'required', '1']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+      });
+
+      it('unresolvable model', function() {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
+
+        swaggerObject.paths['/pets'].get.responses.default.schema.$ref = 'Fake';
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'UNRESOLVABLE_MODEL',
+            message: 'Model could not be resolved: #/definitions/Fake',
+            data: '#/definitions/Fake',
+            path: ['paths', '/pets', 'get', 'responses', 'default', 'schema', '$ref']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+      });
+
+      it('unused model', function() {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
+
+        swaggerObject.definitions.Person = {
+          properties: {
+            age: {
+              type: 'integer'
+            },
+            name: {
+              type: 'string'
+            }
+          }
+        };
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.warnings, [
+          {
+            code: 'UNUSED_MODEL',
+            message: 'Model is defined but is not used: #/definitions/Person',
+            data: swaggerObject.definitions.Person,
+            path: ['definitions', 'Person']
+          }
+        ]);
+        assert.equal(result.errors.length, 0);
+      });
+
+      it('child model redeclares property', function() {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
+
+        swaggerObject.definitions.Person = {
+          allOf: [
+            {
+              $ref: 'Pet'
+            }
+          ],
+          properties: {
+            age: {
+              type: 'integer'
+            },
+            name: {
+              type: 'string'
+            }
+          }
+        };
+
+        swaggerObject.paths['/pets'].get.responses.default.schema.$ref = '#/definitions/Person';
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'CHILD_MODEL_REDECLARES_PROPERTY',
+            message: 'Child model declares property already declared by ancestor: name',
+            data: swaggerObject.definitions.Person.properties.name,
+            path: ['definitions', 'Person', 'properties', 'name']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+      });
+
+      it('cyclical model inheritance', function() {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
+
+        _.merge(swaggerObject.definitions, {
+          Bar: {
+            allOf: [
+              {
+                $ref: 'Baz'
+              }
+            ],
+            properties: {
+              bar: {
+                type: 'string'
+              }
+            }
+          },
+          Baz: {
+            allOf: [
+              {
+                $ref: 'Bar'
+              }
+            ],
+            properties: {
+              baz: {
+                type: 'string'
+              }
+            }
+          }
+        });
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'CYCLICAL_MODEL_INHERITANCE',
+            message: 'Model has a circular inheritance: #/definitions/Baz -> #/definitions/Bar -> #/definitions/Baz',
+            data: swaggerObject.definitions.Baz.allOf,
+            path: ['definitions', 'Baz', 'allOf']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+      });
     });
   });
 });
