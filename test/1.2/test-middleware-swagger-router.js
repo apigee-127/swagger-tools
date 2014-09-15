@@ -44,6 +44,24 @@ var userJson = require('../../samples/1.2/user.json');
 var optionsWithControllersDir = {
   controllers: path.join(__dirname, '..', 'controllers')
 };
+var samplePet = {
+  category: {
+    id: 1,
+    name: 'Sample text'
+  },
+  id: 1,
+  name: 'Sample text',
+  photoUrls: [
+    'Sample text'
+  ],
+  status: 'available',
+  tags: [
+    {
+      id: 1,
+      name: 'Sample text'
+    }
+  ]
+};
 
 var testScenarios = {};
 
@@ -89,19 +107,20 @@ describe('Swagger Router Middleware v1.2', function () {
     }
   });
 
-  it('should not do any routing when there are no operations', function () {
+  it('should return a 405 when there are no operations', function () {
     ['', '/api/v1'].forEach(function (basePath) {
       var testResourceList = testScenarios[basePath].resourceListing;
       var testResources = testScenarios[basePath].apiDeclarations;
 
       request(createServer([testResourceList, testResources], [middleware(optionsWithControllersDir)]))
         .get(basePath + '/foo')
-        .expect(200)
+        .expect(405)
         .end(function(err, res) { // jshint ignore:line
           if (err) {
             throw err;
           }
-          assert.equal(prepareText(res.text), 'OK');
+          assert.equal(prepareText(res.text),
+                       'Route defined in Swagger specification but there is no defined get operation.');
         });
     });
   });
@@ -209,24 +228,7 @@ describe('Swagger Router Middleware v1.2', function () {
         if (err) {
           throw err;
         }
-        assert.deepEqual(JSON.parse(prepareText(res.text)), {
-          category: {
-            id: 1,
-            name: 'Sample text'
-          },
-          id: 1,
-          name: 'Sample text',
-          photoUrls: [
-            'Sample text'
-          ],
-          status: 'available',
-          tags: [
-            {
-              id: 1,
-              name: 'Sample text'
-            }
-          ]
-        });
+        assert.deepEqual(JSON.parse(prepareText(res.text)), samplePet);
       });
     });
   });
@@ -250,8 +252,11 @@ describe('Swagger Router Middleware v1.2', function () {
     });
   });
 
-  it('should do indicate whether or not useStubs is on or not', function () {
+  it('should indicate whether or not useStubs is on or not', function () {
     ['', '/api/v1'].forEach(function (basePath) {
+      var testResourceList = testScenarios[basePath].resourceListing;
+      var testResources = _.cloneDeep(testScenarios[basePath].apiDeclarations);
+
       _.times(2, function (n) {
         var useStubs = n === 1 ? true : false;
         var options = {
@@ -267,14 +272,18 @@ describe('Swagger Router Middleware v1.2', function () {
           useStubs: useStubs
         };
 
-        request(createServer([testScenarios[basePath]], [middleware(options)]))
+        request(createServer([testResourceList, testResources], [middleware(options)]))
           .get(basePath + '/pet/1')
           .expect(200)
           .end(function(err, res) { // jshint ignore:line
             if (err) {
               throw err;
             }
-            assert.equal(prepareText(res.text), 'OK');
+            if (useStubs) {
+              assert.deepEqual(JSON.parse(prepareText(res.text)), samplePet);
+            } else {
+              assert.equal(prepareText(res.text), 'OK');
+            }
           });
       });
     });

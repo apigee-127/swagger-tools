@@ -77,17 +77,17 @@ describe('Swagger Router Middleware v2.0', function () {
     }
   });
 
-  it('should not do any routing when there are no operations', function () {
+  it('should return a 405 when there are no operations', function () {
     ['', '/api/v1'].forEach(function (basePath) {
       request(createServer([testScenarios[basePath]], [middleware(optionsWithControllersDir)]))
         .get(basePath + '/foo')
-        .expect(200)
+        .expect(405)
         .end(function(err, res) { // jshint ignore:line
           if (err) {
-            console.log(res.text);
             throw err;
           }
-          assert.equal(prepareText(res.text), 'OK');
+          assert.equal(prepareText(res.text),
+                       'Route defined in Swagger specification but there is no defined get operation.');
         });
     });
   });

@@ -297,3 +297,9 @@ module.exports.expressStylePath = function expressStylePath (basePath, apiPath) 
   // Replace Swagger syntax for path parameters with Express' version (All Swagger path parameters are required)
   return (basePath + apiPath).replace(/{/g, ':').replace(/}/g, '');
 };
+
+module.exports.send405 = function send405 (req, res) {
+  res.statusCode = 405;
+  res.end('Route defined in Swagger specification but there is no defined ' + req.method.toLowerCase() +
+            ' operation.');
+};
