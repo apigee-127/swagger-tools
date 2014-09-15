@@ -130,20 +130,69 @@
     }
   },
   "definitions": {
-    "Pet": {
-      "required": [
-        "id",
-        "name"
-      ],
+    "Category": {
+      "id": "Category",
       "properties": {
         "id": {
-          "type": "integer",
-          "format": "int64"
+          "format": "int64",
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "Pet": {
+      "id": "Pet",
+      "properties": {
+        "category": {
+          "$ref": "Category"
+        },
+        "id": {
+          "description": "unique identifier for the pet",
+          "format": "int64",
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "type": "integer"
         },
         "name": {
           "type": "string"
         },
-        "tag": {
+        "photoUrls": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "status": {
+          "description": "pet status in the store",
+          "enum": [
+            "available",
+            "pending",
+            "sold"
+          ],
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "$ref": "Tag"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "Tag": {
+      "id": "Tag",
+      "properties": {
+        "id": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "name": {
           "type": "string"
         }
       }

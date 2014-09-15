@@ -26,8 +26,9 @@
 
 var _ = require('lodash');
 var helpers = require('../helpers');
-var handlerCacheFromDir = helpers.handlerCacheFromDir;
 var createStubHandler = helpers.createStubHandler;
+var getHandlerName = helpers.getHandlerName;
+var handlerCacheFromDir = helpers.handlerCacheFromDir;
 
 var defaultOptions = {
   controllers: {},
@@ -77,19 +78,20 @@ exports = module.exports = function swaggerRouterMiddleware (options) {
 
   return function swaggerRouter (req, res, next) {
     var handler;
+    var handlerName;
     var operation;
 
     if (req.swagger) {
+      handlerName = getHandlerName('1.2', req);
       operation = req.swagger.operation;
       req.swagger.useStubs = options.useStubs;
     }
 
     if (!_.isUndefined(operation)) {
-      handler = handlerCache[operation.nickname];
+      handler = handlerCache[handlerName];
 
       if (_.isUndefined(handler) && options.useStubs === true) {
-        handler = handlerCache[operation.nickname] = createStubHandler(req, res,
-                                                                       'Stubbed response for ' + operation.nickname);
+        handler = handlerCache[handlerName] = createStubHandler(req, res, '1.2');
       }
 
       if (!_.isUndefined(handler)) {

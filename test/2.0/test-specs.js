@@ -2,19 +2,19 @@
 
 /*
  * The MIT License (MIT)
- * 
+ *
  * Copyright (c) 2014 Apigee Corporation
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -607,6 +607,7 @@ describe('Specification v2.0', function () {
 
     it('should return a valid composed model', function () {
       var swaggerObject = _.cloneDeep(petStoreJson);
+      var cPet = _.cloneDeep(swaggerObject.definitions.Pet);
 
       swaggerObject.definitions.Person = {
         properties: {
@@ -638,6 +639,20 @@ describe('Specification v2.0', function () {
         required: ['company', 'email']
       };
 
+      swaggerObject.definitions.Company = {
+        properties: {
+          name: {
+            type: 'string'
+          },
+          employees: {
+            type: 'array',
+            items: {
+              $ref: 'Employee'
+            }
+          }
+        }
+      };
+
       // Add a reference so an error isn't thrown for a missing reference
       swaggerObject.paths['/pets'].get.responses.default.schema.$ref = 'Person';
 
@@ -656,6 +671,46 @@ describe('Specification v2.0', function () {
         properties: swaggerObject.definitions.Person.properties,
         required: swaggerObject.definitions.Person.required
       });
+
+      assert.deepEqual(spec.composeModel(swaggerObject, 'Company'), {
+        title: 'Composed #/definitions/Company',
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string'
+          },
+          employees: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: _.merge(_.cloneDeep(swaggerObject.definitions.Person.properties),
+                                  _.cloneDeep(swaggerObject.definitions.Employee.properties)),
+              required: _.uniq([].concat(swaggerObject.definitions.Person.required,
+                                         swaggerObject.definitions.Employee.required))
+            }
+          }
+        }
+      });
+
+      // Prepare our Pet for comparison
+
+      delete cPet.id;
+
+      cPet.title = 'Composed #/definitions/Pet';
+      cPet.type = 'object';
+      cPet.properties.category = {
+        properties: swaggerObject.definitions.Category.properties,
+        type: 'object'
+      };
+      cPet.properties.tags = {
+        items: {
+          properties: swaggerObject.definitions.Tag.properties,
+          type: 'object'
+        },
+        type: 'array'
+      };
+
+      assert.deepEqual(spec.composeModel(swaggerObject, 'Pet'), cPet);
     });
   });
 });

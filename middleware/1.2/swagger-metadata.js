@@ -105,10 +105,12 @@ exports = module.exports = function swaggerMetadataMiddleware (resourceList, res
     });
     var metadata = {
       api: api ? api.api : undefined,
+      apiDeclaration: api ? resources[api.resourceIndex] : undefined,
       authorizations: resourceList.authorizations || {},
       models: api ? resources[api.resourceIndex].models || {} : {},
       operation: api ? api.operations[req.method] : undefined,
-      params: {}
+      params: {},
+      resourceListing: resourceList
     };
 
     // Collect the parameter values

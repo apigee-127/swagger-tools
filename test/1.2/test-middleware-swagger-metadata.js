@@ -214,6 +214,7 @@ describe('Swagger Metadata Middleware v1.2', function () {
         try {
           assert.ok(!_.isUndefined(swagger));
           assert.deepEqual(swagger.api, petJson.apis[0]);
+          assert.deepEqual(swagger.apiDeclaration, petJson);
           assert.deepEqual(swagger.authorizations, resourceList.authorizations || {});
           assert.deepEqual(swagger.models, petJson.models || {});
           assert.deepEqual(swagger.operation, petJson.apis[0].operations[0]);
@@ -223,6 +224,7 @@ describe('Swagger Metadata Middleware v1.2', function () {
               value: '1'
             }
           });
+          assert.deepEqual(swagger.resourceListing, resourceList);
         } catch (err) {
           return next(err.message);
         }

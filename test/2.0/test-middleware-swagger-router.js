@@ -2,19 +2,19 @@
 
 /*
  * The MIT License (MIT)
- * 
+ *
  * Copyright (c) 2014 Apigee Corporation
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -186,7 +186,24 @@ describe('Swagger Router Middleware v2.0', function () {
           if (err) {
             throw err;
           }
-          assert.equal(prepareText(res.text), 'Stubbed response for PetsAdmin_getPetById');
+          assert.deepEqual(JSON.parse(prepareText(res.text)), {
+            category: {
+              id: 1,
+              name: 'Sample text'
+            },
+            id: 1,
+            name: 'Sample text',
+            photoUrls: [
+              'Sample text'
+            ],
+            status: 'available',
+            tags: [
+              {
+                id: 1,
+                name: 'Sample text'
+              }
+            ]
+          });
         });
     });
   });
@@ -227,25 +244,7 @@ describe('Swagger Router Middleware v2.0', function () {
     });
   });
 
-  it('should do routing when controller is provided but operationId is missing', function () {
-    ['', '/api/v1'].forEach(function (basePath) {
-      var swaggerObject = testScenarios[basePath];
-
-      delete swaggerObject.paths['/pets/{id}'].delete.operationId;
-
-      request(createServer([swaggerObject], [middleware(optionsWithControllersDir)]))
-        .delete(basePath + '/pets/1')
-        .expect(204)
-        .end(function(err, res) { // jshint ignore:line
-          if (err) {
-            throw err;
-          }
-          assert.equal(prepareText(res.text), '');
-        });
-    });
-  });
-
-  it('should do indicate whether or not useStubs is on or not', function () {  
+  it('should do indicate whether or not useStubs is on or not', function () {
     ['', '/api/v1'].forEach(function (basePath) {
       _.times(2, function (n) {
         var useStubs = n === 1 ? true : false;

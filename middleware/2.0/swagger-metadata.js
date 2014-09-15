@@ -64,6 +64,7 @@ exports = module.exports = function swaggerMetadataMiddleware (swaggerObject) {
     var reStr = re.toString();
 
     paths[reStr] = {
+      apiPath: pathName,
       path: path,
       keys: keys,
       re: re,

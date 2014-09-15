@@ -2,20 +2,20 @@
 
 /*
  * The MIT License (MIT)
- * 
+ *
  * Copyright (c) 2014 Apigee Corporation
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
+ * of this software and associated documentation files (the 'Software'), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *
+ * THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
@@ -551,7 +551,7 @@ describe('Specification v1.2', function () {
         assert.equal(result.apiDeclarations[0].warnings.length, 0);
       });
 
-      // Should we be writing tests for the model property constraints (default values) even though the same code to 
+      // Should we be writing tests for the model property constraints (default values) even though the same code to
       // validate them is the same one for swagger-validator which is already tested?
 
       it('missing required model property in API declaration', function() {
@@ -933,6 +933,7 @@ describe('Specification v1.2', function () {
 
     it('should return a valid composed model', function () {
       var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+      var cPet = _.cloneDeep(petJson.models.Pet);
 
       petJson.models.Person = {
         id: 'Person',
@@ -979,6 +980,26 @@ describe('Specification v1.2', function () {
         properties: petJson.models.Person.properties,
         required: petJson.models.Person.required
       });
+
+      // Prepare our Pet for comparison
+
+      delete cPet.id;
+
+      cPet.title = 'Composed Pet';
+      cPet.type = 'object';
+      cPet.properties.category = {
+        properties: petJson.models.Category.properties,
+        type: 'object'
+      };
+      cPet.properties.tags = {
+        items: {
+          properties: petJson.models.Tag.properties,
+          type: 'object'
+        },
+        type: 'array'
+      };
+
+      assert.deepEqual(spec.composeModel(petJson, 'Pet'), cPet);
     });
   });
 });
