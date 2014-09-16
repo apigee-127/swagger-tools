@@ -26,7 +26,8 @@ based on the [JSON Schema][json-schema] associated with that version of the spec
 * Connect middleware for using Swagger resource documents for pre-route validation (swagger-validator)
     * Validate the request Content-Type based on the operation's `consumes` value(s)
     * Validate the request parameter types
-    * Validate the request parameter values
+    * Validate the request parameter values (Models are not validated right now, see
+      [Issue 18](https://github.com/apigee-127/swagger-tools/issues/18))
 
 ## Installation
 
@@ -44,6 +45,8 @@ following structure:
 contents
 * `validate`: This is a function used to validate your Swagger document(s) based on the schema(s) for that
 specifications schemas and semantically
+* `composeModel`: This takes a Swagger document and generates a JSON Schema representation of the model completely
+composed
 
 Here is an example showing how to use both versions of the `validate` function *(For more details, the sources are
 documented)*:
