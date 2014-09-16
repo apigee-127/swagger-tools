@@ -30,6 +30,7 @@ var createStubHandler = helpers.createStubHandler;
 var getHandlerName = helpers.getHandlerName;
 var handlerCacheFromDir = helpers.handlerCacheFromDir;
 var send405 = helpers.send405;
+var specVer = '1.2';
 
 var defaultOptions = {
   controllers: {},
@@ -87,13 +88,13 @@ exports = module.exports = function swaggerRouterMiddleware (options) {
       req.swagger.useStubs = options.useStubs;
 
       if (_.isUndefined(operation)) {
-        send405(req, res);
+        send405(specVer, req, res);
       } else {
-        handlerName = getHandlerName('1.2', req);
+        handlerName = getHandlerName(specVer, req);
         handler = handlerCache[handlerName];
 
         if (_.isUndefined(handler) && options.useStubs === true) {
-          handler = handlerCache[handlerName] = createStubHandler(req, res, '1.2');
+          handler = handlerCache[handlerName] = createStubHandler(req, res, specVer);
         }
 
         if (!_.isUndefined(handler)) {

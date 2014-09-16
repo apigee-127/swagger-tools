@@ -96,6 +96,7 @@ describe('Swagger Router Middleware v2.0', function () {
       request(createServer([testScenarios[basePath]], [middleware(optionsWithControllersDir)]))
         .put(basePath + '/pets/1')
         .expect(405)
+        .expect('Allow', 'DELETE, GET')
         .end(function(err, res) { // jshint ignore:line
           if (err) {
             throw err;

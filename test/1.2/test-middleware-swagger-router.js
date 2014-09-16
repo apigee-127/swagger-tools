@@ -132,12 +132,13 @@ describe('Swagger Router Middleware v1.2', function () {
       request(createServer([testResourceList, testResources], [middleware(optionsWithControllersDir)]))
         .put(basePath + '/pet/1')
         .expect(405)
+        .expect('Allow', 'DELETE, GET, PATCH, POST')
         .end(function(err, res) { // jshint ignore:line
           if (err) {
             throw err;
           }
           assert.equal(prepareText(res.text),
-                       'Route defined in Swagger specification but there is no defined put operation.');
+                       'Route defined in Swagger specification but there is no defined PUT operation.');
         });
     });
   });

@@ -30,6 +30,15 @@ var parseurl = require('parseurl');
 var path = require('path');
 
 var helpers = require('../lib/helpers');
+var operationVerbs = [
+  'DELETE',
+  'GET',
+  'HEAD',
+  'OPTIONS',
+  'PATCH',
+  'POST',
+  'PUT'
+];
 
 var getHandlerName = module.exports.getHandlerName = function getHandlerName (version, req) {
   var handlerName;
@@ -298,8 +307,24 @@ module.exports.expressStylePath = function expressStylePath (basePath, apiPath) 
   return (basePath + apiPath).replace(/{/g, ':').replace(/}/g, '');
 };
 
-module.exports.send405 = function send405 (req, res) {
+module.exports.send405 = function send405 (version, req, res) {
+  var allowedMethods = [];
+
+  if (!_.isUndefined(req.swagger.api)) {
+    _.each(req.swagger.api.operations, function (operation) {
+      allowedMethods.push(operation.method.toUpperCase());
+    });
+  } else {
+    _.each(req.swagger.path, function (operation, method) {
+      if (operationVerbs.indexOf(method.toUpperCase()) !== -1) {
+        allowedMethods.push(method.toUpperCase());
+      }
+    });
+  }
+
+  res.setHeader('Allow', allowedMethods.sort().join(', '));
   res.statusCode = 405;
-  res.end('Route defined in Swagger specification but there is no defined ' + req.method.toLowerCase() +
+  res.end('Route defined in Swagger specification but there is no defined ' +
+            (version === '1.2' ? req.method.toUpperCase() : req.method.toLowerCase()) +
             ' operation.');
 };
