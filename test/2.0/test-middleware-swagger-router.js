@@ -77,17 +77,31 @@ describe('Swagger Router Middleware v2.0', function () {
     }
   });
 
-  it('should return a 405 when there are no operations', function () {
+  it('should do no routing when there is no route match', function () {
     ['', '/api/v1'].forEach(function (basePath) {
       request(createServer([testScenarios[basePath]], [middleware(optionsWithControllersDir)]))
-        .get(basePath + '/foo')
+        .put(basePath + '/foo')
+        .expect(200)
+        .end(function(err, res) { // jshint ignore:line
+          if (err) {
+            throw err;
+          }
+          assert.equal(prepareText(res.text),'OK');
+        });
+    });
+  });
+
+  it('should return a 405 when thre is a route match but there are no operations', function () {
+    ['', '/api/v1'].forEach(function (basePath) {
+      request(createServer([testScenarios[basePath]], [middleware(optionsWithControllersDir)]))
+        .put(basePath + '/pets/1')
         .expect(405)
         .end(function(err, res) { // jshint ignore:line
           if (err) {
             throw err;
           }
           assert.equal(prepareText(res.text),
-                       'Route defined in Swagger specification but there is no defined get operation.');
+                       'Route defined in Swagger specification but there is no defined put operation.');
         });
     });
   });

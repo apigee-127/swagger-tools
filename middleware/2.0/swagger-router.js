@@ -86,32 +86,32 @@ exports = module.exports = function swaggerRouterMiddleware (options) {
     var operation;
 
     if (req.swagger) {
-      handlerName = getHandlerName('2.0', req);
       operation = req.swagger.operation;
       req.swagger.useStubs = options.useStubs;
-    }
 
-    if (_.isUndefined(operation)) {
-      send405(req, res);
-    } else {
-      handler = handlerCache[handlerName];
+      if (_.isUndefined(operation)) {
+        send405(req, res);
+      } else {
+        handlerName = getHandlerName('2.0', req);
+        handler = handlerCache[handlerName];
 
-      if (_.isUndefined(handler) && options.useStubs === true) {
-        responseModel = _.find(operation.responses, function (responseModel, responseCode) {
-          if (responseCode === '200') {
-            return responseModel.responseModel;
+        if (_.isUndefined(handler) && options.useStubs === true) {
+          responseModel = _.find(operation.responses, function (responseModel, responseCode) {
+            if (responseCode === '200') {
+              return responseModel.responseModel;
+            }
+          });
+
+          if (_.isUndefined(responseModel)) {
+            responseModel = operation.responses.default;
           }
-        });
 
-        if (_.isUndefined(responseModel)) {
-          responseModel = operation.responses.default;
+          handler = handlerCache[handlerName] = createStubHandler(req, res, '2.0', handlerName, responseModel);
         }
 
-        handler = handlerCache[handlerName] = createStubHandler(req, res, '2.0', handlerName, responseModel);
-      }
-
-      if (!_.isUndefined(handler)) {
-        return handler(req, res, next);
+        if (!_.isUndefined(handler)) {
+          return handler(req, res, next);
+        }
       }
     }
 

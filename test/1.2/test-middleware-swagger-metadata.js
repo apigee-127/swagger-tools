@@ -2,19 +2,19 @@
 
 /*
  * The MIT License (MIT)
- * 
+ *
  * Copyright (c) 2014 Apigee Corporation
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -133,27 +133,6 @@ describe('Swagger Metadata Middleware v1.2', function () {
     }
   });
 
-  it('should not add Swagger middleware to the request when there are no operations', function () {
-    request(createServer(middleware(
-        resourceList,
-        [{apis: [{path: '/foo'}]}
-      ]), function (req, res, next) {
-        if (req.swagger) {
-          return next('This should not happen');
-        }
-        res.end('OK');
-      }))
-      .get('/foo')
-      .expect(200)
-      .end(function(err, res) {
-        if (err) {
-          throw err;
-        }
-        assert.equal(prepareText(res.text), 'OK');
-      });
-  });
-
-
   it('should return an error for an improperly configured server for body/form parameter validation', function () {
     ['body', 'form'].forEach(function (type) {
       var app = require('connect')();
@@ -204,7 +183,48 @@ describe('Swagger Metadata Middleware v1.2', function () {
       });
   });
 
-  it('should add Swagger middleware to the request when there are operations', function () {
+  it('should not add Swagger middleware to the request when there is no route match', function () {
+    request(createServer(middleware(
+        resourceList,
+        [{apis: [{path: '/pet'}]}
+      ]), function (req, res, next) {
+        if (req.swagger) {
+          return next('This should not happen');
+        }
+        res.end('OK');
+      }))
+      .get('/foo')
+      .expect(200)
+      .end(function(err, res) {
+        if (err) {
+          throw err;
+        }
+        assert.equal(prepareText(res.text), 'OK');
+      });
+  });
+
+  it('should add Swagger middleware to the request when there is a route match but no operations', function () {
+    request(createServer(middleware(
+        resourceList,
+        [{apis: [{path: '/pet'}]}
+      ]), function (req, res, next) {
+        if (req.swagger) {
+          res.end('OK');
+        } else {
+          return next('This should not happen');
+        }
+      }))
+      .get('/pet')
+      .expect(200)
+      .end(function(err, res) {
+        if (err) {
+          throw err;
+        }
+        assert.equal(prepareText(res.text), 'OK');
+      });
+  });
+
+  it('should add Swagger middleware to the request when there is a route match and there are operations', function () {
     request(createServer(middleware(
         resourceList,
         [petJson]

@@ -83,22 +83,22 @@ exports = module.exports = function swaggerRouterMiddleware (options) {
     var operation;
 
     if (req.swagger) {
-      handlerName = getHandlerName('1.2', req);
       operation = req.swagger.operation;
       req.swagger.useStubs = options.useStubs;
-    }
 
-    if (_.isUndefined(operation)) {
-      send405(req, res);
-    } else {
-      handler = handlerCache[handlerName];
+      if (_.isUndefined(operation)) {
+        send405(req, res);
+      } else {
+        handlerName = getHandlerName('1.2', req);
+        handler = handlerCache[handlerName];
 
-      if (_.isUndefined(handler) && options.useStubs === true) {
-        handler = handlerCache[handlerName] = createStubHandler(req, res, '1.2');
-      }
+        if (_.isUndefined(handler) && options.useStubs === true) {
+          handler = handlerCache[handlerName] = createStubHandler(req, res, '1.2');
+        }
 
-      if (!_.isUndefined(handler)) {
-        return handler(req, res, next);
+        if (!_.isUndefined(handler)) {
+          return handler(req, res, next);
+        }
       }
     }
 
