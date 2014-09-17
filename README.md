@@ -48,90 +48,17 @@ specifications schemas and semantically
 * `composeModel`: This takes a Swagger document and generates a JSON Schema representation of the model completely
 composed
 
-Here is an example showing how to use both versions of the `validate` function *(For more details, the sources are
-documented)*:
+## Documentation
 
-**Swagger 1.2 (v1) Example**
-
-```javascript
-var swagger = require('swagger-tools');
-
-var spec = swagger.specs.v1_2; // Could also use 'swagger.specs.v1'
-var petJson = require('./samples/1.2/pet.json');
-var rlJson = require('./samples/1.2/resource-listing.json');
-var results = spec.validate(rlJson, [petJson]);
-```
-
-**Swagger 2.0 (v2) Example**
-
-```javascript
-var swagger = require('swagger-tools');
-
-var spec = swagger.specs.v2_0; // Could also use 'swagger.specs.v2'
-var petStoreJson = require('./samples/2.0/petstore.json');
-var results = spec.validate(petStoreJson);
-```
-
-Here is an example of using the Swagger middleware for validating requests based on your Swagger resource documents:
-
-**Swagger 1.2 (v1) Example**
-
-```javascript
-var swagger = require('swagger-tools');
-
-var petJson = require('./samples/1.2/pet.json');
-var resourceListing = require('./samples/1.2/resource-listing.json');
-var storeJson = require('./samples/1.2/user.json');
-var userJson = require('./samples/1.2/store.json');
-var swaggerMetadata = swagger.middleware.v1_2.swaggerMetadata; // Could also use 'swagger.metadata.v1.swaggerMetadata'
-var swaggerRouter = swagger.middleware.v1_2.swaggerRouter; // Could also use 'swagger.metadata.v1.swaggerRouter'
-var swaggerValidator = swagger.middleware.v1_2.swaggerValidator; // Could also use 'swagger.metadata.v1.swaggerValidator'
-
-var connect = require('connect');
-var app = connect();
-
-// Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
-app.use(swaggerMetadata(resourceListing, [petJson, storeJson, userJson]));
-
-// Validate Swagger requests
-app.use(swaggerValidator());
-
-// Route validated requests to appropriate controller
-app.use(swaggerRouter({useStubs: true, controllers: './controllers'}));
-
-// ...
-```
-
-**Swagger 2.0 (v2) Example**
-
-```javascript
-var swagger = require('swagger-tools');
-
-var swaggerObject = require('./samples/2.0/petstore.json');
-var swaggerMetadata = swagger.middleware.v2_0.swaggerMetadata; // Could also use 'swagger.metadata.v2.swaggerMetadata'
-var swaggerRouter = swagger.middleware.v2_0.swaggerRouter; // Could also use 'swagger.metadata.v2.swaggerRouter'
-var swaggerValidator = swagger.middleware.v2_0.swaggerValidator; // Could also use 'swagger.metadata.v2.swaggerValidator'
-
-var connect = require('connect');
-var app = connect();
-
-// Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
-app.use(swaggerMetadata(swaggerObject));
-
-// Validate Swagger requests
-app.use(swaggerValidator());
-
-// Route validated requests to appropriate controller
-app.use(swaggerRouter({useStubs: true, controllers: './controllers'}));
-
-// ...
-```
+For more detailed documentation on what is provided by Swagger Tools and how to use it, please view the
+[documentation][documentation].
 
 ## Contributing
 
 This project uses [Gulp][gulp] for building so `npm install -g gulp` once you clone this project.  Running `gulp` in the
 project root will lint check the source code and run the unit tests.
 
+[documentation]: https://github.com/apigee-127/swagger-tools/blob/master/docs/README.md
 [gulp]: http://gulpjs.com/
 [json-schema]: http://json-schema.org/
 [npm]: https://www.npmjs.org/

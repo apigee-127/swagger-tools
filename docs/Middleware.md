@@ -1,0 +1,309 @@
+Swagger Tools provides a few [Connect][connect] middlewares to help you utilize your Swagger documents.  Each middleware
+is documented below.
+
+**Note:** All middlewares for the different Swagger versions function the same but due to the differences between the
+Swagger versions, some function arguments are different and so is the `swagger` object attached to the `req` object.  In
+the cases where this applies, notation will be made below.
+
+## Swagger Metadata
+
+The Swagger Metadata middleware is the base for all other Swagger Tools middleware and it attaches Swagger information
+to the request (`req.swagger`) when a request matches a route define in your Swagger document(s).  For requests where
+the route does not match a route defined in your Swagger document(s), this middleware does nothing.  Since Swagger 1.2
+and Swagger 2.0 differ both in Swagger document structure and terminology, this middleware takes different parameters
+based on Swagger version and it uses different property names on the `req.swagger` object.
+
+### Swagger 1.2
+
+#### #swaggerMetadata(resourceListing, apiDeclarations)
+
+**Arguments**
+
+* **resourceListing:** `object` The Resource Listing object
+* **apiDeclarations:** `[object[]]` The array of API Declaration objects
+
+**Returns**
+
+The Connect middleware function.
+
+**Note:** Since Swagger Metadata is used by the other Swagger Tools middleware, it must be used before the other
+Swagger Tools middleware.  Also, Swagger Metadata requires that `req.body` and `req.params` be populated so make sure to
+use whatever middleware you need prior to using Swagger Metadata.
+
+#### req.swagger
+
+The structure of `req.swagger` is as follows:
+
+* **api:** `object` The corresponding API in the API Declaration that the request maps to
+* **apiDeclaration:** `object` The corresponding API Declaration that the request maps to
+* **authorizations:** `object` The authorization definitions for the API
+* **models:** `object` The model definitions for the API
+* **params:** `object` For each of the request parameters defined in your Swagger document, its `schema` and its
+processed `value`
+* **resourceListing:** `object` The Resource Listing for the API
+
+### Swagger 2.0
+
+**Arguments**
+
+* **swaggerObject:** `object` The Swagger object
+
+**Returns**
+
+The Connect middleware function.
+
+#### req.swagger
+
+The structure of `req.swagger` is as follows:
+
+* **path:** `object` The corresponding path in the Swagger object that the request maps to
+* **params:** `object` For each of the request parameters defined in your Swagger document, its `schema` and its
+processed `value`
+* **swaggerObject:** `object` The Swagger object
+
+## Swagger Router
+
+The Swagger Router middleware provides facilities for wiring up request handlers, as defined in your Swagger
+document(s).  You can also enable **mock mode** which will allow you to return mock responses, inferred from the
+response definition in your Swagger document(s).  Both Swagger 1.2 and Swagger 2.0 middlewares are instantiated the same
+but how the wiring is defined is different between the two.
+
+### #swaggerRouter(options)
+
+**Arguments**
+
+* **options:** `[object]` The configuration options
+* **options.controllers:** `[string|string[]|object]` The controllers to look for or use.  If the value is a string, we
+assume the value is a path to a directory that contain controller modules.  If the value is an array, we
+assume the value is an array of paths to directories that contain controller modules.  If the value is an object, we
+assume the object keys are the handler name _({ControllerName}_{HandlerFunctionName}) and the value is a function.
+* **options.useStubs:** `[boolean]` Whether or not stub handlers should be used for routes with no defined controller or
+the controller could not be found.
+
+**Returns**
+
+The Connect middleware function.
+
+**Note:** Since Swagger Router will actually return a response, it should be as close to the end of your middleware
+chain as possible.
+
+### req.swagger
+
+The structure of `req.swagger` is updated to include the following:
+
+* **useStubs:** `boolean` The value of `options.useStubs`
+
+### How to Use
+
+For Swagger Router to work, your Swagger document(s) need to be updated to indicate how to find the controller (by name)
+and the controller function.  Due to the differences between Swagger 1.2 and Swagger 2.0, the requirements are different
+and are documented below.
+
+#### Swagger 1.2
+
+Since Swagger 1.2 does not allow you to add additional properties to your Swagger documents, Swagger Router has to use
+an existing Swagger document property to handle the routing.  Since Swagger 1.2 requires all operation objects to have a
+`nickname` property, we use it by overloading its value to give Swagger Router what it needs.
+
+The value of the operation's `nickname` property is in the format of `{ControllerName}_{HandlerFunction}`.  So if you
+have a `Pet` controller and want your operation to map to its `getById` function, your operation's `nickname` property
+would have a value of `Pet_getById`.
+
+#### Swagger 2.0
+
+Since Swagger 2.0 has a new feature called **Vendor Extensions** which allows you to add additional properties
+throughout your Swagger documents as long as they start with `x-`.  Swagger Router uses a vendor extension named
+`x-swagger-router-controller` to help with the routing.  Basically, `x-swagger-router-controller` can be defined at the
+path level and/or the operation level and it tells the controller name to use.  To define the controller to use for an
+operation, just define the `x-swagger-router-controller` property at the operation level.  What if you want to reuse the
+same controller for multiple/all operations in a path?  Just define the `x-swagger-router-controller` property at the
+path level.  Of course if you've defined `x-swagger-router-controller` at the path level and you want to use a different
+controller for any operation below that path, you can override the path controller by defining the
+`x-swagger-router-controller` at the operation level.
+
+When it comes to finding the controller function to call, there are two options.  The default is to use the operation
+name for the operation, which corresponds to the HTTP verb being used.  If you want to override this default and use a
+different name, just define the `operationId` property on your operation.  Here is an example Swagger document snippet
+where each operation tells you which controller and function will be used based on its definition:
+
+```json
+{
+  "swagger": 2.0,
+  "info": {
+    "version": "1.0.0",
+    "title": "Swagger Router Example"
+  },
+  "paths": {
+    "/pets/{id}": {
+      "x-swagger-router-controller": "Pets",
+      "delete": {
+        "description": "Swagger router would look for a 'deletePet' function in the 'Pets' controller",
+        "operationId": "deletePet",
+        "responses": {
+          "204": {
+            "description": "Pet deleted"
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "get": {
+        "description": "Swagger router would look for a 'get' function in the 'Pets' controller",
+        "responses": {
+          "200": {
+            "description": "Pet response",
+            "schema": {
+              "$ref": "#/definitions/Pet"
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "post": {
+        "x-swagger-router-controller": "PetsAdmin",
+        "description": "Swagger router would look for a 'createPet' function in the 'PetsAdmin' controller",
+        "operationId": "createPet",
+        "responses": {
+          "201": {
+            "description": "Pet created"
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "put": {
+        "x-swagger-router-controller": "PetsAdmin",
+        "description": "Swagger router would look for a 'put' function in the 'PetsAdmin' controller",
+        "responses": {
+          "201": {
+            "description": "Pet updated"
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "ID of pet",
+          "required": true,
+          "type": "integer",
+          "format": "int64"
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "Pet": {
+      "id": "Pet",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "Error": {
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
+```
+
+### Mock Mode
+
+Mock mode is a feature that is handy when you are designing your APIs.  You can use your Swagger document(s) to do the
+routing but in the event you've not implemented the controller or its handler function, Swagger Router will create a
+response based on your operation definition.  So if your operation says that the requested API will return an integer,
+mock mode will return an integer.  If your operation says that the requested API will return a model, mock mode will
+return a JSON representation of that model.  For the example `Pet` above, mock mode would return the following:
+
+```json
+{
+  "id": 1,
+  "name": "Sample text"
+}
+```
+
+#### Caveats
+
+Mock mode is a relatively new feature to Swagger Router and while it's cool as-is, there are a few things that need to
+be done to make it better.  This is currently being tracked in [Issue #30][issue-30].
+
+## Swagger Validator
+
+The Swagger Validator middleware is used to validate your requests based on the constraints defined in the operation
+parameters of your Swagger document(s).  So if your operation has a required parameter and your request does not provide
+it, the Swagger Validator will send an error downstream in typical Connect fashion.
+
+### Caveats
+
+Right now, model parameters are not validated.  This is currently being tracked in [Issue #18][issue-18].
+
+## Complete Example
+
+Here is a complete example for using all middlewares documented above:
+
+```javascript
+var swagger = require('swagger-tools');
+var swaggerObject = require('./samples/2.0/petstore.json'); // This assumes you're in the root of the swagger-tools
+var swaggerMetadata = swagger.middleware.v2.swaggerMetadata;
+var swaggerRouter = swagger.middleware.v2.swaggerRouter;
+var swaggerValidator = swagger.middleware.v2.swaggerValidator;
+
+var connect = require('connect');
+var http = require('http');
+var app = connect();
+
+// Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
+app.use(swaggerMetadata(swaggerObject));
+
+// Validate Swagger requests
+app.use(swaggerValidator());
+
+// Route validated requests to appropriate controller
+app.use(swaggerRouter({useStubs: true, controllers: './controllers'}));
+
+// Start the server
+http.createServer(app).listen(3000)
+```
+
+[connect]: https://github.com/senchalabs/connect
+[issue-18]: https://github.com/apigee-127/swagger-tools/issues/18
+[issue-30]: https://github.com/apigee-127/swagger-tools/issues/30
