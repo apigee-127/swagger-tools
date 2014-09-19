@@ -13,6 +13,17 @@ the route does not match a route defined in your Swagger document(s), this middl
 and Swagger 2.0 differ both in Swagger document structure and terminology, this middleware takes different parameters
 based on Swagger version and it uses different property names on the `req.swagger` object.
 
+The Swagger Metadata middleware is useful because it allows you to easily get access to the pertinent Swagger document
+information for your request in your request handler.  This does not require you to use any other Swagger Tools
+metadata.  Why might you want to do this?  Imagine you wanted to annotate your Swagger 2.0 documents using vendor
+extensions in a way that is useful to your implementation, like cache information or quota information.  By attaching
+the request path and the request operation to the `req` object, you can easily get access to your vendor extension
+annotations to make life easier.
+
+Swagger Metadata also processes your request parameters for you.  So no matter how the parameters are provided (body,
+header, form data, query string, ...), as described in your Swagger document(s), the processing is handled for you to
+get the parameter values. _(No validation of the paramter values happens in the Swagger Metadata middleware.)_
+
 ### Swagger 1.2
 
 #### #swaggerMetadata(resourceListing, apiDeclarations)
@@ -64,9 +75,12 @@ processed `value`
 ## Swagger Router
 
 The Swagger Router middleware provides facilities for wiring up request handlers, as defined in your Swagger
-document(s).  You can also enable **mock mode** which will allow you to return mock responses, inferred from the
-response definition in your Swagger document(s).  Both Swagger 1.2 and Swagger 2.0 middlewares are instantiated the same
-but how the wiring is defined is different between the two.
+document(s).  Since your Swagger document(s) already define your API routes, Swagger Router provides a lightweight
+approach to wiring up the router handler implementation function to the proper route based on the information in your
+Swagger document(s).
+
+Both Swagger 1.2 and Swagger 2.0 middlewares are instantiated the same but how the wiring is defined is different
+between the two.
 
 ### #swaggerRouter(options)
 
@@ -248,11 +262,12 @@ where each operation tells you which controller and function will be used based 
 
 ### Mock Mode
 
-Mock mode is a feature that is handy when you are designing your APIs.  You can use your Swagger document(s) to do the
-routing but in the event you've not implemented the controller or its handler function, Swagger Router will create a
-response based on your operation definition.  So if your operation says that the requested API will return an integer,
-mock mode will return an integer.  If your operation says that the requested API will return a model, mock mode will
-return a JSON representation of that model.  For the example `Pet` above, mock mode would return the following:
+Swagger Router also comes with a feature that can be useful during testing and/or design time.  This feature will
+automatically handle routes that are defined in your Swagger document(s) as having route handlers but their configured
+controller and/or handler function is missing.  The response content is inferred from your Swagger document(s).  So if
+your operation says that the requested API will return an integer, mock mode will return an integer.  If your operation
+says that the requested API will return a model, mock mode will return a JSON representation of that model.  For the
+example `Pet` above, mock mode would return the following:
 
 ```json
 {
@@ -260,6 +275,12 @@ return a JSON representation of that model.  For the example `Pet` above, mock m
   "name": "Sample text"
 }
 ```
+
+To enable mock mode, just pass the `useStubs` option as `true` to the `swaggerRouter` middleware.  Both of the complete
+examples below demonstrate how to do this.
+
+This feature is nice to see how your API should respond based on what you've configured prior to implementing the actual
+route handler in code.  This is obviously something that should be disabled in production.
 
 #### Caveats
 
@@ -303,7 +324,7 @@ app.use(swaggerValidator());
 app.use(swaggerRouter({useStubs: true, controllers: './controllers'}));
 
 // Start the server
-http.createServer(app).listen(3000)
+http.createServer(app).listen(3000);
 ```
 
 **Swagger 1.2**
@@ -334,7 +355,7 @@ app.use(swaggerValidator());
 app.use(swaggerRouter({useStubs: true, controllers: './controllers'}));
 
 // Start the server
-http.createServer(app).listen(3000)
+http.createServer(app).listen(3000);
 ```
 
 [connect]: https://github.com/senchalabs/connect
