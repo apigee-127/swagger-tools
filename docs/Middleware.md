@@ -280,6 +280,8 @@ Right now, model parameters are not validated.  This is currently being tracked 
 
 Here is a complete example for using all middlewares documented above:
 
+**Swagger 2.0**
+
 ```javascript
 var swagger = require('swagger-tools');
 var swaggerObject = require('./samples/2.0/petstore.json'); // This assumes you're in the root of the swagger-tools
@@ -293,6 +295,37 @@ var app = connect();
 
 // Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
 app.use(swaggerMetadata(swaggerObject));
+
+// Validate Swagger requests
+app.use(swaggerValidator());
+
+// Route validated requests to appropriate controller
+app.use(swaggerRouter({useStubs: true, controllers: './controllers'}));
+
+// Start the server
+http.createServer(app).listen(3000)
+```
+
+**Swagger 1.2**
+
+```javascript
+var swagger = require('swagger-tools');
+var resourceListing = require('./samples/1.2/resourceListing.json'); // This assumes you're in the root of the swagger-tools
+var apiDeclarations = [
+  require('./samples/1.2/pet.json'), // This assumes you're in the root of the swagger-tools
+  require('./samples/1.2/store.json'), // This assumes you're in the root of the swagger-tools
+  require('./samples/1.2/user.json') // This assumes you're in the root of the swagger-tools
+];
+var swaggerMetadata = swagger.middleware.v1.swaggerMetadata;
+var swaggerRouter = swagger.middleware.v1.swaggerRouter;
+var swaggerValidator = swagger.middleware.v1.swaggerValidator;
+
+var connect = require('connect');
+var http = require('http');
+var app = connect();
+
+// Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
+app.use(swaggerMetadata(resourceListing, apiDeclarations));
 
 // Validate Swagger requests
 app.use(swaggerValidator());
