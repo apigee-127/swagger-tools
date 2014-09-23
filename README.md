@@ -51,7 +51,7 @@ composed
 ## Documentation
 
 For more detailed documentation on what is provided by Swagger Tools and how to use it, please view the
-[documentation][documentation].
+[documentation][documentation] or jump straight to the [Quick Start][quick-start].
 
 ## Contributing
 
@@ -63,6 +63,7 @@ project root will lint check the source code and run the unit tests.
 [json-schema]: http://json-schema.org/
 [npm]: https://www.npmjs.org/
 [project-issues]: https://github.com/apigee/swagger-tools/issues
+[quick-start]: https://github.com/apigee-127/swagger-tools/blob/master/docs/QuickStart.md
 [swagger]: https://helloreverb.com/developers/swagger
 [swagger-docs-v1_2]: https://github.com/wordnik/swagger-spec/blob/master/versions/1.2.md
 [swagger-docs-v2_0]: https://github.com/reverb/swagger-spec/blob/master/versions/2.0.md

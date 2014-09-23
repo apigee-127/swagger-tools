@@ -24,6 +24,9 @@ install Swagger Tools globally like this:
 npm install -g swagger-tools
 ```
 
+At this point, you're ready for the [Quick Start][quick-start].
+
+[quick-start]: https://github.com/apigee-127/swagger-tools/blob/master/docs/QuickStart.md
 [swagger]: http://swagger.io/
 [swagger-tools-api]: https://github.com/apigee-127/swagger-tools/blob/master/docs/API.md
 [swagger-tools-middleware]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Middleware.md

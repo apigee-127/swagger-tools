@@ -22,7 +22,7 @@ annotations to make life easier.
 
 Swagger Metadata also processes your request parameters for you.  So no matter how the parameters are provided (body,
 header, form data, query string, ...), as described in your Swagger document(s), the processing is handled for you to
-get the parameter values. _(No validation of the paramter values happens in the Swagger Metadata middleware.)_
+get the parameter values. _(No validation of the parameter values happens in the Swagger Metadata middleware.)_
 
 ### Swagger 1.2
 
@@ -50,7 +50,9 @@ The structure of `req.swagger` is as follows:
 * **authorizations:** `object` The authorization definitions for the API
 * **models:** `object` The model definitions for the API
 * **params:** `object` For each of the request parameters defined in your Swagger document, its `schema` and its
-processed `value`
+processed `value`.  The value is converted to the proper JSON type based on the Swagger document.  If the parameter
+defined in your Swagger document includes a default value and the request does not include the value, the default value
+is assigned to the parameter value in `req.swagger.params`.
 * **resourceListing:** `object` The Resource Listing for the API
 
 ### Swagger 2.0
@@ -304,6 +306,9 @@ Here is a complete example for using all middlewares documented above:
 **Swagger 2.0**
 
 ```javascript
+var bodyParser = require('body-parser');
+var parseurl = require('parseurl');
+var qs = require('qs');
 var swagger = require('swagger-tools');
 var swaggerObject = require('./samples/2.0/petstore.json'); // This assumes you're in the root of the swagger-tools
 var swaggerMetadata = swagger.middleware.v2.swaggerMetadata;
@@ -313,6 +318,17 @@ var swaggerValidator = swagger.middleware.v2.swaggerValidator;
 var connect = require('connect');
 var http = require('http');
 var app = connect();
+
+// Wire up the middleware required by Swagger Tools (body-parser and qs)
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(function (req, res, next) {
+  if (!req.query) {
+    req.query = req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
+  }
+
+  return next();
+});
 
 // Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
 app.use(swaggerMetadata(swaggerObject));
@@ -330,6 +346,9 @@ http.createServer(app).listen(3000);
 **Swagger 1.2**
 
 ```javascript
+var bodyParser = require('body-parser');
+var parseurl = require('parseurl');
+var qs = require('qs');
 var swagger = require('swagger-tools');
 var resourceListing = require('./samples/1.2/resourceListing.json'); // This assumes you're in the root of the swagger-tools
 var apiDeclarations = [
@@ -344,6 +363,17 @@ var swaggerValidator = swagger.middleware.v1.swaggerValidator;
 var connect = require('connect');
 var http = require('http');
 var app = connect();
+
+// Wire up the middleware required by Swagger Tools (body-parser and qs)
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(function (req, res, next) {
+  if (!req.query) {
+    req.query = req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
+  }
+
+  return next();
+});
 
 // Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
 app.use(swaggerMetadata(resourceListing, apiDeclarations));
