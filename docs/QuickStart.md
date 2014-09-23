@@ -3,6 +3,19 @@ allow you to get the current weather for a location or zip code.  We will build 
 Swagger document _(This example will use Swagger 2.0)_ and then we will move toward the implementation.  The hope is
 that you will see how much simpler your implementation can be thanks to the middleware Swagger Tools provides.
 
+## Upstream Bug
+
+There is currently a bug in the Swagger 2.0 JSON Schema that does not allow us to set the `default` and `enum`
+properties on `#/paths/weather/get/parameters/1`.  This means we cannot demonstrate how `swaggerMetadata`'s parameter
+processing handles default values and you will need to pass `unit` as query parameters alongside `location.`  When this
+bug is fixed, you would set the following:
+
+* `#/paths/weather/get/parameters/1/default` to `"F"``
+* `#/paths/weather/get/parameters/1/enum` to `["C", "F"]`
+* `#/paths/weather/get/parameters/1/required` to `false`
+
+Default value handling works just fine with Swagger 1.2 documents and this should be fixed
+
 ## Create Your Project
 
 This process is standard fare for Node.js development but to be thorough, let's do it anyways.  First we need to create
@@ -58,9 +71,7 @@ To describe this API as a Swagger document, we would end up with something like 
             "name": "unit",
             "in": "query",
             "description": "The unit, either 'C' or 'F'.",
-            "default": "F",
-            "enum": ["C", "F"],
-            "required": false,
+            "required": true,
             "type": "string"
           }
         ],
@@ -217,11 +228,11 @@ To describe this API as a Swagger document, we would end up with something like 
 ```
 
 As you can see, both of our request parameters (`location` and `unit`) are defined as query parameters and are
-restricted based on our requirements.  The response object is modeled after
+both required.  The response object is modeled after the response of the MSN Weather API.
 
-**Note:** To figure out how we came up with this, please view the [Swagger 2.0 Specification][swagger-2.0-spec].  Also,
-there are Swagger validation features we did not use in the model definitions to keep this document brief.  Those too
-are documented in the Swagger 2.0 Specification.
+**Note:** To figure out how we came up with this Swagger document, please view the
+[Swagger 2.0 Specification][swagger-2.0-spec].  Also, there are Swagger validation features we did not use in the model
+definitions to keep this document brief.  Those too are documented in the Swagger 2.0 Specification.
 
 ## Implementing Your API
 
@@ -298,6 +309,13 @@ module.exports.getWeather = function getWeather (req, res, next) {
   var location = req.swagger.params.location.value;
   var unit = req.swagger.params.unit.value;
 
+  // This is only here due to the bug mentioned above and is not a bug/limitation of swagger-tools
+  // https://github.com/apigee-127/swagger-tools/blob/master/docs/QuickStart.md#upstream-bug
+  if (['C', 'F'].indexOf(req.param.unit) === -1) {
+    res.statusCode = 400;
+    res.end('unit must be either C or F');
+  }
+
   // Code necessary to consume the Weather API and respond
   weather.find({search: location, degreeType: unit}, function(err, result) {
     if (err) {
@@ -305,7 +323,7 @@ module.exports.getWeather = function getWeather (req, res, next) {
     }
 
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(result, null, 2));
+    res.end(JSON.stringify(result[0] || {}, null, 2));
   });
 };
 ```
@@ -458,15 +476,12 @@ At this point, if you run your server using `node .` in my example, you should s
 Your server is listening on port 3000 (http://localhost:3000)
 ```
 
-**Note:** If you run into an issue with your server saying your Swagger document fails validation, this is due to a
-known bug in the Swagger 2.0 JSON Schema file.  To work around this, remove the `default` and `enum` properties from the
-`#/paths/weather/get/parameters/1` object.  _(This will also require that you pass in the `unit` query parameter in all
-examples below until this bug can be fixed upstream.)_
-
 To test this API, using whatever tool you want perform a `GET` on `http://localhost:3000/api/weather`.  Since our API
 requires the `location` query string, you should get a `400` with an error message dictating that the request requires
-the `location` parameter.  So update your `GET` request to include the `location` query parameter.  Here is an example:
-`http://localhost:3000?location=95113`.
+the `location` parameter.  So update your `GET` request to include the `location` query parameter.  _(As mentioned
+above, there is an upstream bug that prohibits us from defining our Swagger document to use the default value handling
+of swaggerMetadata.  This means you will also have to include the `unit` query parameter for the time being.)_  Here is
+an example: `http://localhost:3000?location=95113&unit=F`.
 
 At this point you should get a `404` because there are no route handlers configured.  If you view the
 [Swagger Router (How To Use)][swagger-router-how-to-use], you'll see we can just use the `x-swagger-router-controller`
@@ -534,30 +549,11 @@ this.)_
 
 Based on the example above, we will be creating/editing the `./controllers/Weather.js` Node.js module.  We will also be
 adding a new Node.js module to our project, [weather-js][weather-js] by running `npm install weather-js --save`.  With
-that taken care of, below is an idea of what the controller module might look like to fulfill our needs:
+that taken care of, take the code from [Implementing Your API (With Swagger Tools)](#with-swagger-tools) and put it
+into `./controllers/Weather.js`.
 
-```javascript
-var weather = require('weather-js');
-
-module.exports.getWeather = function getWeather (req, res, next) {
-  var location = req.swagger.params.location.value;
-  var unit = req.swagger.params.unit.value;
-
-  // Code necessary to consume the Weather API and respond
-  weather.find({search: location, degreeType: unit}, function(err, result) {
-    if (err) {
-      return next(err.message);
-    }
-
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(result[0] || {}, null, 2));
-  });
-};
-
-```
-
-When you restart your server and perform at `GET` on `http://localhost:3000/api/weather?location=95113`, instead of the
-mock response you should get a **real** response that looks something like this:
+When you restart your server and perform at `GET` on `http://localhost:3000/api/weather?location=95113&unit=F`, instead
+of the mock response you should get a **real** response that looks something like this:
 
 ```json
 {
