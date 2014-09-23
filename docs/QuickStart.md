@@ -14,7 +14,8 @@ bug is fixed, you would set the following:
 * `#/paths/weather/get/parameters/1/enum` to `["C", "F"]`
 * `#/paths/weather/get/parameters/1/required` to `false`
 
-Default value handling works just fine with Swagger 1.2 documents and this should be fixed
+Default value handling works just fine with Swagger 1.2 documents and this should be fixed upstream shortly.  When that
+happens, this disclaimer will be removed and the necessary parts below will be updated to reflect.
 
 ## Create Your Project
 
@@ -485,14 +486,14 @@ an example: `http://localhost:3000?location=95113&unit=F`.
 
 At this point you should get a `404` because there are no route handlers configured.  If you view the
 [Swagger Router (How To Use)][swagger-router-how-to-use], you'll see we can just use the `x-swagger-router-controller`
-property on either `#/paths/weather` or the `#/paths/weather/get`.  For our example, add the
-`x-swagger-router-controller` property to `#/paths/weather/get` and give it a value of `Weather`.  Once you do this,
-the middleware will have a controller wired up to handle `GET` requests for the `/api/weather` path.  To enable it, we
-need to restart our server and run Node.js in the `development` environment.  _(The reason for this is in our code above
-we have the `useStubs` option for `swaggerRouter` enabled conditionally based on the Node.js environment.)_  To do this,
-restart your server using something like: `NODE_ENV=development node .`.  With mock mode enabled, if you perform the
-same `GET` on `http://localhost:3000/api/weather`, you should see a mock response that conforms to the `Weather` model
-defined in `#/definitions/Weather`.  Here is an example:
+property on either `#/paths/weather` or the `#/paths/weather/get`.  For our example, we will set the
+`#/paths/weather/get/parameters/1/x-swagger-router-controller` to `Weather`.  Once you do this, the middleware will have
+a controller wired up to handle `GET` requests for the `/api/weather` path.  To enable it, we need to restart our server
+and run Node.js in the `development` environment.  _(The reason for this is in our code above we have the `useStubs`
+option for `swaggerRouter` enabled conditionally based on the Node.js environment.)_  To do this, restart your server
+using something like: `NODE_ENV=development node .`.  With mock mode enabled, if you perform the same `GET` on
+`http://localhost:3000/api/weather`, you should see a mock response that conforms to the `Weather` model defined in
+`#/definitions/Weather`.  Here is an example:
 
 ```json
 {
@@ -540,10 +541,10 @@ Now of course, we want to have a **real** API so let's implement the route handl
 document and the code above, to handle the route we will need to create a Node.js module at `./controllers/Weather.js`.
 How does swaggerRouter figure out which method to call in the controller module?  Well, the default is to use the
 operation method from `#/paths/weather`, in this case `get`.  What if you do not want to use an HTTP verb as your
-JavaScript function name?  Well, you can use the `operationId` of an operation to dictate the method name.  So if you
-wanted to name the route handler function `getWeather`, you could add the `operationId` property to the operation
-at `#/paths/weather/get` and have its value be `getWeather`.  _(The example code below will assume you've done
-this.)_
+JavaScript function name?  Well, you can set the `operationId` property of an operation to dictate the method name.  So
+if you wanted to name the route handler function `getWeather`, you could set
+`#/paths/weather/get/parameters/1/operationId` property to `getWeather`.  _(The example code above assumes you will be
+overriding the controller function name using `operationId`.)_
 
 ### Creating Our Route Handler
 
