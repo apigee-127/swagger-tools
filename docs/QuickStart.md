@@ -3,16 +3,28 @@ allow you to get the current weather for a location or zip code.  We will build 
 Swagger document _(This example will use Swagger 2.0)_ and then we will move toward the implementation.  The hope is
 that you will see how much simpler your implementation can be thanks to the middleware Swagger Tools provides.
 
+**Note:** Throughout this document we will be using [JSON Pointer][json-pointer] syntax to "point to" paths in our
+Swagger document.  The idea is to use a simpler format for describing a path to a specific location in the Swagger JSON
+document.  While the JSON Pointer documentation would be a good read, to give you enough information to understand this
+document, please read the following:
+
+* `#` is a reference to the root of the JSON document.  So if you had a property named `name` at the root of your JSON
+document and you wanted to reference it, you would use `#/name`.
+* Path segments are `/` delimited.  So if you have a property named `repo` at the root of your JSON document and within
+that property you had another property named `name`, to reference it you would use `#/repo/name`
+* Anytime a JSON property has a path segment delimiter in it, its JSON pointer path replaces the `/` with `~1`.  So for
+Swagger paths, which always start with a `/`, like our `/weather` path, you'll see this replacement.
+
 ## Upstream Bug
 
 There is currently a bug in the Swagger 2.0 JSON Schema that does not allow us to set the `default` and `enum`
-properties on `#/paths/weather/get/parameters/1`.  This means we cannot demonstrate how `swaggerMetadata`'s parameter
+properties on `#/paths/~1weather/get/parameters/1`.  This means we cannot demonstrate how `swaggerMetadata`'s parameter
 processing handles default values and you will need to pass `unit` as query parameters alongside `location.`  When this
 bug is fixed, you would set the following:
 
-* `#/paths/weather/get/parameters/1/default` to `"F"``
-* `#/paths/weather/get/parameters/1/enum` to `["C", "F"]`
-* `#/paths/weather/get/parameters/1/required` to `false`
+* `#/paths/~1weather/get/parameters/1/default` to `"F"``
+* `#/paths/~1weather/get/parameters/1/enum` to `["C", "F"]`
+* `#/paths/~1weather/get/parameters/1/required` to `false`
 
 Default value handling works just fine with Swagger 1.2 documents and this should be fixed upstream shortly.  When that
 happens, this disclaimer will be removed and the necessary parts below will be updated to reflect.
@@ -486,13 +498,13 @@ an example: `http://localhost:3000/api/weather?location=95113&unit=F`.
 
 At this point you should get a `404` because there are no route handlers configured.  If you view the
 [Swagger Router (How To Use)][swagger-router-how-to-use], you'll see we can just use the `x-swagger-router-controller`
-property on either `#/paths/weather` or the `#/paths/weather/get`.  For our example, we will set the
-`#/paths/weather/get/parameters/1/x-swagger-router-controller` to `Weather`.  Once you do this, the middleware will have
-a controller wired up to handle `GET` requests for the `/api/weather` path.  To enable it, we need to restart our server
-and run Node.js in the `development` environment.  _(The reason for this is in our code above we have the `useStubs`
-option for `swaggerRouter` enabled conditionally based on the Node.js environment.)_  To do this, restart your server
-using something like: `NODE_ENV=development node .`.  With mock mode enabled, if you perform the same `GET` on
-`http://localhost:3000/api/weather`, you should see a mock response that conforms to the `Weather` model defined in
+property on either `#/paths/~1weather` or the `#/paths/~1weather/get`.  For our example, we will set the
+`#/paths/~1weather/get/parameters/1/x-swagger-router-controller` property to `Weather`.  Once you do this, the middleware
+will have a controller wired up to handle `GET` requests for the `/api/weather` path.  To enable it, we need to restart
+our server and run Node.js in the `development` environment.  _(The reason for this is in our code above we have the
+`useStubs` option for `swaggerRouter` enabled conditionally based on the Node.js environment.)_  To do this, restart
+your server using something like: `NODE_ENV=development node .`.  With mock mode enabled, if you perform the same `GET`
+on `http://localhost:3000/api/weather`, you should see a mock response that conforms to the `Weather` model defined in
 `#/definitions/Weather`.  Here is an example:
 
 ```json
@@ -540,10 +552,10 @@ using something like: `NODE_ENV=development node .`.  With mock mode enabled, if
 Now of course, we want to have a **real** API so let's implement the route handler.  Based on the current Swagger
 document and the code above, to handle the route we will need to create a Node.js module at `./controllers/Weather.js`.
 How does swaggerRouter figure out which method to call in the controller module?  Well, the default is to use the
-operation method from `#/paths/weather`, in this case `get`.  What if you do not want to use an HTTP verb as your
+operation method from `#/paths/~1weather`, in this case `get`.  What if you do not want to use an HTTP verb as your
 JavaScript function name?  Well, you can set the `operationId` property of an operation to dictate the method name.  So
 if you wanted to name the route handler function `getWeather`, you could set
-`#/paths/weather/get/parameters/1/operationId` property to `getWeather`.  _(The example code above assumes you will be
+`#/paths/~1weather/get/parameters/1/operationId` property to `getWeather`.  _(The example code above assumes you will be
 overriding the controller function name using `operationId`.)_
 
 ### Creating Our Route Handler
@@ -645,6 +657,7 @@ out and implement a REST API with minimal repetition and boilerplate.  If you ha
 
 [body-parser]: https://www.npmjs.org/package/body-parser
 [connect]: https://www.npmjs.org/package/connect
+[json-pointer]: http://tools.ietf.org/html/rfc6901
 [msn-weather]: http://local.msn.com/weather.aspx
 [parseurl]: https://www.npmjs.org/package/parseurl
 [qs]: https://www.npmjs.org/package/qs
