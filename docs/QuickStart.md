@@ -482,7 +482,7 @@ requires the `location` query string, you should get a `400` with an error messa
 the `location` parameter.  So update your `GET` request to include the `location` query parameter.  _(As mentioned
 above, there is an upstream bug that prohibits us from defining our Swagger document to use the default value handling
 of swaggerMetadata.  This means you will also have to include the `unit` query parameter for the time being.)_  Here is
-an example: `http://localhost:3000?location=95113&unit=F`.
+an example: `http://localhost:3000/api/weather?location=95113&unit=F`.
 
 At this point you should get a `404` because there are no route handlers configured.  If you view the
 [Swagger Router (How To Use)][swagger-router-how-to-use], you'll see we can just use the `x-swagger-router-controller`
