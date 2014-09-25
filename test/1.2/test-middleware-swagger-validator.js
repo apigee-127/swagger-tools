@@ -358,23 +358,50 @@ describe('Swagger Validator Middleware v1.2', function () {
   it('should return an error for an invalid model parameter (array)', function () {
     var clonedAd = _.cloneDeep(petJson);
 
-    clonedAd.models.Tag.required = ['name'];
+      clonedAd.models.Tag.required = ['name'];
 
-    request(createServer([rlJson, [clonedAd]], [middleware()]))
-      .post('/api/pet')
-      .send({
-        id: 1,
-        name: 'Test Pet',
-        tags: [
+      clonedAd.apis.push({
+        operations: [
+          {
+            authorizations: {},
+            method: 'POST',
+            parameters: [
+              {
+                name: 'body',
+                paramType: 'body',
+                required: true,
+                type: 'array',
+                items: {
+                  $ref: 'Tag'
+                }
+              }
+            ],
+            responseMessages: [
+              {
+                code: 400,
+                message: 'Invalid tag value'
+              }
+            ],
+            type: 'void'
+          }
+        ],
+        path: '/tags'
+      });
+
+      request(createServer([rlJson, [clonedAd]], [middleware()]))
+        .post('/api/tags')
+        .send([
           {
             id: 1
+          },
+          {
+            id: 2
           }
-        ]
-      })
-      .expect(400)
-      .end(function(err, res) { // jshint ignore:line
-        assert.equal(prepareText(res.text), 'Parameter (body) is not a valid Pet model');
-      });
+        ])
+        .expect(200)
+        .end(function(err, res) { // jshint ignore:line
+          assert.equal(prepareText(res.text), 'Parameter (body) is not a valid Tag model');
+        });
   });
 
   it('should not return an error for a valid model parameter (array)', function () {
@@ -382,20 +409,44 @@ describe('Swagger Validator Middleware v1.2', function () {
 
     clonedAd.models.Tag.required = ['name'];
 
+    clonedAd.apis.push({
+      operations: [
+        {
+          authorizations: {},
+          method: 'POST',
+          parameters: [
+            {
+              name: 'body',
+              paramType: 'body',
+              required: true,
+              type: 'array',
+              items: {
+                $ref: 'Tag'
+              }
+            }
+          ],
+          responseMessages: [
+            {
+              code: 400,
+              message: 'Invalid tag value'
+            }
+          ],
+          type: 'void'
+        }
+      ],
+      path: '/tags'
+    });
+
     request(createServer([rlJson, [clonedAd]], [middleware()]))
-      .post('/api/pet')
-      .send({
-        id: 1,
-        name: 'Test Pet',
-        tags: [
-          {
-            name: 'A'
-          },
-          {
-            name: 'B'
-          }
-        ]
-      })
+      .post('/api/tags')
+      .send([
+        {
+          name: 'Tag 1'
+        },
+        {
+          name: 'Tag 2'
+        }
+      ])
       .expect(200)
       .end(function(err, res) { // jshint ignore:line
         assert.equal(prepareText(res.text), 'OK');
