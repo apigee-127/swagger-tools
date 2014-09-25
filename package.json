@@ -1,6 +1,6 @@
 {
   "name": "swagger-tools",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "description": "Various tools for using and integrating with Swagger.",
   "main": "index.js",
   "scripts": {
