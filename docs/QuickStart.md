@@ -661,7 +661,7 @@ Swagger Tools ships with a middleware that will not only serve your Swagger docu
 running, you can access the following URLs:
 
 * `http://localhost:3000/docs`: This URL will serve Swagger UI
-* `http://localhost:3000/api-docs`: This URL will serve the Swagger document(s)
+* `http://localhost:3000/api-docs`: This URL will serve the Swagger document
 
 **Note:** To view how to configure the `swaggerUi` middleware, view its [documentation][swagger-ui-how-to-use].
 
@@ -681,6 +681,6 @@ out and implement a REST API with minimal repetition and boilerplate.  If you ha
 [swagger-router]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Middleware.md#swagger-router
 [swagger-router-how-to-use]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Middleware.md#how-to-use
 [swagger-ui]: https://github.com/wordnik/swagger-ui
-[swagger-ui-how-to-use]: [swagger-router]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Middleware.md#swagger-ui
+[swagger-ui-how-to-use]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Middleware.md#swagger-ui
 [swagger-tools]: https://www.npmjs.org/package/swagger-tools
 [weather-js]: https://github.com/cmfatih/weather
