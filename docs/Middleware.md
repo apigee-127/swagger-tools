@@ -295,10 +295,6 @@ The Swagger Validator middleware is used to validate your requests based on the 
 parameters of your Swagger document(s).  So if your operation has a required parameter and your request does not provide
 it, the Swagger Validator will send an error downstream in typical Connect fashion.
 
-### Caveats
-
-Right now, model parameters are not validated.  This is currently being tracked in [Issue #18][issue-18].
-
 ## Complete Example
 
 Here is a complete example for using all middlewares documented above:
@@ -389,5 +385,4 @@ http.createServer(app).listen(3000);
 ```
 
 [connect]: https://github.com/senchalabs/connect
-[issue-18]: https://github.com/apigee-127/swagger-tools/issues/18
 [issue-30]: https://github.com/apigee-127/swagger-tools/issues/30
