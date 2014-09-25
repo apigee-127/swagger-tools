@@ -504,8 +504,8 @@ controller wired up to handle `GET` requests for the `/api/weather` path.  To en
 and run Node.js in the `development` environment.  _(The reason for this is in our code above we have the `useStubs`
 option for `swaggerRouter` enabled conditionally based on the Node.js environment.)_  To do this, restart your server
 using something like: `NODE_ENV=development node .`.  With mock mode enabled, if you perform the same `GET` on
-`http://localhost:3000/api/weather`, you should see a mock response that conforms to the `Weather` model defined in
-`#/definitions/Weather`.  Here is an example:
+`http://localhost:3000/api/weather?location=95113&unit=F`, you should see a mock response that conforms to the `Weather`
+model defined in `#/definitions/Weather`.  Here is an example:
 
 ```json
 {
