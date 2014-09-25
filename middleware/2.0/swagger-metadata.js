@@ -25,7 +25,7 @@
 'use strict';
 
 var _ = require('lodash');
-var expressStylePath = require('../helpers').expressStylePath;
+var helpers = require('../helpers');
 var parseurl = require('parseurl');
 var pathToRegexp = require('path-to-regexp');
 
@@ -60,7 +60,7 @@ exports = module.exports = function swaggerMetadataMiddleware (swaggerObject) {
   // Gather the paths, their path regex patterns and the corresponding operations
   _.each(swaggerObject.paths, function (path, pathName) {
     var keys = [];
-    var re = pathToRegexp(expressStylePath(swaggerObject.basePath, pathName), keys);
+    var re = pathToRegexp(helpers.expressStylePath(swaggerObject.basePath, pathName), keys);
     var reStr = re.toString();
 
     paths[reStr] = {
@@ -106,7 +106,21 @@ exports = module.exports = function swaggerMetadataMiddleware (swaggerObject) {
         // with operation parameters.  That's why we start with the path parameters first and then the operation
         // parameters.  (Note: "path" in this context is a path entry at #/paths in the Swagger Object)
         _.each(_.union(metadata.path.parameters, metadata.operation.parameters), function (param) {
-          var paramType = param.in || 'query';
+          var paramPath = ['paths', path.apiPath];
+          var paramType = param.in;
+          var findIndex = function (params, name) {
+            var foundIndex;
+
+            _.each(params, function (param, index) {
+              if (param.in === paramType && param.name === name) {
+                foundIndex = index;
+                return false;
+              }
+            });
+
+            return foundIndex;
+          };
+          var paramIndex = findIndex(metadata.path.parameters, param.name);
           var val;
 
           // Get the value to validate based on the operation parameter type
@@ -117,7 +131,11 @@ exports = module.exports = function swaggerMetadataMiddleware (swaggerObject) {
               throw new Error('Server configuration error: req.body is not defined but is required');
             }
 
-            val = req.body[param.name];
+            if (helpers.isModelParameter('2.0', param)) {
+              val = req.body;
+            } else {
+              val = req.body[param.name];
+            }
 
             break;
           case 'header':
@@ -147,7 +165,17 @@ exports = module.exports = function swaggerMetadataMiddleware (swaggerObject) {
             val = param.schema.default;
           }
 
+          // Figure out the parameter path
+          if (_.isUndefined(paramIndex)) {
+            paramPath.push(req.method.toLowerCase());
+
+            paramIndex = findIndex(metadata.operation.parameters, param.name);
+          }
+
+          paramPath.push('parameters', paramIndex);
+
           metadata.params[param.name] = {
+            path: paramPath,
             schema: param,
             value: val
           };

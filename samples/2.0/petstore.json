@@ -52,7 +52,7 @@
             "description": "The Pet to create",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/Pet"
+              "$ref": "#/definitions/newPet"
             }
           }
         ],
@@ -182,6 +182,16 @@
       },
       "required": [
         "id",
+        "name"
+      ]
+    },
+    "newPet": {
+      "allOf": [
+        {
+          "$ref": "Pet"
+        }
+      ],
+      "required": [
         "name"
       ]
     },

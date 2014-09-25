@@ -1002,4 +1002,65 @@ describe('Specification v1.2', function () {
       assert.deepEqual(spec.composeModel(petJson, 'Pet'), cPet);
     });
   });
+
+  describe('#validateModel', function () {
+    it('should throw an Error for an API Declaration that has invalid models', function () {
+      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+
+      petJson.models.Person = {
+        id: 'Person',
+        properties: {
+          age: {
+            type: 'integer'
+          },
+          name: {
+            type: 'string'
+          }
+        }
+      };
+
+      petJson.models.Tag.discriminator = 'name';
+      petJson.models.Tag.subTypes = ['Person'];
+
+      try {
+        spec.composeModel(petJson, 'Person');
+        assert.fail(null, null, 'Should had failed above');
+      } catch (err) {
+        assert.equal('The models are invalid and model composition is not possible', err.message);
+        assert.equal(1, err.errors.length);
+        assert.equal(0, err.warnings.length);
+        assert.deepEqual({
+          code: 'CHILD_MODEL_REDECLARES_PROPERTY',
+          message: 'Child model declares property already declared by ancestor: name',
+          data: petJson.models.Person.properties.name,
+          path: ['models', 'Person', 'properties', 'name']
+        }, err.errors[0]);
+      }
+    });
+
+    it('should return errors/warnings for invalid model', function () {
+      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+      var result = spec.validateModel(petJson, 'Pet', {
+        id: 1
+      });
+
+      assert.deepEqual(result.errors, [
+        {
+          code: 'VALIDATION_OBJECT_REQUIRED',
+          message: 'Missing required property: name',
+          path: ['name']
+        }
+      ]);
+    });
+
+    it('should return undefined for valid model', function () {
+      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+      var result = spec.validateModel(petJson, 'Pet', {
+        id: 1,
+        name: 'Jeremy'
+      });
+
+      assert.ok(_.isUndefined(result));
+    });
+  });
 });

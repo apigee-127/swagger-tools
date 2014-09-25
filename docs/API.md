@@ -227,7 +227,6 @@ if (result) {
 } else {
   console.log('Swagger document is valid');
 }
-
 ```
 
 **Swagger 1.2**
@@ -288,7 +287,47 @@ if (result) {
 } else {
   console.log('Swagger document is valid');
 }
+```
 
+##### #validateModel(aDOrSO, modelIdOrPtr, data)
+
+**Arguments**
+
+* **aDOrSO:** `object` The API Declaration or the Swagger Object _(For Swagger 1.2, this should be the API Declaration
+object that defines the model.  For Swagger 2.0, this is the Swagger object itself.)_
+* **modelIdOrPtr:** `string` The model id or the model's JSON Pointer _(For Swagger 1.2, this is the model id.  For
+Swagger 2.0, this is the model id (if it's defined in `#/definitions`) or the model's JSON Pointer)_
+* **data:** `object|array` The object representing the model to be validated
+
+**Returns**
+
+`undefined` if the Swagger document(s) are valid or an `object` containing the validation errors.  The error object is
+structured identically to that of the `#validate` method.
+
+Here is a full example of this API in action:
+
+```javascript
+var spec = require('swagger-tools').specs.v2; // Using the latest Swagger 2.x specification
+var swaggerObject = require('./samples/2.0/petstore.json'); // This assumes you're in the root of the swagger-tools
+var result = spec.validateModel(swaggerObject, 'Pet', {
+  id: 1,
+  name: 'Some Pet Name'
+});
+
+if (result) {
+  console.log('Swagger model failed validation:');
+
+  console.log('Errors');
+  console.log('------');
+
+  result.errors.forEach(function (err) {
+    console.log('#/' + err.path.join('/') + ': ' + err.message);
+  });
+
+  // Since this is schema validation, warnings shouldn't be populated
+} else {
+  console.log('Swagger model is valid');
+}
 ```
 
 [connect]: https://github.com/senchalabs/connect

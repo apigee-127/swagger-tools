@@ -1,18 +1,18 @@
 /*
  * The MIT License (MIT)
- * 
+ *
  * Copyright (c) 2014 Apigee Corporation
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,6 +25,8 @@
 'use strict';
 
 var _ = require('lodash');
+var isModelParameter = require('../helpers').isModelParameter;
+var toJsonPointer = require('../../lib/helpers').toJsonPointer;
 var validators = require('../../lib/validators');
 
 /**
@@ -36,9 +38,6 @@ var validators = require('../../lib/validators');
  * @returns the middleware function
  */
 exports = module.exports = function swaggerValidatorMiddleware () {
-
-  // TODO: Add support for validating models (https://github.com/apigee-127/swagger-tools/issues/18)
-
   return function swaggerValidator (req, res, next) {
     var operation = req.swagger ? req.swagger.operation : undefined;
 
@@ -50,6 +49,7 @@ exports = module.exports = function swaggerValidatorMiddleware () {
 
         _.each(_.union(req.swagger.path.parameters, operation.parameters), function (param) {
           var paramName = param.name;
+          var paramPath = req.swagger.params[paramName].path;
           var val = req.swagger.params[paramName].value;
 
           // Validate requiredness
@@ -60,44 +60,56 @@ exports = module.exports = function swaggerValidatorMiddleware () {
             return;
           }
 
-          // Constraints can appear in the parameter itself (type/format) and in the parameter's schema (if available)
-          if (param.schema) {
-            param = param.schema;
+          if (isModelParameter('2.0', param)) {
+            if (param.schema) {
+              paramPath.push('schema');
+            }
+
+            // Validate the model
+            validators.validateModel(paramName, val, '2.0', req.swagger.swaggerObject,
+                                     _.isUndefined(param.schema.$ref) ?
+                                      toJsonPointer(paramPath) :
+                                      param.schema.$ref);
+          } else {
+            // Constraints can appear in the parameter itself (type/format) and in the parameter's schema (if available)
+            if (param.schema) {
+              param = param.schema;
+            }
+
+            // Validate the value type/format
+            validators.validateTypeAndFormat(paramName, val,
+                                             param.type === 'array' ? param.items.type : param.type,
+                                             param.type === 'array' && param.items.format ?
+                                               param.items.format :
+                                               param.format);
+
+            // Validate enum
+            validators.validateEnum(paramName, val, param.enum);
+
+            // Validate maximum
+            validators.validateMaximum(paramName, val, param.maximum, param.type, param.exclusiveMaximum);
+
+            // Validate maximum items
+            validators.validateMaxItems(paramName, val, param.maxItems);
+
+            // Validate maximum length
+            validators.validateMaxLength(paramName, val, param.maxLength);
+
+            // Validate minimum
+            validators.validateMinimum(paramName, val, param.minimum, param.type, param.exclusiveMinimum);
+
+            // Validate minimum items
+            validators.validateMinItems(paramName, val, param.minItems);
+
+            // Validate minimum length
+            validators.validateMinLength(paramName, val, param.minLength);
+
+            // Validate pattern
+            validators.validatePattern(paramName, val, param.pattern);
+
+            // Validate uniqueItems
+            validators.validateUniqueItems(paramName, val, param.uniqueItems);
           }
-
-          // Validate the value type/format
-          validators.validateTypeAndFormat(paramName, val,
-                                           param.type === 'array' ? param.items.type : param.type,
-                                           param.type === 'array' && param.items.format ?
-                                             param.items.format :
-                                             param.format);
-
-          // Validate enum
-          validators.validateEnum(paramName, val, param.enum);
-
-          // Validate maximum
-          validators.validateMaximum(paramName, val, param.maximum, param.type, param.exclusiveMaximum);
-
-          // Validate maximum items
-          validators.validateMaxItems(paramName, val, param.maxItems);
-
-          // Validate maximum length
-          validators.validateMaxLength(paramName, val, param.maxLength);
-
-          // Validate minimum
-          validators.validateMinimum(paramName, val, param.minimum, param.type, param.exclusiveMinimum);
-
-          // Validate minimum items
-          validators.validateMinItems(paramName, val, param.minItems);
-
-          // Validate minimum length
-          validators.validateMinLength(paramName, val, param.minLength);
-
-          // Validate pattern
-          validators.validatePattern(paramName, val, param.pattern);
-
-          // Validate uniqueItems
-          validators.validateUniqueItems(paramName, val, param.uniqueItems);
         });
       } catch (err) {
         return next(err.message);

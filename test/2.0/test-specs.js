@@ -413,6 +413,12 @@ describe('Specification v2.0', function () {
             message: 'Model requires property but it is not defined: name',
             data: 'name',
             path: ['definitions', 'Pet', 'required', '1']
+          },
+          {
+            code: 'MISSING_REQUIRED_MODEL_PROPERTY',
+            message: 'Model requires property but it is not defined: name',
+            data: 'name',
+            path: ['definitions', 'newPet', 'required', '0']
           }
         ]);
         assert.equal(result.warnings.length, 0);
@@ -711,6 +717,70 @@ describe('Specification v2.0', function () {
       };
 
       assert.deepEqual(spec.composeModel(swaggerObject, 'Pet'), cPet);
+    });
+  });
+
+  describe('#validateModel', function () {
+    it('should throw an Error for an API Declaration that has invalid models', function () {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.definitions.Person = {
+        allOf: [
+          {
+            $ref: 'Pet'
+          }
+        ],
+        properties: {
+          age: {
+            type: 'integer'
+          },
+          name: {
+            type: 'string'
+          }
+        }
+      };
+
+      swaggerObject.paths['/pets'].get.responses.default.schema.$ref = '#/definitions/Person';
+
+      try {
+        spec.composeModel(swaggerObject, 'Pet');
+        assert.fail(null, null, 'Should had failed above');
+      } catch (err) {
+        assert.equal('The models are invalid and model composition is not possible', err.message);
+        assert.equal(1, err.errors.length);
+        assert.equal(0, err.warnings.length);
+        assert.deepEqual({
+          code: 'CHILD_MODEL_REDECLARES_PROPERTY',
+          message: 'Child model declares property already declared by ancestor: name',
+          data: swaggerObject.definitions.Person.properties.name,
+          path: ['definitions', 'Person', 'properties', 'name']
+        }, err.errors[0]);
+      }
+    });
+
+    it('should return errors/warnings for invalid model', function () {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+      var result = spec.validateModel(swaggerObject, 'Pet', {
+        id: 1
+      });
+
+      assert.deepEqual(result.errors, [
+        {
+          code: 'VALIDATION_OBJECT_REQUIRED',
+          message: 'Missing required property: name',
+          path: ['name']
+        }
+      ]);
+    });
+
+    it('should return undefined for valid model', function () {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+      var result = spec.validateModel(swaggerObject, 'Pet', {
+        id: 1,
+        name: 'Jeremy'
+      });
+
+      assert.ok(_.isUndefined(result));
     });
   });
 });

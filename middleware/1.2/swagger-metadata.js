@@ -25,7 +25,7 @@
 'use strict';
 
 var _ = require('lodash');
-var expressStylePath = require('../helpers').expressStylePath;
+var helpers = require('../helpers');
 var parseurl = require('parseurl');
 var pathToRegexp = require('path-to-regexp');
 
@@ -69,7 +69,7 @@ exports = module.exports = function swaggerMetadataMiddleware (resourceList, res
   _.each(resources, function (resource, index) {
     _.each(resource.apis, function (api) {
       var keys = [];
-      var re = pathToRegexp(expressStylePath(resource.basePath, api.path), keys);
+      var re = pathToRegexp(helpers.expressStylePath(resource.basePath, api.path), keys);
       var reStr = re.toString();
 
       if (Object.keys(apis).indexOf(reStr) !== -1) {
@@ -132,7 +132,11 @@ exports = module.exports = function swaggerMetadataMiddleware (resourceList, res
               throw new Error('Server configuration error: req.body is not defined but is required');
             }
 
-            val = req.body[param.name];
+            if (helpers.isModelParameter('1.2', param)) {
+              val = req.body;
+            } else {
+              val = req.body[param.name];
+            }
 
             break;
           case 'header':

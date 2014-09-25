@@ -215,16 +215,17 @@ describe('Swagger Metadata Middleware v2.0', function () {
         assert.deepEqual(swagger.operation, json.paths['/pets/{id}'].get);
         assert.deepEqual(swagger.params, {
           id: {
+            path: ['paths', '/pets/{id}', 'parameters', '0'],
             schema: json.paths['/pets/{id}'].parameters[0],
             value: '1'
           },
           mock: {
+            path: ['paths', '/pets/{id}', 'get', 'parameters', '0'],
             schema: json.paths['/pets/{id}'].get.parameters[0],
             value: 'false'
           }
         });
       } catch (err) {
-        console.log(err.stack);
         return next(err.message);
       }
 

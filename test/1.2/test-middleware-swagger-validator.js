@@ -2,19 +2,19 @@
 
 /*
  * The MIT License (MIT)
- * 
+ *
  * Copyright (c) 2014 Apigee Corporation
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -326,5 +326,79 @@ describe('Swagger Validator Middleware v1.2', function () {
           assert.equal(prepareText(res.text), 'OK');
         });
     });
+  });
+
+  it('should return an error for an invalid model parameter', function () {
+    var clonedAd = _.cloneDeep(petJson);
+
+    request(createServer([rlJson, [clonedAd]], [middleware()]))
+      .post('/api/pet')
+      .send({})
+      .expect(400)
+      .end(function(err, res) { // jshint ignore:line
+        assert.equal(prepareText(res.text), 'Parameter (body) is not a valid Pet model');
+      });
+  });
+
+  it('should not return an error for a valid model parameter', function () {
+    var clonedAd = _.cloneDeep(petJson);
+
+    request(createServer([rlJson, [clonedAd]], [middleware()]))
+      .post('/api/pet')
+      .send({
+        id: 1,
+        name: 'Test Pet'
+      })
+      .expect(200)
+      .end(function(err, res) { // jshint ignore:line
+        assert.equal(prepareText(res.text), 'OK');
+      });
+  });
+
+  it('should return an error for an invalid model parameter (array)', function () {
+    var clonedAd = _.cloneDeep(petJson);
+
+    clonedAd.models.Tag.required = ['name'];
+
+    request(createServer([rlJson, [clonedAd]], [middleware()]))
+      .post('/api/pet')
+      .send({
+        id: 1,
+        name: 'Test Pet',
+        tags: [
+          {
+            id: 1
+          }
+        ]
+      })
+      .expect(400)
+      .end(function(err, res) { // jshint ignore:line
+        assert.equal(prepareText(res.text), 'Parameter (body) is not a valid Pet model');
+      });
+  });
+
+  it('should not return an error for a valid model parameter (array)', function () {
+    var clonedAd = _.cloneDeep(petJson);
+
+    clonedAd.models.Tag.required = ['name'];
+
+    request(createServer([rlJson, [clonedAd]], [middleware()]))
+      .post('/api/pet')
+      .send({
+        id: 1,
+        name: 'Test Pet',
+        tags: [
+          {
+            name: 'A'
+          },
+          {
+            name: 'B'
+          }
+        ]
+      })
+      .expect(200)
+      .end(function(err, res) { // jshint ignore:line
+        assert.equal(prepareText(res.text), 'OK');
+      });
   });
 });

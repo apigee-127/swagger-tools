@@ -168,13 +168,12 @@ var mockResponse = function mockResponse (version, req) {
   var response;
   var responseCode; // (2.0)
   var responseType;
-  var spec;
+  var spec = helpers.getSpec(version);
 
   switch (version) {
   case '1.2':
     apiDOrSO = req.swagger.apiDeclaration;
     responseType = operation.type;
-    spec = require('../lib/specs').v1_2; // jshint ignore:line
 
     if (spec.primitives.indexOf(operation.type) === -1) {
       responseType = operation.type;
@@ -184,7 +183,6 @@ var mockResponse = function mockResponse (version, req) {
 
   case '2.0':
     apiDOrSO = req.swagger.swaggerObject;
-    spec = require('../lib/specs').v2_0; // jshint ignore:line
 
     if (method === 'post' && _.isPlainObject(operation.responses['201'])) {
       responseCode = '201';
@@ -305,6 +303,34 @@ module.exports.expressStylePath = function expressStylePath (basePath, apiPath) 
 
   // Replace Swagger syntax for path parameters with Express' version (All Swagger path parameters are required)
   return (basePath + apiPath).replace(/{/g, ':').replace(/}/g, '');
+};
+
+module.exports.isModelParameter = function isModelParameter (version, param) {
+  var spec = helpers.getSpec(version);
+  var isModel = false;
+
+  switch (version) {
+  case '1.2':
+    if (!_.isUndefined(param.type) && spec.primitives.indexOf(param.type) === -1) {
+      isModel = true;
+    } else if (param.type === 'array' && !_.isUndefined(param.items.$ref)) {
+      isModel = true;
+    }
+    break;
+
+  case '2.0':
+    if (param.type === 'object') {
+      isModel = true;
+    } else if (!_.isUndefined(param.schema) && (param.schema.type === 'object' || !_.isUndefined(param.schema.$ref))) {
+      isModel = true;
+    }
+
+    // 2.0 does not allow arrays of models
+
+    break;
+  }
+
+  return isModel;
 };
 
 module.exports.send405 = function send405 (version, req, res) {
