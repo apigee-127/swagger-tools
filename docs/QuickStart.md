@@ -409,6 +409,7 @@ var qs = require('qs');
 var swaggerTools = require('swagger-tools');
 var swaggerMetadata = swaggerTools.middleware.v2.swaggerMetadata;
 var swaggerRouter = swaggerTools.middleware.v2.swaggerRouter;
+var swaggerUi = swaggerTools.middleware.v2.swaggerUi;
 var swaggerValidator = swaggerTools.middleware.v2.swaggerValidator;
 
 var serverPort = 3000;
@@ -474,6 +475,9 @@ app.use(swaggerValidator());
 
 // Route validated requests to appropriate controller
 app.use(swaggerRouter(options));
+
+// Serve the Swagger documents and Swagger UI
+app.use(swaggerUi(swaggerObject));
 
 // Start the server
 http.createServer(app).listen(serverPort, function () {
@@ -650,6 +654,17 @@ of the mock response you should get a **real** response that looks something lik
 }
 ```
 
+### Testing Built-in Documentation
+
+Swagger Tools ships with a middleware that will not only serve your Swagger document(s) but it will also serve the
+[Swagger UI][swagger-ui].  For this example, we will use the defaults for `swaggerUi` and whenever your server is
+running, you can access the following URLs:
+
+* `http://localhost:3000/docs`: This URL will serve Swagger UI
+* `http://localhost:3000/api-docs`: This URL will serve the Swagger document(s)
+
+**Note:** To view how to configure the `swaggerUi` middleware, view its [documentation][swagger-ui-how-to-use].
+
 ## Conclusion
 
 Swagger Tools provides tooling for ensuring your Swagger documents are valid and with your Swagger documents, scaffold
@@ -665,5 +680,7 @@ out and implement a REST API with minimal repetition and boilerplate.  If you ha
 [swagger-2.0-spec]: https://github.com/reverb/swagger-spec/blob/master/versions/2.0.md
 [swagger-router]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Middleware.md#swagger-router
 [swagger-router-how-to-use]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Middleware.md#how-to-use
+[swagger-ui]: https://github.com/wordnik/swagger-ui
+[swagger-ui-how-to-use]: [swagger-router]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Middleware.md#swagger-ui
 [swagger-tools]: https://www.npmjs.org/package/swagger-tools
 [weather-js]: https://github.com/cmfatih/weather

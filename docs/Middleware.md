@@ -31,7 +31,7 @@ get the parameter values. _(No validation of the parameter values happens in the
 **Arguments**
 
 * **resourceListing:** `object` The Resource Listing object
-* **apiDeclarations:** `[object[]]` The array of API Declaration objects
+* **apiDeclarations:** `[object` The array of API Declaration objects
 
 **Returns**
 
@@ -289,11 +289,60 @@ route handler in code.  This is obviously something that should be disabled in p
 Mock mode is a relatively new feature to Swagger Router and while it's cool as-is, there are a few things that need to
 be done to make it better.  This is currently being tracked in [Issue #30][issue-30].
 
+## Swagger UI
+
+The Swagger UI middleware is used to serve your Swagger document(s) via an API and also to serve
+[Swagger UI][swagger-ui] on your behalf.  Must like `swaggerMetadata`, this middleware has a different function
+signature based on your Swagger version.
+
+**Note:** This middleware is completely standalone and does not require `swaggerMetadata`.
+
+### Swagger 1.2
+
+#### #swaggerUi(resourceListing, resources)
+
+**Arguments**
+
+* **resourceListing:** `object` The Resource Listing object
+* **resources:** `object` Object whose keys are the relative path from your configured `options.apiDocs` to serve the
+JSON for the apiDeclaration/resource and the value is the apiDeclaration being served.  _(Note: The path must match a
+path in the Resource Listing's `apis`.)_
+* **options:** `object` The middleware options
+* **options.apiDocs:** `string=/api-docs` The path to serve the Swagger documents from
+* **options.swaggerUi:** `string=/docs` The path to serve Swagger UI from
+
+**Returns**
+
+The Connect middleware function.
+
+### Swagger 2.0
+
+**Arguments**
+
+* **swaggerObject:** `object` The Swagger object
+* **options:** `object` The middleware options
+* **options.apiDocs:** `string=/api-docs` The path to serve the Swagger documents from
+* **options.swaggerUi:** `string=/docs` The path to serve Swagger UI from
+
+**Returns**
+
+The Connect middleware function.
+
+### Swagger Documents
+
+For Swagger 2.0, there is only one Swagger document and it is served at the path configured by `options.apiDocs`.  For
+Swagger 1.2, there is a Resource Listing document and one document per API Declaration (resource) your API ships with.
+The Resource Listing document is served at the path configured by `options.apiDocs` and the API Declaration documents
+are served at their respective subpath below the path configured by `options.apiDocs`.  To see an example of this, view
+the [complete example](#complete-example) below for your Swagger version to see the paths exposed by the `swaggerUi`
+middleware.
+
 ## Swagger Validator
 
 The Swagger Validator middleware is used to validate your requests based on the constraints defined in the operation
 parameters of your Swagger document(s).  So if your operation has a required parameter and your request does not provide
-it, the Swagger Validator will send an error downstream in typical Connect fashion.
+it, the Swagger Validator will send an error downstream in typical Connect fashion.  There are no configuration options
+for this middleware.
 
 ## Complete Example
 
@@ -309,6 +358,7 @@ var swagger = require('swagger-tools');
 var swaggerObject = require('./samples/2.0/petstore.json'); // This assumes you're in the root of the swagger-tools
 var swaggerMetadata = swagger.middleware.v2.swaggerMetadata;
 var swaggerRouter = swagger.middleware.v2.swaggerRouter;
+var swaggerUi = swagger.middleware.v2.swaggerUi;
 var swaggerValidator = swagger.middleware.v2.swaggerValidator;
 
 var connect = require('connect');
@@ -335,6 +385,11 @@ app.use(swaggerValidator());
 // Route validated requests to appropriate controller
 app.use(swaggerRouter({useStubs: true, controllers: './controllers'}));
 
+// Serve the Swagger documents and Swagger UI
+//   http://localhost:3000/docs => Swagger UI
+//   http://localhost:3000/api-docs => Swagger document
+app.use(swaggerUi(swaggerObject));
+
 // Start the server
 http.createServer(app).listen(3000);
 ```
@@ -354,6 +409,7 @@ var apiDeclarations = [
 ];
 var swaggerMetadata = swagger.middleware.v1.swaggerMetadata;
 var swaggerRouter = swagger.middleware.v1.swaggerRouter;
+var swaggerUi = swagger.middleware.v1.swaggerUi;
 var swaggerValidator = swagger.middleware.v1.swaggerValidator;
 
 var connect = require('connect');
@@ -380,9 +436,22 @@ app.use(swaggerValidator());
 // Route validated requests to appropriate controller
 app.use(swaggerRouter({useStubs: true, controllers: './controllers'}));
 
+// Serve the Swagger documents and Swagger UI
+//   http://localhost:3000/docs => Swagger UI
+//   http://localhost:3000/api-docs => Resource Listing JSON
+//   http://localhost:3000/api-docs/pet => Pet JSON
+//   http://localhost:3000/api-docs/store => Store JSON
+//   http://localhost:3000/api-docs/user => User JSON
+app.use(swaggerUi(rlJson, {
+  '/pet': apiDeclarations[0],
+  '/store': apiDeclarations[1],
+  '/user': apiDeclarations[2]
+}));
+
 // Start the server
 http.createServer(app).listen(3000);
 ```
 
 [connect]: https://github.com/senchalabs/connect
 [issue-30]: https://github.com/apigee-127/swagger-tools/issues/30
+[swagger-ui]: https://github.com/wordnik/swagger-ui

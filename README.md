@@ -23,6 +23,7 @@ based on the [JSON Schema][json-schema] associated with that version of the spec
 * Semantic validation: Validates Swagger files above and beyond the structure of the file
 * Connect middleware for adding pertinent Swagger information to your requests (swagger-metadata)
 * Connect middleware for wiring request handlers to requests based on Swagger documentation (swagger-router)
+* Connect middleware for serving your Swagger documents and [Swagger UI][swagger-ui]
 * Connect middleware for using Swagger resource documents for pre-route validation (swagger-validator)
     * Validate the request Content-Type based on the operation's `consumes` value(s)
     * Validate the request parameter types
@@ -68,3 +69,4 @@ project root will lint check the source code and run the unit tests.
 [swagger]: https://helloreverb.com/developers/swagger
 [swagger-docs-v1_2]: https://github.com/wordnik/swagger-spec/blob/master/versions/1.2.md
 [swagger-docs-v2_0]: https://github.com/reverb/swagger-spec/blob/master/versions/2.0.md
+[swagger-ui]: https://github.com/wordnik/swagger-ui
