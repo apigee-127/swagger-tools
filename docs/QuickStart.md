@@ -499,12 +499,12 @@ an example: `http://localhost:3000/api/weather?location=95113&unit=F`.
 At this point you should get a `404` because there are no route handlers configured.  If you view the
 [Swagger Router (How To Use)][swagger-router-how-to-use], you'll see we can just use the `x-swagger-router-controller`
 property on either `#/paths/~1weather` or the `#/paths/~1weather/get`.  For our example, we will set the
-`#/paths/~1weather/get/parameters/1/x-swagger-router-controller` property to `Weather`.  Once you do this, the middleware
-will have a controller wired up to handle `GET` requests for the `/api/weather` path.  To enable it, we need to restart
-our server and run Node.js in the `development` environment.  _(The reason for this is in our code above we have the
-`useStubs` option for `swaggerRouter` enabled conditionally based on the Node.js environment.)_  To do this, restart
-your server using something like: `NODE_ENV=development node .`.  With mock mode enabled, if you perform the same `GET`
-on `http://localhost:3000/api/weather`, you should see a mock response that conforms to the `Weather` model defined in
+`#/paths/~1weather/get/x-swagger-router-controller` property to `Weather`.  Once you do this, the middleware will have a
+controller wired up to handle `GET` requests for the `/api/weather` path.  To enable it, we need to restart our server
+and run Node.js in the `development` environment.  _(The reason for this is in our code above we have the `useStubs`
+option for `swaggerRouter` enabled conditionally based on the Node.js environment.)_  To do this, restart your server
+using something like: `NODE_ENV=development node .`.  With mock mode enabled, if you perform the same `GET` on
+`http://localhost:3000/api/weather`, you should see a mock response that conforms to the `Weather` model defined in
 `#/definitions/Weather`.  Here is an example:
 
 ```json
