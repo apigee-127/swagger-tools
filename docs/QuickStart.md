@@ -71,6 +71,12 @@ To describe this API as a Swagger document, we would end up with something like 
   "paths": {
     "/weather": {
       "get": {
+        "tags": [
+          {
+            "description": "Operations on Weather",
+            "name": "/weather"
+          }
+        ],
         "description": "Returns the current weather for the requested location using the requested unit.",
         "parameters": [
           {

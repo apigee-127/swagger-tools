@@ -337,6 +337,11 @@ are served at their respective subpath below the path configured by `options.api
 the [complete example](#complete-example) below for your Swagger version to see the paths exposed by the `swaggerUi`
 middleware.
 
+### Caveats
+
+For Swagger 2.0 documents, you **must** use [operation tags][operation-tags] to get Swagger UI to display your
+operations.  [swagger-ui issue #605][swagger-ui-bug] is tracking this.
+
 ## Swagger Validator
 
 The Swagger Validator middleware is used to validate your requests based on the constraints defined in the operation
@@ -455,3 +460,4 @@ http.createServer(app).listen(3000);
 [connect]: https://github.com/senchalabs/connect
 [issue-30]: https://github.com/apigee-127/swagger-tools/issues/30
 [swagger-ui]: https://github.com/wordnik/swagger-ui
+[swagger-ui-bug]: https://github.com/wordnik/swagger-ui/issues/605
