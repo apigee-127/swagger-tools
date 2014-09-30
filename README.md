@@ -19,47 +19,33 @@ see what issues we are aware of and what features/enhancements we are working on
 ## Features
 
 * Schema validation: For the file(s) supported by the Swagger specification, ensure they pass structural validation
-based on the [JSON Schema][json-schema] associated with that version of the specification
-* Semantic validation: Validates Swagger files above and beyond the structure of the file
-* Connect middleware for adding pertinent Swagger information to your requests (swagger-metadata)
-* Connect middleware for wiring request handlers to requests based on Swagger documentation (swagger-router)
-* Connect middleware for serving your Swagger documents and [Swagger UI][swagger-ui]
-* Connect middleware for using Swagger resource documents for pre-route validation (swagger-validator)
+based on the [JSON Schema][json-schema] associated with that version of the specification _(Browser and Node)_
+* Semantic validation: Validates Swagger files above and beyond the structure of the file _(Browser and Node)_
+* Connect middleware for adding pertinent Swagger information to your requests _(Node only)_
+* Connect middleware for wiring request handlers to requests based on Swagger documentation _(Node only)_
+* Connect middleware for serving your Swagger documents and [Swagger UI][swagger-ui] _(Node only)_
+* Connect middleware for using Swagger resource documents for pre-route validation _(Node only)_
     * Validate the request Content-Type based on the operation's `consumes` value(s)
     * Validate the request parameter types
     * Validate the request parameter values
 
 ## Installation
 
-swagger-tools is distributed via [NPM][npm] so installation is the usual: `npm install swagger-tools --save`
-
-## Usage
-
-The swagger-tools module currently exposes one property: `v1_2`.  This is a reference to an object that has the
-following structure:
-
-* `docsUrl`: This is a link to the Swagger documentation for the corresponding specification version
-* `schemasUrl`: This is a link to the Swagger JSON Schema files for the corresponding specification version
-* `version`: This is the Swagger specification version
-* `schemas`: This is an object where the keys are the Swagger JSON Schema file names and the object is the loaded schema
-contents
-* `validate`: This is a function used to validate your Swagger document(s) based on the schema(s) for that
-specifications schemas and semantically
-* `composeModel`: This takes a Swagger document and generates a JSON Schema representation of the model completely
-composed
-* `validateModel`: This takes a Swagger document, a model id/path and a model document and validates the model document
-against its defined schema in the Swagger document
+swagger-tools is distributed via [NPM][npm] so installation is the usual: `npm install swagger-tools --save`.  You can
+also install swagger-tools using [Bower][bower] for browser-based applications using
+`bower install swagger-tools --save`.
 
 ## Documentation
 
-For more detailed documentation on what is provided by Swagger Tools and how to use it, please view the
-[documentation][documentation] or jump straight to the [Quick Start][quick-start].
+swagger-tools is heavily documentedso head on over to the project  [documentation][documentation] or jump straight to
+the [Quick Start][quick-start].
 
 ## Contributing
 
 This project uses [Gulp][gulp] for building so `npm install -g gulp` once you clone this project.  Running `gulp` in the
 project root will lint check the source code and run the unit tests.
 
+[bower]: http://bower.io/
 [documentation]: https://github.com/apigee-127/swagger-tools/blob/master/docs/README.md
 [gulp]: http://gulpjs.com/
 [json-schema]: http://json-schema.org/

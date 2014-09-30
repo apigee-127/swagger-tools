@@ -24,9 +24,32 @@
 
 'use strict';
 
+var _ = {
+  times: require('lodash.times')
+};
+var browserify = require('browserify');
 var gulp = require('gulp');
 var jshint = require('gulp-jshint');
 var mocha = require('gulp-mocha');
+var source = require('vinyl-source-stream');
+
+gulp.task('browserify', function () {
+  _.times(2, function (n) {
+    var b = browserify('./lib/specs.js', {
+      debug: n === 0,
+      standalone: 'SwaggerTools.specs'
+    });
+
+    if (n === 1) {
+      b.transform({global: true}, 'uglifyify');
+    }
+
+    b.transform('brfs')
+      .bundle()
+      .pipe(source('swagger-tools' + (n === 1 ? '-min' : '') + '.js'))
+      .pipe(gulp.dest('./browser/'));
+  });
+});
 
 gulp.task('lint', function () {
   return gulp.src([
@@ -49,3 +72,4 @@ gulp.task('test', function () {
 });
 
 gulp.task('default', ['lint', 'test']);
+gulp.task('dist', ['default', 'browserify']);

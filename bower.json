@@ -1,0 +1,28 @@
+{
+  "name": "swagger-tools",
+  "main": "browser/swagger-tools.js",
+  "version": "0.5.6",
+  "homepage": "https://github.com/apigee-127/swagger-tools",
+  "authors": [
+    "Jeremy Whitlock <jwhitlock@apache.org>"
+  ],
+  "description": "Various tools for using and integrating with Swagger.",
+  "keywords": [
+    "browser", "swagger"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bin",
+    "bower_components",
+    "docs",
+    "gulpfile",
+    "index.js",
+    "middleware",
+    "package.json",
+    "samples",
+    "schemas",
+    "test"
+  ]
+}

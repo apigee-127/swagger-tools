@@ -1,5 +1,6 @@
-The purpose of Swagger Tools (swagger-tools) is to provide some useful [Swagger][swagger] tooling written in/for
-Node.js.  Use the links below to get specific documentation about the provided APIs and tools:
+The purpose of Swagger Tools (swagger-tools) is to provide some useful [Swagger][swagger] tooling written for Node.js
+and the browser (where applicable).  Use the links below to get specific documentation about the provided APIs and
+tools:
 
 * [API][swagger-tools-api]: The JavaScript API for interacting with Swagger documents
 * [Middleware][swagger-tools-middleware]: Connect middleware using Swagger information for various things
@@ -7,11 +8,29 @@ Node.js.  Use the links below to get specific documentation about the provided A
 
 ## Installation
 
-As of right now, Swagger Tools is only available for Node.js.  _(The reason this is mentioned is because we will
-eventually make a browser distribution for the applicable parts of the project.  See
-[#22](https://github.com/apigee-127/swagger-tools/issues/22).)_
+Swagger Tools is available for both Node.js and the browser.  Installation instructions for each environment are below.
 
-If you want to use the Swagger Tools APIs and middleware, install Swagger Tools into your project like so:
+### Browser
+
+Installation for browser applications can be done via [Bower][bower] or by downloading a standalone binary.
+
+#### Using Bower
+
+```
+bower install swagger-tools --save
+```
+
+#### Standalone Binaries
+
+The standalone binaries come in two flavors:
+
+* [swagger-tools.js](https://raw.github.com/apigee-127/swagger-tools/master/browser/swagger-tools.js): _876kb_, full source and source maps
+* [swagger-tools-min.js](https://raw.github.com/apigee-127/swagger-tools/master/browser/swagger-tools-min.js): _204kb_, minified, compressed
+and no sourcemap
+
+### Node.js
+
+Installation for Node.js applications can be done via [NPM][npm].
 
 ```
 npm install swagger-tools --save
@@ -26,6 +45,8 @@ npm install -g swagger-tools
 
 At this point, you're ready for the [Quick Start][quick-start].
 
+[bower]: http://bower.io/
+[npm]: npmjs.org
 [quick-start]: https://github.com/apigee-127/swagger-tools/blob/master/docs/QuickStart.md
 [swagger]: http://swagger.io/
 [swagger-tools-api]: https://github.com/apigee-127/swagger-tools/blob/master/docs/API.md

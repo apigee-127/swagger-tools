@@ -24,7 +24,9 @@
 
 'use strict';
 
-var _ = require('lodash');
+var _ = {
+  each: require('lodash.foreach')
+};
 var swagger = require('../');
 
 module.exports.createServer = function createServer (middlewareArgs, middlewares, handler) {

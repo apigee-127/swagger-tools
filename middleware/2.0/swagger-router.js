@@ -24,7 +24,14 @@
 
 'use strict';
 
-var _ = require('lodash');
+var _ = {
+  defaults: require('lodash.defaults'),
+  each: require('lodash.foreach'),
+  find: require('lodash.find'),
+  isFunction: require('lodash.isfunction'),
+  isPlainObject: require('lodash.isplainobject'),
+  isUndefined: require('lodash.isundefined')
+};
 var helpers = require('../helpers');
 var createStubHandler = helpers.createStubHandler;
 var getHandlerName = helpers.getHandlerName;

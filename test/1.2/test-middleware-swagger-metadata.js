@@ -29,7 +29,11 @@
 // Here to quiet down Connect logging errors
 process.env.NODE_ENV = 'test';
 
-var _ = require('lodash');
+var _ = {
+  each: require('lodash.foreach'),
+  isFunction: require('lodash.isfunction'),
+  isUndefined: require('lodash.isundefined')
+};
 var assert = require('assert');
 var middleware = require('../../').middleware.v1_2.swaggerMetadata; // jshint ignore:line
 var petJson = require('../../samples/1.2/pet.json');

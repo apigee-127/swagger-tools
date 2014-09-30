@@ -24,9 +24,15 @@
 
 'use strict';
 
-var _ = require('lodash');
+var _ = {
+  each: require('lodash.foreach'),
+  isArray: require('lodash.isarray'),
+  isFunction: require('lodash.isfunction'),
+  isNumber: require('lodash.isnumber'),
+  isPlainObject: require('lodash.isplainobject'),
+  isUndefined: require('lodash.isundefined')
+};
 var fs = require('fs');
-var parseurl = require('parseurl');
 var path = require('path');
 
 var helpers = require('../lib/helpers');
@@ -281,28 +287,6 @@ module.exports.createStubHandler = function createStubHandler (req, res, version
     res.end(mockResponse(version, req));
     // res.end('Stubbed response for ' + getHandlerName(version, req));
   };
-};
-
-module.exports.expressStylePath = function expressStylePath (basePath, apiPath) {
-  basePath = parseurl({url: basePath || '/'}).pathname || '/';
-
-  // Make sure the base path starts with '/'
-  if (basePath.charAt(0) !== '/') {
-    basePath = '/' + basePath;
-  }
-
-  // Make sure the base path ends with '/'
-  if (basePath.charAt(basePath.length - 1) !== '/') {
-    basePath = basePath + '/';
-  }
-
-  // Make sure the api path does not start with '/' since the base path will end with '/'
-  if (apiPath.charAt(0) === '/') {
-    apiPath = apiPath.substring(1);
-  }
-
-  // Replace Swagger syntax for path parameters with Express' version (All Swagger path parameters are required)
-  return (basePath + apiPath).replace(/{/g, ':').replace(/}/g, '');
 };
 
 module.exports.isModelParameter = function isModelParameter (version, param) {

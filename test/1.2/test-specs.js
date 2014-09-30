@@ -26,8 +26,13 @@
 
 'use strict';
 
-// Module requirements
-var _ = require('lodash');
+var _ = {
+  cloneDeep: require('lodash.clonedeep'),
+  each: require('lodash.foreach'),
+  isUndefined: require('lodash.isundefined'),
+  merge: require('lodash.merge'),
+  uniq: require('lodash.uniq')
+};
 var assert = require('assert');
 var fs = require('fs');
 var path = require('path');

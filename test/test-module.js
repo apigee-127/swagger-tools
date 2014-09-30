@@ -26,7 +26,10 @@
 
 'use strict';
 
-var _ = require('lodash');
+var _ = {
+  difference: require('lodash.difference'),
+  isPlainObject: require('lodash.isplainobject')
+};
 var assert = require('assert');
 var swagger = require('../');
 

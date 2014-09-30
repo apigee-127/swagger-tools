@@ -24,7 +24,12 @@
 
 'use strict';
 
-var _ = require('lodash');
+var _ = {
+  defaults: require('lodash.defaults'),
+  each: require('lodash.foreach'),
+  isPlainObject: require('lodash.isplainobject'),
+  isUndefined: require('lodash.isundefined')
+};
 var parseurl = require('parseurl');
 var path = require('path');
 var serveStatic = require('serve-static');

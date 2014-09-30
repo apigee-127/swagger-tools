@@ -24,7 +24,15 @@
 
 'use strict';
 
-var _ = require('lodash');
+var _ = {
+  each: require('lodash.foreach'),
+  find: require('lodash.find'),
+  isArray: require('lodash.isarray'),
+  isPlainObject: require('lodash.isplainobject'),
+  isUndefined: require('lodash.isundefined'),
+  union: require('lodash.union')
+};
+var expressStylePath = require('../../lib/helpers').expressStylePath;
 var helpers = require('../helpers');
 var parseurl = require('parseurl');
 var pathToRegexp = require('path-to-regexp');
@@ -60,7 +68,7 @@ exports = module.exports = function swaggerMetadataMiddleware (swaggerObject) {
   // Gather the paths, their path regex patterns and the corresponding operations
   _.each(swaggerObject.paths, function (path, pathName) {
     var keys = [];
-    var re = pathToRegexp(helpers.expressStylePath(swaggerObject.basePath, pathName), keys);
+    var re = pathToRegexp(expressStylePath(swaggerObject.basePath, pathName), keys);
     var reStr = re.toString();
 
     paths[reStr] = {

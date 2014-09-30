@@ -24,7 +24,11 @@
 
 'use strict';
 
-var _ = require('lodash');
+var _ = {
+  each: require('lodash.foreach'),
+  isUndefined: require('lodash.isundefined'),
+  uniq: require('lodash.uniq')
+};
 var isModelParameter = require('../helpers').isModelParameter;
 var validators = require('../../lib/validators');
 

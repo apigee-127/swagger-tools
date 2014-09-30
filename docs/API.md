@@ -15,10 +15,12 @@ this project will be updated as upstream Swagger schemas/specifications change.
 
 ## API
 
-When you import Swagger Tools into your project (`require('swagger-tools')`), an object is returned with two properties:
+When you import Swagger Tools into your project (`require('swagger-tools')` for Node.js or `SwaggerTools` for the
+browser), an object is returned with the following property/properties:
 
 * **middleware:** An object whose keys are the Swagger version (dots are converted to underscores) and the value is the
 also an object whose keys are the middleware name and its values are the corresponding [Connect][connect] middleware
+_(Node.js only)_
 * **specs:** An object whose keys are the Swagger version (dots are converted to underscores) and the value is a
 `Specification` object
 
