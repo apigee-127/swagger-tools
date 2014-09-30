@@ -18,6 +18,7 @@
     "bin",
     "bower_components",
     "docs",
+    "examples",
     "gulpfile",
     "index.js",
     "middleware",
