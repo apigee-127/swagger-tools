@@ -22,10 +22,58 @@
 
   <!-- enabling this will enable oauth2 implicit scope support -->
   <script src='lib/swagger-oauth.js' type='text/javascript'></script>
-
   <script type="text/javascript">
     $(function () {
-      // Get Swagger UI URL from the server
+      var initSwaggerUi = function initSwaggerUi (url) {
+        window.swaggerUi = new SwaggerUi({
+          url: url,
+          dom_id: "swagger-ui-container",
+          supportedSubmitMethods: ['get', 'post', 'put', 'delete'],
+          onComplete: function (swaggerApi, swaggerUi){
+            log("Loaded SwaggerUI");
+            if(typeof initOAuth == "function") {
+              /*
+              initOAuth({
+                clientId: "your-client-id",
+                realm: "your-realms",
+                appName: "your-app-name"
+              });
+              */
+            }
+            $('pre code').each(function(i, e) {
+              hljs.highlightBlock(e)
+            });
+          },
+          onFailure: function(data) {
+            log("Unable to Load SwaggerUI");
+          },
+          docExpansion: "none",
+          sorter : "alpha"
+        });
+
+        function addApiKeyAuthorization() {
+          var key = $('#input_apiKey')[0].value;
+          log("key: " + key);
+          if(key && key.trim() != "") {
+              log("added key " + key);
+              window.authorizations.add("api_key", new ApiKeyAuthorization("api_key", key, "query"));
+          }
+        }
+
+        $('#input_apiKey').change(function() {
+          addApiKeyAuthorization();
+        });
+
+        // if you have an apiKey you would like to pre-populate on the page for demonstration purposes...
+        /*
+          var apiKey = "myApiKeyXXXX123456789";
+          $('#input_apiKey').val(apiKey);
+          addApiKeyAuthorization();
+        */
+
+        window.swaggerUi.load();
+      };
+
       $.ajax({
         type: "HEAD",
         async: true,
@@ -33,47 +81,23 @@
         error: function (xhr, status, thrown) {
           log("Unable to get the Swagger UI URL from the server: " + thrown);
         },
-        success: function (message, text, response){
-          window.swaggerUi = new SwaggerUi({
-            url: response.getResponseHeader('Swagger-API-Docs-URL'),
-            dom_id: "swagger-ui-container",
-            supportedSubmitMethods: ['get', 'post', 'put', 'delete'],
-            onComplete: function (swaggerApi, swaggerUi){
-              log("Loaded SwaggerUI");
+        success: function (message, text, response) {
+          var url = response.getResponseHeader('Swagger-API-Docs-URL');
 
-              if(typeof initOAuth == "function") {
-                /*
-                initOAuth({
-                  clientId: "your-client-id",
-                  realm: "your-realms",
-                  appName: "your-app-name"
-                });
-                */
-              }
-              $('pre code').each(function (i, e) {
-                hljs.highlightBlock(e)
-              });
-            },
-            onFailure: function (data) {
-              log("Unable to Load SwaggerUI");
-            },
-            docExpansion: "none",
-            sorter : "alpha"
-          });
+          if (!url) {
+            url = window.location.search.match(/url=([^&]+)/);
 
-          $('#input_apiKey').change(function() {
-            var key = $('#input_apiKey')[0].value;
-            log("key: " + key);
-            if(key && key.trim() != "") {
-              log("added key " + key);
-              window.authorizations.add("key", new ApiKeyAuthorization("api_key", key, "query"));
+            if (url && url.length > 1) {
+              url = url[1];
+            } else {
+              url = "http://petstore.swagger.wordnik.com/v2/swagger.json";
             }
-          });
+          }
 
-          window.swaggerUi.load();
+          initSwaggerUi(url);
         }
       });
-    });
+  });
   </script>
 </head>
 

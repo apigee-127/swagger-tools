@@ -206,6 +206,8 @@ var SwaggerClient = function(url, options) {
 
   this.failure = options.failure != null ? options.failure : function() {};
   this.progress = options.progress != null ? options.progress : function() {};
+  this.spec = options.spec;
+
   if (options.success != null)
     this.build();
 }
@@ -247,9 +249,18 @@ SwaggerClient.prototype.build = function() {
       }
     }
   };
-  var e = (typeof window !== 'undefined' ? window : exports);
-  var status = e.authorizations.apply(obj);
-  new SwaggerHttp().execute(obj);
+  if(this.spec) {
+    var self = this;
+    setTimeout(function() {
+      self.buildFromSpec(self.spec);
+    }, 10);
+  }
+  else {
+    var e = (typeof window !== 'undefined' ? window : exports);
+    var status = e.authorizations.apply(obj);
+    new SwaggerHttp().execute(obj);
+  }
+
   return this;
 };
 
@@ -289,8 +300,10 @@ SwaggerClient.prototype.buildFromSpec = function(response) {
     for(httpMethod in response.paths[path]) {
       var operation = response.paths[path][httpMethod];
       var tags = operation.tags;
-      if(typeof tags === 'undefined')
-        tags = [];
+      if(typeof tags === 'undefined') {
+        operation.tags = [ 'default' ];
+        tags = operation.tags;
+      }
       var operationId = this.idFromOp(path, httpMethod, operation);
       var operation = new Operation (
         this,
@@ -660,6 +673,7 @@ Operation.prototype.execute = function(arg1, arg2, arg3, arg4, parent) {
   var obj = {
     url: url,
     method: this.method,
+    body: args.body,
     useJQuery: this.useJQuery,
     headers: headers,
     on: {
@@ -1305,7 +1319,12 @@ ShredHttpClient.prototype.execute = function(obj) {
     if(contentType != null) {
       if(contentType.indexOf("application/json") == 0 || contentType.indexOf("+json") > 0) {
         if(response.content.data && response.content.data !== "")
-          out.obj = JSON.parse(response.content.data);
+          try{
+            out.obj = JSON.parse(response.content.data);
+          }
+          catch (e) {
+            // unable to parse
+          }
         else
           out.obj = {}
       }
