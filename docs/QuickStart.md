@@ -3,6 +3,9 @@ allow you to get the current weather for a location or zip code.  We will build 
 Swagger document _(This example will use Swagger 2.0)_ and then we will move toward the implementation.  The hope is
 that you will see how much simpler your implementation can be thanks to the middleware Swagger Tools provides.
 
+In case you get stuck going through the Quick Start or would just like to see the finished product, you can find the
+full source or the completed example in the [/examples][swagger-tools-examples] directory.
+
 **Note:** Throughout this document we will be using [JSON Pointer][json-pointer] syntax to "point to" paths in our
 Swagger document.  The idea is to use a simpler format for describing a path to a specific location in the Swagger JSON
 document.  While the JSON Pointer documentation would be a good read, to give you enough information to understand this
@@ -695,4 +698,5 @@ out and implement a REST API with minimal repetition and boilerplate.  If you ha
 [swagger-ui]: https://github.com/wordnik/swagger-ui
 [swagger-ui-how-to-use]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Middleware.md#swagger-ui
 [swagger-tools]: https://www.npmjs.org/package/swagger-tools
+[swagger-tools-examples]: https://github.com/apigee-127/swagger-tools/tree/master/examples
 [weather-js]: https://github.com/cmfatih/weather
