@@ -208,24 +208,34 @@ var spec = require('swagger-tools').specs.v2; // Using the latest Swagger 2.x sp
 var swaggerObject = require('./samples/2.0/petstore.json'); // This assumes you're in the root of the swagger-tools
 var result = spec.validate(swaggerObject);
 
-if (result) {
-  console.log('Swagger document failed validation:');
+if (typeof result !== 'undefined') {
+  if (result.errors.length > 0) {
+    console.log('The server could not start due to invalid Swagger document...');
 
-  console.log('Errors');
-  console.log('------');
+    console.log('');
 
-  result.errors.forEach(function (err) {
-    console.log('#/' + err.path.join('/') + ': ' + err.message);
-  });
+    console.log('Errors');
+    console.log('------');
 
-  console.log('');
+    result.errors.forEach(function (err) {
+      console.log('#/' + err.path.join('/') + ': ' + err.message);
+    });
 
-  console.log('Warnings');
-  console.log('--------');
+    console.log('');
+  }
 
-  result.warnings.forEach(function (warn) {
-    console.log('#/' + warn.path.join('/') + ': ' + warn.message);
-  });
+  if (result.warnings.length > 0) {
+    console.log('Warnings');
+    console.log('--------');
+
+    result.warnings.forEach(function (warn) {
+      console.log('#/' + warn.path.join('/') + ': ' + warn.message);
+    });
+  }
+
+  if (result.errors.length > 0) {
+    process.exit(1);
+  }
 } else {
   console.log('Swagger document is valid');
 }
@@ -234,6 +244,8 @@ if (result) {
 **Swagger 1.2**
 
 ```javascript
+'use strict';
+
 var spec = require('swagger-tools').specs.v1; // Using the latest Swagger 1.x specification
 var resourceListing = require('./samples/1.2/resourceListing.json'); // This assumes you're in the root of the swagger-tools
 var apiDeclarations = [
@@ -242,49 +254,76 @@ var apiDeclarations = [
   require('./samples/1.2/user.json') // This assumes you're in the root of the swagger-tools
 ];
 var result = spec.validate(resourceListing, apiDeclarations);
+var apiDeclarations = [
+  require('./api/weather.json')
+];
 
-if (result) {
-  console.log('Swagger document failed validation:');
+// Validate the Swagger documents
+var result = swaggerTools.specs.v1.validate(apiDocJson, apiDeclarations);
+var errorCount = 0;
 
-  console.log('API Errors');
-  console.log('----------');
-
-  result.errors.forEach(function (err) {
-    console.log('#/' + err.path.join('/') + ': ' + err.message);
-  });
+if (typeof result !== 'undefined') {
+  console.log('The server could not start due to invalid Swagger document...');
 
   console.log('');
 
-  console.log('API Warnings');
-  console.log('------------');
+  if (result.errors.length > 0) {
+    errorCount += result.errors.length;
 
-  result.warnings.forEach(function (warn) {
-    console.log('#/' + warn.path.join('/') + ': ' + warn.message);
-  });
+    console.log('Errors');
+    console.log('------');
+
+    result.errors.forEach(function (err) {
+      console.log('#/' + err.path.join('/') + ': ' + err.message);
+    });
+
+    console.log('');
+  }
+
+  if (result.warnings.length > 0) {
+    console.log('Warnings');
+    console.log('--------');
+
+    result.warnings.forEach(function (warn) {
+      console.log('#/' + warn.path.join('/') + ': ' + warn.message);
+    });
+
+    console.log('');
+  }
 
   if (result.apiDeclarations) {
     result.apiDeclarations.forEach(function (adResult, index) {
       var errorHeader = 'API Declaration (' + apiDeclarations[index].resourcePath + ') Errors';
       var warningHeader = 'API (' + apiDeclarations[index].resourcePath + ') Warnings';
 
-      console.log('');
+      if (adResult.errors.length > 0) {
+        errorCount += adResult.errors.length;
 
-      console.log(errorHeader);
-      console.log(new Array(errorHeader.length + 1).join('-'));
+        console.log(errorHeader);
+        console.log(new Array(errorHeader.length + 1).join('-'));
 
-      adResult.errors.forEach(function (err) {
-        console.log('#/' + err.path.join('/') + ': ' + err.message);
-      });
+        adResult.errors.forEach(function (err) {
+          console.log('#/' + err.path.join('/') + ': ' + err.message);
+        });
 
-      console.log('');
+        console.log('');
+      }
 
-      console.log(warningHeader);
-      console.log(new Array(warningHeader.length + 1).join('-'));
+      if (adResult.warnings.length > 0) {
+        console.log(warningHeader);
+        console.log(new Array(warningHeader.length + 1).join('-'));
 
-      adResult.warnings.forEach(function (warn) {
-        console.log('#/' + warn.path.join('/') + ': ' + warn.message);
-      });
+        adResult.warnings.forEach(function (warn) {
+          console.log('#/' + warn.path.join('/') + ': ' + warn.message);
+        });
+
+        console.log('');
+      }
     });
+  }
+
+  if (errorCount > 0) {
+    process.exit(1);
   }
 } else {
   console.log('Swagger document is valid');

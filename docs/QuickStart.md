@@ -270,6 +270,8 @@ will have the same needs.  Let's look at how we might implement this.
 The above being said, without Swagger Tools or some similar tool you'd end up with something point like this:
 
 ```javascript
+'use strict';
+
 var weather = require('weather-js');
 var send400 = function send400 (res, next, msg) {
   res.statusCode = 400;
@@ -291,7 +293,7 @@ module.exports.getWeather = function getWeather (req, res, next) {
   }
 
   // Code necessary to consume the Weather API and respond
-  weather.find({search: req.params.location, degreeType: req.params.unit}, function(err, result) {
+  weather.find({search: req.params.location, degreeType: unit}, function(err, result) {
     if (err) {
       return next(err.message);
     }
@@ -322,6 +324,8 @@ generated documentation reflects this change and so does the request validation 
 With Swagger Tools, your code would look more like this:
 
 ```javascript
+'use strict';
+
 var weather = require('weather-js');
 
 module.exports.getWeather = function getWeather (req, res, next) {
@@ -330,7 +334,7 @@ module.exports.getWeather = function getWeather (req, res, next) {
 
   // This is only here due to the bug mentioned above and is not a bug/limitation of swagger-tools
   // https://github.com/apigee-127/swagger-tools/blob/master/docs/QuickStart.md#upstream-bug
-  if (['C', 'F'].indexOf(req.param.unit) === -1) {
+  if (['C', 'F'].indexOf(unit) === -1) {
     res.statusCode = 400;
     res.end('unit must be either C or F');
   }
@@ -345,6 +349,7 @@ module.exports.getWeather = function getWeather (req, res, next) {
     res.end(JSON.stringify(result[0] || {}, null, 2));
   });
 };
+
 ```
 
 You'll notice the code that handles default values for request parameters and the validation of request parameters is
@@ -406,11 +411,12 @@ The next thing we need to do is create our server.  This is the code that will w
 Swagger Tools, and then begin listening on a port to begin hosting the API.  Below is an example of such a  server:
 
 ```javascript
+'use strict';
+
 var app = require('connect')();
 var bodyParser = require('body-parser');
 var http = require('http');
 var parseurl = require('parseurl');
-var path = require('path');
 var qs = require('qs');
 var swaggerTools = require('swagger-tools');
 var swaggerMetadata = swaggerTools.middleware.v2.swaggerMetadata;
@@ -427,7 +433,7 @@ var options = {
 };
 
 // The Swagger document (require it, build it programmatically, fetch it from a URL, ...)
-var swaggerDoc = require(path.join(__dirname, 'api', 'swagger.json'));
+var swaggerDoc = require('./api/swagger.json');
 
 // Validate the Swagger document
 var result = swaggerTools.specs.v2.validate(swaggerDoc);
@@ -483,7 +489,7 @@ app.use(swaggerValidator());
 app.use(swaggerRouter(options));
 
 // Serve the Swagger documents and Swagger UI
-app.use(swaggerUi(swaggerObject));
+app.use(swaggerUi(swaggerDoc));
 
 // Start the server
 http.createServer(app).listen(serverPort, function () {
