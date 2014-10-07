@@ -18,6 +18,7 @@ see what issues we are aware of and what features/enhancements we are working on
 
 ## Features
 
+* Simple CLI for validating Swagger documents
 * Schema validation: For the file(s) supported by the Swagger specification, ensure they pass structural validation
 based on the [JSON Schema][json-schema] associated with that version of the specification _(Browser and Node)_
 * Semantic validation: Validates Swagger files above and beyond the structure of the file _(Browser and Node)_
@@ -31,9 +32,9 @@ based on the [JSON Schema][json-schema] associated with that version of the spec
 
 ## Installation
 
-swagger-tools is distributed via [NPM][npm] so installation is the usual: `npm install swagger-tools --save`.  You can
-also install swagger-tools using [Bower][bower] for browser-based applications using
-`bower install swagger-tools --save`.
+swagger-tools is distributed via [NPM][npm] so installation is the usual: `npm install swagger-tools --save`.  _(If you
+plan on using the CLI, you would install using `npm install swagger-tools -g`.)_  You can also install swagger-tools
+using [Bower][bower] for browser-based applications using `bower install swagger-tools --save`.
 
 ## Documentation
 
