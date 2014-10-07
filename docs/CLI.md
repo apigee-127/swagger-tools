@@ -33,7 +33,7 @@ available commands and their description.
 
 ```
 
-### Command HELP
+### Command Help
 
 `swagger-tools help <command>` or `swagger-tools <command> --help`
 
