@@ -10,6 +10,8 @@ available commands and their description.
 
 `swagger-tools help` or `swagger-tools --help`
 
+Here is an example output by running `swagger-tools --help`:
+
 ```
 
   Usage: swagger-tools [options] [command]
@@ -36,6 +38,8 @@ available commands and their description.
 ### Command Help
 
 `swagger-tools help <command>` or `swagger-tools <command> --help`
+
+Here is an example output by running `swagger-tools help validate`:
 
 ```
 
