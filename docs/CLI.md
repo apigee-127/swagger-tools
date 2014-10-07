@@ -8,7 +8,7 @@ available commands and their description.
 
 ### Global Help
 
-`swagger-tools help` or `swagger-tools--help`
+`swagger-tools help` or `swagger-tools --help`
 
 ```
 
@@ -30,6 +30,20 @@ available commands and their description.
 
     -h, --help     output usage information
     -V, --version  output the version number
+
+```
+
+### Command HELP
+
+`swagger-tools help <command>` or `swagger-tools <command> --help`
+
+```
+
+  Usage: validate [options] <resourceListingOrSwaggerDoc> [apiDeclarations...]
+
+  Options:
+
+    -h, --help  output usage information
 
 ```
 
