@@ -24,7 +24,11 @@
     "connect",
     "swagger"
   ],
+  "bin": {
+    "swagger-tools": "./bin/swagger-tools"
+  },
   "files": [
+    "bin",
     "index.js",
     "LICENSE",
     "lib",
@@ -47,6 +51,7 @@
     "vinyl-source-stream": "^1.0.0"
   },
   "dependencies": {
+    "commander": "^2.3.0",
     "jjv": "^1.0.0",
     "jjve": "^0.4.0",
     "lodash.clonedeep": "^2.4.1",
@@ -73,6 +78,7 @@
     "path-to-regexp": "^0.2.3",
     "serve-static": "^1.6.3",
     "spark-md5": "0.0.5",
+    "string": "^2.1.0",
     "traverse": "^0.6.6"
   }
 }

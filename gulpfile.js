@@ -53,6 +53,7 @@ gulp.task('browserify', function () {
 
 gulp.task('lint', function () {
   return gulp.src([
+      './bin/swagger-tools',
       './index.js',
       './lib/**/*.js',
       './middleware/**/*.js',

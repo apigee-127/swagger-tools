@@ -1,0 +1,197 @@
+#!/usr/bin/env node
+
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2014 Apigee Corporation
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+'use strict';
+
+var _ = {
+  each: require('lodash.foreach'),
+  find: require('lodash.find'),
+  isString: require('lodash.isstring'),
+  isUndefined: require('lodash.isundefined')
+};
+var helpers = require('../lib/helpers');
+var paddingAmount = 18;
+var path = require('path');
+var pkg = require('../package.json');
+var program = require('commander');
+var S = require('string');
+
+var exitWithError = function exitWithError (msg) {
+  console.error();
+  console.error('  error: ' + msg);
+  console.error(); // Here only to match the output of commander.js
+
+  process.exit(1);
+};
+var getSpec = function getSpec (version) {
+  var spec = helpers.getSpec(version);
+
+  if (_.isUndefined(spec)) {
+    return exitWithError(program._name + ' does not support Swagger version ' + version + '.');
+  }
+
+  return spec;
+};
+
+
+program
+  .version(pkg.version);
+
+program
+  .command('help [command]')
+  .description('Display help information')
+  .action(function (command) {
+    var theCommand;
+
+    if (_.isUndefined(command)) {
+      theCommand = this;
+    } else {
+      theCommand = _.find(this.commands, function (cmd) {
+        return cmd._name === command;
+      });
+    }
+
+    if (_.isUndefined(theCommand)) {
+      return exitWithError(program._name + ' does not support the ' + command + ' command.');
+    }
+
+    theCommand.help();
+  });
+
+program
+  .command('info <version>')
+  .description('Display information about the Swagger version requested')
+  .action(function (version) {
+    var spec = getSpec(version);
+
+    console.log();
+    console.log('Swagger ' + version + ' Information:');
+    console.log();
+
+    console.log('  ' + S('documentation url').padRight(paddingAmount).s + spec.docsUrl);
+    console.log('  ' + S('schema(s) url').padRight(paddingAmount).s + spec.schemasUrl);
+  });
+
+program
+  .command('validate <resourceListingOrSwaggerDoc> [apiDeclarations...]')
+  .description('Display validation results for the Swagger document(s)')
+  .action(function () {
+    var apiDeclarations = [];
+    var errorCount = 0;
+    var pluralize = function pluralize (string, count) {
+      return count === 1 ? string : string + 's';
+    };
+    var printErrorsOrWarnings = function printErrorsOrWarnings (header, entries, indent) {
+      console.error(header);
+      console.error();
+
+      _.each(entries, function (entry) {
+        console.error(new Array(indent + 1).join(' ') + '#/' + entry.path.join('/') + ': ' + entry.message);
+      });
+
+      console.error();
+    };
+    var warningCount = 0;
+    var result;
+    var resourceListing;
+    var spec;
+    var swaggerObject;
+    var version;
+
+    _.each(this.args, function (arg, index) {
+      if (!_.isString(arg)) {
+        return;
+      }
+
+      var json = require(path.resolve(arg));
+
+      if (index === 0) {
+        if (json.swagger) {
+          swaggerObject = json;
+          version = json.swagger.toFixed(1).toString();
+        } else if (json.swaggerVersion) {
+          resourceListing = json;
+          version = json.swaggerVersion;
+        } else {
+          return exitWithError('Unable to identify the Swagger version for document: ' + arg);
+        }
+      } else if (_.isUndefined(swaggerObject)) {
+        apiDeclarations.push(json);
+      }
+    });
+
+    spec = getSpec(version);
+
+    if (_.isUndefined(resourceListing)) {
+      result = spec.validate(swaggerObject);
+    } else {
+      result = spec.validate(resourceListing, apiDeclarations);
+    }
+
+    if (!_.isUndefined(result)) {
+      console.error();
+
+      if (result.errors.length > 0) {
+        errorCount += result.errors.length;
+
+        printErrorsOrWarnings('API Errors:', result.errors, 2);
+      }
+
+      if (result.warnings.length > 0) {
+        warningCount += result.warnings.length;
+
+        printErrorsOrWarnings('API Warnings:', result.warnings, 2);
+      }
+
+      if (result.apiDeclarations) {
+        result.apiDeclarations.forEach(function (adResult, index) {
+          var name = apiDeclarations[index].resourcePath || index;
+
+          if (adResult.errors.length > 0) {
+            errorCount += adResult.errors.length;
+
+            printErrorsOrWarnings('  API Declaration (' + name + ') Errors:', adResult.errors, 4);
+          }
+
+          if (adResult.warnings.length > 0) {
+            warningCount += adResult.warnings.length;
+
+            printErrorsOrWarnings('  API Declaration (' + name + ') Warnings:', adResult.warnings, 4);
+          }
+        });
+      }
+
+      if (errorCount > 0) {
+        console.error(errorCount + ' ' + pluralize('error', errorCount) + ' and ' + warningCount + ' ' +
+                        pluralize('warning', warningCount));
+        process.exit(1);
+      } else {
+        console.error('Validation succeeded but with ' + warningCount + ' ' + pluralize('warning', warningCount));
+      }
+    }
+  });
+
+program.parse(process.argv);
