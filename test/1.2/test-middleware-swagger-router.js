@@ -41,7 +41,6 @@ var path = require('path');
 var request = require('supertest');
 var helpers = require('../helpers');
 var createServer = helpers.createServer;
-var prepareText = helpers.prepareText;
 
 var rlJson = require('../../samples/1.2/resource-listing.json');
 var petJson = require('../../samples/1.2/pet.json');
@@ -120,12 +119,7 @@ describe('Swagger Router Middleware v1.2', function () {
       request(createServer([testResourceList, testResources], [middleware(optionsWithControllersDir)]))
         .get(basePath + '/foo')
         .expect(200)
-        .end(function(err, res) { // jshint ignore:line
-          if (err) {
-            throw err;
-          }
-          assert.equal(prepareText(res.text), 'OK');
-        });
+        .end(helpers.expectContent('OK'));
     });
   });
 
@@ -138,13 +132,7 @@ describe('Swagger Router Middleware v1.2', function () {
         .put(basePath + '/pet/1')
         .expect(405)
         .expect('Allow', 'DELETE, GET, PATCH, POST')
-        .end(function(err, res) { // jshint ignore:line
-          if (err) {
-            throw err;
-          }
-          assert.equal(prepareText(res.text),
-                       'Route defined in Swagger specification but there is no defined PUT operation.');
-        });
+        .end(helpers.expectContent('Route defined in Swagger specification but there is no defined PUT operation.'));
     });
   });
 
@@ -156,12 +144,7 @@ describe('Swagger Router Middleware v1.2', function () {
       request(createServer([testResourceList, testResources], [middleware(optionsWithControllersDir)]))
         .get(basePath + '/user/1')
         .expect(200)
-        .end(function(err, res) { // jshint ignore:line
-          if (err) {
-            throw err;
-          }
-          assert.equal(prepareText(res.text), require('../controllers/Users').response);
-        });
+        .end(helpers.expectContent(require('../controllers/Users').response));
     });
   });
 
@@ -181,12 +164,7 @@ describe('Swagger Router Middleware v1.2', function () {
         .post(basePath + '/pet')
         .send({})
         .expect(200)
-        .end(function(err, res) { // jshint ignore:line
-          if (err) {
-            throw err;
-          }
-          assert.equal(prepareText(res.text), require('../controllers2/Pets').response);
-        });
+        .end(helpers.expectContent(require('../controllers2/Pets').response));
     });
   });
 
@@ -204,12 +182,7 @@ describe('Swagger Router Middleware v1.2', function () {
       })]))
         .get(basePath + '/user/1')
         .expect(200)
-        .end(function(err, res) { // jshint ignore:line
-          if (err) {
-            throw err;
-          }
-          assert.equal(prepareText(res.text), controller.response);
-        });
+        .end(helpers.expectContent(controller.response));
     });
   });
 
@@ -224,12 +197,7 @@ describe('Swagger Router Middleware v1.2', function () {
               }))
         .get(basePath + '/pet/1')
         .expect(200)
-        .end(function(err, res) { // jshint ignore:line
-          if (err) {
-            throw err;
-          }
-          assert.equal(prepareText(res.text), 'NOT OK');
-        });
+        .end(helpers.expectContent('NOT OK'));
     });
   });
 
@@ -245,14 +213,9 @@ describe('Swagger Router Middleware v1.2', function () {
       request(createServer([testResourceList, testResources], [middleware(options)], function (req, res) {
         res.end('NOT OK');
       }))
-      .get(basePath + '/pet/1')
-      .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        if (err) {
-          throw err;
-        }
-        assert.deepEqual(JSON.parse(prepareText(res.text)), samplePet);
-      });
+        .get(basePath + '/pet/1')
+        .expect(200)
+        .end(helpers.expectContent(samplePet));
     });
   });
 
@@ -266,12 +229,7 @@ describe('Swagger Router Middleware v1.2', function () {
       request(createServer([testResourceList, testResources], [middleware(optionsWithControllersDir)]))
         .get(basePath + '/user/1')
         .expect(200)
-        .end(function(err, res) { // jshint ignore:line
-          if (err) {
-            throw err;
-          }
-          assert.equal(prepareText(res.text), require('../controllers/Users').response);
-        });
+        .end(helpers.expectContent(require('../controllers/Users').response));
     });
   });
 
@@ -281,6 +239,7 @@ describe('Swagger Router Middleware v1.2', function () {
       var testResources = _.cloneDeep(testScenarios[basePath].apiDeclarations);
 
       _.times(2, function (n) {
+        var content;
         var useStubs = n === 1 ? true : false;
         var options = {
           controllers: {
@@ -294,20 +253,17 @@ describe('Swagger Router Middleware v1.2', function () {
           },
           useStubs: useStubs
         };
+        var r = request(createServer([testResourceList, testResources], [middleware(options)]))
+                  .get(basePath + '/pet/1')
+                  .expect(200);
 
-        request(createServer([testResourceList, testResources], [middleware(options)]))
-          .get(basePath + '/pet/1')
-          .expect(200)
-          .end(function(err, res) { // jshint ignore:line
-            if (err) {
-              throw err;
-            }
-            if (useStubs) {
-              assert.deepEqual(JSON.parse(prepareText(res.text)), samplePet);
-            } else {
-              assert.equal(prepareText(res.text), 'OK');
-            }
-          });
+        if (useStubs) {
+          content = samplePet;
+        } else {
+          content = 'OK';
+        }
+
+        r.end(helpers.expectContent(content));
       });
     });
   });

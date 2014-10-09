@@ -36,9 +36,9 @@ var _ = {
   isUndefined: require('lodash.isundefined')
 };
 var assert = require('assert');
+var helpers = require('../helpers');
 var middleware = require('../../').middleware.v2_0.swaggerMetadata; // jshint ignore:line
 var petstoreJson = require('../../samples/2.0/petstore.json');
-var prepareText = require('../helpers').prepareText;
 var request = require('supertest');
 
 var createServer = function (middleware, handler) {
@@ -119,10 +119,7 @@ describe('Swagger Metadata Middleware v2.0', function () {
       request(app)
         .post('/foo')
         .expect(500)
-        .end(function(err, res) { // jshint ignore:line
-          assert.equal(prepareText(res.text),
-                       'Server configuration error: req.body is not defined but is required');
-        });
+        .end(helpers.expectContent('Server configuration error: req.body is not defined but is required'));
     });
   });
 
@@ -156,10 +153,7 @@ describe('Swagger Metadata Middleware v2.0', function () {
     request(app)
       .post('/foo')
       .expect(500)
-      .end(function(err, res) { // jshint ignore:line
-        assert.equal(prepareText(res.text),
-                     'Server configuration error: req.query is not defined but is required');
-      });
+      .end(helpers.expectContent('Server configuration error: req.query is not defined but is required'));
   });
 
   it('should not add Swagger middleware to the request when there is no route match', function () {
@@ -171,12 +165,7 @@ describe('Swagger Metadata Middleware v2.0', function () {
       }))
       .get('/foo')
       .expect(200)
-      .end(function(err, res) {
-        if (err) {
-          throw err;
-        }
-        assert.equal(prepareText(res.text), 'OK');
-      });
+      .end(helpers.expectContent('OK'));
   });
 
   it('should add Swagger middleware to the request when there is a route match but no operations', function () {
@@ -189,12 +178,7 @@ describe('Swagger Metadata Middleware v2.0', function () {
       }))
       .get('/pets')
       .expect(200)
-      .end(function(err, res) {
-        if (err) {
-          throw err;
-        }
-        assert.equal(prepareText(res.text), 'OK');
-      });
+      .end(helpers.expectContent('OK'));
   });
 
   it('should add Swagger middleware to the request when there is a route match and there are operations', function () {
@@ -239,12 +223,7 @@ describe('Swagger Metadata Middleware v2.0', function () {
     .get('/api/pets/1')
     .query({mock: false})
     .expect(200)
-    .end(function(err, res) {
-      if (err) {
-        throw err;
-      }
-      assert.equal(prepareText(res.text), 'OK');
-    });
+    .end(helpers.expectContent('OK'));
   });
 
   // TODO: Add tests to ensure parameters are located properly (And handle default values)

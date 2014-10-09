@@ -98,7 +98,7 @@ exports = module.exports = function swaggerRouterMiddleware (options) {
       req.swagger.useStubs = options.useStubs;
 
       if (_.isUndefined(operation)) {
-        send405(specVer, req, res);
+        return send405(specVer, req, res, next);
       } else {
         handlerName = getHandlerName(specVer, req);
         handler = handlerCache[handlerName];

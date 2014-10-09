@@ -38,7 +38,6 @@ var helpers = require('../helpers');
 var middleware = require('../../').middleware.v2_0.swaggerUi; // jshint ignore:line
 var request = require('supertest');
 var createServer = helpers.createServer;
-var prepareText = helpers.prepareText;
 
 var swaggerObject = require('../../samples/2.0/petstore.json');
 
@@ -71,9 +70,7 @@ describe('Swagger UI Middleware v2.0', function () {
     request(createServer([swaggerObject], [middleware(swaggerObject)]))
       .get('/api-docs')
       .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        assert.deepEqual(JSON.parse(prepareText(res.text)), swaggerObject);
-      });
+      .end(helpers.expectContent(swaggerObject));
   });
 
   it('should serve Swagger documents at requested location', function () {
@@ -84,9 +81,7 @@ describe('Swagger UI Middleware v2.0', function () {
     request(createServer([swaggerObject], [middleware(swaggerObject, options)]))
       .get('/api-docs2')
       .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        assert.deepEqual(JSON.parse(prepareText(res.text)), swaggerObject);
-      });
+      .end(helpers.expectContent(swaggerObject));
   });
 
   it('should serve Swagger UI at /docs by default', function () {

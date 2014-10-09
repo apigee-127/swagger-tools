@@ -25,8 +25,10 @@
 'use strict';
 
 var _ = {
-  each: require('lodash.foreach')
+  each: require('lodash.foreach'),
+  isPlainObject: require('lodash.isplainobject')
 };
+var assert = require('assert');
 var swagger = require('../');
 
 module.exports.createServer = function createServer (middlewareArgs, middlewares, handler) {
@@ -74,6 +76,20 @@ module.exports.createServer = function createServer (middlewareArgs, middlewares
   return app;
 };
 
-module.exports.prepareText = function prepareText (text) {
+var prepareText = module.exports.prepareText = function prepareText (text) {
   return text.replace(/&nbsp;/g, ' ').replace(/\n/g, '');
+};
+
+module.exports.expectContent = function expectContent (content) {
+  return function (err, res) {
+    if (err) {
+      throw err;
+    }
+
+    if (_.isPlainObject(content)) {
+      assert.deepEqual(JSON.parse(prepareText(res.text)), content);
+    } else {
+      assert.equal(prepareText(res.text), content);
+    }
+  };
 };

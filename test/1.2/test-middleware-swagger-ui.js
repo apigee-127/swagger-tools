@@ -39,7 +39,6 @@ var helpers = require('../helpers');
 var middleware = require('../../').middleware.v1_2.swaggerUi; // jshint ignore:line
 var request = require('supertest');
 var createServer = helpers.createServer;
-var prepareText = helpers.prepareText;
 
 var rlJson = require('../../samples/1.2/resource-listing.json');
 var petJson = require('../../samples/1.2/pet.json');
@@ -107,17 +106,13 @@ describe('Swagger UI Middleware v1.2', function () {
     request(createServer(middlewareArgs, [middleware(rlJson, resourcesArg)]))
       .get('/api-docs')
       .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        assert.deepEqual(JSON.parse(prepareText(res.text)), rlJson);
-      });
+      .end(helpers.expectContent(rlJson));
 
     _.each(resourcesArg, function (json, path) {
       request(createServer(middlewareArgs, [middleware(rlJson, resourcesArg)]))
         .get('/api-docs' + path)
         .expect(200)
-        .end(function(err, res) { // jshint ignore:line
-          assert.deepEqual(JSON.parse(prepareText(res.text)), json);
-        });
+        .end(helpers.expectContent(json));
     });
   });
 
@@ -129,17 +124,13 @@ describe('Swagger UI Middleware v1.2', function () {
     request(createServer(middlewareArgs, [middleware(rlJson, resourcesArg, options)]))
       .get('/api-docs2')
       .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        assert.deepEqual(JSON.parse(prepareText(res.text)), rlJson);
-      });
+      .end(helpers.expectContent(rlJson));
 
     _.each(resourcesArg, function (json, path) {
       request(createServer(middlewareArgs, [middleware(rlJson, resourcesArg, options)]))
         .post('/api-docs2' + path)
         .expect(200)
-        .end(function(err, res) { // jshint ignore:line
-          assert.deepEqual(JSON.parse(prepareText(res.text)), json);
-        });
+        .end(helpers.expectContent(json));
     });
   });
 

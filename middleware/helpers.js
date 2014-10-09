@@ -317,7 +317,13 @@ module.exports.isModelParameter = function isModelParameter (version, param) {
   return isModel;
 };
 
-module.exports.send405 = function send405 (version, req, res) {
+module.exports.send400 = function send400 (req, res, next, msg) {
+  res.statusCode = 400;
+
+  return next(msg);
+};
+
+module.exports.send405 = function send405 (version, req, res, next) {
   var allowedMethods = [];
 
   if (!_.isUndefined(req.swagger.api)) {
@@ -334,7 +340,7 @@ module.exports.send405 = function send405 (version, req, res) {
 
   res.setHeader('Allow', allowedMethods.sort().join(', '));
   res.statusCode = 405;
-  res.end('Route defined in Swagger specification but there is no defined ' +
-            (version === '1.2' ? req.method.toUpperCase() : req.method.toLowerCase()) +
-            ' operation.');
+
+  return next('Route defined in Swagger specification but there is no defined ' +
+                (version === '1.2' ? req.method.toUpperCase() : req.method.toLowerCase()) + ' operation.');
 };

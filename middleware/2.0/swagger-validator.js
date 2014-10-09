@@ -29,8 +29,10 @@ var _ = {
   isUndefined: require('lodash.isundefined'),
   union: require('lodash.union')
 };
-var isModelParameter = require('../helpers').isModelParameter;
+var helpers = require('../helpers');
+var isModelParameter = helpers.isModelParameter;
 var toJsonPointer = require('../../lib/helpers').toJsonPointer;
+var send400 = helpers.send400;
 var validators = require('../../lib/validators');
 
 /**
@@ -116,7 +118,7 @@ exports = module.exports = function swaggerValidatorMiddleware () {
           }
         });
       } catch (err) {
-        return next(err.message);
+        return send400(req, res, next, err.message);
       }
     }
 

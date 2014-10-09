@@ -43,7 +43,6 @@ var petJson = require('../../samples/1.2/pet.json');
 var request = require('supertest');
 var rlJson = require('../../samples/1.2/resource-listing.json');
 var createServer = helpers.createServer;
-var prepareText = helpers.prepareText;
 
 describe('Swagger Validator Middleware v1.2', function () {
   it('should return a function when passed the right arguments', function () {
@@ -58,23 +57,15 @@ describe('Swagger Validator Middleware v1.2', function () {
     request(createServer([rlJson, [petJson]], [middleware()]))
       .get('/api/foo')
       .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        if (err) {
-          throw err;
-        }
-        assert.equal(prepareText(res.text), 'OK');
-      });
+      .end(helpers.expectContent('OK'));
   });
 
   it('should return an error for invalid request content type based on POST/PUT operation consumes', function () {
     request(createServer([rlJson, [petJson]], [middleware()]))
       .post('/api/pet/1')
       .expect(400)
-      .end(function(err, res) { // jshint ignore:line
-        assert.equal(prepareText(res.text),
-                     'Invalid content type (application/octet-stream).  These are valid: ' +
-                       'application/x-www-form-urlencoded');
-      });
+      .end(helpers.expectContent('Invalid content type (application/octet-stream).  These are valid: ' +
+                                'application/x-www-form-urlencoded'));
   });
 
   it('should not return an error for invalid request content type for non-POST/PUT', function () {
@@ -86,12 +77,7 @@ describe('Swagger Validator Middleware v1.2', function () {
     request(createServer([clonedRl, [clonedAd]]))
       .get('/api/pet/1')
       .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        if (err) {
-          throw err;
-        }
-        assert.equal(prepareText(res.text), 'OK');
-      });
+      .end(helpers.expectContent('OK'));
   });
 
   it('should not return an error for valid request content type', function () {
@@ -99,9 +85,7 @@ describe('Swagger Validator Middleware v1.2', function () {
       .post('/api/pet/1')
       .set('Content-Type', 'application/x-www-form-urlencoded')
       .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        assert.equal(prepareText(res.text), 'OK');
-      });
+      .end(helpers.expectContent('OK'));
   });
 
   it('should not return an error for valid request content type with charset', function () {
@@ -109,9 +93,7 @@ describe('Swagger Validator Middleware v1.2', function () {
       .post('/api/pet/1')
       .set('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8')
       .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        assert.equal(prepareText(res.text), 'OK');
-      });
+      .end(helpers.expectContent('OK'));
   });
 
   it('should return an error for missing required parameters', function () {
@@ -128,9 +110,7 @@ describe('Swagger Validator Middleware v1.2', function () {
     request(createServer([rlJson, [clonedAd]], [middleware()]))
       .get('/api/pet/1')
       .expect(400)
-      .end(function(err, res) { // jshint ignore:line
-        assert.equal(prepareText(res.text), 'Parameter (mock) is required');
-      });
+      .end(helpers.expectContent('Parameter (mock) is required'));
   });
 
   it('should not return an error for missing required parameters with defaultValue', function () {
@@ -147,9 +127,7 @@ describe('Swagger Validator Middleware v1.2', function () {
     request(createServer([rlJson, [clonedAd]], [middleware()]))
       .get('/api/pet/1')
       .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        assert.equal(prepareText(res.text), 'OK');
-      });
+      .end(helpers.expectContent('OK'));
   });
 
   it('should not return an error for provided required parameters', function () {
@@ -167,9 +145,7 @@ describe('Swagger Validator Middleware v1.2', function () {
       .get('/api/pet/1')
       .query({mock: 'true'})
       .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        assert.equal(prepareText(res.text), 'OK');
-      });
+      .end(helpers.expectContent('OK'));
   });
 
   it('should return an error for invalid parameter values based on type/format', function () {
@@ -190,6 +166,7 @@ describe('Swagger Validator Middleware v1.2', function () {
         var clonedS = _.cloneDeep(scenario);
         var content = {};
         var app;
+        var expectedMessage;
         var r;
 
         // We don't test default value with arrays
@@ -211,18 +188,15 @@ describe('Swagger Validator Middleware v1.2', function () {
           .query(content)
           .expect(400);
 
-        r.end(function(err, res) { // jshint ignore:line
-          var message;
-          if (scenario.type === 'array') {
-            message = 'Parameter (' + argName + ') at index 1 is not a valid integer: fake';
-          } else {
-            message = 'Parameter (' + scenario.name + ') is not a valid ' +
-                         (_.isUndefined(scenario.format) ? '' : scenario.format + ' ') + scenario.type + ': ' +
-                         badValue;
-          }
+        if (scenario.type === 'array') {
+          expectedMessage = 'Parameter (' + argName + ') at index 1 is not a valid integer: fake';
+        } else {
+          expectedMessage = 'Parameter (' + scenario.name + ') is not a valid ' +
+                       (_.isUndefined(scenario.format) ? '' : scenario.format + ' ') + scenario.type + ': ' +
+                       badValue;
+        }
 
-          assert.equal(prepareText(res.text), message);
-        });
+        r.end(helpers.expectContent(expectedMessage));
       });
     });
   });
@@ -262,9 +236,7 @@ describe('Swagger Validator Middleware v1.2', function () {
           .get('/api/pet/1')
           .query(content)
           .expect(200)
-          .end(function(err, res) { // jshint ignore:line
-            assert.equal(prepareText(res.text), 'OK');
-          });
+          .end(helpers.expectContent('OK'));
       });
     });
   });
@@ -299,9 +271,7 @@ describe('Swagger Validator Middleware v1.2', function () {
         .get('/api/pet/1')
         .query({arg0: values[index]})
         .expect(400)
-        .end(function(err, res) { // jshint ignore:line
-          assert.equal(prepareText(res.text), errors[index]);
-        });
+        .end(helpers.expectContent(errors[index]));
     });
   });
 
@@ -328,9 +298,7 @@ describe('Swagger Validator Middleware v1.2', function () {
         .get('/api/pet/1')
         .query({arg0: values[index]})
         .expect(200)
-        .end(function(err, res) { // jshint ignore:line
-          assert.equal(prepareText(res.text), 'OK');
-        });
+        .end(helpers.expectContent('OK'));
     });
   });
 
@@ -341,9 +309,7 @@ describe('Swagger Validator Middleware v1.2', function () {
       .post('/api/pet')
       .send({})
       .expect(400)
-      .end(function(err, res) { // jshint ignore:line
-        assert.equal(prepareText(res.text), 'Parameter (body) is not a valid Pet model');
-      });
+      .end(helpers.expectContent('Parameter (body) is not a valid Pet model'));
   });
 
   it('should not return an error for a valid model parameter', function () {
@@ -356,9 +322,7 @@ describe('Swagger Validator Middleware v1.2', function () {
         name: 'Test Pet'
       })
       .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        assert.equal(prepareText(res.text), 'OK');
-      });
+      .end(helpers.expectContent('OK'));
   });
 
   it('should return an error for an invalid model parameter (array)', function () {
@@ -404,10 +368,8 @@ describe('Swagger Validator Middleware v1.2', function () {
             id: 2
           }
         ])
-        .expect(200)
-        .end(function(err, res) { // jshint ignore:line
-          assert.equal(prepareText(res.text), 'Parameter (body) is not a valid Tag model');
-        });
+        .expect(400)
+        .end(helpers.expectContent('Parameter (body) is not a valid Tag model'));
   });
 
   it('should not return an error for a valid model parameter (array)', function () {
@@ -454,8 +416,6 @@ describe('Swagger Validator Middleware v1.2', function () {
         }
       ])
       .expect(200)
-      .end(function(err, res) { // jshint ignore:line
-        assert.equal(prepareText(res.text), 'OK');
-      });
+      .end(helpers.expectContent('OK'));
   });
 });
