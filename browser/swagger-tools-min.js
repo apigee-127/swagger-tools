@@ -1,5 +1,5 @@
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var o;"undefined"!=typeof window?o=window:"undefined"!=typeof global?o=global:"undefined"!=typeof self&&(o=self),(o.SwaggerTools||(o.SwaggerTools={})).specs=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-"use strict";var _={cloneDeep:require("lodash.clonedeep"),difference:require("lodash.difference"),each:require("lodash.foreach"),isArray:require("lodash.isarray"),isPlainObject:require("lodash.isplainobject"),isUndefined:require("lodash.isundefined"),map:require("lodash.map"),reduce:require("lodash.reduce"),union:require("lodash.union"),uniq:require("lodash.uniq")},jjv=require("jjv"),jjve=require("jjve"),md5=require("spark-md5"),traverse=require("traverse"),helpers=require("./helpers"),pathToRegexp=require("path-to-regexp"),validators=require("./validators"),draft04Json=require("../schemas/json-schema-draft-04.json"),draft04Url="http://json-schema.org/draft-04/schema",jjvOptions={checkRequired:!0,removeAdditional:!1,useDefault:!1,useCoerce:!1},jjveOptions={formatPath:!1},metadataCache={},expressStylePath=helpers.expressStylePath,refToJsonPointer=helpers.refToJsonPointer,toJsonPointer=helpers.toJsonPointer,createValidator=function(e,r){var a=jjv(jjvOptions);return a.addFormat("uri",function(){return!0}),a.addSchema(draft04Url,draft04Json),_.each(r,function(r){var t=_.cloneDeep(e.schemas[r]);t.id=r,a.addSchema(r,t)}.bind(this)),a.je=jjve(a),a},createErrorOrWarning=function(e,r,a,t,n){n.push({code:e,message:r,data:a,path:t})},createUnusedErrorOrWarning=function(e,r,a,t,n,i){createErrorOrWarning("UNUSED_"+a,t+" is defined but is not used: "+r,e,n,i)},validateExist=function(e,r,a,t,n,i){_.isUndefined(e)||-1!==e.indexOf(r)||createErrorOrWarning("UNRESOLVABLE_"+a,t+" could not be resolved: "+r,r,n,i)},validateNoExist=function(e,r,a,t,n,i){!_.isUndefined(e)&&e.indexOf(r)>-1&&createErrorOrWarning("DUPLICATE_"+a,t+" already defined: "+r,r,n,i)},validateNoDuplicates=function(e,r,a,t,n){var i=t[t.length-1];_.isUndefined(e)||e.length===_.uniq(e).length||createErrorOrWarning("DUPLICATE_"+r,a+" "+i+" has duplicate items",e,t,n)},validateParameterConstraints=function(e,r,a,t,n){switch(e.version){case"1.2":try{validators.validateTypeAndFormat(r.name,a,"array"===r.type?r.items.type:r.type,"array"===r.type&&r.items.format?r.items.format:r.format)}catch(i){return void createErrorOrWarning("INVALID_TYPE",i.message,a,t,n)}try{validators.validateEnum(r.name,a,r.enum)}catch(i){return void createErrorOrWarning("ENUM_MISMATCH",i.message,a,t,n)}try{validators.validateMaximum(r.name,a,r.maximum,r.type)}catch(i){return void createErrorOrWarning("MAXIMUM",i.message,a,t,n)}try{validators.validateMinimum(r.name,a,r.minimum,r.type)}catch(i){return void createErrorOrWarning("MINIMUM",i.message,a,t,n)}try{validators.validateUniqueItems(r.name,a,r.uniqueItems)}catch(i){return void createErrorOrWarning("ARRAY_UNIQUE",i.message,a,t,n)}break;case"2.0":try{validators.validateTypeAndFormat(r.name,a,"array"===r.type?r.items.type:r.type,"array"===r.type&&r.items.format?r.items.format:r.format)}catch(i){return void createErrorOrWarning("INVALID_TYPE",i.message,a,t,n)}try{validators.validateEnum(r.name,a,r.enum)}catch(i){return void createErrorOrWarning("ENUM_MISMATCH",i.message,a,t,n)}try{validators.validateMaximum(r.name,a,r.maximum,r.type,r.exclusiveMaximum)}catch(i){return void createErrorOrWarning(r.exclusiveMaximum===!0?"MAXIMUM_EXCLUSIVE":"MAXIMUM",i.message,a,t,n)}try{validators.validateMaxItems(r.name,a,r.maxItems)}catch(i){return void createErrorOrWarning("ARRAY_LENGTH_LONG",i.message,a,t,n)}try{validators.validateMaxLength(r.name,a,r.maxLength)}catch(i){return void createErrorOrWarning("MAX_LENGTH",i.message,a,t,n)}try{validators.validateMinimum(r.name,a,r.minimum,r.type,r.exclusiveMinimum)}catch(i){return void createErrorOrWarning("true"===r.exclusiveMinimum?"MINIMUM_EXCLUSIVE":"MINIMUM",i.message,a,t,n)}try{validators.validateMinItems(r.name,a,r.minItems)}catch(i){return void createErrorOrWarning("ARRAY_LENGTH_SHORT",i.message,a,t,n)}try{validators.validateMinLength(r.name,a,r.minLength)}catch(i){return void createErrorOrWarning("MIN_LENGTH",i.message,a,t,n)}try{validators.validatePattern(r.name,a,r.pattern)}catch(i){return void createErrorOrWarning("PATTERN",i.message,a,t,n)}try{validators.validateUniqueItems(r.name,a,r.uniqueItems)}catch(i){return void createErrorOrWarning("ARRAY_UNIQUE",i.message,a,t,n)}}},Specification=function(e){var r,a,t=["string","number","boolean","integer","array"];switch(e){case"1.2":r="https://github.com/wordnik/swagger-spec/blob/master/versions/1.2.md",a="https://github.com/wordnik/swagger-spec/tree/master/schemas/v1.2",t=_.union(t,["void","File"]);break;case"2.0":r="https://github.com/reverb/swagger-spec/blob/master/versions/2.0.md",a="https://github.com/reverb/swagger-spec/tree/master/schemas/v2.0";break;default:throw new Error(e+" is an unsupported Swagger specification version")}switch(this.docsUrl=r,this.primitives=t,this.schemasUrl=a,this.version=e,this.schemas={},this.validators={},e){case"1.2":this.schemas["apiDeclaration.json"]=require("../schemas/1.2/apiDeclaration.json"),this.schemas["authorizationObject.json"]=require("../schemas/1.2/authorizationObject.json"),this.schemas["dataType.json"]=require("../schemas/1.2/dataType.json"),this.schemas["dataTypeBase.json"]=require("../schemas/1.2/dataTypeBase.json"),this.schemas["infoObject.json"]=require("../schemas/1.2/infoObject.json"),this.schemas["modelsObject.json"]=require("../schemas/1.2/modelsObject.json"),this.schemas["oauth2GrantType.json"]=require("../schemas/1.2/oauth2GrantType.json"),this.schemas["operationObject.json"]=require("../schemas/1.2/operationObject.json"),this.schemas["parameterObject.json"]=require("../schemas/1.2/parameterObject.json"),this.schemas["resourceListing.json"]=require("../schemas/1.2/resourceListing.json"),this.schemas["resourceObject.json"]=require("../schemas/1.2/resourceObject.json"),this.validators["apiDeclaration.json"]=createValidator(this,["dataTypeBase.json","modelsObject.json","oauth2GrantType.json","authorizationObject.json","parameterObject.json","operationObject.json","apiDeclaration.json"]),this.validators["resourceListing.json"]=createValidator(this,["resourceObject.json","infoObject.json","oauth2GrantType.json","authorizationObject.json","resourceListing.json"]);break;case"2.0":this.schemas["schema.json"]=require("../schemas/2.0/schema.json"),this.validators["schema.json"]=createValidator(this,["schema.json"])}},getModelMetadata=function(e,r){var a=e[r];return _.isUndefined(a)&&(a=e[r]={composed:{},name:void 0,parents:[],refs:[],schema:void 0}),a},processModel=function e(r,a,t,n,i,s){var o=getModelMetadata(a,n);switch(o.schema=t,o.name=n,o.path=i,r.version){case"1.2":o.name=i[i.length-1],_.each(t.properties,function(e,t){var n=i.concat("properties",t);e.$ref?getModelMetadata(a,e.$ref).refs.push(n.concat(["$ref"])):"array"===e.type&&e.items.$ref&&getModelMetadata(a,e.items.$ref).refs.push(n.concat(["items","$ref"])),_.isUndefined(e.defaultValue)||validateParameterConstraints(r,e,e.defaultValue,n.concat("defaultValue"),s.errors)}),_.each(_.uniq(t.subTypes),function(e,r){var t=getModelMetadata(a,e);t.parents.push(n),t.refs.push(i.concat("subTypes",r.toString()))});break;case"2.0":_.each(_.uniq(t.allOf),function(t,n){var c=i.concat("allOf",n.toString());_.isUndefined(t.$ref)?(e(r,a,t,toJsonPointer(c),c,s),o.parents.push(toJsonPointer(c))):(o.parents.push(refToJsonPointer(t.$ref)),getModelMetadata(a,refToJsonPointer(t.$ref)).refs.push(c.concat("$ref")))}),_.isUndefined(t.default)||validateParameterConstraints(r,t,t.defaultValue,i.concat("default"),s.errors),t.$ref?getModelMetadata(a,refToJsonPointer(t.$ref)).refs.push(i.concat(["$ref"])):"array"===t.type&&(t.items.$ref?getModelMetadata(a,refToJsonPointer(t.items.$ref)).refs.push(i.concat(["items","$ref"])):_.isUndefined(t.items.type)||-1!==r.primitives.indexOf(t.items.type)||_.each(t.items,function(t,n){var o=i.concat("items",n.toString());e(r,a,t,toJsonPointer(o),o,s)})),_.each(t.properties,function(t,n){var o=i.concat("properties",n);t.$ref?getModelMetadata(a,refToJsonPointer(t.$ref)).refs.push(o.concat(["$ref"])):"array"===t.type&&(t.items.$ref?getModelMetadata(a,refToJsonPointer(t.items.$ref)).refs.push(o.concat(["items","$ref"])):_.isUndefined(t.items.type)||-1!==r.primitives.indexOf(t.items.type)||_.each(t.items,function(t,n){var i=o.concat("items",n.toString());e(r,a,t,toJsonPointer(i),i,s)}))}),-1===toJsonPointer(i).indexOf("#/definitions/")&&o.refs.push(i)}},getModelsMetadata=function(e,r,a){var t,n={},i={errors:[],warnings:[]},s={},o={},c=function(r,a){var n=t[r].schema;n&&(_.each(n.properties,function(t,n){var s=_.cloneDeep(t);a.properties[n]?createErrorOrWarning("CHILD_MODEL_REDECLARES_PROPERTY","Child model declares property already declared by ancestor: "+n,t,"1.2"===e.version?["models",r,"properties",n]:r.substring(2).split("/").concat("properties",n),i.errors):("1.2"===e.version&&(_.isUndefined(s.maximum)||(s.maximum=parseFloat(s.maximum)),_.isUndefined(s.minimum)||(s.minimum=parseFloat(s.minimum))),a.properties[n]=s)}),!_.isUndefined(n.required)&&_.isUndefined(a.required)&&(a.required=[]),_.each(n.required,function(e){-1===a.required.indexOf(e)&&a.required.push(e)}))},d=function(e,r){var a=!1;return Object.keys(r).filter(function(t){return t===e&&(a=!0),a&&r[t]})},u=function p(r,a,n,s,o){var u=t[r],h=u.schema;s[r]=!0,_.isUndefined(h)||(u.parents.length>1&&"1.2"===e.version?createErrorOrWarning("MULTIPLE_MODEL_INHERITANCE","Child model is sub type of multiple models: "+u.parents.join(" && "),h,["models",r],i.errors):_.each(u.parents,function(t){n[t]||(s[t]&&(a[r]=d(t,s),createErrorOrWarning("CYCLICAL_MODEL_INHERITANCE","Model has a circular inheritance: "+r+" -> "+a[r].join(" -> "),"1.2"===e.version?h.subTypes:h.allOf,"1.2"===e.version?["models",r,"subTypes"]:r.substring(2).split("/").concat("allOf"),i.errors)),a[r]||p(t,a,n,s,o)),a[r]||c(t,o)})),n[r]=!0,s[r]=!1},h=md5.hash(JSON.stringify(r)),m=metadataCache[h];if(_.isUndefined(m)){switch(m=metadataCache[h]={metadata:{},results:i},t=m.metadata,e.version){case"1.2":_.reduce(r.models,function(r,a,n){return validateNoExist(r,a.id,"MODEL_DEFINITION","Model",["models",n,"id"],i.errors),processModel(e,t,a,a.id,["models",n],i),r.concat(a.id)},[]);break;case"2.0":_.each(r.definitions,function(r,a){var n=["definitions",a];processModel(e,t,r,toJsonPointer(n),n,i)})}_.each(t,function(e,r){e.composed={title:"Composed "+r,type:"object",properties:{}},_.isUndefined(e.schema)||(u(r,n,s,o,e.composed),c(r,e.composed)),_.isUndefined(e.schema.required)||_.each(e.schema.required,function(r,t){_.isUndefined(e.composed.properties[r])&&createErrorOrWarning("MISSING_REQUIRED_MODEL_PROPERTY","Model requires property but it is not defined: "+r,r,e.path.concat(["required",t.toString()]),a.errors)})}),_.each(t,function(r){var a=traverse(r.composed).reduce(function(r){return"$ref"===this.key&&(r[toJsonPointer(this.path)]="1.2"===e.version?this.node:refToJsonPointer(this.node)),r},{});_.each(a,function(e,a){var n=a.substring(2).split("/"),i=_.isUndefined(t[e])?void 0:_.cloneDeep(t[e].composed);_.isUndefined(i)||(delete i.id,delete i.title,traverse(r.composed).set(n.slice(0,n.length-1),i))})}),_.isUndefined(a)||_.each(i,function(e,r){a[r]=a[r].concat(e)})}return m},validateWithSchema=function(e,r,a){var t=e.validators[r],n=t.schema[r],i=t.validate(n,a),s={errors:[],warnings:[]};return i&&(s={errors:t.je(n,a,i,jjveOptions),warnings:[]}),s},validateContent=function(e,r,a){var t={errors:[],warnings:[]},n={},i={},s=[],o=[];switch(e.version){case"1.2":_.each(r.apis,function(e,r){validateNoExist(s,e.path,"RESOURCE_PATH","Resource path",["apis",r.toString(),"path"],t.errors),-1===s.indexOf(e.path)&&s.push(e.path)}),0===t.errors.length&&(_.each(r.authorizations,function(e,r){n[r]=_.map(e.scopes,function(e){return e.scope})},{}),t.apiDeclarations=[],_.each(a,function(r,a){var c=t.apiDeclarations[a]={errors:[],warnings:[]},d={},u={},h=getModelsMetadata(e,r,c).metadata,m=function(e,r){var a=getModelMetadata(h,e);a.refs.push(r)},p=function(e,r){var a;_.isUndefined(d[e])?(a=i[e],_.isUndefined(a)&&(a=i[e]=[])):(a=u[e],_.isUndefined(a)&&(a=u[e]=[])),-1===a.indexOf(r)&&a.push(r)};_.each(r.authorizations,function(e,r){d[r]=_.map(e.scopes,function(e){return e.scope})},{}),validateNoExist(o,r.resourcePath,"RESOURCE_PATH","Resource path",["resourcePath"],c.errors),validateExist(s,r.resourcePath,"RESOURCE_PATH","Resource path",["resourcePath"],c.errors),-1===o.indexOf(r.resourcePath)&&o.push(r.resourcePath),_.each(["consumes","produces"],function(e){validateNoDuplicates(r[e],"API_"+e.toUpperCase(),"API",[e],c.warnings)}),_.reduce(r.apis,function(r,a,t){var i=["apis",t.toString()],s=[],o=[],u=pathToRegexp(expressStylePath("",a.path),s).toString(),h=_.map(s,function(e){return e.name});return r.indexOf(u)>-1&&createErrorOrWarning("DUPLICATE_API_PATH","API path (or equivalent) already defined: "+a.path,a.path,i.concat("path"),c.errors),_.reduce(a.operations,function(r,t,s){var u=i.concat(["operations",s.toString()]);return _.each(["consumes","produces"],function(e){validateNoDuplicates(t[e],"OPERATION_"+e.toUpperCase(),"Operation",u.concat(e),c.warnings)}),validateNoExist(r,t.method,"OPERATION_METHOD","Operation method",u.concat("method"),c.errors),_.each(t.authorizations,function(e,r){validateExist(_.uniq(Object.keys(d).concat(Object.keys(n))),r,"AUTHORIZATION","Authorization",u.concat(["authorizations",r]),c.errors),_.each(e,function(e,a){_.isUndefined(d[r])&&_.isUndefined(n[r])||validateExist(_.uniq((d[r]||[]).concat(n[r]||[])),e.scope,"AUTHORIZATION_SCOPE","Authorization scope",u.concat(["authorizations",r,a.toString(),"scope"]),c.errors),p(r,e.scope)})}),_.reduce(t.parameters,function(r,a,t){return-1===e.primitives.indexOf(a.type)?m(a.type,u.concat(["parameters",t.toString(),"type"])):"array"===a.type&&a.items.$ref&&m(a.items.$ref,u.concat(["parameters",t.toString(),"items","$ref"])),validateNoExist(r,a.name,"OPERATION_PARAMETER","Operation parameter",u.concat("parameters",t.toString(),"name"),c.errors),"path"===a.paramType&&(-1===h.indexOf(a.name)&&createErrorOrWarning("UNRESOLVABLE_API_PATH_PARAMETER","API path parameter could not be resolved: "+a.name,a.name,u.concat("parameters",t.toString(),"name"),c.errors),-1===o.indexOf(a.name)&&o.push(a.name)),_.isUndefined(a.defaultValue)||validateParameterConstraints(e,a,a.defaultValue,u.concat("parameters",t.toString(),"defaultValue"),c.errors),r.concat(a.name)},[]),_.each(_.difference(h,o),function(e){createErrorOrWarning("MISSING_API_PATH_PARAMETER","API requires path parameter but it is not defined: "+e,a.path,i.concat("path"),c.errors)}),_.reduce(t.responseMessages,function(e,r,a){return validateNoExist(e,r.code,"RESPONSE_MESSAGE_CODE","Response message code",u.concat(["responseMessages",a.toString(),"code"]),c.errors),r.responseModel&&m(r.responseModel,u.concat(["responseMessages",a.toString(),"responseModel"])),e.concat(r.code)},[]),"array"===t.type&&t.items.$ref?m(t.items.$ref,u.concat(["items","$ref"])):-1===e.primitives.indexOf(t.type)&&m(t.type,u.concat(["type"])),r.concat(t.method)},[]),r.concat(u)},[]),_.each(h,function(e,r){_.isUndefined(e.schema)&&_.each(e.refs,function(e){createErrorOrWarning("UNRESOLVABLE_MODEL","Model could not be resolved: "+r,r,e,c.errors)}),0===e.refs.length&&createUnusedErrorOrWarning(e.schema,r,"MODEL","Model",["models",e.name],c.warnings)}),_.each(_.difference(Object.keys(d),Object.keys(u)),function(e){createUnusedErrorOrWarning(r.authorizations[e],e,"AUTHORIZATION","Authorization",["authorizations",e],c.warnings)}),_.each(d,function(e,a){var t=["authorizations",a],n=r.authorizations[a];_.each(_.difference(e,u[a]||[]),function(r){var a=e.indexOf(r);createUnusedErrorOrWarning(n.scopes[a],r,"AUTHORIZATION_SCOPE","Authorization scope",t.concat(["scopes",a.toString()]),c.warnings)})})}),_.each(_.difference(s,o),function(e){var a=_.map(r.apis,function(e){return e.path}).indexOf(e);createUnusedErrorOrWarning(r.apis[a].path,e,"RESOURCE_PATH","Resource path",["apis",a.toString(),"path"],t.errors)}),_.each(_.difference(Object.keys(n),Object.keys(i)),function(e){createUnusedErrorOrWarning(r.authorizations[e],e,"AUTHORIZATION","Authorization",["authorizations",e],t.warnings)}),_.each(i,function(e,a){var n=["authorizations",a];_.each(_.difference(e,i[a]),function(i){var s=e.indexOf(i);createUnusedErrorOrWarning(r.authorizations[a].scopes[s],i,"AUTHORIZATION_SCOPE","Authorization scope",n.concat(["scopes",s.toString()]),t.warnings)})}));break;case"2.0":if(_.each(["consumes","produces","schemes"],function(e){validateNoDuplicates(r[e],"API_"+e.toUpperCase(),"API",[e],t.warnings)}),0===t.errors.length&&0===t.warnings.length){var c=getModelsMetadata(e,r,t).metadata;_.reduce(r.paths,function(r,a,n){var i=["paths",n],s=[],o=[],d=pathToRegexp(expressStylePath("",n),s).toString(),u=_.map(s,function(e){return e.name});return r.indexOf(d)>-1&&createErrorOrWarning("DUPLICATE_API_PATH","API path (or equivalent) already defined: "+n,n,i,t.errors),_.each(a,function(r,n){var s=i.concat(n);return"parameters"===n?void _.reduce(a.parameters,function(r,a,n){var i=s.concat(n.toString());return validateNoExist(r,a.name,"API_PARAMETER","API parameter",i.concat("name"),t.errors),"path"===a.in&&(-1===u.indexOf(a.name)&&createErrorOrWarning("UNRESOLVABLE_API_PATH_PARAMETER","API path parameter could not be resolved: "+a.name,a.name,i.concat("name"),t.errors),-1===o.indexOf(a.name)&&o.push(a.name)),_.isUndefined(a.schema)||processModel(e,c,a.schema,toJsonPointer(i.concat("schema")),i.concat("schema"),t),r.concat(a.name)},[]):(_.each(["consumes","produces","schemes"],function(e){validateNoDuplicates(r[e],"OPERATION_"+e.toUpperCase(),"Operation",s.concat(e),t.warnings)}),_.reduce(r.parameters,function(r,a,n){var i=s.concat("parameters",n.toString());return validateNoExist(r,a.name,"OPERATION_PARAMETER","Operation parameter",i.concat("name"),t.errors),"path"===a.in&&(-1===u.indexOf(a.name)&&createErrorOrWarning("UNRESOLVABLE_API_PATH_PARAMETER","API path parameter could not be resolved: "+a.name,a.name,i.concat("name"),t.errors),-1===o.indexOf(a.name)&&o.push(a.name)),_.isUndefined(a.schema)||processModel(e,c,a.schema,toJsonPointer(i.concat("schema")),i.concat("schema"),t),r.concat(a.name)},[]),void _.each(r.responses,function(r,a){var t=s.concat("responses",a);_.isUndefined(r.schema)||processModel(e,c,r.schema,toJsonPointer(t.concat("schema")),t.concat("schema"),r)}))}),_.each(_.difference(u,o),function(e){createErrorOrWarning("MISSING_API_PATH_PARAMETER","API requires path parameter but it is not defined: "+e,n,i,t.errors)}),r.concat(d)},[]),_.each(c,function(e,r){_.isUndefined(e.schema)&&_.each(e.refs,function(e){createErrorOrWarning("UNRESOLVABLE_MODEL","Model could not be resolved: "+r,r,e,t.errors)}),0===e.refs.length&&createUnusedErrorOrWarning(e.schema,r,"MODEL","Model",r.substring(2).split("/"),t.warnings)})}}return t};Specification.prototype.validate=function(e,r){var a={errors:[],warnings:[]},t=!1;switch(this.version){case"1.2":if(_.isUndefined(e))throw new Error("resourceListing is required");if(!_.isPlainObject(e))throw new TypeError("resourceListing must be an object");if(_.isUndefined(r))throw new Error("apiDeclarations is required");if(!_.isArray(r))throw new TypeError("apiDeclarations must be an array");a=validateWithSchema(this,"resourceListing.json",e),a.errors.length>0&&(t=!0),t||(a.apiDeclarations=[],_.each(r,function(e,r){return a.apiDeclarations[r]=validateWithSchema(this,"apiDeclaration.json",e),a.apiDeclarations[r].errors.length>0?(t=!0,!1):void 0}.bind(this))),t||(a=validateContent(this,e,r)),a=a.errors.length>0||a.warnings.length>0||_.reduce(a.apiDeclarations,function(e,r){return e+(_.isArray(r.errors)?r.errors.length:0)+(_.isArray(r.warnings)?r.warnings.length:0)},0)>0?a:void 0;break;case"2.0":if(_.isUndefined(e))throw new Error("swaggerObject is required");if(!_.isPlainObject(e))throw new TypeError("swaggerObject must be an object");a=validateWithSchema(this,"schema.json",e),a.errors.length>0&&(t=!0),t||(a=validateContent(this,e)),a=a.errors.length>0||a.warnings.length>0?a:void 0}return a},Specification.prototype.composeModel=function(e,r){var a,t,n,i;switch(this.version){case"1.2":if(_.isUndefined(e))throw new Error("apiDeclaration is required");if(!_.isPlainObject(e))throw new TypeError("apiDeclaration must be an object");if(_.isUndefined(r))throw new Error("modelId is required");break;case"2.0":if(_.isUndefined(e))throw new Error("swaggerObject is required");if(!_.isPlainObject(e))throw new TypeError("swaggerObject must be an object");if(_.isUndefined(r))throw new Error("modelIdOrPath is required")}if(a=getModelsMetadata(this,e),n=a.metadata,a.results.errors.length>0)throw i=new Error("The models are invalid and model composition is not possible"),i.errors=a.results.errors,i.warnings=a.results.warnings,i;return t=n["1.2"===this.version?r:refToJsonPointer(r)],_.isUndefined(t)?void 0:t.composed},Specification.prototype.validateModel=function(e,r,a){var t,n,i=this.composeModel(e,r);if(_.isUndefined(i))throw Error("Unable to compose model so validation is not possible");return n=jjv(jjvOptions),n.addFormat("uri",function(){return!0}),n.addSchema(draft04Url,draft04Json),n.je=jjve(n),t=n.validate(i,a),t=t?{errors:n.je(i,a,t,jjveOptions)}:void 0},module.exports.v1=module.exports.v1_2=new Specification("1.2"),module.exports.v2=module.exports.v2_0=new Specification("2.0");
+"use strict";var _={cloneDeep:require("lodash.clonedeep"),difference:require("lodash.difference"),each:require("lodash.foreach"),isArray:require("lodash.isarray"),isPlainObject:require("lodash.isplainobject"),isUndefined:require("lodash.isundefined"),map:require("lodash.map"),reduce:require("lodash.reduce"),union:require("lodash.union"),uniq:require("lodash.uniq")},jjv=require("jjv"),jjve=require("jjve"),md5=require("spark-md5"),traverse=require("traverse"),helpers=require("./helpers"),pathToRegexp=require("path-to-regexp"),validators=require("./validators"),draft04Json=require("../schemas/json-schema-draft-04.json"),draft04Url="http://json-schema.org/draft-04/schema",jjvOptions={checkRequired:!0,removeAdditional:!1,useDefault:!1,useCoerce:!1},jjveOptions={formatPath:!1},metadataCache={},expressStylePath=helpers.expressStylePath,refToJsonPointer=helpers.refToJsonPointer,toJsonPointer=helpers.toJsonPointer,createValidator=function(e,r){var a=jjv(jjvOptions);return a.addFormat("uri",function(){return!0}),a.addSchema(draft04Url,draft04Json),_.each(r,function(r){var t=_.cloneDeep(e.schemas[r]);t.id=r,a.addSchema(r,t)}.bind(this)),a.je=jjve(a),a},createErrorOrWarning=function(e,r,a,t,n){n.push({code:e,message:r,data:a,path:t})},createUnusedErrorOrWarning=function(e,r,a,t,n,i){createErrorOrWarning("UNUSED_"+a,t+" is defined but is not used: "+r,e,n,i)},validateExist=function(e,r,a,t,n,i){_.isUndefined(e)||-1!==e.indexOf(r)||createErrorOrWarning("UNRESOLVABLE_"+a,t+" could not be resolved: "+r,r,n,i)},validateNoExist=function(e,r,a,t,n,i){!_.isUndefined(e)&&e.indexOf(r)>-1&&createErrorOrWarning("DUPLICATE_"+a,t+" already defined: "+r,r,n,i)},validateNoDuplicates=function(e,r,a,t,n){var i=t[t.length-1];_.isUndefined(e)||e.length===_.uniq(e).length||createErrorOrWarning("DUPLICATE_"+r,a+" "+i+" has duplicate items",e,t,n)},validateParameterConstraints=function(e,r,a,t,n){switch(e.version){case"1.2":try{validators.validateTypeAndFormat(r.name,a,"array"===r.type?r.items.type:r.type,"array"===r.type&&r.items.format?r.items.format:r.format)}catch(i){return void createErrorOrWarning("INVALID_TYPE",i.message,a,t,n)}try{validators.validateEnum(r.name,a,r.enum)}catch(i){return void createErrorOrWarning("ENUM_MISMATCH",i.message,a,t,n)}try{validators.validateMaximum(r.name,a,r.maximum,r.type)}catch(i){return void createErrorOrWarning("MAXIMUM",i.message,a,t,n)}try{validators.validateMinimum(r.name,a,r.minimum,r.type)}catch(i){return void createErrorOrWarning("MINIMUM",i.message,a,t,n)}try{validators.validateUniqueItems(r.name,a,r.uniqueItems)}catch(i){return void createErrorOrWarning("ARRAY_UNIQUE",i.message,a,t,n)}break;case"2.0":try{validators.validateTypeAndFormat(r.name,a,"array"===r.type?r.items.type:r.type,"array"===r.type&&r.items.format?r.items.format:r.format)}catch(i){return void createErrorOrWarning("INVALID_TYPE",i.message,a,t,n)}try{validators.validateEnum(r.name,a,r.enum)}catch(i){return void createErrorOrWarning("ENUM_MISMATCH",i.message,a,t,n)}try{validators.validateMaximum(r.name,a,r.maximum,r.type,r.exclusiveMaximum)}catch(i){return void createErrorOrWarning(r.exclusiveMaximum===!0?"MAXIMUM_EXCLUSIVE":"MAXIMUM",i.message,a,t,n)}try{validators.validateMaxItems(r.name,a,r.maxItems)}catch(i){return void createErrorOrWarning("ARRAY_LENGTH_LONG",i.message,a,t,n)}try{validators.validateMaxLength(r.name,a,r.maxLength)}catch(i){return void createErrorOrWarning("MAX_LENGTH",i.message,a,t,n)}try{validators.validateMinimum(r.name,a,r.minimum,r.type,r.exclusiveMinimum)}catch(i){return void createErrorOrWarning("true"===r.exclusiveMinimum?"MINIMUM_EXCLUSIVE":"MINIMUM",i.message,a,t,n)}try{validators.validateMinItems(r.name,a,r.minItems)}catch(i){return void createErrorOrWarning("ARRAY_LENGTH_SHORT",i.message,a,t,n)}try{validators.validateMinLength(r.name,a,r.minLength)}catch(i){return void createErrorOrWarning("MIN_LENGTH",i.message,a,t,n)}try{validators.validatePattern(r.name,a,r.pattern)}catch(i){return void createErrorOrWarning("PATTERN",i.message,a,t,n)}try{validators.validateUniqueItems(r.name,a,r.uniqueItems)}catch(i){return void createErrorOrWarning("ARRAY_UNIQUE",i.message,a,t,n)}}},Specification=function(e){var r,a,t=["string","number","boolean","integer","array"];switch(e){case"1.2":r="https://github.com/wordnik/swagger-spec/blob/master/versions/1.2.md",t=_.union(t,["void","File"]),a="https://github.com/wordnik/swagger-spec/tree/master/schemas/v1.2";break;case"2.0":r="https://github.com/wordnik/swagger-spec/blob/master/versions/2.0.md",t=_.union(t,["file"]),a="https://github.com/wordnik/swagger-spec/tree/master/schemas/v2.0";break;default:throw new Error(e+" is an unsupported Swagger specification version")}switch(this.docsUrl=r,this.primitives=t,this.schemasUrl=a,this.version=e,this.schemas={},this.validators={},e){case"1.2":this.schemas["apiDeclaration.json"]=require("../schemas/1.2/apiDeclaration.json"),this.schemas["authorizationObject.json"]=require("../schemas/1.2/authorizationObject.json"),this.schemas["dataType.json"]=require("../schemas/1.2/dataType.json"),this.schemas["dataTypeBase.json"]=require("../schemas/1.2/dataTypeBase.json"),this.schemas["infoObject.json"]=require("../schemas/1.2/infoObject.json"),this.schemas["modelsObject.json"]=require("../schemas/1.2/modelsObject.json"),this.schemas["oauth2GrantType.json"]=require("../schemas/1.2/oauth2GrantType.json"),this.schemas["operationObject.json"]=require("../schemas/1.2/operationObject.json"),this.schemas["parameterObject.json"]=require("../schemas/1.2/parameterObject.json"),this.schemas["resourceListing.json"]=require("../schemas/1.2/resourceListing.json"),this.schemas["resourceObject.json"]=require("../schemas/1.2/resourceObject.json"),this.validators["apiDeclaration.json"]=createValidator(this,["dataTypeBase.json","modelsObject.json","oauth2GrantType.json","authorizationObject.json","parameterObject.json","operationObject.json","apiDeclaration.json"]),this.validators["resourceListing.json"]=createValidator(this,["resourceObject.json","infoObject.json","oauth2GrantType.json","authorizationObject.json","resourceListing.json"]);break;case"2.0":this.schemas["schema.json"]=require("../schemas/2.0/schema.json"),this.validators["schema.json"]=createValidator(this,["schema.json"])}},getModelMetadata=function(e,r){var a=e[r];return _.isUndefined(a)&&(a=e[r]={composed:{},name:void 0,parents:[],refs:[],schema:void 0}),a},processModel=function e(r,a,t,n,i,s){var o=getModelMetadata(a,n);switch(o.schema=t,o.name=n,o.path=i,r.version){case"1.2":o.name=i[i.length-1],_.each(t.properties,function(e,t){var n=i.concat("properties",t);e.$ref?getModelMetadata(a,e.$ref).refs.push(n.concat(["$ref"])):"array"===e.type&&e.items.$ref&&getModelMetadata(a,e.items.$ref).refs.push(n.concat(["items","$ref"])),_.isUndefined(e.defaultValue)||validateParameterConstraints(r,e,e.defaultValue,n.concat("defaultValue"),s.errors)}),_.each(_.uniq(t.subTypes),function(e,r){var t=getModelMetadata(a,e);t.parents.push(n),t.refs.push(i.concat("subTypes",r.toString()))});break;case"2.0":_.each(_.uniq(t.allOf),function(t,n){var c=i.concat("allOf",n.toString());_.isUndefined(t.$ref)?(e(r,a,t,toJsonPointer(c),c,s),o.parents.push(toJsonPointer(c))):(o.parents.push(refToJsonPointer(t.$ref)),getModelMetadata(a,refToJsonPointer(t.$ref)).refs.push(c.concat("$ref")))}),_.isUndefined(t.default)||validateParameterConstraints(r,t,t.defaultValue,i.concat("default"),s.errors),t.$ref?getModelMetadata(a,refToJsonPointer(t.$ref)).refs.push(i.concat(["$ref"])):"array"===t.type&&(t.items.$ref?getModelMetadata(a,refToJsonPointer(t.items.$ref)).refs.push(i.concat(["items","$ref"])):_.isUndefined(t.items.type)||-1!==r.primitives.indexOf(t.items.type)||_.each(t.items,function(t,n){var o=i.concat("items",n.toString());e(r,a,t,toJsonPointer(o),o,s)})),_.each(t.properties,function(t,n){var o=i.concat("properties",n);t.$ref?getModelMetadata(a,refToJsonPointer(t.$ref)).refs.push(o.concat(["$ref"])):"array"===t.type&&(t.items.$ref?getModelMetadata(a,refToJsonPointer(t.items.$ref)).refs.push(o.concat(["items","$ref"])):_.isUndefined(t.items.type)||-1!==r.primitives.indexOf(t.items.type)||_.each(t.items,function(t,n){var i=o.concat("items",n.toString());e(r,a,t,toJsonPointer(i),i,s)}))}),-1===toJsonPointer(i).indexOf("#/definitions/")&&o.refs.push(i)}},getModelsMetadata=function(e,r,a){var t,n={},i={errors:[],warnings:[]},s={},o={},c=function(r,a){var n=t[r].schema;n&&(_.each(n.properties,function(t,n){var s=_.cloneDeep(t);a.properties[n]?createErrorOrWarning("CHILD_MODEL_REDECLARES_PROPERTY","Child model declares property already declared by ancestor: "+n,t,"1.2"===e.version?["models",r,"properties",n]:r.substring(2).split("/").concat("properties",n),i.errors):("1.2"===e.version&&(_.isUndefined(s.maximum)||(s.maximum=parseFloat(s.maximum)),_.isUndefined(s.minimum)||(s.minimum=parseFloat(s.minimum))),a.properties[n]=s)}),!_.isUndefined(n.required)&&_.isUndefined(a.required)&&(a.required=[]),_.each(n.required,function(e){-1===a.required.indexOf(e)&&a.required.push(e)}))},d=function(e,r){var a=!1;return Object.keys(r).filter(function(t){return t===e&&(a=!0),a&&r[t]})},u=function p(r,a,n,s,o){var u=t[r],h=u.schema;s[r]=!0,_.isUndefined(h)||(u.parents.length>1&&"1.2"===e.version?createErrorOrWarning("MULTIPLE_MODEL_INHERITANCE","Child model is sub type of multiple models: "+u.parents.join(" && "),h,["models",r],i.errors):_.each(u.parents,function(t){n[t]||(s[t]&&(a[r]=d(t,s),createErrorOrWarning("CYCLICAL_MODEL_INHERITANCE","Model has a circular inheritance: "+r+" -> "+a[r].join(" -> "),"1.2"===e.version?h.subTypes:h.allOf,"1.2"===e.version?["models",r,"subTypes"]:r.substring(2).split("/").concat("allOf"),i.errors)),a[r]||p(t,a,n,s,o)),a[r]||c(t,o)})),n[r]=!0,s[r]=!1},h=md5.hash(JSON.stringify(r)),m=metadataCache[h];if(_.isUndefined(m)){switch(m=metadataCache[h]={metadata:{},results:i},t=m.metadata,e.version){case"1.2":_.reduce(r.models,function(r,a,n){return validateNoExist(r,a.id,"MODEL_DEFINITION","Model",["models",n,"id"],i.errors),processModel(e,t,a,a.id,["models",n],i),r.concat(a.id)},[]);break;case"2.0":_.each(r.definitions,function(r,a){var n=["definitions",a];processModel(e,t,r,toJsonPointer(n),n,i)})}_.each(t,function(e,r){e.composed={title:"Composed "+r,type:"object",properties:{}},_.isUndefined(e.schema)||(u(r,n,s,o,e.composed),c(r,e.composed)),_.isUndefined(e.schema.required)||_.each(e.schema.required,function(r,t){_.isUndefined(e.composed.properties[r])&&createErrorOrWarning("MISSING_REQUIRED_MODEL_PROPERTY","Model requires property but it is not defined: "+r,r,e.path.concat(["required",t.toString()]),a.errors)})}),_.each(t,function(r){var a=traverse(r.composed).reduce(function(r){return"$ref"===this.key&&(r[toJsonPointer(this.path)]="1.2"===e.version?this.node:refToJsonPointer(this.node)),r},{});_.each(a,function(e,a){var n=a.substring(2).split("/"),i=_.isUndefined(t[e])?void 0:_.cloneDeep(t[e].composed);_.isUndefined(i)||(delete i.id,delete i.title,traverse(r.composed).set(n.slice(0,n.length-1),i))})}),_.isUndefined(a)||_.each(i,function(e,r){a[r]=a[r].concat(e)})}return m},validateWithSchema=function(e,r,a){var t=e.validators[r],n=t.schema[r],i=t.validate(n,a),s={errors:[],warnings:[]};return i&&(s={errors:t.je(n,a,i,jjveOptions),warnings:[]}),s},validateContent=function(e,r,a){var t={errors:[],warnings:[]},n={},i={},s=[],o=[];switch(e.version){case"1.2":_.each(r.apis,function(e,r){validateNoExist(s,e.path,"RESOURCE_PATH","Resource path",["apis",r.toString(),"path"],t.errors),-1===s.indexOf(e.path)&&s.push(e.path)}),0===t.errors.length&&(_.each(r.authorizations,function(e,r){n[r]=_.map(e.scopes,function(e){return e.scope})},{}),t.apiDeclarations=[],_.each(a,function(r,a){var c=t.apiDeclarations[a]={errors:[],warnings:[]},d={},u={},h=getModelsMetadata(e,r,c).metadata,m=function(e,r){var a=getModelMetadata(h,e);a.refs.push(r)},p=function(e,r){var a;_.isUndefined(d[e])?(a=i[e],_.isUndefined(a)&&(a=i[e]=[])):(a=u[e],_.isUndefined(a)&&(a=u[e]=[])),-1===a.indexOf(r)&&a.push(r)};_.each(r.authorizations,function(e,r){d[r]=_.map(e.scopes,function(e){return e.scope})},{}),validateNoExist(o,r.resourcePath,"RESOURCE_PATH","Resource path",["resourcePath"],c.errors),validateExist(s,r.resourcePath,"RESOURCE_PATH","Resource path",["resourcePath"],c.errors),-1===o.indexOf(r.resourcePath)&&o.push(r.resourcePath),_.each(["consumes","produces"],function(e){validateNoDuplicates(r[e],"API_"+e.toUpperCase(),"API",[e],c.warnings)}),_.reduce(r.apis,function(r,a,t){var i=["apis",t.toString()],s=[],o=[],u=pathToRegexp(expressStylePath("",a.path),s).toString(),h=_.map(s,function(e){return e.name});return r.indexOf(u)>-1&&createErrorOrWarning("DUPLICATE_API_PATH","API path (or equivalent) already defined: "+a.path,a.path,i.concat("path"),c.errors),_.reduce(a.operations,function(r,t,s){var u=i.concat(["operations",s.toString()]);return _.each(["consumes","produces"],function(e){validateNoDuplicates(t[e],"OPERATION_"+e.toUpperCase(),"Operation",u.concat(e),c.warnings)}),validateNoExist(r,t.method,"OPERATION_METHOD","Operation method",u.concat("method"),c.errors),_.each(t.authorizations,function(e,r){validateExist(_.uniq(Object.keys(d).concat(Object.keys(n))),r,"AUTHORIZATION","Authorization",u.concat(["authorizations",r]),c.errors),_.each(e,function(e,a){_.isUndefined(d[r])&&_.isUndefined(n[r])||validateExist(_.uniq((d[r]||[]).concat(n[r]||[])),e.scope,"AUTHORIZATION_SCOPE","Authorization scope",u.concat(["authorizations",r,a.toString(),"scope"]),c.errors),p(r,e.scope)})}),_.reduce(t.parameters,function(r,a,t){return-1===e.primitives.indexOf(a.type)?m(a.type,u.concat(["parameters",t.toString(),"type"])):"array"===a.type&&a.items.$ref&&m(a.items.$ref,u.concat(["parameters",t.toString(),"items","$ref"])),validateNoExist(r,a.name,"OPERATION_PARAMETER","Operation parameter",u.concat("parameters",t.toString(),"name"),c.errors),"path"===a.paramType&&(-1===h.indexOf(a.name)&&createErrorOrWarning("UNRESOLVABLE_API_PATH_PARAMETER","API path parameter could not be resolved: "+a.name,a.name,u.concat("parameters",t.toString(),"name"),c.errors),-1===o.indexOf(a.name)&&o.push(a.name)),_.isUndefined(a.defaultValue)||validateParameterConstraints(e,a,a.defaultValue,u.concat("parameters",t.toString(),"defaultValue"),c.errors),r.concat(a.name)},[]),_.each(_.difference(h,o),function(e){createErrorOrWarning("MISSING_API_PATH_PARAMETER","API requires path parameter but it is not defined: "+e,a.path,i.concat("path"),c.errors)}),_.reduce(t.responseMessages,function(e,r,a){return validateNoExist(e,r.code,"RESPONSE_MESSAGE_CODE","Response message code",u.concat(["responseMessages",a.toString(),"code"]),c.errors),r.responseModel&&m(r.responseModel,u.concat(["responseMessages",a.toString(),"responseModel"])),e.concat(r.code)},[]),"array"===t.type&&t.items.$ref?m(t.items.$ref,u.concat(["items","$ref"])):-1===e.primitives.indexOf(t.type)&&m(t.type,u.concat(["type"])),r.concat(t.method)},[]),r.concat(u)},[]),_.each(h,function(e,r){_.isUndefined(e.schema)&&_.each(e.refs,function(e){createErrorOrWarning("UNRESOLVABLE_MODEL","Model could not be resolved: "+r,r,e,c.errors)}),0===e.refs.length&&createUnusedErrorOrWarning(e.schema,r,"MODEL","Model",["models",e.name],c.warnings)}),_.each(_.difference(Object.keys(d),Object.keys(u)),function(e){createUnusedErrorOrWarning(r.authorizations[e],e,"AUTHORIZATION","Authorization",["authorizations",e],c.warnings)}),_.each(d,function(e,a){var t=["authorizations",a],n=r.authorizations[a];_.each(_.difference(e,u[a]||[]),function(r){var a=e.indexOf(r);createUnusedErrorOrWarning(n.scopes[a],r,"AUTHORIZATION_SCOPE","Authorization scope",t.concat(["scopes",a.toString()]),c.warnings)})})}),_.each(_.difference(s,o),function(e){var a=_.map(r.apis,function(e){return e.path}).indexOf(e);createUnusedErrorOrWarning(r.apis[a].path,e,"RESOURCE_PATH","Resource path",["apis",a.toString(),"path"],t.errors)}),_.each(_.difference(Object.keys(n),Object.keys(i)),function(e){createUnusedErrorOrWarning(r.authorizations[e],e,"AUTHORIZATION","Authorization",["authorizations",e],t.warnings)}),_.each(i,function(e,a){var n=["authorizations",a];_.each(_.difference(e,i[a]),function(i){var s=e.indexOf(i);createUnusedErrorOrWarning(r.authorizations[a].scopes[s],i,"AUTHORIZATION_SCOPE","Authorization scope",n.concat(["scopes",s.toString()]),t.warnings)})}));break;case"2.0":if(_.each(["consumes","produces","schemes"],function(e){validateNoDuplicates(r[e],"API_"+e.toUpperCase(),"API",[e],t.warnings)}),0===t.errors.length&&0===t.warnings.length){var c=getModelsMetadata(e,r,t).metadata;_.reduce(r.paths,function(r,a,n){var i=["paths",n],s=[],o=[],d=pathToRegexp(expressStylePath("",n),s).toString(),u=_.map(s,function(e){return e.name});return r.indexOf(d)>-1&&createErrorOrWarning("DUPLICATE_API_PATH","API path (or equivalent) already defined: "+n,n,i,t.errors),_.each(a,function(r,n){var s=i.concat(n);return"parameters"===n?void _.reduce(a.parameters,function(r,a,n){var i=s.concat(n.toString());return validateNoExist(r,a.name,"API_PARAMETER","API parameter",i.concat("name"),t.errors),"path"===a.in&&(-1===u.indexOf(a.name)&&createErrorOrWarning("UNRESOLVABLE_API_PATH_PARAMETER","API path parameter could not be resolved: "+a.name,a.name,i.concat("name"),t.errors),-1===o.indexOf(a.name)&&o.push(a.name)),_.isUndefined(a.schema)||processModel(e,c,a.schema,toJsonPointer(i.concat("schema")),i.concat("schema"),t),r.concat(a.name)},[]):(_.each(["consumes","produces","schemes"],function(e){validateNoDuplicates(r[e],"OPERATION_"+e.toUpperCase(),"Operation",s.concat(e),t.warnings)}),_.reduce(r.parameters,function(r,a,n){var i=s.concat("parameters",n.toString());return validateNoExist(r,a.name,"OPERATION_PARAMETER","Operation parameter",i.concat("name"),t.errors),"path"===a.in&&(-1===u.indexOf(a.name)&&createErrorOrWarning("UNRESOLVABLE_API_PATH_PARAMETER","API path parameter could not be resolved: "+a.name,a.name,i.concat("name"),t.errors),-1===o.indexOf(a.name)&&o.push(a.name)),_.isUndefined(a.schema)||processModel(e,c,a.schema,toJsonPointer(i.concat("schema")),i.concat("schema"),t),r.concat(a.name)},[]),void _.each(r.responses,function(r,a){var t=s.concat("responses",a);_.isUndefined(r.schema)||processModel(e,c,r.schema,toJsonPointer(t.concat("schema")),t.concat("schema"),r)}))}),_.each(_.difference(u,o),function(e){createErrorOrWarning("MISSING_API_PATH_PARAMETER","API requires path parameter but it is not defined: "+e,n,i,t.errors)}),r.concat(d)},[]),_.each(c,function(e,r){_.isUndefined(e.schema)&&_.each(e.refs,function(e){createErrorOrWarning("UNRESOLVABLE_MODEL","Model could not be resolved: "+r,r,e,t.errors)}),0===e.refs.length&&createUnusedErrorOrWarning(e.schema,r,"MODEL","Model",r.substring(2).split("/"),t.warnings)})}}return t};Specification.prototype.validate=function(e,r){var a={errors:[],warnings:[]},t=!1;switch(this.version){case"1.2":if(_.isUndefined(e))throw new Error("resourceListing is required");if(!_.isPlainObject(e))throw new TypeError("resourceListing must be an object");if(_.isUndefined(r))throw new Error("apiDeclarations is required");if(!_.isArray(r))throw new TypeError("apiDeclarations must be an array");a=validateWithSchema(this,"resourceListing.json",e),a.errors.length>0&&(t=!0),t||(a.apiDeclarations=[],_.each(r,function(e,r){return a.apiDeclarations[r]=validateWithSchema(this,"apiDeclaration.json",e),a.apiDeclarations[r].errors.length>0?(t=!0,!1):void 0}.bind(this))),t||(a=validateContent(this,e,r)),a=a.errors.length>0||a.warnings.length>0||_.reduce(a.apiDeclarations,function(e,r){return e+(_.isArray(r.errors)?r.errors.length:0)+(_.isArray(r.warnings)?r.warnings.length:0)},0)>0?a:void 0;break;case"2.0":if(_.isUndefined(e))throw new Error("swaggerObject is required");if(!_.isPlainObject(e))throw new TypeError("swaggerObject must be an object");a=validateWithSchema(this,"schema.json",e),a.errors.length>0&&(t=!0),t||(a=validateContent(this,e)),a=a.errors.length>0||a.warnings.length>0?a:void 0}return a},Specification.prototype.composeModel=function(e,r){var a,t,n,i;switch(this.version){case"1.2":if(_.isUndefined(e))throw new Error("apiDeclaration is required");if(!_.isPlainObject(e))throw new TypeError("apiDeclaration must be an object");if(_.isUndefined(r))throw new Error("modelId is required");break;case"2.0":if(_.isUndefined(e))throw new Error("swaggerObject is required");if(!_.isPlainObject(e))throw new TypeError("swaggerObject must be an object");if(_.isUndefined(r))throw new Error("modelIdOrPath is required")}if(a=getModelsMetadata(this,e),n=a.metadata,a.results.errors.length>0)throw i=new Error("The models are invalid and model composition is not possible"),i.errors=a.results.errors,i.warnings=a.results.warnings,i;return t=n["1.2"===this.version?r:refToJsonPointer(r)],_.isUndefined(t)?void 0:t.composed},Specification.prototype.validateModel=function(e,r,a){var t,n,i=this.composeModel(e,r);if(_.isUndefined(i))throw Error("Unable to compose model so validation is not possible");return n=jjv(jjvOptions),n.addFormat("uri",function(){return!0}),n.addSchema(draft04Url,draft04Json),n.je=jjve(n),t=n.validate(i,a),t=t?{errors:n.je(i,a,t,jjveOptions)}:void 0},module.exports.v1=module.exports.v1_2=new Specification("1.2"),module.exports.v2=module.exports.v2_0=new Specification("2.0");
 },{"../schemas/1.2/apiDeclaration.json":329,"../schemas/1.2/authorizationObject.json":330,"../schemas/1.2/dataType.json":331,"../schemas/1.2/dataTypeBase.json":332,"../schemas/1.2/infoObject.json":333,"../schemas/1.2/modelsObject.json":334,"../schemas/1.2/oauth2GrantType.json":335,"../schemas/1.2/operationObject.json":336,"../schemas/1.2/parameterObject.json":337,"../schemas/1.2/resourceListing.json":338,"../schemas/1.2/resourceObject.json":339,"../schemas/2.0/schema.json":340,"../schemas/json-schema-draft-04.json":341,"./helpers":2,"./validators":3,"jjv":9,"jjve":11,"lodash.clonedeep":12,"lodash.difference":54,"lodash.foreach":70,"lodash.isarray":99,"lodash.isplainobject":106,"lodash.isundefined":128,"lodash.map":129,"lodash.reduce":190,"lodash.union":251,"lodash.uniq":272,"path-to-regexp":326,"spark-md5":327,"traverse":328}],2:[function(require,module,exports){
 "use strict";var _={isUndefined:require("lodash.isundefined")},parseurl=require("parseurl"),specCache={};module.exports.expressStylePath=function(e,r){return e=parseurl({url:e||"/"}).pathname||"/","/"!==e.charAt(0)&&(e="/"+e),"/"!==e.charAt(e.length-1)&&(e+="/"),"/"===r.charAt(0)&&(r=r.substring(1)),(e+r).replace(/{/g,":").replace(/}/g,"")},module.exports.getSpec=function(e){var r=specCache[e];if(_.isUndefined(r))switch(e){case"1.2":r=require("../lib/specs").v1_2;break;case"2.0":r=require("../lib/specs").v2_0}return r},module.exports.refToJsonPointer=function(e){return"#"!==e.charAt(0)&&(e="#/definitions/"+e),e},module.exports.toJsonPointer=function(e){return"#/"+e.map(function(e){return e.replace(/\//g,"~1")}).join("/")};
 },{"../lib/specs":undefined,"lodash.isundefined":128,"parseurl":325}],3:[function(require,module,exports){
@@ -1244,10 +1244,14 @@ module.exports={
 },{}],340:[function(require,module,exports){
 module.exports={
   "title": "A JSON Schema for Swagger 2.0 API.",
+  "id": "http://swagger.io/v2/schema.json#",
   "$schema": "http://json-schema.org/draft-04/schema#",
-
   "type": "object",
-  "required": [ "swagger", "info", "paths" ],
+  "required": [
+    "swagger",
+    "info",
+    "paths"
+  ],
   "additionalProperties": false,
   "patternProperties": {
     "^x-": {
@@ -1256,20 +1260,19 @@ module.exports={
   },
   "properties": {
     "swagger": {
-      "type": "number",
-      "enum": [ 2.0 ],
+      "type": "string",
+      "enum": [
+        "2.0"
+      ],
       "description": "The Swagger version of this document."
     },
     "info": {
       "$ref": "#/definitions/info"
     },
-    "externalDocs": {
-      "$ref": "#/definitions/externalDocs"
-    },
     "host": {
       "type": "string",
       "format": "uri",
-      "pattern": "^((?!\\:\/\/).)*$",
+      "pattern": "^[^{}/ :\\\\]+(?::\\d+)?$",
       "description": "The fully qualified URI to the host of the API."
     },
     "basePath": {
@@ -1278,79 +1281,53 @@ module.exports={
       "description": "The base path to the API. Example: '/api'."
     },
     "schemes": {
-      "type": "array",
-      "description": "The transfer protocol of the API.",
-      "items": {
-        "type": "string",
-        "enum": [ "http", "https", "ws", "wss" ]
-      }
+      "$ref": "#/definitions/schemesList"
     },
     "consumes": {
-      "type": "array",
       "description": "A list of MIME types accepted by the API.",
-      "items": {
-        "$ref": "#/definitions/mimeType"
-      }
+      "$ref": "#/definitions/mediaTypeList"
     },
     "produces": {
-      "type": "array",
       "description": "A list of MIME types the API can produce.",
-      "items": {
-        "$ref": "#/definitions/mimeType"
-      }
+      "$ref": "#/definitions/mediaTypeList"
     },
     "paths": {
-      "type": "object",
-      "description": "Relative paths to the individual endpoints. They must be relative to the 'basePath'.",
-      "patternProperties": {
-        "^x-": {
-          "$ref": "#/definitions/vendorExtension"
-        },
-        "^/.*[^\/]$": {
-          "$ref": "#/definitions/pathItem"
-        }
-      },
-      "additionalProperties": false
+      "$ref": "#/definitions/paths"
     },
     "definitions": {
-      "type": "object",
-      "description": "One or more JSON objects describing the schemas being consumed and produced by the API.",
-      "additionalProperties": { "$ref": "#/definitions/schema" }
+      "$ref": "#/definitions/definitions"
     },
     "parameters": {
-      "type": "object",
-      "description": "One or more JSON representations for parameters",
-      "additionalProperties": { "$ref": "#/definitions/parameter" }
+      "$ref": "#/definitions/parameterDefinitions"
+    },
+    "responses": {
+      "$ref": "#/definitions/responseDefinitions"
     },
     "security": {
       "$ref": "#/definitions/security"
+    },
+    "securityDefinitions": {
+      "$ref": "#/definitions/securityDefinitions"
     },
     "tags": {
       "type": "array",
       "items": {
         "$ref": "#/definitions/tag"
-      }
+      },
+      "uniqueItems": true
+    },
+    "externalDocs": {
+      "$ref": "#/definitions/externalDocs"
     }
   },
   "definitions": {
-    "externalDocs": {
-      "type": "object",
-      "description": "information about external documentation",
-      "required": [ "url" ],
-      "properties": {
-        "description": {
-          "type": "string"
-        },
-        "url": {
-          "type": "string",
-          "format": "uri"
-        }
-      }
-    },
     "info": {
       "type": "object",
       "description": "General information about the API.",
-      "required": [ "version", "title" ],
+      "required": [
+        "version",
+        "title"
+      ],
       "additionalProperties": false,
       "patternProperties": {
         "^x-": {
@@ -1358,13 +1335,13 @@ module.exports={
         }
       },
       "properties": {
-        "version": {
-          "type": "string",
-          "description": "A semantic version number of the API."
-        },
         "title": {
           "type": "string",
           "description": "A unique and precise title of the API."
+        },
+        "version": {
+          "type": "string",
+          "description": "A semantic version number of the API."
         },
         "description": {
           "type": "string",
@@ -1375,59 +1352,120 @@ module.exports={
           "description": "The terms of service for the API."
         },
         "contact": {
-          "type": "object",
-          "description": "Contact information for the owners of the API.",
-          "additionalProperties": false,
-          "properties": {
-            "name": {
-              "type": "string",
-              "description": "The identifying name of the contact person/organization."
-            },
-            "url": {
-              "type": "string",
-              "description": "The URL pointing to the contact information.",
-              "format": "uri"
-            },
-            "email": {
-              "type": "string",
-              "description": "The email address of the contact person/organization.",
-              "format": "email"
-            }
-          }
+          "$ref": "#/definitions/contact"
         },
         "license": {
-          "type": "object",
-          "required": [ "name" ],
-          "additionalProperties": false,
-          "properties": {
-            "name": {
-              "type": "string",
-              "description": "The name of the license type. It's encouraged to use an OSI compatible license."
-            },
-            "url": {
-              "type": "string",
-              "description": "The URL pointing to the license.",
-              "format": "uri"
-            }
-          }
+          "$ref": "#/definitions/license"
         }
       }
     },
-    "example": {
+    "contact": {
+      "type": "object",
+      "description": "Contact information for the owners of the API.",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The identifying name of the contact person/organization."
+        },
+        "url": {
+          "type": "string",
+          "description": "The URL pointing to the contact information.",
+          "format": "uri"
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the contact person/organization.",
+          "format": "email"
+        }
+      }
+    },
+    "license": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the license type. It's encouraged to use an OSI compatible license."
+        },
+        "url": {
+          "type": "string",
+          "description": "The URL pointing to the license.",
+          "format": "uri"
+        }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "description": "Relative paths to the individual endpoints. They must be relative to the 'basePath'.",
+      "patternProperties": {
+        "^x-": {
+          "$ref": "#/definitions/vendorExtension"
+        },
+        "^/": {
+          "$ref": "#/definitions/pathItem"
+        }
+      },
+      "additionalProperties": false
+    },
+    "definitions": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/schema"
+      },
+      "description": "One or more JSON objects describing the schemas being consumed and produced by the API."
+    },
+    "parameterDefinitions": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/parameter"
+      },
+      "description": "One or more JSON representations for parameters"
+    },
+    "responseDefinitions": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/response"
+      },
+      "description": "One or more JSON representations for parameters"
+    },
+    "externalDocs": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "information about external documentation",
+      "required": [
+        "url"
+      ],
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "examples": {
       "type": "object",
       "patternProperties": {
-        "^[a-z0-9-]+/[a-z0-9-+]+$": {}
+        "^[a-z0-9-]+/[a-z0-9\\-+]+$": {}
       },
       "additionalProperties": false
     },
     "mimeType": {
       "type": "string",
-      "pattern": "^[\\sa-z0-9-+;\\.=\\/]+$",
+      "pattern": "^[\\sa-z0-9\\-+;\\.=\\/]+$",
       "description": "The MIME type of the HTTP message."
     },
     "operation": {
       "type": "object",
-      "required": [ "responses" ],
+      "required": [
+        "responses"
+      ],
       "additionalProperties": false,
       "patternProperties": {
         "^x-": {
@@ -1439,7 +1477,8 @@ module.exports={
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "uniqueItems": true
         },
         "summary": {
           "type": "string",
@@ -1457,51 +1496,25 @@ module.exports={
           "description": "A friendly name of the operation"
         },
         "produces": {
-          "type": "array",
           "description": "A list of MIME types the API can produce.",
-          "additionalItems": false,
-          "items": {
-            "$ref": "#/definitions/mimeType"
-          }
+          "$ref": "#/definitions/mediaTypeList"
         },
         "consumes": {
-          "type": "array",
           "description": "A list of MIME types the API can consume.",
-          "additionalItems": false,
-          "items": {
-            "$ref": "#/definitions/mimeType"
-          }
+          "$ref": "#/definitions/mediaTypeList"
         },
         "parameters": {
-          "type": "array",
-          "description": "The parameters needed to send a valid API call.",
-          "minItems": 1,
-          "additionalItems": false,
-          "items": {
-            "oneOf": [
-              { "$ref": "#/definitions/parameter" },
-              {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "$ref": {
-                    "type": "string"
-                  }
-                }
-              }
-            ]
-          }
+          "$ref": "#/definitions/parametersList"
         },
         "responses": {
           "$ref": "#/definitions/responses"
         },
         "schemes": {
-          "type": "array",
-          "description": "The transfer protocol of the API.",
-          "items": {
-            "type": "string",
-            "enum": [ "http", "https", "ws", "wss" ]
-          }
+          "$ref": "#/definitions/schemesList"
+        },
+        "deprecated": {
+          "type": "boolean",
+          "default": false
         },
         "security": {
           "$ref": "#/definitions/security"
@@ -1542,10 +1555,7 @@ module.exports={
           "$ref": "#/definitions/operation"
         },
         "parameters": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/parameter"
-          }
+          "$ref": "#/definitions/parametersList"
         }
       }
     },
@@ -1555,17 +1565,38 @@ module.exports={
       "minProperties": 1,
       "additionalProperties": false,
       "patternProperties": {
-        "^([0-9]+)$|^(default)$": {
-          "$ref": "#/definitions/response"
+        "^([0-9]{3})$|^(default)$": {
+          "$ref": "#/definitions/responseValue"
         },
         "^x-": {
           "$ref": "#/definitions/vendorExtension"
         }
+      },
+      "not": {
+        "type": "object",
+        "additionalProperties": false,
+        "patternProperties": {
+          "^x-": {
+            "$ref": "#/definitions/vendorExtension"
+          }
+        }
       }
+    },
+    "responseValue": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/response"
+        },
+        {
+          "$ref": "#/definitions/jsonReference"
+        }
+      ]
     },
     "response": {
       "type": "object",
-      "required": [ "description" ],
+      "required": [
+        "description"
+      ],
       "properties": {
         "description": {
           "type": "string"
@@ -1574,30 +1605,86 @@ module.exports={
           "$ref": "#/definitions/schema"
         },
         "headers": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/serializableType"
-          }
+          "$ref": "#/definitions/headers"
         },
         "examples": {
-          "$ref": "#/definitions/example"
+          "$ref": "#/definitions/examples"
         }
       },
       "additionalProperties": false
     },
-    "serializableType": {
+    "headers": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/header"
+      }
+    },
+    "header": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
       "properties": {
         "type": {
           "type": "string",
-          "enum": [ "string", "number", "boolean", "integer", "array", "file" ]
+          "enum": [
+            "string",
+            "number",
+            "integer",
+            "boolean",
+            "array"
+          ]
         },
         "format": {
           "type": "string"
         },
         "items": {
-          "type": "object"
+          "$ref": "#/definitions/primitivesItems"
         },
         "collectionFormat": {
+          "$ref": "#/definitions/collectionFormat"
+        },
+        "default": {
+          "$ref": "#/definitions/default"
+        },
+        "maximum": {
+          "$ref": "#/definitions/maximum"
+        },
+        "exclusiveMaximum": {
+          "$ref": "#/definitions/exclusiveMaximum"
+        },
+        "minimum": {
+          "$ref": "#/definitions/minimum"
+        },
+        "exclusiveMinimum": {
+          "$ref": "#/definitions/exclusiveMinimum"
+        },
+        "maxLength": {
+          "$ref": "#/definitions/maxLength"
+        },
+        "minLength": {
+          "$ref": "#/definitions/minLength"
+        },
+        "pattern": {
+          "$ref": "#/definitions/pattern"
+        },
+        "maxItems": {
+          "$ref": "#/definitions/maxItems"
+        },
+        "minItems": {
+          "$ref": "#/definitions/minItems"
+        },
+        "uniqueItems": {
+          "$ref": "#/definitions/uniqueItems"
+        },
+        "enum": {
+          "$ref": "#/definitions/enum"
+        },
+        "multipleOf": {
+          "$ref": "#/definitions/multipleOf"
+        },
+        "description": {
           "type": "string"
         }
       }
@@ -1607,79 +1694,429 @@ module.exports={
       "additionalProperties": true,
       "additionalItems": true
     },
-    "parameter": {
+    "bodyParameter": {
       "type": "object",
-      "required": [ "name", "in" ],
+      "required": [
+        "name",
+        "in",
+        "schema"
+      ],
+      "patternProperties": {
+        "^x-": {
+          "$ref": "#/definitions/vendorExtension"
+        }
+      },
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "A brief description of the parameter. This could contain examples of use.  Github-flavored markdown is allowed."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the parameter."
+        },
+        "in": {
+          "type": "string",
+          "description": "Determines the location of the parameter.",
+          "enum": [
+            "body"
+          ]
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Determines whether or not this parameter is required or optional.",
+          "default": false
+        },
+        "schema": {
+          "$ref": "#/definitions/schema"
+        }
+      },
+      "additionalProperties": false
+    },
+    "headerParameterSubSchema": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": {
+          "$ref": "#/definitions/vendorExtension"
+        }
+      },
+      "properties": {
+        "required": {
+          "type": "boolean",
+          "description": "Determines whether or not this parameter is required or optional.",
+          "default": false
+        },
+        "in": {
+          "type": "string",
+          "description": "Determines the location of the parameter.",
+          "enum": [
+            "header"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the parameter. This could contain examples of use.  Github-flavored markdown is allowed."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the parameter."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "integer",
+            "array"
+          ]
+        },
+        "format": {
+          "type": "string"
+        },
+        "items": {
+          "$ref": "#/definitions/primitivesItems"
+        },
+        "collectionFormat": {
+          "$ref": "#/definitions/collectionFormat"
+        },
+        "default": {
+          "$ref": "#/definitions/default"
+        },
+        "maximum": {
+          "$ref": "#/definitions/maximum"
+        },
+        "exclusiveMaximum": {
+          "$ref": "#/definitions/exclusiveMaximum"
+        },
+        "minimum": {
+          "$ref": "#/definitions/minimum"
+        },
+        "exclusiveMinimum": {
+          "$ref": "#/definitions/exclusiveMinimum"
+        },
+        "maxLength": {
+          "$ref": "#/definitions/maxLength"
+        },
+        "minLength": {
+          "$ref": "#/definitions/minLength"
+        },
+        "pattern": {
+          "$ref": "#/definitions/pattern"
+        },
+        "maxItems": {
+          "$ref": "#/definitions/maxItems"
+        },
+        "minItems": {
+          "$ref": "#/definitions/minItems"
+        },
+        "uniqueItems": {
+          "$ref": "#/definitions/uniqueItems"
+        },
+        "enum": {
+          "$ref": "#/definitions/enum"
+        },
+        "multipleOf": {
+          "$ref": "#/definitions/multipleOf"
+        }
+      }
+    },
+    "queryParameterSubSchema": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": {
+          "$ref": "#/definitions/vendorExtension"
+        }
+      },
+      "properties": {
+        "required": {
+          "type": "boolean",
+          "description": "Determines whether or not this parameter is required or optional.",
+          "default": false
+        },
+        "in": {
+          "type": "string",
+          "description": "Determines the location of the parameter.",
+          "enum": [
+            "query"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the parameter. This could contain examples of use.  Github-flavored markdown is allowed."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the parameter."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "integer",
+            "array"
+          ]
+        },
+        "format": {
+          "type": "string"
+        },
+        "items": {
+          "$ref": "#/definitions/primitivesItems"
+        },
+        "collectionFormat": {
+          "$ref": "#/definitions/collectionFormatWithMulti"
+        },
+        "default": {
+          "$ref": "#/definitions/default"
+        },
+        "maximum": {
+          "$ref": "#/definitions/maximum"
+        },
+        "exclusiveMaximum": {
+          "$ref": "#/definitions/exclusiveMaximum"
+        },
+        "minimum": {
+          "$ref": "#/definitions/minimum"
+        },
+        "exclusiveMinimum": {
+          "$ref": "#/definitions/exclusiveMinimum"
+        },
+        "maxLength": {
+          "$ref": "#/definitions/maxLength"
+        },
+        "minLength": {
+          "$ref": "#/definitions/minLength"
+        },
+        "pattern": {
+          "$ref": "#/definitions/pattern"
+        },
+        "maxItems": {
+          "$ref": "#/definitions/maxItems"
+        },
+        "minItems": {
+          "$ref": "#/definitions/minItems"
+        },
+        "uniqueItems": {
+          "$ref": "#/definitions/uniqueItems"
+        },
+        "enum": {
+          "$ref": "#/definitions/enum"
+        },
+        "multipleOf": {
+          "$ref": "#/definitions/multipleOf"
+        }
+      }
+    },
+    "formDataParameterSubSchema": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": {
+          "$ref": "#/definitions/vendorExtension"
+        }
+      },
+      "properties": {
+        "required": {
+          "type": "boolean",
+          "description": "Determines whether or not this parameter is required or optional.",
+          "default": false
+        },
+        "in": {
+          "type": "string",
+          "description": "Determines the location of the parameter.",
+          "enum": [
+            "formData"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the parameter. This could contain examples of use.  Github-flavored markdown is allowed."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the parameter."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "integer",
+            "array",
+            "file"
+          ]
+        },
+        "format": {
+          "type": "string"
+        },
+        "items": {
+          "$ref": "#/definitions/primitivesItems"
+        },
+        "collectionFormat": {
+          "$ref": "#/definitions/collectionFormatWithMulti"
+        },
+        "default": {
+          "$ref": "#/definitions/default"
+        },
+        "maximum": {
+          "$ref": "#/definitions/maximum"
+        },
+        "exclusiveMaximum": {
+          "$ref": "#/definitions/exclusiveMaximum"
+        },
+        "minimum": {
+          "$ref": "#/definitions/minimum"
+        },
+        "exclusiveMinimum": {
+          "$ref": "#/definitions/exclusiveMinimum"
+        },
+        "maxLength": {
+          "$ref": "#/definitions/maxLength"
+        },
+        "minLength": {
+          "$ref": "#/definitions/minLength"
+        },
+        "pattern": {
+          "$ref": "#/definitions/pattern"
+        },
+        "maxItems": {
+          "$ref": "#/definitions/maxItems"
+        },
+        "minItems": {
+          "$ref": "#/definitions/minItems"
+        },
+        "uniqueItems": {
+          "$ref": "#/definitions/uniqueItems"
+        },
+        "enum": {
+          "$ref": "#/definitions/enum"
+        },
+        "multipleOf": {
+          "$ref": "#/definitions/multipleOf"
+        }
+      }
+    },
+    "pathParameterSubSchema": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": {
+          "$ref": "#/definitions/vendorExtension"
+        }
+      },
+      "properties": {
+        "required": {
+          "type": "boolean",
+          "enum": [
+            true
+          ],
+          "description": "Determines whether or not this parameter is required or optional."
+        },
+        "in": {
+          "type": "string",
+          "description": "Determines the location of the parameter.",
+          "enum": [
+            "path"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the parameter. This could contain examples of use.  Github-flavored markdown is allowed."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the parameter."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "integer",
+            "array"
+          ]
+        },
+        "format": {
+          "type": "string"
+        },
+        "items": {
+          "$ref": "#/definitions/primitivesItems"
+        },
+        "collectionFormat": {
+          "$ref": "#/definitions/collectionFormat"
+        },
+        "default": {
+          "$ref": "#/definitions/default"
+        },
+        "maximum": {
+          "$ref": "#/definitions/maximum"
+        },
+        "exclusiveMaximum": {
+          "$ref": "#/definitions/exclusiveMaximum"
+        },
+        "minimum": {
+          "$ref": "#/definitions/minimum"
+        },
+        "exclusiveMinimum": {
+          "$ref": "#/definitions/exclusiveMinimum"
+        },
+        "maxLength": {
+          "$ref": "#/definitions/maxLength"
+        },
+        "minLength": {
+          "$ref": "#/definitions/minLength"
+        },
+        "pattern": {
+          "$ref": "#/definitions/pattern"
+        },
+        "maxItems": {
+          "$ref": "#/definitions/maxItems"
+        },
+        "minItems": {
+          "$ref": "#/definitions/minItems"
+        },
+        "uniqueItems": {
+          "$ref": "#/definitions/uniqueItems"
+        },
+        "enum": {
+          "$ref": "#/definitions/enum"
+        },
+        "multipleOf": {
+          "$ref": "#/definitions/multipleOf"
+        }
+      }
+    },
+    "nonBodyParameter": {
+      "type": "object",
+      "required": [
+        "name",
+        "in",
+        "type"
+      ],
       "oneOf": [
         {
-          "patternProperties": {
-            "^x-": {
-              "$ref": "#/definitions/vendorExtension"
-            }
-          },
-          "properties": {
-            "name": {
-              "type": "string",
-              "description": "The name of the parameter."
-            },
-            "in": {
-              "type": "string",
-              "description": "Determines the location of the parameter.",
-              "enum": [ "query", "header", "path", "formData" ]
-            },
-            "description": {
-              "type": "string",
-              "description": "A brief description of the parameter. This could contain examples of use.  Github-flavored markdown is allowed."
-            },
-            "required": {
-              "type": "boolean",
-              "description": "Determines whether or not this parameter is required or optional."
-            },
-            "type": {
-              "type": "string",
-              "enum": [ "string", "number", "boolean", "integer", "array" ]
-            },
-            "format": {
-              "type": "string"
-            },
-            "items": {
-              "type": "object"
-            },
-            "collectionFormat": {
-              "type": "string"
-            }
-          },
-          "additionalProperties": false
+          "$ref": "#/definitions/headerParameterSubSchema"
         },
         {
-          "patternProperties": {
-            "^x-": {
-              "$ref": "#/definitions/vendorExtension"
-            }
-          },
-          "properties": {
-            "name": {
-              "type": "string",
-              "description": "The name of the parameter."
-            },
-            "in": {
-              "type": "string",
-              "description": "Determines the location of the parameter.",
-              "enum": [ "body" ]
-            },
-            "description": {
-              "type": "string",
-              "description": "A brief description of the parameter. This could contain examples of use."
-            },
-            "required": {
-              "type": "boolean",
-              "description": "Determines whether or not this parameter is required or optional."
-            },
-            "schema": {
-              "$ref": "#/definitions/schema"
-            }
-          },
-          "additionalProperties": false
+          "$ref": "#/definitions/formDataParameterSubSchema"
+        },
+        {
+          "$ref": "#/definitions/queryParameterSubSchema"
+        },
+        {
+          "$ref": "#/definitions/pathParameterSubSchema"
+        }
+      ]
+    },
+    "parameter": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/bodyParameter"
+        },
+        {
+          "$ref": "#/definitions/nonBodyParameter"
         }
       ]
     },
@@ -1692,91 +2129,603 @@ module.exports={
         }
       },
       "properties": {
-        "$ref": { "type": "string" },
-        "format": { "type": "string" },
-        "title": { "$ref": "http://json-schema.org/draft-04/schema#/properties/title" },
-        "description": { "$ref": "http://json-schema.org/draft-04/schema#/properties/description" },
-        "default": { "$ref": "http://json-schema.org/draft-04/schema#/properties/default" },
-        "multipleOf": { "$ref": "http://json-schema.org/draft-04/schema#/properties/multipleOf" },
-        "maximum": { "$ref": "http://json-schema.org/draft-04/schema#/properties/maximum" },
-        "exclusiveMaximum": { "$ref": "http://json-schema.org/draft-04/schema#/properties/exclusiveMaximum" },
-        "minimum": { "$ref": "http://json-schema.org/draft-04/schema#/properties/minimum" },
-        "exclusiveMinimum": { "$ref": "http://json-schema.org/draft-04/schema#/properties/exclusiveMinimum" },
-        "maxLength": { "$ref": "http://json-schema.org/draft-04/schema#/definitions/positiveInteger" },
-        "minLength": { "$ref": "http://json-schema.org/draft-04/schema#/definitions/positiveIntegerDefault0" },
-        "pattern": { "$ref": "http://json-schema.org/draft-04/schema#/properties/pattern" },
-        "discriminator": { "type": "string" },
-        "xml": { "$ref": "#/definitions/xml"},
+        "$ref": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        },
+        "title": {
+          "$ref": "http://json-schema.org/draft-04/schema#/properties/title"
+        },
+        "description": {
+          "$ref": "http://json-schema.org/draft-04/schema#/properties/description"
+        },
+        "default": {
+          "$ref": "http://json-schema.org/draft-04/schema#/properties/default"
+        },
+        "multipleOf": {
+          "$ref": "http://json-schema.org/draft-04/schema#/properties/multipleOf"
+        },
+        "maximum": {
+          "$ref": "http://json-schema.org/draft-04/schema#/properties/maximum"
+        },
+        "exclusiveMaximum": {
+          "$ref": "http://json-schema.org/draft-04/schema#/properties/exclusiveMaximum"
+        },
+        "minimum": {
+          "$ref": "http://json-schema.org/draft-04/schema#/properties/minimum"
+        },
+        "exclusiveMinimum": {
+          "$ref": "http://json-schema.org/draft-04/schema#/properties/exclusiveMinimum"
+        },
+        "maxLength": {
+          "$ref": "http://json-schema.org/draft-04/schema#/definitions/positiveInteger"
+        },
+        "minLength": {
+          "$ref": "http://json-schema.org/draft-04/schema#/definitions/positiveIntegerDefault0"
+        },
+        "pattern": {
+          "$ref": "http://json-schema.org/draft-04/schema#/properties/pattern"
+        },
+        "maxItems": {
+          "$ref": "http://json-schema.org/draft-04/schema#/definitions/positiveInteger"
+        },
+        "minItems": {
+          "$ref": "http://json-schema.org/draft-04/schema#/definitions/positiveIntegerDefault0"
+        },
+        "uniqueItems": {
+          "$ref": "http://json-schema.org/draft-04/schema#/properties/uniqueItems"
+        },
+        "maxProperties": {
+          "$ref": "http://json-schema.org/draft-04/schema#/definitions/positiveInteger"
+        },
+        "minProperties": {
+          "$ref": "http://json-schema.org/draft-04/schema#/definitions/positiveIntegerDefault0"
+        },
+        "required": {
+          "$ref": "http://json-schema.org/draft-04/schema#/definitions/stringArray"
+        },
+        "enum": {
+          "$ref": "http://json-schema.org/draft-04/schema#/properties/enum"
+        },
+        "type": {
+          "$ref": "http://json-schema.org/draft-04/schema#/properties/type"
+        },
         "items": {
           "anyOf": [
-            { "$ref": "#/definitions/schema" },
+            {
+              "$ref": "#/definitions/schema"
+            },
             {
               "type": "array",
               "minItems": 1,
-              "items": { "$ref": "#/definitions/schema" }
+              "items": {
+                "$ref": "#/definitions/schema"
+              }
             }
           ],
-          "default": { }
-        },
-        "maxItems": { "$ref": "http://json-schema.org/draft-04/schema#/definitions/positiveInteger" },
-        "minItems": { "$ref": "http://json-schema.org/draft-04/schema#/definitions/positiveIntegerDefault0" },
-        "uniqueItems": { "$ref": "http://json-schema.org/draft-04/schema#/properties/uniqueItems" },
-        "maxProperties": { "$ref": "http://json-schema.org/draft-04/schema#/definitions/positiveInteger" },
-        "minProperties": { "$ref": "http://json-schema.org/draft-04/schema#/definitions/positiveIntegerDefault0" },
-        "required": { "$ref": "http://json-schema.org/draft-04/schema#/definitions/stringArray" },
-        "externalDocs": { "$ref": "#/definitions/externalDocs" },
-        "definitions": {
-          "type": "object",
-          "additionalProperties": { "$ref": "#/definitions/schema" },
-          "default": { }
-        },
-        "properties": {
-          "type": "object",
-          "additionalProperties": { "$ref": "#/definitions/schema" },
-          "default": { }
-        },
-        "enum": { "$ref": "http://json-schema.org/draft-04/schema#/properties/enum" },
-        "type": { "$ref": "http://json-schema.org/draft-04/schema#/properties/type" },
-        "example": {
-          
+          "default": {}
         },
         "allOf": {
           "type": "array",
           "minItems": 1,
-          "items": { "$ref": "#/definitions/schema" }
+          "items": {
+            "$ref": "#/definitions/schema"
+          }
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/schema"
+          },
+          "default": {}
+        },
+        "discriminator": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean",
+          "default": false
+        },
+        "xml": {
+          "$ref": "#/definitions/xml"
+        },
+        "externalDocs": {
+          "$ref": "#/definitions/externalDocs"
+        },
+        "example": {}
+      }
+    },
+    "primitivesItems": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "integer",
+            "boolean",
+            "array"
+          ]
+        },
+        "format": {
+          "type": "string"
+        },
+        "items": {
+          "$ref": "#/definitions/primitivesItems"
+        },
+        "collectionFormat": {
+          "$ref": "#/definitions/collectionFormat"
+        },
+        "default": {
+          "$ref": "#/definitions/default"
+        },
+        "maximum": {
+          "$ref": "#/definitions/maximum"
+        },
+        "exclusiveMaximum": {
+          "$ref": "#/definitions/exclusiveMaximum"
+        },
+        "minimum": {
+          "$ref": "#/definitions/minimum"
+        },
+        "exclusiveMinimum": {
+          "$ref": "#/definitions/exclusiveMinimum"
+        },
+        "maxLength": {
+          "$ref": "#/definitions/maxLength"
+        },
+        "minLength": {
+          "$ref": "#/definitions/minLength"
+        },
+        "pattern": {
+          "$ref": "#/definitions/pattern"
+        },
+        "maxItems": {
+          "$ref": "#/definitions/maxItems"
+        },
+        "minItems": {
+          "$ref": "#/definitions/minItems"
+        },
+        "uniqueItems": {
+          "$ref": "#/definitions/uniqueItems"
+        },
+        "enum": {
+          "$ref": "#/definitions/enum"
+        },
+        "multipleOf": {
+          "$ref": "#/definitions/multipleOf"
         }
       }
     },
     "security": {
       "type": "array",
-      "description": "defines security requirements"
+      "items": {
+        "$ref": "#/definitions/securityRequirement"
+      },
+      "uniqueItems": true
+    },
+    "securityRequirement": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "uniqueItems": true
+      }
     },
     "xml": {
+      "type": "object",
+      "additionalProperties": false,
       "properties": {
-        "name": { "type": "string"},
-        "namespace": { "type": "string" },
-        "prefix": { "type": "string" },
-        "attribute": { "type": "boolean" },
-        "wrapped": { "type": "boolean" }
-      },
-      "additionalProperties": false
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "attribute": {
+          "type": "boolean",
+          "default": false
+        },
+        "wrapped": {
+          "type": "boolean",
+          "default": false
+        }
+      }
     },
     "tag": {
       "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
       "properties": {
-        "externalDocs": { "$ref": "#/definitions/externalDocs" }
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "externalDocs": {
+          "$ref": "#/definitions/externalDocs"
+        }
       },
       "patternProperties": {
         "^x-": {
           "$ref": "#/definitions/vendorExtension"
+        }
+      }
+    },
+    "securityDefinitions": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/basicAuthenticationSecurity"
+          },
+          {
+            "$ref": "#/definitions/apiKeySecurity"
+          },
+          {
+            "$ref": "#/definitions/oauth2ImplicitSecurity"
+          },
+          {
+            "$ref": "#/definitions/oauth2PasswordSecurity"
+          },
+          {
+            "$ref": "#/definitions/oauth2ApplicationSecurity"
+          },
+          {
+            "$ref": "#/definitions/oauth2AccessCodeSecurity"
+          }
+        ]
+      }
+    },
+    "basicAuthenticationSecurity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "basic"
+          ]
         },
-        "^/.*[^\/]$": {
+        "description": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^x-": {
+          "$ref": "#/definitions/vendorExtension"
+        }
+      }
+    },
+    "apiKeySecurity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "name",
+        "in"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "apiKey"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "in": {
+          "type": "string",
+          "enum": [
+            "header",
+            "query"
+          ]
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^x-": {
+          "$ref": "#/definitions/vendorExtension"
+        }
+      }
+    },
+    "oauth2ImplicitSecurity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "flow",
+        "authorizationUrl"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "oauth2"
+          ]
+        },
+        "flow": {
+          "type": "string",
+          "enum": [
+            "implicit"
+          ]
+        },
+        "scopes": {
+          "$ref": "#/definitions/oauth2Scopes"
+        },
+        "authorizationUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^x-": {
+          "$ref": "#/definitions/vendorExtension"
+        }
+      }
+    },
+    "oauth2PasswordSecurity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "flow",
+        "tokenUrl"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "oauth2"
+          ]
+        },
+        "flow": {
+          "type": "string",
+          "enum": [
+            "password"
+          ]
+        },
+        "scopes": {
+          "$ref": "#/definitions/oauth2Scopes"
+        },
+        "tokenUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^x-": {
+          "$ref": "#/definitions/vendorExtension"
+        }
+      }
+    },
+    "oauth2ApplicationSecurity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "flow",
+        "tokenUrl"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "oauth2"
+          ]
+        },
+        "flow": {
+          "type": "string",
+          "enum": [
+            "application"
+          ]
+        },
+        "scopes": {
+          "$ref": "#/definitions/oauth2Scopes"
+        },
+        "tokenUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^x-": {
+          "$ref": "#/definitions/vendorExtension"
+        }
+      }
+    },
+    "oauth2AccessCodeSecurity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "flow",
+        "authorizationUrl",
+        "tokenUrl"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "oauth2"
+          ]
+        },
+        "flow": {
+          "type": "string",
+          "enum": [
+            "accessCode"
+          ]
+        },
+        "scopes": {
+          "$ref": "#/definitions/oauth2Scopes"
+        },
+        "authorizationUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "tokenUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^x-": {
+          "$ref": "#/definitions/vendorExtension"
+        }
+      }
+    },
+    "oauth2Scopes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "mediaTypeList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/mimeType"
+      },
+      "uniqueItems": true
+    },
+    "parametersList": {
+      "type": "array",
+      "description": "The parameters needed to send a valid API call.",
+      "minItems": 1,
+      "additionalItems": false,
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/parameter"
+          },
+          {
+            "$ref": "#/definitions/jsonReference"
+          }
+        ]
+      },
+      "uniqueItems": true
+    },
+    "schemesList": {
+      "type": "array",
+      "description": "The transfer protocol of the API.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "http",
+          "https",
+          "ws",
+          "wss"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "collectionFormat": {
+      "type": "string",
+      "enum": [
+        "csv",
+        "ssv",
+        "tsv",
+        "pipes"
+      ],
+      "default": "csv"
+    },
+    "collectionFormatWithMulti": {
+      "type": "string",
+      "enum": [
+        "csv",
+        "ssv",
+        "tsv",
+        "pipes",
+        "multi"
+      ],
+      "default": "csv"
+    },
+    "title": {
+      "$ref": "http://json-schema.org/draft-04/schema#/properties/title"
+    },
+    "description": {
+      "$ref": "http://json-schema.org/draft-04/schema#/properties/description"
+    },
+    "default": {
+      "$ref": "http://json-schema.org/draft-04/schema#/properties/default"
+    },
+    "multipleOf": {
+      "$ref": "http://json-schema.org/draft-04/schema#/properties/multipleOf"
+    },
+    "maximum": {
+      "$ref": "http://json-schema.org/draft-04/schema#/properties/maximum"
+    },
+    "exclusiveMaximum": {
+      "$ref": "http://json-schema.org/draft-04/schema#/properties/exclusiveMaximum"
+    },
+    "minimum": {
+      "$ref": "http://json-schema.org/draft-04/schema#/properties/minimum"
+    },
+    "exclusiveMinimum": {
+      "$ref": "http://json-schema.org/draft-04/schema#/properties/exclusiveMinimum"
+    },
+    "maxLength": {
+      "$ref": "http://json-schema.org/draft-04/schema#/definitions/positiveInteger"
+    },
+    "minLength": {
+      "$ref": "http://json-schema.org/draft-04/schema#/definitions/positiveIntegerDefault0"
+    },
+    "pattern": {
+      "$ref": "http://json-schema.org/draft-04/schema#/properties/pattern"
+    },
+    "maxItems": {
+      "$ref": "http://json-schema.org/draft-04/schema#/definitions/positiveInteger"
+    },
+    "minItems": {
+      "$ref": "http://json-schema.org/draft-04/schema#/definitions/positiveIntegerDefault0"
+    },
+    "uniqueItems": {
+      "$ref": "http://json-schema.org/draft-04/schema#/properties/uniqueItems"
+    },
+    "enum": {
+      "$ref": "http://json-schema.org/draft-04/schema#/properties/enum"
+    },
+    "jsonReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "$ref": {
           "type": "string"
         }
       }
     }
   }
 }
+
 },{}],341:[function(require,module,exports){
 module.exports={
     "id": "http://json-schema.org/draft-04/schema#",
