@@ -41,9 +41,9 @@ var petStoreJson = require('../../samples/2.0/petstore.json');
 describe('Specification v2.0', function () {
   describe('metadata', function () {
     it('should have proper docsUrl, primitives, options, schemasUrl and verison properties', function () {
-      assert.strictEqual(spec.docsUrl, 'https://github.com/reverb/swagger-spec/blob/master/versions/2.0.md');
-      assert.deepEqual(spec.primitives, ['string', 'number', 'boolean', 'integer', 'array']);
-      assert.strictEqual(spec.schemasUrl, 'https://github.com/reverb/swagger-spec/tree/master/schemas/v2.0');
+      assert.strictEqual(spec.docsUrl, 'https://github.com/wordnik/swagger-spec/blob/master/versions/2.0.md');
+      assert.deepEqual(spec.primitives, ['string', 'number', 'boolean', 'integer', 'array', 'file']);
+      assert.strictEqual(spec.schemasUrl, 'https://github.com/wordnik/swagger-spec/tree/master/schemas/v2.0');
       assert.strictEqual(spec.version, '2.0');
     });
   });
@@ -162,63 +162,6 @@ describe('Specification v2.0', function () {
     });
 
     describe('should return errors for semantically invalid JSON files', function () {
-      it('duplicate global consumes', function () {
-        var swaggerObject = _.cloneDeep(petStoreJson);
-        var result;
-
-        swaggerObject.consumes = ['application/json', 'application/xml', 'application/json'];
-
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.warnings, [
-          {
-            code: 'DUPLICATE_API_CONSUMES',
-            message: 'API consumes has duplicate items',
-            data: swaggerObject.consumes,
-            path: ['consumes']
-          }
-        ]);
-        assert.equal(result.errors.length, 0);
-      });
-
-      it('duplicate global produces', function () {
-        var swaggerObject = _.cloneDeep(petStoreJson);
-        var result;
-
-        swaggerObject.produces = ['application/json', 'application/xml', 'application/json'];
-
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.warnings, [
-          {
-            code: 'DUPLICATE_API_PRODUCES',
-            message: 'API produces has duplicate items',
-            data: swaggerObject.produces,
-            path: ['produces']
-          }
-        ]);
-        assert.equal(result.errors.length, 0);
-      });
-
-      it('duplicate global schemes', function () {
-        var swaggerObject = _.cloneDeep(petStoreJson);
-        var result;
-
-        swaggerObject.schemes.push('http');
-
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.warnings, [
-          {
-            code: 'DUPLICATE_API_SCHEMES',
-            message: 'API schemes has duplicate items',
-            data: swaggerObject.schemes,
-            path: ['schemes']
-          }
-        ]);
-        assert.equal(result.errors.length, 0);
-      });
-
       // Should we be writing tests for the operation parameter constraints (default values) even though the same code
       // to validate them is the same one for swagger-validator which is already tested?
 
@@ -243,68 +186,17 @@ describe('Specification v2.0', function () {
         assert.equal(result.warnings.length, 0);
       });
 
-      it('duplicate operation consumes', function () {
-        var swaggerObject = _.cloneDeep(petStoreJson);
-        var result;
-
-        swaggerObject.paths['/pets'].get.consumes = ['application/json', 'application/xml', 'application/json'];
-
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.warnings, [
-          {
-            code: 'DUPLICATE_OPERATION_CONSUMES',
-            message: 'Operation consumes has duplicate items',
-            data: swaggerObject.paths['/pets'].get.consumes,
-            path: ['paths', '/pets', 'get', 'consumes']
-          }
-        ]);
-        assert.equal(result.errors.length, 0);
-      });
-
-      it('duplicate operation produces', function () {
-        var swaggerObject = _.cloneDeep(petStoreJson);
-        var result;
-
-        swaggerObject.paths['/pets'].get.produces = ['application/json', 'application/xml', 'application/json'];
-
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.warnings, [
-          {
-            code: 'DUPLICATE_OPERATION_PRODUCES',
-            message: 'Operation produces has duplicate items',
-            data: swaggerObject.paths['/pets'].get.produces,
-            path: ['paths', '/pets', 'get', 'produces']
-          }
-        ]);
-        assert.equal(result.errors.length, 0);
-      });
-
-      it('duplicate operation schemes', function () {
-        var swaggerObject = _.cloneDeep(petStoreJson);
-        var result;
-
-        swaggerObject.paths['/pets'].get.schemes = ['http', 'http'];
-
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.warnings, [
-          {
-            code: 'DUPLICATE_OPERATION_SCHEMES',
-            message: 'Operation schemes has duplicate items',
-            data: swaggerObject.paths['/pets'].get.schemes,
-            path: ['paths', '/pets', 'get', 'schemes']
-          }
-        ]);
-        assert.equal(result.errors.length, 0);
-      });
-
       it('duplicate API parameter', function () {
         var swaggerObject = _.cloneDeep(petStoreJson);
+        var cParam = _.cloneDeep(swaggerObject.paths['/pets/{id}'].parameters[0]);
         var result;
 
-        swaggerObject.paths['/pets/{id}'].parameters.push(swaggerObject.paths['/pets/{id}'].parameters[0]);
+        // Make the parameter not identical but still having the same id
+        cParam.type = 'string';
+
+        delete cParam.format;
+
+        swaggerObject.paths['/pets/{id}'].parameters.push(cParam);
 
         result = spec.validate(swaggerObject);
 
@@ -343,11 +235,15 @@ describe('Specification v2.0', function () {
 
       it('duplicate operation parameter', function () {
         var swaggerObject = _.cloneDeep(petStoreJson);
+        var cParam = _.cloneDeep(swaggerObject.paths['/pets/{id}'].delete.parameters[0]);
         var result;
 
-        swaggerObject.paths['/pets/{id}'].delete.parameters.push(
-          swaggerObject.paths['/pets/{id}'].delete.parameters[0]
-        );
+        // Make the parameter not identical but still having the same id
+        cParam.type = 'string';
+
+        delete cParam.format;
+
+        swaggerObject.paths['/pets/{id}'].delete.parameters.push(cParam);
 
         result = spec.validate(swaggerObject);
 
