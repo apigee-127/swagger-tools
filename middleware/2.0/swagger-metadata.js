@@ -32,8 +32,8 @@ var _ = {
   isUndefined: require('lodash.isundefined'),
   union: require('lodash.union')
 };
-var expressStylePath = require('../../lib/helpers').expressStylePath;
 var helpers = require('../helpers');
+var expressStylePath = helpers.expressStylePath;
 var parseurl = require('parseurl');
 var pathToRegexp = require('path-to-regexp');
 

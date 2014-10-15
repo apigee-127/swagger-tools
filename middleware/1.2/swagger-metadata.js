@@ -31,8 +31,8 @@ var _ = {
   isPlainObject: require('lodash.isplainobject'),
   isUndefined: require('lodash.isundefined')
 };
-var expressStylePath = require('../../lib/helpers').expressStylePath;
 var helpers = require('../helpers');
+var expressStylePath = helpers.expressStylePath;
 var parseurl = require('parseurl');
 var pathToRegexp = require('path-to-regexp');
 

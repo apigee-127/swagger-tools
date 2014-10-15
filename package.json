@@ -21,7 +21,9 @@
     "url": "git://github.com/apigee-127/swagger-tools.git"
   },
   "keywords": [
+    "api",
     "connect",
+    "middleware",
     "swagger"
   ],
   "bin": {
