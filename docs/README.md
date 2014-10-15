@@ -25,8 +25,8 @@ bower install swagger-tools --save
 
 The standalone binaries come in two flavors:
 
-* [swagger-tools.js](https://raw.github.com/apigee-127/swagger-tools/master/browser/swagger-tools-standalone.js): _1,060kb_, full source and source maps
-* [swagger-tools-min.js](https://raw.github.com/apigee-127/swagger-tools/master/browser/swagger-tools-standalone-min.js): _140kb_, minified, compressed
+* [swagger-tools-standalone.js](https://raw.github.com/apigee-127/swagger-tools/master/browser/swagger-tools-standalone.js): _1,060kb_, full source and source maps
+* [swagger-tools-standalone-min.js](https://raw.github.com/apigee-127/swagger-tools/master/browser/swagger-tools-standalone-min.js): _140kb_, minified, compressed
 and no sourcemap
 
 ### Node.js
