@@ -29,10 +29,7 @@
 // Here to quiet down Connect logging errors
 process.env.NODE_ENV = 'test';
 
-var _ = {
-  each: require('lodash.foreach'),
-  isFunction: require('lodash.isfunction')
-};
+var _ = require('lodash');
 var assert = require('assert');
 var helpers = require('../helpers');
 var middleware = require('../../').middleware.v2_0.swaggerUi; // jshint ignore:line

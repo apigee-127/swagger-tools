@@ -26,13 +26,7 @@
 
 'use strict';
 
-var _ = {
-  cloneDeep: require('lodash.clonedeep'),
-  each: require('lodash.foreach'),
-  isUndefined: require('lodash.isundefined'),
-  merge: require('lodash.merge'),
-  uniq: require('lodash.uniq')
-};
+var _ = require('lodash');
 var assert = require('assert');
 var fs = require('fs');
 var path = require('path');

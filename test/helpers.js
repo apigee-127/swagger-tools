@@ -24,10 +24,7 @@
 
 'use strict';
 
-var _ = {
-  each: require('lodash.foreach'),
-  isPlainObject: require('lodash.isplainobject')
-};
+var _ = require('lodash');
 var assert = require('assert');
 var swagger = require('../');
 

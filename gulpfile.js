@@ -24,14 +24,13 @@
 
 'use strict';
 
-var _ = {
-  times: require('lodash.times')
-};
+var _ = require('lodash');
 var browserify = require('browserify');
 var gulp = require('gulp');
 var jshint = require('gulp-jshint');
 var mocha = require('gulp-mocha');
 var source = require('vinyl-source-stream');
+var exposify = require('exposify');
 
 gulp.task('browserify', function () {
   _.times(2, function (n) {
@@ -44,7 +43,16 @@ gulp.task('browserify', function () {
       b.transform({global: true}, 'uglifyify');
     }
 
-    b.transform('brfs')
+    // Expose Bower modules so they can be required
+    exposify.config = {
+      'lodash': '_',
+      'jjv': 'jjv',
+      'spark-md5': 'SparkMD5',
+      'traverse': 'traverse'
+    };
+
+    b.transform('exposify')
+      .transform('brfs')
       .bundle()
       .pipe(source('swagger-tools' + (n === 1 ? '-min' : '') + '.js'))
       .pipe(gulp.dest('./browser/'));

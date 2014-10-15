@@ -24,11 +24,7 @@
 
 'use strict';
 
-var _ = {
-  each: require('lodash.foreach'),
-  isUndefined: require('lodash.isundefined'),
-  union: require('lodash.union')
-};
+var _ = require('lodash');
 var helpers = require('../helpers');
 var isModelParameter = helpers.isModelParameter;
 var toJsonPointer = require('../../lib/helpers').toJsonPointer;

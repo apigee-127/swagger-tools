@@ -24,11 +24,7 @@
 
 'use strict';
 
-var _ = {
-  each: require('lodash.foreach'),
-  isUndefined: require('lodash.isundefined'),
-  uniq: require('lodash.uniq')
-};
+var _ = require('lodash');
 var helpers = require('../helpers');
 var isModelParameter = helpers.isModelParameter;
 var send400 = helpers.send400;

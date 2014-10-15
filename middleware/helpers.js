@@ -24,14 +24,7 @@
 
 'use strict';
 
-var _ = {
-  each: require('lodash.foreach'),
-  isArray: require('lodash.isarray'),
-  isFunction: require('lodash.isfunction'),
-  isNumber: require('lodash.isnumber'),
-  isPlainObject: require('lodash.isplainobject'),
-  isUndefined: require('lodash.isundefined')
-};
+var _ = require('lodash');
 var fs = require('fs');
 var parseurl = require('parseurl');
 var path = require('path');

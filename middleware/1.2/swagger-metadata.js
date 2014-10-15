@@ -24,13 +24,7 @@
 
 'use strict';
 
-var _ = {
-  each: require('lodash.foreach'),
-  find: require('lodash.find'),
-  isArray: require('lodash.isarray'),
-  isPlainObject: require('lodash.isplainobject'),
-  isUndefined: require('lodash.isundefined')
-};
+var _ = require('lodash');
 var helpers = require('../helpers');
 var expressStylePath = helpers.expressStylePath;
 var parseurl = require('parseurl');
