@@ -17,6 +17,7 @@
     "node_modules",
     "bin",
     "bower_components",
+    "browser/*-standalone*.js",
     "docs",
     "examples",
     "gulpfile",

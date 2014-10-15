@@ -33,28 +33,34 @@ var source = require('vinyl-source-stream');
 var exposify = require('exposify');
 
 gulp.task('browserify', function () {
-  _.times(2, function (n) {
+  _.times(4, function (n) {
+    var useDebug = n === 0 || n === 2;
+    var isStandalone = n >= 2;
     var b = browserify('./lib/specs.js', {
-      debug: n === 0,
+      debug: useDebug,
       standalone: 'SwaggerTools.specs'
     });
 
-    if (n === 1) {
+    if (!useDebug) {
       b.transform({global: true}, 'uglifyify');
     }
 
-    // Expose Bower modules so they can be required
-    exposify.config = {
-      'lodash': '_',
-      'jjv': 'jjv',
-      'spark-md5': 'SparkMD5',
-      'traverse': 'traverse'
-    };
+    if (!isStandalone) {
+      console.log('HERE');
+      // Expose Bower modules so they can be required
+      exposify.config = {
+        'lodash': '_',
+        'jjv': 'jjv',
+        'spark-md5': 'SparkMD5',
+        'traverse': 'traverse'
+      };
 
-    b.transform('exposify')
-      .transform('brfs')
+      b.transform('exposify');
+    }
+
+    b.transform('brfs')
       .bundle()
-      .pipe(source('swagger-tools' + (n === 1 ? '-min' : '') + '.js'))
+      .pipe(source('swagger-tools' + (isStandalone ? '-standalone' : '') + (!useDebug ? '-min' : '') + '.js'))
       .pipe(gulp.dest('./browser/'));
   });
 });

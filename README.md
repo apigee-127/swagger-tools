@@ -38,7 +38,7 @@ using [Bower][bower] for browser-based applications using `bower install swagger
 
 ## Documentation
 
-swagger-tools is heavily documentedso head on over to the project  [documentation][documentation] or jump straight to
+swagger-tools is heavily documented so head on over to the project  [documentation][documentation] or jump straight to
 the [Quick Start][quick-start].
 
 ## Contributing
