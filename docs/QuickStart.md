@@ -63,7 +63,7 @@ To describe this API as a Swagger document, we would end up with something like 
 
 ```json
 {
-  "swagger": 2.0,
+  "swagger": "2.0",
   "info": {
     "title": "Simple Weather API",
     "description": "API for getting the current weather information.",
