@@ -125,7 +125,7 @@ program
       if (index === 0) {
         if (json.swagger) {
           swaggerObject = json;
-          version = json.swagger.toFixed(1).toString();
+          version = json.swagger;
         } else if (json.swaggerVersion) {
           resourceListing = json;
           version = json.swaggerVersion;
