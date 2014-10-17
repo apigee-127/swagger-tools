@@ -36,6 +36,8 @@ if (typeof result !== 'undefined') {
 
     result.errors.forEach(function (err) {
       console.log('#/' + err.path.join('/') + ': ' + err.message);
+      //longform error
+      console.log(err);
     });
 
     console.log('');
