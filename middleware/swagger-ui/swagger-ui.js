@@ -1,5 +1,5 @@
 // swagger-ui.js
-// version 2.1.0
+// version 2.1.0-alpha.2
 $(function() {
 
 	// Helper function for vertically aligning DOM elements
@@ -294,11 +294,19 @@ function program8(depth0,data) {
 function program10(depth0,data) {
   
   var buffer = "", stack1;
-  buffer += "\n    <span style=\"float:right\"><a href=\"http://online.swagger.io/validator/debug?url=";
+  buffer += "\n    <span style=\"float:right\"><a href=\"";
+  if (stack1 = helpers.validatorUrl) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
+  else { stack1 = depth0.validatorUrl; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
+  buffer += escapeExpression(stack1)
+    + "/debug?url=";
   if (stack1 = helpers.url) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.url; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
-    + "\"><img id=\"validator\" src=\"http://online.swagger.io/validator?url=";
+    + "\"><img id=\"validator\" src=\"";
+  if (stack1 = helpers.validatorUrl) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
+  else { stack1 = depth0.validatorUrl; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
+  buffer += escapeExpression(stack1)
+    + "?url=";
   if (stack1 = helpers.url) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.url; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
@@ -333,6 +341,18 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
 
 function program1(depth0,data) {
   
+  
+  return "deprecated";
+  }
+
+function program3(depth0,data) {
+  
+  
+  return "\n            <h4>Warning: Deprecated</h4>\n        ";
+  }
+
+function program5(depth0,data) {
+  
   var buffer = "", stack1;
   buffer += "\n        <h4>Implementation Notes</h4>\n        <p>";
   if (stack1 = helpers.description) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
@@ -342,22 +362,22 @@ function program1(depth0,data) {
   return buffer;
   }
 
-function program3(depth0,data) {
+function program7(depth0,data) {
   
   
   return "\n        <div class=\"auth\">\n        <span class=\"api-ic ic-error\"></span>";
   }
 
-function program5(depth0,data) {
+function program9(depth0,data) {
   
   var buffer = "", stack1;
   buffer += "\n          <div id=\"api_information_panel\" style=\"top: 526px; left: 776px; display: none;\">\n          ";
-  stack1 = helpers.each.call(depth0, depth0, {hash:{},inverse:self.noop,fn:self.program(6, program6, data),data:data});
+  stack1 = helpers.each.call(depth0, depth0, {hash:{},inverse:self.noop,fn:self.program(10, program10, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n          </div>\n        ";
   return buffer;
   }
-function program6(depth0,data) {
+function program10(depth0,data) {
   
   var buffer = "", stack1, stack2;
   buffer += "\n            <div title='";
@@ -369,43 +389,43 @@ function program6(depth0,data) {
   return buffer;
   }
 
-function program8(depth0,data) {
+function program12(depth0,data) {
   
   
   return "</div>";
   }
 
-function program10(depth0,data) {
+function program14(depth0,data) {
   
   
   return "\n        <div class='access'>\n          <span class=\"api-ic ic-off\" title=\"click to authenticate\"></span>\n        </div>\n        ";
   }
 
-function program12(depth0,data) {
+function program16(depth0,data) {
   
   
   return "\n          <h4>Response Class</h4>\n          <p><span class=\"model-signature\" /></p>\n          <br/>\n          <div class=\"response-content-type\" />\n        ";
   }
 
-function program14(depth0,data) {
+function program18(depth0,data) {
   
   
   return "\n          <h4>Parameters</h4>\n          <table class='fullwidth'>\n          <thead>\n            <tr>\n            <th style=\"width: 100px; max-width: 100px\">Parameter</th>\n            <th style=\"width: 310px; max-width: 310px\">Value</th>\n            <th style=\"width: 200px; max-width: 200px\">Description</th>\n            <th style=\"width: 100px; max-width: 100px\">Parameter Type</th>\n            <th style=\"width: 220px; max-width: 230px\">Data Type</th>\n            </tr>\n          </thead>\n          <tbody class=\"operation-params\">\n\n          </tbody>\n          </table>\n          ";
   }
 
-function program16(depth0,data) {
+function program20(depth0,data) {
   
   
   return "\n          <div style='margin:0;padding:0;display:inline'></div>\n          <h4>Response Messages</h4>\n          <table class='fullwidth'>\n            <thead>\n            <tr>\n              <th>HTTP Status Code</th>\n              <th>Reason</th>\n              <th>Response Model</th>\n            </tr>\n            </thead>\n            <tbody class=\"operation-status\">\n            \n            </tbody>\n          </table>\n          ";
   }
 
-function program18(depth0,data) {
+function program22(depth0,data) {
   
   
   return "\n          ";
   }
 
-function program20(depth0,data) {
+function program24(depth0,data) {
   
   
   return "\n          <div class='sandbox_header'>\n            <input class='submit' name='commit' type='button' value='Try it out!' />\n            <a href='#' class='response_hider' style='display:none'>Hide Response</a>\n            <span class='response_throbber' style='display:none'></span>\n          </div>\n          ";
@@ -443,7 +463,10 @@ function program20(depth0,data) {
   if (stack1 = helpers.nickname) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.nickname; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
-    + "' class=\"toggleOperation\">";
+    + "' class=\"toggleOperation ";
+  stack1 = helpers['if'].call(depth0, depth0.deprecated, {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += "\">";
   if (stack1 = helpers.path) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.path; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
@@ -468,40 +491,43 @@ function program20(depth0,data) {
   else { stack1 = depth0.nickname; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
     + "_content' style='display:none'>\n        ";
-  stack1 = helpers['if'].call(depth0, depth0.description, {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
+  stack1 = helpers['if'].call(depth0, depth0.deprecated, {hash:{},inverse:self.noop,fn:self.program(3, program3, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n        ";
-  options = {hash:{},inverse:self.noop,fn:self.program(3, program3, data),data:data};
+  stack1 = helpers['if'].call(depth0, depth0.description, {hash:{},inverse:self.noop,fn:self.program(5, program5, data),data:data});
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += "\n        ";
+  options = {hash:{},inverse:self.noop,fn:self.program(7, program7, data),data:data};
   if (stack1 = helpers.oauth) { stack1 = stack1.call(depth0, options); }
   else { stack1 = depth0.oauth; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   if (!helpers.oauth) { stack1 = blockHelperMissing.call(depth0, stack1, options); }
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n        ";
-  stack1 = helpers.each.call(depth0, depth0.oauth, {hash:{},inverse:self.noop,fn:self.program(5, program5, data),data:data});
+  stack1 = helpers.each.call(depth0, depth0.oauth, {hash:{},inverse:self.noop,fn:self.program(9, program9, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n        ";
-  options = {hash:{},inverse:self.noop,fn:self.program(8, program8, data),data:data};
+  options = {hash:{},inverse:self.noop,fn:self.program(12, program12, data),data:data};
   if (stack1 = helpers.oauth) { stack1 = stack1.call(depth0, options); }
   else { stack1 = depth0.oauth; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   if (!helpers.oauth) { stack1 = blockHelperMissing.call(depth0, stack1, options); }
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n        ";
-  options = {hash:{},inverse:self.noop,fn:self.program(10, program10, data),data:data};
+  options = {hash:{},inverse:self.noop,fn:self.program(14, program14, data),data:data};
   if (stack1 = helpers.oauth) { stack1 = stack1.call(depth0, options); }
   else { stack1 = depth0.oauth; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   if (!helpers.oauth) { stack1 = blockHelperMissing.call(depth0, stack1, options); }
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n        ";
-  stack1 = helpers['if'].call(depth0, depth0.type, {hash:{},inverse:self.noop,fn:self.program(12, program12, data),data:data});
+  stack1 = helpers['if'].call(depth0, depth0.type, {hash:{},inverse:self.noop,fn:self.program(16, program16, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n        <form accept-charset='UTF-8' class='sandbox'>\n          <div style='margin:0;padding:0;display:inline'></div>\n          ";
-  stack1 = helpers['if'].call(depth0, depth0.parameters, {hash:{},inverse:self.noop,fn:self.program(14, program14, data),data:data});
+  stack1 = helpers['if'].call(depth0, depth0.parameters, {hash:{},inverse:self.noop,fn:self.program(18, program18, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n          ";
-  stack1 = helpers['if'].call(depth0, depth0.responseMessages, {hash:{},inverse:self.noop,fn:self.program(16, program16, data),data:data});
+  stack1 = helpers['if'].call(depth0, depth0.responseMessages, {hash:{},inverse:self.noop,fn:self.program(20, program20, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n          ";
-  stack1 = helpers['if'].call(depth0, depth0.isReadOnly, {hash:{},inverse:self.program(20, program20, data),fn:self.program(18, program18, data),data:data});
+  stack1 = helpers['if'].call(depth0, depth0.isReadOnly, {hash:{},inverse:self.program(24, program24, data),fn:self.program(22, program22, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n        </form>\n        <div class='response' style='display:none'>\n          <h4>Request URL</h4>\n          <div class='block request_url'></div>\n          <h4>Response Body</h4>\n          <div class='block response_body'></div>\n          <h4>Response Code</h4>\n          <div class='block response_code'></div>\n          <h4>Response Headers</h4>\n          <div class='block response_headers'></div>\n        </div>\n      </div>\n    </li>\n  </ul>\n";
   return buffer;
@@ -1303,6 +1329,14 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
       });
     };
 
+    SwaggerUi.prototype.setOption = function(option, value) {
+      return this.options[option] = value;
+    };
+
+    SwaggerUi.prototype.getOption = function(option) {
+      return this.options[option];
+    };
+
     SwaggerUi.prototype.updateSwaggerUi = function(data) {
       this.options.url = data.url;
       return this.load();
@@ -1512,8 +1546,12 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
       if (!this.model.info.version) {
         this.model.info.version = this.model.apiVersion;
       }
-      if (this.model.url.indexOf('http://localhost') === -1 && this.model.swaggerVersion === 2) {
+      if ("validatorUrl" in opts.swaggerOptions) {
+        return this.model.validatorUrl = opts.swaggerOptions.validatorUrl;
+      } else if (this.model.url.match(/https?:\/\/localhost/) && this.model.swaggerVersion === 2) {
         return this.model.validatorUrl = this.model.url;
+      } else {
+        return this.model.validatorUrl = "http://online.swagger.io/validator";
       }
     };
 
@@ -1755,7 +1793,7 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
         type = param.type || param.dataType;
         if (typeof type === 'undefined') {
           schema = param.schema;
-          if (schema['$ref']) {
+          if (schema && schema['$ref']) {
             ref = schema['$ref'];
             if (ref.indexOf('#/definitions/') === 0) {
               type = ref.substring('#/definitions/'.length);
@@ -1848,7 +1886,7 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
         for (_j = 0, _len1 = _ref6.length; _j < _len1; _j++) {
           o = _ref6[_j];
           if ((o.value != null) && jQuery.trim(o.value).length > 0) {
-            map["body"] = o.value;
+            map[o.name] = o.value;
           }
         }
         _ref7 = form.find("select");
@@ -1977,7 +2015,7 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
           }
         }
         if (options.length > 0) {
-          return options.join(",");
+          return options;
         } else {
           return null;
         }
@@ -2209,7 +2247,7 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
       type = this.model.type || this.model.dataType;
       if (typeof type === 'undefined') {
         schema = this.model.schema;
-        if (schema['$ref']) {
+        if (schema && schema['$ref']) {
           ref = schema['$ref'];
           if (ref.indexOf('#/definitions/') === 0) {
             type = ref.substring('#/definitions/'.length);
