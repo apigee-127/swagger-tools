@@ -78,6 +78,14 @@ describe('Specification v2.0', function () {
       assert.ok(_.isUndefined(spec.validate(petStoreJson)));
     });
 
+    it('should not validate remote references', function () {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.paths['/pets'].get.responses['200'].schema.items.$ref = 'http://localhost/schemas/pet.json';
+
+      assert.ok(_.isUndefined(spec.validate(swaggerObject)));
+    });
+
     describe('should return errors for structurally invalid JSON files', function () {
       it('extra property', function() {
         var swaggerObject = _.cloneDeep(petStoreJson);
