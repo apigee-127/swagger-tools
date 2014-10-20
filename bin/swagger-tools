@@ -89,8 +89,12 @@ program
     console.log('  ' + S('schema(s) url').padRight(paddingAmount).s + spec.schemasUrl);
   });
 
+// We have to use command+usage because commander.js does not handle the following properly:
+//   .command('validate <resourceListingOrSwaggerDoc> [apiDeclarations ...]')
+
 program
-  .command('validate <resourceListingOrSwaggerDoc> [apiDeclarations...]')
+  .command('validate')
+  .usage('<resourceListingOrSwaggerDoc> <apiDeclarations>')
   .description('Display validation results for the Swagger document(s)')
   .action(function () {
     var apiDeclarations = [];
@@ -115,7 +119,7 @@ program
     var swaggerObject;
     var version;
 
-    _.each(this.args, function (arg, index) {
+    _.each(program.args, function (arg, index) {
       if (!_.isString(arg)) {
         return;
       }
