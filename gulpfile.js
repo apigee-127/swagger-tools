@@ -53,7 +53,6 @@ gulp.task('browserify', function () {
     }
 
     if (!isStandalone) {
-      console.log('HERE');
       // Expose Bower modules so they can be required
       exposify.config = {
         'lodash': '_',
