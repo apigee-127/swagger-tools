@@ -31,7 +31,7 @@
   ],
   "dependencies": {
     "lodash": "~2.4.1",
-    "jjv": "~1.0.0",
+    "jjv": "~1.0.2",
     "spark-md5": "~0.0.5",
     "traverse": "~0.6.7"
   }
