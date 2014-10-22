@@ -114,7 +114,7 @@ exports = module.exports = function swaggerValidatorMiddleware () {
           }
         });
       } catch (err) {
-        return send400(req, res, next, err.message);
+        return send400(req, res, next, err);
       }
     }
 

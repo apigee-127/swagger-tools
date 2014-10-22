@@ -147,6 +147,9 @@ describe('Swagger Metadata Middleware v1.2', function () {
         res.end('OK');
       });
 
+      // Error handler middleware to pass errors downstream as JSON
+      app.use(helpers.errorHandler());
+
       request(app)
         .post('/foo')
         .expect(500)
@@ -170,6 +173,9 @@ describe('Swagger Metadata Middleware v1.2', function () {
     app.use(function(req, res){
       res.end('OK');
     });
+
+    // Error handler middleware to pass errors downstream as JSON
+    app.use(helpers.errorHandler());
 
     request(app)
       .post('/foo')

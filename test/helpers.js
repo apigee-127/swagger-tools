@@ -28,6 +28,20 @@ var _ = require('lodash');
 var assert = require('assert');
 var swagger = require('../');
 
+var errorHandler = module.exports.errorHandler = function errorHandler() {
+  return function (err, req, res, next) {
+    if (err) {
+      if (res.statusCode < 400) {
+        res.statusCode = 500;
+      }
+
+      res.end(err.message);
+    } else {
+      return next();
+    }
+  };
+};
+
 module.exports.createServer = function createServer (middlewareArgs, middlewares, handler) {
   var swaggerMetadata;
   var app = require('connect')();
@@ -69,6 +83,9 @@ module.exports.createServer = function createServer (middlewareArgs, middlewares
       res.end('OK');
     });
   }
+
+  // Error handler middleware to pass errors downstream as JSON
+  app.use(errorHandler());
 
   return app;
 };

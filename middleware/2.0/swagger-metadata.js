@@ -89,6 +89,7 @@ exports = module.exports = function swaggerMetadataMiddleware (swaggerObject) {
       return _.isArray(match);
     });
     var metadata = {
+      apiPath : path ? path.apiPath : undefined,
       path: path ? path.path : undefined,
       operation: path ? path.operations[req.method.toLowerCase()] : undefined,
       params: {},
@@ -182,7 +183,7 @@ exports = module.exports = function swaggerMetadataMiddleware (swaggerObject) {
           };
         });
       } catch (err) {
-        return next(err.message);
+        return next(err);
       }
     }
 

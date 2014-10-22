@@ -91,7 +91,8 @@ describe('Swagger Router Middleware v2.0', function () {
         .put(basePath + '/pets/1')
         .expect(405)
         .expect('Allow', 'DELETE, GET')
-        .end(helpers.expectContent('Route defined in Swagger specification but there is no defined put operation.'));
+        .end(helpers.expectContent('Route defined in Swagger specification (/pets/{id}) but there is no defined put ' +
+                                     'operation.'));
     });
   });
 

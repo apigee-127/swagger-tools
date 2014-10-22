@@ -341,14 +341,18 @@ module.exports.isModelParameter = function isModelParameter (version, param) {
   return isModel;
 };
 
-module.exports.send400 = function send400 (req, res, next, msg) {
+module.exports.send400 = function send400 (req, res, next, err) {
   res.statusCode = 400;
 
-  return next(msg);
+  return next(err);
 };
 
 module.exports.send405 = function send405 (version, req, res, next) {
   var allowedMethods = [];
+  var err = new Error('Route defined in Swagger specification (' +
+                        (_.isUndefined(req.swagger.api) ? req.swagger.apiPath : req.swagger.api.path) +
+                        ') but there is no defined ' +
+                        (version === '1.2' ? req.method.toUpperCase() : req.method.toLowerCase()) + ' operation.');
 
   if (!_.isUndefined(req.swagger.api)) {
     _.each(req.swagger.api.operations, function (operation) {
@@ -362,9 +366,10 @@ module.exports.send405 = function send405 (version, req, res, next) {
     });
   }
 
+  err.allowedMethods = allowedMethods;
+
   res.setHeader('Allow', allowedMethods.sort().join(', '));
   res.statusCode = 405;
 
-  return next('Route defined in Swagger specification but there is no defined ' +
-                (version === '1.2' ? req.method.toUpperCase() : req.method.toLowerCase()) + ' operation.');
+  return next(err);
 };

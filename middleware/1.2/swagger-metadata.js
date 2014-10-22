@@ -173,7 +173,7 @@ exports = module.exports = function swaggerMetadataMiddleware (resourceList, res
           };
         });
       } catch (err) {
-        return next(err.message);
+        return next(err);
       }
     }
 
