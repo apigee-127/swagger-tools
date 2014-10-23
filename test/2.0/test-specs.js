@@ -452,6 +452,27 @@ describe('Specification v2.0', function () {
         ]);
         assert.equal(result.warnings.length, 0);
       });
+
+      // This should be removed when the upstream bug in the Swagger schema is fixed
+      //   https://github.com/swagger-api/swagger-spec/issues/174
+      it('missing items property for array type', function() {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var result;
+
+        delete swaggerObject.paths['/pets'].get.responses['200'].schema.items;
+
+        result = spec.validate(swaggerObject);
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
+            message: 'Missing required property: items',
+            data: swaggerObject.paths['/pets'].get.responses['200'].schema,
+            path: ['paths', '/pets', 'get', 'responses', '200', 'schema']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+      });
     });
   });
 
