@@ -455,7 +455,7 @@ describe('Specification v2.0', function () {
 
       // This should be removed when the upstream bug in the Swagger schema is fixed
       //   https://github.com/swagger-api/swagger-spec/issues/174
-      it('missing items property for array type', function() {
+      it('missing items property for array type (Issue 62)', function() {
         var swaggerObject = _.cloneDeep(petStoreJson);
         var result;
 
@@ -472,6 +472,17 @@ describe('Specification v2.0', function () {
           }
         ]);
         assert.equal(result.warnings.length, 0);
+      });
+
+      it('should not report missing model for inlines model schemas (Issue 61)', function() {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.definitions.Pet.properties.extraCategories = {
+          type: 'array',
+          items: _.cloneDeep(swaggerObject.definitions.Category)
+        };
+
+        assert.ok(_.isUndefined(spec.validate(swaggerObject)));
       });
     });
   });

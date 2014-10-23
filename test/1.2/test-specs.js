@@ -874,7 +874,7 @@ describe('Specification v1.2', function () {
 
       // This should be removed when the upstream bug in the Swagger schema is fixed
       //   https://github.com/swagger-api/swagger-spec/issues/174
-      it('missing items property for array type', function() {
+      it('missing items property for array type (Issue 61)', function() {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
@@ -884,8 +884,6 @@ describe('Specification v1.2', function () {
         delete petJson.apis[0].operations[2].items;
 
         result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        console.log(result.apiDeclarations[0].errors);
 
         assert.deepEqual(result.apiDeclarations[0].errors, [
           {
