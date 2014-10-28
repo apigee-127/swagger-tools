@@ -1,5 +1,5 @@
 // swagger-client.js
-// version 2.1.0-alpha.1
+// version 2.1.0-alpha.2
 /**
  * Array Model
  **/
@@ -375,7 +375,8 @@ SwaggerClient.prototype.buildFromSpec = function(response) {
   this.info = response.info || {};
   this.title = response.title || '';
   this.host = response.host || '';
-  this.schemes = response.schemes || [ 'http' ];
+  this.schemes = response.schemes || [];
+  this.scheme;
   this.basePath = response.basePath || '';
   this.apis = {};
   this.apisArray = [];
@@ -383,9 +384,19 @@ SwaggerClient.prototype.buildFromSpec = function(response) {
   this.produces = response.produces;
   this.authSchemes = response.authorizations;
 
+  var location = this.parseUri(this.url);
+  if(typeof this.schemes === 'undefined' || this.schemes.length === 0) {
+    this.scheme = location.scheme;
+  }
+  else {
+    this.scheme = this.schemes[0];
+  }
+
   if(typeof this.host === 'undefined' || this.host === '') {
-    var location = this.parseUri(this.url);
     this.host = location.host;
+    if (location.port) {
+      this.host = this.host + ':' + location.port;
+    }
   }
 
   this.definitions = response.definitions;
@@ -401,56 +412,58 @@ SwaggerClient.prototype.buildFromSpec = function(response) {
   var path;
   var operations = [];
   for(path in response.paths) {
-    var httpMethod;
-    for(httpMethod in response.paths[path]) {
-      var operation = response.paths[path][httpMethod];
-      var tags = operation.tags;
-      if(typeof tags === 'undefined') {
-        operation.tags = [ 'default' ];
-        tags = operation.tags;
-      }
-      var operationId = this.idFromOp(path, httpMethod, operation);
-      var operationObject = new Operation (
-        this,
-        operationId,
-        httpMethod,
-        path,
-        operation,
-        this.definitions
-      );
-      // bind this operation's execute command to the api
-      if(tags.length > 0) {
-        var i;
-        for(i = 0; i < tags.length; i++) {
-          var tag = this.tagFromLabel(tags[i]);
-          var operationGroup = this[tag];
-          if(typeof operationGroup === 'undefined') {
-            this[tag] = [];
-            operationGroup = this[tag];
-            operationGroup.label = tag;
-            operationGroup.apis = [];
-            this[tag].help = this.help.bind(operationGroup);
-            this.apisArray.push(new OperationGroup(tag, operationObject));
-          }
-          operationGroup[operationId] = operationObject.execute.bind(operationObject);
-          operationGroup[operationId].help = operationObject.help.bind(operationObject);
-          operationGroup.apis.push(operationObject);
+    if(typeof response.paths[path] === 'object') {
+      var httpMethod;
+      for(httpMethod in response.paths[path]) {
+        var operation = response.paths[path][httpMethod];
+        var tags = operation.tags;
+        if(typeof tags === 'undefined') {
+          operation.tags = [ 'default' ];
+          tags = operation.tags;
+        }
+        var operationId = this.idFromOp(path, httpMethod, operation);
+        var operationObject = new Operation (
+          this,
+          operationId,
+          httpMethod,
+          path,
+          operation,
+          this.definitions
+        );
+        // bind this operation's execute command to the api
+        if(tags.length > 0) {
+          var i;
+          for(i = 0; i < tags.length; i++) {
+            var tag = this.tagFromLabel(tags[i]);
+            var operationGroup = this[tag];
+            if(typeof operationGroup === 'undefined') {
+              this[tag] = [];
+              operationGroup = this[tag];
+              operationGroup.label = tag;
+              operationGroup.apis = [];
+              this[tag].help = this.help.bind(operationGroup);
+              this.apisArray.push(new OperationGroup(tag, operationObject));
+            }
+            operationGroup[operationId] = operationObject.execute.bind(operationObject);
+            operationGroup[operationId].help = operationObject.help.bind(operationObject);
+            operationGroup.apis.push(operationObject);
 
-          // legacy UI feature
-          var j;
-          var api;
-          for(j = 0; j < this.apisArray.length; j++) {
-            if(this.apisArray[j].tag === tag) {
-              api = this.apisArray[j];
+            // legacy UI feature
+            var j;
+            var api;
+            for(j = 0; j < this.apisArray.length; j++) {
+              if(this.apisArray[j].tag === tag) {
+                api = this.apisArray[j];
+              }
+            }
+            if(api) {
+              api.operationsArray.push(operationObject);
             }
           }
-          if(api) {
-            api.operationsArray.push(operationObject);
-          }
         }
-      }
-      else {
-        log('no group to bind to');
+        else {
+          log('no group to bind to');
+        }
       }
     }
   }
@@ -466,6 +479,7 @@ SwaggerClient.prototype.parseUri = function(uri) {
   return {
     scheme: parts[4].replace(':',''),
     host: parts[11],
+    port: parts[12],
     path: parts[15]
   };
 }
@@ -516,6 +530,7 @@ var Operation = function(parent, operationId, httpMethod, path, args, definition
   this.parent = parent;
   this.host = parent.host;
   this.schemes = parent.schemes;
+  this.scheme = parent.scheme || 'http';
   this.basePath = parent.basePath;
   this.nickname = (operationId||errors.push('Operations must have a nickname.'));
   this.method = (httpMethod||errors.push('Operation ' + operationId + ' is missing method.'));
@@ -631,6 +646,8 @@ Operation.prototype.getType = function (param) {
     str = 'integer';
   else if(type === 'integer' && format === 'int64')
     str = 'long';
+  else if(type === 'integer' && typeof format === 'undefined')
+    str = 'long';
   else if(type === 'string' && format === 'date-time')
     str = 'date-time';
   else if(type === 'string' && format === 'date')
@@ -638,6 +655,8 @@ Operation.prototype.getType = function (param) {
   else if(type === 'number' && format === 'float')
     str = 'float';
   else if(type === 'number' && format === 'double')
+    str = 'double';
+  else if(type === 'number' && typeof format === 'undefined')
     str = 'double';
   else if(type === 'boolean')
     str = 'boolean';
@@ -847,8 +866,7 @@ Operation.prototype.execute = function(arg1, arg2, arg3, arg4, parent) {
     // todo append?
     args.body = encoded;
   }
-  var scheme = this.schemes[0];
-  var url = scheme + '://' + this.host + this.basePath + requestUrl + querystring;
+  var url = this.scheme + '://' + this.host + this.basePath + requestUrl + querystring;
 
   var obj = {
     url: url,
@@ -1002,7 +1020,7 @@ var Model = function(name, definition) {
   this.name = name;
   this.definition = definition || {};
   this.properties = [];
-  var requiredFields = definition.enum || [];
+  var requiredFields = definition.required || [];
 
   var key;
   var props = definition.properties;
@@ -1063,7 +1081,7 @@ Model.prototype.getMockSignature = function(modelsToIgnore) {
     var prop = this.properties[i];
     var ref = prop['$ref'];
     var model = models[ref];
-    if (model && typeof modelsToIgnore === 'undefined') {
+    if (model && typeof modelsToIgnore[model.name] === 'undefined') {
       returnVal = returnVal + ('<br>' + model.getMockSignature(modelsToIgnore));
     }
   }
@@ -1085,8 +1103,10 @@ var Property = function(name, obj, required) {
       obj = obj.items;
   }
   this.name = name;
+  this.description = obj.description;
   this.obj = obj;
   this.optional = true;
+  this.default = obj.default || null;
   this.example = obj.example || null;
 }
 
@@ -1119,6 +1139,8 @@ Property.prototype.sampleValue = function(isArray, ignoredModels) {
   }
   else if(this.example)
     output = this.example;
+  else if(this.default)
+    output = this.default;
   else if(type === 'date-time')
     output = new Date().toISOString();
   else if(type === 'string')
@@ -1182,12 +1204,17 @@ simpleRef = function(name) {
 
 Property.prototype.toString = function() {
   var str = getStringSignature(this.obj);
-  if(str !== '')
-    str = this.name + ' : ' + str;
+  if(str !== '') {
+    str = '<span class="propName ' + this.required + '">' + this.name + '</span> (<span class="propType">' + str + '</span>';
+    if(!this.required)
+      str += ', <span class="propOptKey">optional</span>';
+    str += ')';
+  }
   else 
-    str = this.name + ' : ' + JSON.stringify(this.obj);
-  if(!this.required)
-    str += ' (optional)';
+    str = this.name + ' (' + JSON.stringify(this.obj) + ')';
+
+  if(typeof this.description !== 'undefined')
+    str += ': ' + this.description;
   return str;
 }
 

@@ -1,5 +1,5 @@
 // swagger-ui.js
-// version 2.1.0-alpha.2
+// version 2.1.0-alpha.3
 $(function() {
 
 	// Helper function for vertically aligning DOM elements
@@ -1546,12 +1546,14 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
       if (!this.model.info.version) {
         this.model.info.version = this.model.apiVersion;
       }
-      if ("validatorUrl" in opts.swaggerOptions) {
-        return this.model.validatorUrl = opts.swaggerOptions.validatorUrl;
-      } else if (this.model.url.match(/https?:\/\/localhost/) && this.model.swaggerVersion === 2) {
-        return this.model.validatorUrl = this.model.url;
-      } else {
-        return this.model.validatorUrl = "http://online.swagger.io/validator";
+      if (this.model.swaggerVersion === "2.0") {
+        if ("validatorUrl" in opts.swaggerOptions) {
+          return this.model.validatorUrl = opts.swaggerOptions.validatorUrl;
+        } else if (this.model.url.match(/https?:\/\/localhost/)) {
+          return this.model.validatorUrl = this.model.url;
+        } else {
+          return this.model.validatorUrl = "http://online.swagger.io/validator";
+        }
       }
     };
 
