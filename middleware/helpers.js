@@ -267,7 +267,7 @@ var mockResponse = function mockResponse (version, req) {
 
 module.exports.handlerCacheFromDir = function handlerCacheFromDir (dirOrDirs) {
   var handlerCache = {};
-  var jsFileRegex = /\.js$/;
+  var jsFileRegex = /\.js|\.coffee$/;
   var dirs = [];
 
   if (_.isArray(dirOrDirs)) {
