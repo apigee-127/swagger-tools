@@ -27,6 +27,7 @@
 var _ = require('lodash');
 var browserify = require('browserify');
 var gulp = require('gulp');
+var istanbul = require('gulp-istanbul');
 var jshint = require('gulp-jshint');
 var mocha = require('gulp-mocha');
 var source = require('vinyl-source-stream');
@@ -88,8 +89,17 @@ gulp.task('lint', function () {
 });
 
 gulp.task('test', function () {
-    return gulp.src('test/**/test-*.js')
-        .pipe(mocha({reporter: 'spec'}));
+  gulp.src([
+      'lib/**/*.js',
+      'middleware/1.2/**/*.js',
+      'middleware/2.0/**/*.js'
+    ])
+    .pipe(istanbul())
+    .on('finish', function () {
+      gulp.src('test/**/test-*.js')
+        .pipe(mocha({reporter: 'spec'}))
+        .pipe(istanbul.writeReports());
+    });
 });
 
 gulp.task('default', ['lint', 'test']);
