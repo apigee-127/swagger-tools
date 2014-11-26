@@ -20,8 +20,21 @@
   "paths": {
     "/pets": {
       "get": {
+        "security": [
+          {
+            "oauth2": ["read"]
+          }
+        ],
         "tags": [ "Pet Operations" ],
         "operationId": "getAllPets",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "The status to filter by",
+            "type": "string"
+          }
+        ],
         "summary": "Finds all pets in the system",
         "responses": {
           "200": {
@@ -42,6 +55,11 @@
         }
       },
       "post": {
+        "security": [
+          {
+            "oauth2": ["write"]
+          }
+        ],
         "tags": [ "Pet Operations" ],
         "operationId": "createPet",
         "summary": "Creates a new pet",
@@ -74,6 +92,11 @@
     },
     "/pets/{id}": {
       "delete": {
+        "security": [
+          {
+            "oauth2": ["write"]
+          }
+        ],
         "description": "Deletes the Pet by id",
         "operationId": "deletePet",
         "parameters": [
@@ -99,6 +122,11 @@
         }
       },
       "get": {
+        "security": [
+          {
+            "oauth2": ["read"]
+          }
+        ],
         "tags": [ "Pet Operations" ],
         "operationId": "getPetById",
         "summary": "Finds the pet by id",
@@ -146,7 +174,7 @@
       "id": "Pet",
       "properties": {
         "category": {
-          "$ref": "Category"
+          "$ref": "#/definitions/Category"
         },
         "id": {
           "description": "unique identifier for the pet",
@@ -175,7 +203,7 @@
         },
         "tags": {
           "items": {
-            "$ref": "Tag"
+            "$ref": "#/definitions/Tag"
           },
           "type": "array"
         }
@@ -188,7 +216,7 @@
     "newPet": {
       "allOf": [
         {
-          "$ref": "Pet"
+          "$ref": "#/definitions/Pet"
         }
       ],
       "required": [
@@ -221,6 +249,18 @@
           "type": "string"
         }
       }
+    }
+  },
+  "securityDefinitions": {
+    "oauth2": {
+      "type": "oauth2",
+      "scopes": {
+        "read": "Read access.",
+        "write": "Write access"
+      },
+      "flow": "accessCode",
+      "authorizationUrl": "http://petstore.swagger.wordnik.com/oauth/authorize",
+      "tokenUrl": "http://petstore.swagger.wordnik.com/oauth/token"
     }
   }
 }

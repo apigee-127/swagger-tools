@@ -29,79 +29,55 @@
 // Here to quiet down Connect logging errors
 process.env.NODE_ENV = 'test';
 
-var _ = require('lodash');
-var assert = require('assert');
 var helpers = require('../helpers');
-var middleware = require('../../').middleware.v2_0.swaggerUi; // jshint ignore:line
 var request = require('supertest');
-var createServer = helpers.createServer;
 
 var swaggerObject = require('../../samples/2.0/petstore.json');
 
 describe('Swagger UI Middleware v2.0', function () {
-  it('should throw Error when passed the wrong arguments', function () {
-    var errors = {
-      'swaggerObject is required': [],
-      'swaggerObject must be an object': ['petstore.json']
-    };
-
-    _.each(errors, function (args, message) {
-      try {
-        middleware.apply(middleware, args);
-        assert.fail(null, null, 'Should had thrown an error');
-      } catch (err) {
-        assert.equal(message, err.message);
-      }
+  it('should serve Swagger documents at /api-docs by default', function (done) {
+    helpers.createServer([swaggerObject], {}, function (app) {
+      request(app)
+        .get('/api-docs')
+        .expect(200)
+        .end(helpers.expectContent(swaggerObject, done));
     });
   });
 
-  it('should return a function when passed the right arguments', function () {
-    try {
-      assert.ok(_.isFunction(middleware(swaggerObject)));
-    } catch (err) {
-      assert.fail(null, null, err.message);
-    }
-  });
-
-  it('should serve Swagger documents at /api-docs by default', function () {
-    request(createServer([swaggerObject], [middleware(swaggerObject)]))
-      .get('/api-docs')
-      .expect(200)
-      .end(helpers.expectContent(swaggerObject));
-  });
-
-  it('should serve Swagger documents at requested location', function () {
-    var options = {
-      apiDocs: '/api-docs2'
-    };
-
-    request(createServer([swaggerObject], [middleware(swaggerObject, options)]))
+  it('should serve Swagger documents at requested location', function (done) {
+    helpers.createServer([swaggerObject], {
+      swaggerUiOptions: {
+        apiDocs: '/api-docs2'
+      }
+    }, function (app) {
+      request(app)
       .get('/api-docs2')
       .expect(200)
-      .end(helpers.expectContent(swaggerObject));
+      .end(helpers.expectContent(swaggerObject, done));
+    });
   });
 
-  it('should serve Swagger UI at /docs by default', function () {
-    request(createServer([swaggerObject], [middleware(swaggerObject)]))
-      .get('/docs/') // Trailing slash to avoid a 303
-      .expect(200)
-      .expect('content-type', 'text/html; charset=UTF-8')
-      .end(function(err, res) { // jshint ignore:line
-        if (err) {
-          throw err;
-        }
-      });
+  it('should serve Swagger UI at /docs by default', function (done) {
+    helpers.createServer([swaggerObject], {}, function (app) {
+      request(app)
+        .get('/docs/') // Trailing slash to avoid a 303
+        .expect(200)
+        .expect('content-type', 'text/html; charset=UTF-8')
+        .end(done);
+    });
   });
 
-  it('should serve Swagger UI at requested location', function () {
-    request(createServer([swaggerObject], [middleware(swaggerObject, {swaggerUi: '/docs2'})]))
-      .get('/docs2/') // Trailing slash to avoid a 303
-      .expect(200)
-      .expect('content-type', 'text/html; charset=UTF-8')
-      .end(function(err, res) { // jshint ignore:line
-        if (err) {
-          throw err;
-        }
-      });
+  it('should serve Swagger UI at requested location', function (done) {
+    helpers.createServer([swaggerObject], {
+      swaggerUiOptions: {
+        swaggerUi: '/docs2'
+      }
+    }, function (app) {
+      request(app)
+        .get('/docs2/') // Trailing slash to avoid a 303
+        .expect(200)
+        .expect('content-type', 'text/html; charset=UTF-8')
+        .end(done);
+    });
   });
 });

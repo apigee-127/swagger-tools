@@ -30,127 +30,88 @@
 process.env.NODE_ENV = 'test';
 
 var _ = require('lodash');
-var assert = require('assert');
+var async = require('async');
 var helpers = require('../helpers');
-var middleware = require('../../').middleware.v1_2.swaggerUi; // jshint ignore:line
 var request = require('supertest');
-var createServer = helpers.createServer;
 
 var rlJson = require('../../samples/1.2/resource-listing.json');
 var petJson = require('../../samples/1.2/pet.json');
 var storeJson = require('../../samples/1.2/store.json');
 var userJson = require('../../samples/1.2/user.json');
-var resourcesArg = {
-  '/pet': petJson,
-  '/store': storeJson,
-  '/user': userJson
-};
-var middlewareArgs = [rlJson, [petJson, storeJson, userJson]];
 
 describe('Swagger UI Middleware v1.2', function () {
-  it('should throw Error when passed the wrong arguments', function () {
-    var errors = {
-      'resourceList is required': [],
-      'resourceList must be an object': ['resource-listing.json'],
-      'resources is required': [rlJson],
-      'resources must be an object': [rlJson, 'pet.json']
-    };
+  it('should serve Swagger documents at /api-docs by default', function (done) {
+    var pathMap = _.reduce([rlJson, petJson, storeJson, userJson], function (map, resource) {
+      map['/api-docs' + (resource.resourcePath || '')] = resource;
 
-    _.each(errors, function (args, message) {
-      try {
-        middleware.apply(middleware, args);
-        assert.fail(null, null, 'Should had thrown an error');
-      } catch (err) {
-        assert.equal(message, err.message);
+      return map;
+    }, {});
+
+    async.map(Object.keys(pathMap), function (path, callback) {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {}, function (app) {
+        request(app)
+          .get(path)
+          .expect(200)
+          .end(helpers.expectContent(pathMap[path], callback));
+      });
+    }, function (err) {
+      if (err) {
+        throw err;
       }
+
+      done();
     });
   });
 
-  it('should return a function when passed the right arguments', function () {
-    try {
-      assert.ok(_.isFunction(middleware(rlJson, resourcesArg)));
-    } catch (err) {
-      assert.fail(null, null, err.message);
-    }
-  });
-
-  it('should throw Error when resource listing has duplicate API paths', function () {
-    var clonedRl = _.cloneDeep(rlJson);
-
-    clonedRl.apis[1].path = clonedRl.apis[0].path;
-
-    try {
-      middleware.apply(middleware, [clonedRl, resourcesArg]);
-      assert.fail(null, null, 'Should had thrown an error');
-    } catch (err) {
-      assert.equal('API path declared multiple times: ' + clonedRl.apis[1].path, err.message);
-    }
-  });
-
-  it('should throw Error when resource path is not defined in the resource listing', function () {
-    try {
-      middleware.apply(middleware, [rlJson, {
-        '/pets': petJson
-      }]);
-      assert.fail(null, null, 'Should had thrown an error');
-    } catch (err) {
-      assert.equal('resource path is not defined in the resource listing: /pets', err.message);
-    }
-  });
-
-  it('should serve Swagger documents at /api-docs by default', function () {
-    request(createServer(middlewareArgs, [middleware(rlJson, resourcesArg)]))
-      .get('/api-docs')
-      .expect(200)
-      .end(helpers.expectContent(rlJson));
-
-    _.each(resourcesArg, function (json, path) {
-      request(createServer(middlewareArgs, [middleware(rlJson, resourcesArg)]))
-        .get('/api-docs' + path)
-        .expect(200)
-        .end(helpers.expectContent(json));
-    });
-  });
-
-  it('should serve Swagger documents at requested location', function () {
+  it('should serve Swagger documents at requested location', function (done) {
     var options = {
       apiDocs: '/api-docs2'
     };
+    var pathMap = _.reduce([rlJson, petJson, storeJson, userJson], function (map, resource) {
+      map['/api-docs2' + (resource.resourcePath || '')] = resource;
 
-    request(createServer(middlewareArgs, [middleware(rlJson, resourcesArg, options)]))
-      .get('/api-docs2')
-      .expect(200)
-      .end(helpers.expectContent(rlJson));
+      return map;
+    }, {});
 
-    _.each(resourcesArg, function (json, path) {
-      request(createServer(middlewareArgs, [middleware(rlJson, resourcesArg, options)]))
-        .post('/api-docs2' + path)
-        .expect(200)
-        .end(helpers.expectContent(json));
+    async.map(Object.keys(pathMap), function (path, callback) {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        swaggerUiOptions: options
+      }, function (app) {
+        request(app)
+          .get(path)
+          .expect(200)
+          .end(helpers.expectContent(pathMap[path], callback));
+      });
+    }, function (err) {
+      if (err) {
+        throw err;
+      }
+
+      done();
     });
   });
 
-  it('should serve Swagger UI at /docs by default', function () {
-    request(createServer(middlewareArgs, [middleware(rlJson, resourcesArg)]))
-      .get('/docs/') // Trailing slash to avoid a 303
-      .expect(200)
-      .expect('content-type', 'text/html; charset=UTF-8')
-      .end(function(err, res) { // jshint ignore:line
-        if (err) {
-          throw err;
-        }
-      });
+  it('should serve Swagger UI at /docs by default', function (done) {
+    helpers.createServer([rlJson, [petJson, storeJson, userJson]], {}, function (app) {
+      request(app)
+        .get('/docs/') // Trailing slash to avoid a 303
+        .expect(200)
+        .expect('content-type', 'text/html; charset=UTF-8')
+        .end(done);
+    });
   });
 
-  it('should serve Swagger UI at requested location', function () {
-    request(createServer(middlewareArgs, [middleware(rlJson, resourcesArg, {swaggerUi: '/docs2'})]))
-      .get('/docs2/') // Trailing slash to avoid a 303
-      .expect(200)
-      .expect('content-type', 'text/html; charset=UTF-8')
-      .end(function(err, res) { // jshint ignore:line
-        if (err) {
-          throw err;
-        }
-      });
+  it('should serve Swagger UI at requested location', function (done) {
+    helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+      swaggerUiOptions: {
+        swaggerUi: '/docs2'
+      }
+    }, function (app) {
+      request(app)
+        .get('/docs2/') // Trailing slash to avoid a 303
+        .expect(200)
+        .expect('content-type', 'text/html; charset=UTF-8')
+        .end(done);
+    });
   });
 });

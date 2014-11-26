@@ -26,23 +26,202 @@
 
 'use strict';
 
+// Here to quiet down Connect logging errors
+process.env.NODE_ENV = 'test';
+
 var _ = require('lodash');
 var assert = require('assert');
 var swagger = require('../');
 
 var middlewares = ['swaggerMetadata', 'swaggerRouter', 'swaggerUi', 'swaggerValidator'];
+var petJson = require('../samples/1.2/pet.json');
+var petStoreJson = require('../samples/2.0/petstore.json');
+var rlJson = require('../samples/1.2/resource-listing.json');
+var storeJson = require('../samples/1.2/store.json');
+var userJson = require('../samples/1.2/user.json');
 
 describe('swagger-tools', function () {
-  describe('middleware', function () {
-    it('should have proper exports', function () {
-      assert.ok(_.isPlainObject(swagger.middleware.v1));
-      assert.ok(_.isPlainObject(swagger.middleware.v1_2)); // jshint ignore:line
-      assert.deepEqual(middlewares, Object.keys(swagger.middleware.v1));
-      assert.deepEqual(middlewares, Object.keys(swagger.middleware.v1_2)); // jshint ignore:line
-      assert.ok(_.isPlainObject(swagger.middleware.v2));
-      assert.ok(_.isPlainObject(swagger.middleware.v2_0)); // jshint ignore:line
-      assert.deepEqual(middlewares, Object.keys(swagger.middleware.v2));
-      assert.deepEqual(middlewares, Object.keys(swagger.middleware.v2_0)); // jshint ignore:line
+  describe('initializeMiddlware', function () {
+    it('should throw errors for invalid arguments (invalid Resource Listing or Swagger Object)', function () {
+      try {
+        swagger.initializeMiddleware({}, function() {
+          assert.fail(null, null, 'Should had failed');
+        });
+      } catch (err) {
+        assert.equal('Unable to identify the Swagger version based on rlOrSO', err.message);
+      }
+    });
+
+    describe('Swagger 1.2', function () {
+      it('should throw errors for invalid arguments', function () {
+        var errors = {
+          'rlOrSO is required': [],
+          'rlOrSO must be an object': ['resource-listing.json'],
+          'resources is required': [rlJson],
+          'resources must be an array': [rlJson, petJson],
+          'callback is required': [rlJson, [petJson, storeJson, userJson]],
+          'callback must be a function': [rlJson, [petJson, storeJson, userJson], 'wrong-type'],
+        };
+
+        _.each(errors, function (args, message) {
+          try {
+            swagger.initializeMiddleware.apply(undefined, args);
+
+            assert.fail(null, null, 'Should had failed above');
+          } catch (err) {
+            assert.equal(message, err.message);
+          }
+        });
+      });
+
+      it('should throw errors for invalid Swagger documents', function (done) {
+        var cRlJson = _.cloneDeep(rlJson);
+
+        cRlJson.apis.push(cRlJson.apis[0]);
+
+        try {
+          swagger.initializeMiddleware(cRlJson, [petJson, storeJson, userJson], function () {
+            assert.fail(null, null, 'Should had thrown an error');
+
+            done();
+          });
+        } catch (err) {
+          assert.deepEqual(err.results.errors, [
+            {
+              code: 'DUPLICATE_RESOURCE_PATH',
+              message: 'Resource path already defined: /pet',
+              path: ['apis', '3', 'path']
+            }
+            ]);
+            assert.equal(err.results.warnings.length, 0);
+
+            done();
+          }
+        });
+
+        it('should not throw error when Swagger document have only warnings', function () {
+          var cPetJson = _.cloneDeep(petJson);
+
+          cPetJson.models.Person = {
+            id: 'Person',
+            properties: {
+              age: {
+                type: 'integer'
+              },
+              name: {
+                type: 'string'
+              }
+            }
+          };
+
+          try {
+            swagger.initializeMiddleware(rlJson, [cPetJson, storeJson, userJson], function(middleware) {
+              _.each(Object.keys(middlewares), function (key) {
+                assert.ok(!_.isFunction(middleware[key]));
+              });
+            });
+          } catch (err) {
+            assert.fail(null, null, 'Should not had failed');
+          }
+        });
+
+        it('should not throw an error for valid arguments', function () {
+          try {
+            swagger.initializeMiddleware(rlJson, [petJson, storeJson, userJson], function(middleware) {
+              _.each(Object.keys(middlewares), function (key) {
+                assert.ok(!_.isFunction(middleware[key]));
+              });
+            });
+          } catch (err) {
+            assert.fail(null, null, 'Should not had failed');
+          }
+        });
+    });
+
+    describe('Swagger 2.0', function () {
+      it('should throw errors for invalid arguments', function () {
+        var errors = {
+          'rlOrSO is required': [],
+          'rlOrSO must be an object': ['petstore.json'],
+          'callback is required': [petStoreJson],
+          'callback must be a function': [petStoreJson, 'wrong-type'],
+        };
+
+        _.each(errors, function (args, message) {
+          try {
+            swagger.initializeMiddleware.apply(undefined, args);
+
+            assert.fail(null, null, 'Should had failed above');
+          } catch (err) {
+            assert.equal(message, err.message);
+          }
+        });
+      });
+
+      it('should throw errors for invalid Swagger documents', function (done) {
+        var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+        cPetStoreJson.paths['/pets/{petId}'] = _.cloneDeep(cPetStoreJson.paths['/pets/{id}']);
+        cPetStoreJson.paths['/pets/{petId}'].parameters[0].name = 'petId';
+        cPetStoreJson.paths['/pets/{petId}'].delete.parameters[0].name = 'petId';
+
+        try {
+          swagger.initializeMiddleware(cPetStoreJson, function () {
+            assert.fail(null, null, 'Should had thrown an error');
+
+            done();
+          });
+        } catch (err) {
+          assert.deepEqual(err.results.errors, [
+            {
+              code: 'DUPLICATE_API_PATH',
+              message: 'API path (or equivalent) already defined: /pets/{petId}',
+              path: ['paths', '/pets/{petId}']
+            }
+            ]);
+            assert.equal(err.results.warnings.length, 0);
+
+            done();
+        }
+      });
+
+      it('should not throw error when Swagger document have only warnings', function () {
+        var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+        cPetStoreJson.definitions.Person = {
+          id: 'Person',
+          properties: {
+            age: {
+              type: 'integer'
+            },
+            name: {
+              type: 'string'
+            }
+          }
+        };
+
+        try {
+          swagger.initializeMiddleware(cPetStoreJson, function(middleware) {
+            _.each(Object.keys(middlewares), function (key) {
+              assert.ok(!_.isFunction(middleware[key]));
+            });
+          });
+        } catch (err) {
+          assert.fail(null, null, 'Should not had failed');
+        }
+      });
+
+      it('should not throw an error for valid arguments', function () {
+        try {
+          swagger.initializeMiddleware(petStoreJson, function(middleware) {
+            _.each(Object.keys(middlewares), function (key) {
+              assert.ok(!_.isFunction(middleware[key]));
+            });
+          });
+        } catch (err) {
+          assert.fail(null, null, 'Should not had failed');
+        }
+      });
     });
   });
 

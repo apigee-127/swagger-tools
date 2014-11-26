@@ -98,22 +98,7 @@ program
   .description('Display validation results for the Swagger document(s)')
   .action(function () {
     var apiDeclarations = [];
-    var errorCount = 0;
-    var pluralize = function pluralize (string, count) {
-      return count === 1 ? string : string + 's';
-    };
-    var printErrorsOrWarnings = function printErrorsOrWarnings (header, entries, indent) {
-      console.error(header);
-      console.error();
-
-      _.each(entries, function (entry) {
-        console.error(new Array(indent + 1).join(' ') + helpers.toJsonPointer(entry.path) + ': ' + entry.message);
-      });
-
-      console.error();
-    };
-    var warningCount = 0;
-    var result;
+    var soArgs = [];
     var resourceListing;
     var spec;
     var swaggerObject;
@@ -144,52 +129,31 @@ program
     spec = getSpec(version);
 
     if (_.isUndefined(resourceListing)) {
-      result = spec.validate(swaggerObject);
+      soArgs = [swaggerObject];
     } else {
-      result = spec.validate(resourceListing, apiDeclarations);
+      soArgs = [resourceListing].concat(apiDeclarations);
     }
 
-    if (!_.isUndefined(result)) {
-      console.error();
+    soArgs.push(function (err, results) {
+      if (results && results.errors.length + _.reduce(results.apiDeclarations || [], function (count, apiDeclaration) {
+        return count += (apiDeclaration ? apiDeclaration.errors.length : 0);
+      }, 0) > 0) {
+        err = new Error('Swagger document(s) failed validation so the server cannot start');
 
-      if (result.errors.length > 0) {
-        errorCount += result.errors.length;
-
-        printErrorsOrWarnings('API Errors:', result.errors, 2);
+        err.results = results;
       }
 
-      if (result.warnings.length > 0) {
-        warningCount += result.warnings.length;
-
-        printErrorsOrWarnings('API Warnings:', result.warnings, 2);
+      if (err) {
+        if (process.env.NODE_ENV === 'test') {
+          throw err;
+        } else {
+          return helpers.printValidationResults(version, resourceListing || swaggerObject, apiDeclarations, results,
+                                                true, true);
+        }
       }
+    });
 
-      if (result.apiDeclarations) {
-        result.apiDeclarations.forEach(function (adResult, index) {
-          var name = apiDeclarations[index].resourcePath || index;
-
-          if (adResult.errors.length > 0) {
-            errorCount += adResult.errors.length;
-
-            printErrorsOrWarnings('  API Declaration (' + name + ') Errors:', adResult.errors, 4);
-          }
-
-          if (adResult.warnings.length > 0) {
-            warningCount += adResult.warnings.length;
-
-            printErrorsOrWarnings('  API Declaration (' + name + ') Warnings:', adResult.warnings, 4);
-          }
-        });
-      }
-
-      if (errorCount > 0) {
-        console.error(errorCount + ' ' + pluralize('error', errorCount) + ' and ' + warningCount + ' ' +
-                        pluralize('warning', warningCount));
-        process.exit(1);
-      } else {
-        console.error('Validation succeeded but with ' + warningCount + ' ' + pluralize('warning', warningCount));
-      }
-    }
+    spec.validate.apply(spec, soArgs);
   });
 
 program.parse(process.argv);

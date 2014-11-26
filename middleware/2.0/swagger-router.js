@@ -26,11 +26,6 @@
 
 var _ = require('lodash');
 var helpers = require('../helpers');
-var createStubHandler = helpers.createStubHandler;
-var getHandlerName = helpers.getHandlerName;
-var handlerCacheFromDir = helpers.handlerCacheFromDir;
-var send405 = helpers.send405;
-var specVer = '2.0';
 
 var defaultOptions = {
   controllers: {},
@@ -77,13 +72,12 @@ exports = module.exports = function swaggerRouterMiddleware (options) {
     handlerCache = options.controllers;
   } else {
     // Create the handler cache from the modules in the controllers directory
-    handlerCache = handlerCacheFromDir(options.controllers);
+    handlerCache = helpers.handlerCacheFromDir(options.controllers);
   }
 
   return function swaggerRouter (req, res, next) {
     var handler;
     var handlerName;
-    var responseModel;
     var operation;
 
     if (req.swagger) {
@@ -91,23 +85,13 @@ exports = module.exports = function swaggerRouterMiddleware (options) {
       req.swagger.useStubs = options.useStubs;
 
       if (_.isUndefined(operation)) {
-        return send405(specVer, req, res, next);
+        return helpers.send405('2.0', req, res, next);
       } else {
-        handlerName = getHandlerName(specVer, req);
+        handlerName = helpers.getHandlerName('2.0', req);
         handler = handlerCache[handlerName];
 
         if (_.isUndefined(handler) && options.useStubs === true) {
-          responseModel = _.find(operation.responses, function (responseModel, responseCode) {
-            if (responseCode === '200') {
-              return responseModel.responseModel;
-            }
-          });
-
-          if (_.isUndefined(responseModel)) {
-            responseModel = operation.responses.default;
-          }
-
-          handler = handlerCache[handlerName] = createStubHandler(req, res, specVer, handlerName, responseModel);
+          handler = handlerCache[handlerName] = helpers.createStubHandler('2.0', req, res, next, handlerName);
         }
 
         if (!_.isUndefined(handler)) {

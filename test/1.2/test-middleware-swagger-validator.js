@@ -30,70 +30,72 @@
 process.env.NODE_ENV = 'test';
 
 var _ = require('lodash');
-var assert = require('assert');
+var async = require('async');
 var helpers = require('../helpers');
-var middleware = require('../../').middleware.v1_2.swaggerValidator; // jshint ignore:line
-var petJson = require('../../samples/1.2/pet.json');
 var request = require('supertest');
+
+var petJson = require('../../samples/1.2/pet.json');
 var rlJson = require('../../samples/1.2/resource-listing.json');
-var createServer = helpers.createServer;
+var storeJson = require('../../samples/1.2/store.json');
+var userJson = require('../../samples/1.2/user.json');
 
 describe('Swagger Validator Middleware v1.2', function () {
-  it('should return a function when passed the right arguments', function () {
-    try {
-      assert.ok(_.isFunction(middleware()));
-    } catch (err) {
-      assert.fail(null, null, err.message);
-    }
+  it('should not validate request when there are no operations', function (done) {
+    helpers.createServer([rlJson, [petJson, storeJson, userJson]], {}, function (app) {
+      request(app)
+        .get('/api/foo')
+        .expect(200)
+        .end(helpers.expectContent('OK', done));
+      });
   });
 
-  it('should not validate request when there are no operations', function () {
-    request(createServer([rlJson, [petJson]], [middleware()]))
-      .get('/api/foo')
-      .expect(200)
-      .end(helpers.expectContent('OK'));
+  it('should return an error for invalid request content type based on POST/PUT operation consumes', function (done) {
+    helpers.createServer([rlJson, [petJson, storeJson, userJson]], {}, function (app) {
+      request(app)
+        .post('/api/pet/1')
+        .expect(400)
+        .end(helpers.expectContent('Invalid content type (application/octet-stream).  These are valid: ' +
+                                  'application/x-www-form-urlencoded', done));
+    });
   });
 
-  it('should return an error for invalid request content type based on POST/PUT operation consumes', function () {
-    request(createServer([rlJson, [petJson]], [middleware()]))
-      .post('/api/pet/1')
-      .expect(400)
-      .end(helpers.expectContent('Invalid content type (application/octet-stream).  These are valid: ' +
-                                'application/x-www-form-urlencoded'));
+  it('should not return an error for invalid request content type for non-POST/PUT', function (done) {
+    var clonedP = _.cloneDeep(petJson);
+
+    clonedP.consumes = ['application/json'];
+
+    helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {}, function (app) {
+      request(app)
+        .get('/api/pet/1')
+        .expect(200)
+        .end(helpers.expectContent('OK', done));
+    });
   });
 
-  it('should not return an error for invalid request content type for non-POST/PUT', function () {
-    var clonedRl = _.cloneDeep(rlJson);
-    var clonedAd = _.cloneDeep(petJson);
-
-    clonedAd.consumes = ['application/json'];
-
-    request(createServer([clonedRl, [clonedAd]]))
-      .get('/api/pet/1')
-      .expect(200)
-      .end(helpers.expectContent('OK'));
+  it('should not return an error for valid request content type', function (done) {
+    helpers.createServer([rlJson, [petJson, storeJson, userJson]], {}, function (app) {
+      request(app)
+        .post('/api/pet/1')
+        .set('Content-Type', 'application/x-www-form-urlencoded')
+        .expect(200)
+        .end(helpers.expectContent('OK', done));
+    });
   });
 
-  it('should not return an error for valid request content type', function () {
-    request(createServer([rlJson, [petJson]], [middleware()]))
-      .post('/api/pet/1')
-      .set('Content-Type', 'application/x-www-form-urlencoded')
-      .expect(200)
-      .end(helpers.expectContent('OK'));
+  it('should not return an error for valid request content type with charset', function (done) {
+    helpers.createServer([rlJson, [petJson, storeJson, userJson]], {}, function (app) {
+      request(app)
+        .post('/api/pet/1')
+        .set('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8')
+        .expect(200)
+        .end(helpers.expectContent('OK', done));
+    });
   });
 
-  it('should not return an error for valid request content type with charset', function () {
-    request(createServer([rlJson, [petJson]], [middleware()]))
-      .post('/api/pet/1')
-      .set('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8')
-      .expect(200)
-      .end(helpers.expectContent('OK'));
-  });
+  it('should return an error for missing required parameters', function (done) {
+    var clonedP = _.cloneDeep(petJson);
 
-  it('should return an error for missing required parameters', function () {
-    var clonedAd = _.cloneDeep(petJson);
-
-    clonedAd.apis[0].operations[0].parameters.push({
+    clonedP.apis[0].operations[0].parameters.push({
       description: 'Whether or not to use mock mode',
       name: 'mock',
       paramType: 'query',
@@ -101,33 +103,38 @@ describe('Swagger Validator Middleware v1.2', function () {
       type: 'boolean'
     });
 
-    request(createServer([rlJson, [clonedAd]], [middleware()]))
-      .get('/api/pet/1')
-      .expect(400)
-      .end(helpers.expectContent('Parameter (mock) is required'));
+    helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {}, function (app) {
+      request(app)
+        .get('/api/pet/1')
+        .expect(400)
+        .end(helpers.expectContent('Parameter (mock) is required', done));
+    });
   });
 
-  it('should not return an error for missing required parameters with defaultValue', function () {
-    var clonedAd = _.cloneDeep(petJson);
+  it('should not return an error for missing required parameters with a default value', function (done) {
+    var clonedP = _.cloneDeep(petJson);
 
-    clonedAd.apis[0].operations[0].parameters.push({
+    clonedP.apis[0].operations[0].parameters.push({
       description: 'Whether or not to use mock mode',
       name: 'mock',
       paramType: 'query',
       required: true,
+      type: 'boolean',
       defaultValue: 'false'
     });
 
-    request(createServer([rlJson, [clonedAd]], [middleware()]))
-      .get('/api/pet/1')
-      .expect(200)
-      .end(helpers.expectContent('OK'));
+    helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {}, function (app) {
+      request(app)
+        .get('/api/pet/1')
+        .expect(200)
+        .end(helpers.expectContent('OK', done));
+    });
   });
 
-  it('should not return an error for provided required parameters', function () {
-    var clonedAd = _.cloneDeep(petJson);
+  it('should not return an error for provided required parameters', function (done) {
+    var clonedP = _.cloneDeep(petJson);
 
-    clonedAd.apis[0].operations[0].parameters.push({
+    clonedP.apis[0].operations[0].parameters.push({
       description: 'Whether or not to use mock mode',
       name: 'mock',
       paramType: 'query',
@@ -135,14 +142,16 @@ describe('Swagger Validator Middleware v1.2', function () {
       type: 'boolean'
     });
 
-    request(createServer([rlJson, [clonedAd]], [middleware()]))
-      .get('/api/pet/1')
-      .query({mock: 'true'})
-      .expect(200)
-      .end(helpers.expectContent('OK'));
+    helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {}, function (app) {
+      request(app)
+        .get('/api/pet/1')
+        .query({mock: 'true'})
+        .expect(200)
+        .end(helpers.expectContent('OK', done));
+    });
   });
 
-  it('should return an error for invalid parameter values based on type/format', function () {
+  it('should return an error for invalid parameter values based on type/format', function (done) {
     var argName = 'arg0';
     var badValue = 'fake';
     var testScenarios = [
@@ -154,48 +163,51 @@ describe('Swagger Validator Middleware v1.2', function () {
       {paramType: 'query', name: argName, type: 'array', items: {type: 'integer'}}
     ];
 
-    _.each(testScenarios, function (scenario) {
-      _.times(2, function (n) {
-        var clonedAd = _.cloneDeep(petJson);
-        var clonedS = _.cloneDeep(scenario);
-        var content = {};
-        var app;
-        var expectedMessage;
-        var r;
+    async.map(testScenarios, function (scenario, callback) {
+      var clonedP = _.cloneDeep(petJson);
+      var clonedS = _.cloneDeep(scenario);
+      var content = {arg0: scenario.type === 'array' ? [1, 'fake'] : badValue};
+      var expectedMessage;
 
-        // We don't test default value with arrays
-        if (n === 0) {
-          content = {arg0: scenario.type === 'array' ? [1, 'fake'] : badValue};
-        } else if (n === 1) {
-          if (scenario.type === 'array') {
-            return;
-          } else {
-            clonedS.defaultValue = badValue;
-          }
-        }
+      clonedP.apis[0].operations[0].parameters.push(clonedS);
 
-        clonedAd.apis[0].operations[0].parameters.push(clonedS);
+      if (scenario.type === 'array') {
+        expectedMessage = 'Parameter (' + argName + ') at index 1 is not a valid integer: fake';
+      } else {
+        expectedMessage = 'Parameter (' + scenario.name + ') is not a valid ' +
+                            (_.isUndefined(scenario.format) ? '' : scenario.format + ' ') + scenario.type + ': ' +
+                            badValue;
+      }
 
-        app = createServer([rlJson, [clonedAd]], [middleware()]);
-        r = request(app)
+      helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {}, function (app) {
+        request(app)
           .get('/api/pet/1')
           .query(content)
-          .expect(400);
+          .expect(400)
+          .end(function (err, res) {
+            if (res) {
+              res.expectedMessage = expectedMessage;
+            }
 
-        if (scenario.type === 'array') {
-          expectedMessage = 'Parameter (' + argName + ') at index 1 is not a valid integer: fake';
-        } else {
-          expectedMessage = 'Parameter (' + scenario.name + ') is not a valid ' +
-                       (_.isUndefined(scenario.format) ? '' : scenario.format + ' ') + scenario.type + ': ' +
-                       badValue;
-        }
-
-        r.end(helpers.expectContent(expectedMessage));
+            callback(err, res);
+          });
       });
+    }, function (err, responses) {
+      if (err) {
+        throw err;
+      }
+
+      _.each(responses, function (res) {
+        if (res) {
+          helpers.expectContent(res.expectedMessage)(undefined, res);
+        }
+      });
+
+      done();
     });
   });
 
-  it('should not return an error for valid parameter values based on type/format', function () {
+  it('should not return an error for valid parameter values based on type/format', function (done) {
     var argName = 'arg0';
     var testScenarios = [
       {paramType: 'query', name: argName, type: 'boolean', defaultValue: 'true'},
@@ -211,12 +223,12 @@ describe('Swagger Validator Middleware v1.2', function () {
       },
     ];
 
-    _.each(testScenarios, function (scenario) {
-      var clonedAd = _.cloneDeep(petJson);
+    async.map(testScenarios, function (scenario, oCallback) {
+      var clonedP = _.cloneDeep(petJson);
 
-      clonedAd.apis[0].operations[0].parameters.push(scenario);
+      clonedP.apis[0].operations[0].parameters.push(scenario);
 
-      _.times(2, function (n) {
+      async.map([0, 1], function (n, callback) {
         var clonedS = _.cloneDeep(scenario);
         var content = {};
 
@@ -226,16 +238,34 @@ describe('Swagger Validator Middleware v1.2', function () {
           content = {arg0: scenario.defaultValue};
         }
 
-        request(createServer([rlJson, [clonedAd]], [middleware()]))
-          .get('/api/pet/1')
-          .query(content)
-          .expect(200)
-          .end(helpers.expectContent('OK'));
+        helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {}, function (app) {
+          request(app)
+            .get('/api/pet/1')
+            .query(content)
+            .expect(200)
+            .end(callback);
+        });
+      }, function (err, responses) {
+        if (err) {
+          throw err;
+        }
+
+        _.each(responses, function (res) {
+          helpers.expectContent('OK')(undefined, res);
+        });
+
+        oCallback();
       });
+    }, function (err) {
+      if (err) {
+        throw err;
+      }
+
+      done();
     });
   });
 
-  it('should return an error for invalid parameter values not based on type/format', function () {
+  it('should return an error for invalid parameter values not based on type/format', function (done) {
     var argName = 'arg0';
     var testScenarios = [
       {paramType: 'query', name: argName, enum: ['1', '2', '3'], type: 'string'},
@@ -255,21 +285,43 @@ describe('Swagger Validator Middleware v1.2', function () {
       'Parameter (' + argName + ') is greater than the configured maximum (1.0): 2',
       'Parameter (' + argName + ') does not allow duplicate values: fake, fake'
     ];
+    var index = 0;
 
-    _.each(testScenarios, function (scenario, index) {
-      var clonedAd = _.cloneDeep(petJson);
+    async.map(testScenarios, function (scenario, callback) {
+      var clonedP = _.cloneDeep(petJson);
+      var expectedMessage = errors[index];
 
-      clonedAd.apis[0].operations[0].parameters.push(scenario);
+      clonedP.apis[0].operations[0].parameters.push(scenario);
 
-      request(createServer([rlJson, [clonedAd]], [middleware()]))
+      helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {}, function (app) {
+        request(app)
         .get('/api/pet/1')
         .query({arg0: values[index]})
         .expect(400)
-        .end(helpers.expectContent(errors[index]));
+        .end(function (err, res) {
+          if (res) {
+            res.expectedMessage = expectedMessage;
+          }
+
+          callback(err, res);
+        });
+
+        index++;
+      });
+    }, function (err, responses) {
+      if (err) {
+        throw err;
+      }
+
+      _.each(responses, function (res) {
+        helpers.expectContent(res.expectedMessage)(undefined, res);
+      });
+
+      done();
     });
   });
 
-  it('should not return an error for valid parameter values not based on type/format', function () {
+  it('should not return an error for valid parameter values not based on type/format', function (done) {
     var argName = 'arg0';
     var testScenarios = [
       {paramType: 'query', name: argName, enum: ['1', '2', '3'], type: 'string'},
@@ -283,99 +335,69 @@ describe('Swagger Validator Middleware v1.2', function () {
       '1',
       ['fake', 'fake1']
     ];
-    _.each(testScenarios, function (scenario, index) {
-      var clonedAd = _.cloneDeep(petJson);
+    var index = 0;
 
-      clonedAd.apis[0].operations[0].parameters.push(scenario);
+    async.map(testScenarios, function (scenario, callback) {
+      var clonedP = _.cloneDeep(petJson);
 
-      request(createServer([rlJson, [clonedAd]], [middleware()]))
-        .get('/api/pet/1')
-        .query({arg0: values[index]})
-        .expect(200)
-        .end(helpers.expectContent('OK'));
+      clonedP.apis[0].operations[0].parameters.push(scenario);
+
+      helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {}, function (app) {
+        request(app)
+          .get('/api/pet/1')
+          .query({arg0: values[index]})
+          .expect(200)
+          .end(callback);
+
+        index++;
+      });
+    }, function (err, responses) {
+      if (err) {
+        throw err;
+      }
+
+      _.each(responses, function (res) {
+        helpers.expectContent('OK')(undefined, res);
+      });
+
+      done();
     });
   });
 
-  it('should return an error for an invalid model parameter', function () {
-    var clonedAd = _.cloneDeep(petJson);
-
-    request(createServer([rlJson, [clonedAd]], [middleware()]))
-      .post('/api/pet')
-      .send({})
-      .expect(400)
-      .end(helpers.expectContent('Parameter (body) is not a valid Pet model'));
-  });
-
-  it('should not return an error for a valid model parameter', function () {
-    var clonedAd = _.cloneDeep(petJson);
-
-    request(createServer([rlJson, [clonedAd]], [middleware()]))
-      .post('/api/pet')
-      .send({
-        id: 1,
-        name: 'Test Pet'
-      })
-      .expect(200)
-      .end(helpers.expectContent('OK'));
-  });
-
-  it('should return an error for an invalid model parameter (array)', function () {
-    var clonedAd = _.cloneDeep(petJson);
-
-      clonedAd.models.Tag.required = ['name'];
-
-      clonedAd.apis.push({
-        operations: [
-          {
-            authorizations: {},
-            method: 'POST',
-            parameters: [
-              {
-                name: 'body',
-                paramType: 'body',
-                required: true,
-                type: 'array',
-                items: {
-                  $ref: 'Tag'
-                }
-              }
-            ],
-            responseMessages: [
-              {
-                code: 400,
-                message: 'Invalid tag value'
-              }
-            ],
-            type: 'void'
-          }
-        ],
-        path: '/tags'
-      });
-
-      request(createServer([rlJson, [clonedAd]], [middleware()]))
-        .post('/api/tags')
-        .send([
-          {
-            id: 1
-          },
-          {
-            id: 2
-          }
-        ])
+  it('should return an error for an invalid model parameter', function (done) {
+    helpers.createServer([rlJson, [petJson, storeJson, userJson]], {}, function (app) {
+      request(app)
+        .post('/api/pet')
+        .send({})
         .expect(400)
-        .end(helpers.expectContent('Parameter (body) is not a valid Tag model'));
+        .end(helpers.expectContent('Parameter (body) failed schema validation', done));
+    });
   });
 
-  it('should not return an error for a valid model parameter (array)', function () {
-    var clonedAd = _.cloneDeep(petJson);
+  it('should not return an error for a valid model parameter', function (done) {
+    helpers.createServer([rlJson, [petJson, storeJson, userJson]], {}, function (app) {
+      request(app)
+        .post('/api/pet')
+        .send({
+          id: 1,
+          name: 'Test Pet'
+        })
+        .expect(200)
+        .end(helpers.expectContent('OK', done));
+    });
+  });
 
-    clonedAd.models.Tag.required = ['name'];
+  it('should return an error for an invalid model parameter (array)', function (done) {
+    var clonedP = _.cloneDeep(petJson);
 
-    clonedAd.apis.push({
+    clonedP.models.Tag.required = ['name'];
+
+    clonedP.apis.push({
       operations: [
         {
           authorizations: {},
           method: 'POST',
+          nickname: 'createTag',
           parameters: [
             {
               name: 'body',
@@ -399,17 +421,69 @@ describe('Swagger Validator Middleware v1.2', function () {
       path: '/tags'
     });
 
-    request(createServer([rlJson, [clonedAd]], [middleware()]))
-      .post('/api/tags')
-      .send([
+    helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {}, function (app) {
+      request(app)
+        .post('/api/tags')
+        .send([
+          {
+            id: 1
+          },
+          {
+            id: 2
+          }
+        ])
+        .expect(400)
+        .end(helpers.expectContent('Parameter (body) failed schema validation', done));
+    });
+  });
+
+  it('should not return an error for a valid model parameter (array)', function (done) {
+    var clonedP = _.cloneDeep(petJson);
+
+    clonedP.models.Tag.required = ['name'];
+
+    clonedP.apis.push({
+      operations: [
         {
-          name: 'Tag 1'
-        },
-        {
-          name: 'Tag 2'
+          authorizations: {},
+          method: 'POST',
+          nickname: 'createTag',
+          parameters: [
+            {
+              name: 'body',
+              paramType: 'body',
+              required: true,
+              type: 'array',
+              items: {
+                $ref: 'Tag'
+              }
+            }
+          ],
+          responseMessages: [
+            {
+              code: 400,
+              message: 'Invalid tag value'
+            }
+          ],
+          type: 'void'
         }
-      ])
-      .expect(200)
-      .end(helpers.expectContent('OK'));
+      ],
+      path: '/tags'
+    });
+
+    helpers.createServer([rlJson, [petJson, storeJson, userJson]], {}, function (app) {
+      request(app)
+        .post('/api/tags')
+        .send([
+          {
+            name: 'Tag 1'
+          },
+          {
+            name: 'Tag 2'
+          }
+        ])
+        .expect(200)
+        .end(helpers.expectContent('OK', done));
+    });
   });
 });

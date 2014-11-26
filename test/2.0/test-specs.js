@@ -1,4 +1,4 @@
-/* global describe, it */
+/* global afterEach, describe, it */
 
 /*
  * The MIT License (MIT)
@@ -28,16 +28,43 @@
 
 var _ = require('lodash');
 var assert = require('assert');
+var async = require('async');
+var http = require('http');
+var url = require('url');
 var spec = require('../../').specs.v2_0; // jshint ignore:line
 
 var petStoreJson = require('../../samples/2.0/petstore.json');
+var createServer = function createServer (responseMap) {
+  var server = http.createServer(function (req, res) {
+    var data = responseMap[url.parse(req.url).pathname];
+
+    if (data) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(data));
+    } else {
+      res.send(404);
+    }
+  });
+
+  return server;
+};
 
 describe('Specification v2.0', function () {
+  var server;
+
+  afterEach(function () {
+    if (server) {
+      server.close();
+    }
+
+    server = undefined;
+  });
+
   describe('metadata', function () {
     it('should have proper docsUrl, primitives, options, schemasUrl and verison properties', function () {
-      assert.strictEqual(spec.docsUrl, 'https://github.com/wordnik/swagger-spec/blob/master/versions/2.0.md');
+      assert.strictEqual(spec.docsUrl, 'https://github.com/swagger-api/swagger-spec/blob/master/versions/2.0.md');
       assert.deepEqual(spec.primitives, ['string', 'number', 'boolean', 'integer', 'array', 'file']);
-      assert.strictEqual(spec.schemasUrl, 'https://github.com/wordnik/swagger-spec/tree/master/schemas/v2.0');
+      assert.strictEqual(spec.schemasUrl, 'https://github.com/swagger-api/swagger-spec/tree/master/schemas/v2.0');
       assert.strictEqual(spec.version, '2.0');
     });
   });
@@ -62,7 +89,9 @@ describe('Specification v2.0', function () {
     it('should fail when passed the wrong arguments', function () {
       var errors = {
         'swaggerObject is required': [],
-        'swaggerObject must be an object': ['wrongType']
+        'swaggerObject must be an object': ['wrongType'],
+        'callback is required': [petStoreJson],
+        'callback must be a function': [petStoreJson, 'wrongType']
       };
 
       _.each(errors, function (args, message) {
@@ -74,124 +103,145 @@ describe('Specification v2.0', function () {
       });
     });
 
-    it('should return true for valid JSON files', function () {
-      assert.ok(_.isUndefined(spec.validate(petStoreJson)));
-    });
+    it('should return undefined for valid JSON files', function (done) {
+      spec.validate(petStoreJson, function (err, result) {
+        if (err) {
+          throw err;
+        }
 
-    it('should not validate remote references', function () {
-      var swaggerObject = _.cloneDeep(petStoreJson);
+        assert.ok(_.isUndefined(err));
+        assert.ok(_.isUndefined(result));
 
-      swaggerObject.paths['/pets'].get.responses['200'].schema.items.$ref = 'http://localhost/schemas/pet.json';
-
-      assert.ok(_.isUndefined(spec.validate(swaggerObject)));
+        done();
+      });
     });
 
     describe('should return errors for structurally invalid JSON files', function () {
-      it('extra property', function() {
+      it('extra property', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
-        var result;
 
         swaggerObject.paths['/pets'].get.extra = 'value';
 
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.errors, [
-          {
-            code: 'VALIDATION_ADDITIONAL_PROPERTIES',
-            message: 'Additional properties not allowed: extra',
-            data: 'value',
-            path: ['paths', '/pets', 'get', 'extra']
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.warnings.length, 0);
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'OBJECT_ADDITIONAL_PROPERTIES',
+              message: 'Additional properties not allowed: extra',
+
+              path: ['paths', '/pets', 'get']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('invalid type', function() {
+      it('invalid type', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
-        var result;
 
         swaggerObject.info.contact.name = false;
 
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.errors, [
-          {
-            code: 'VALIDATION_INVALID_TYPE',
-            message: 'Invalid type: boolean should be string',
-            data: false,
-            path: ['info', 'contact', 'name']
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.warnings.length, 0);
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'INVALID_TYPE',
+              // Visible because the schema provides it
+              description: 'The identifying name of the contact person/organization.',
+              message: 'Expected type string but found type boolean',
+              path: ['info', 'contact', 'name']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('missing required value', function() {
+      it('missing required value', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
-        var result;
 
         delete swaggerObject.paths;
 
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.errors, [
-          {
-            code: 'VALIDATION_OBJECT_REQUIRED',
-            message: 'Missing required property: paths',
-            path: ['paths']
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.warnings.length, 0);
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
+              message: 'Missing required property: paths',
+              path: []
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('wrong enum value', function() {
+      it('wrong enum value', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
-        var result;
 
         swaggerObject.schemes.push('fake');
 
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.errors, [
-          {
-            code: 'VALIDATION_ENUM_MISMATCH',
-            message: 'No enum match (fake), expects: http, https, ws, wss',
-            data: 'fake',
-            path: ['schemes', '1']
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.warnings.length, 0);
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'ENUM_MISMATCH',
+              message: 'No enum match for: fake',
+              path: ['schemes', '1']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
       });
     });
 
     describe('should return errors for semantically invalid JSON files', function () {
-      // Should we be writing tests for the operation parameter constraints (default values) even though the same code
-      // to validate them is the same one for swagger-validator which is already tested?
-
-      it('duplicate api path (equivalent)', function () {
+      it('duplicate api path (equivalent)', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
-        var result;
 
         swaggerObject.paths['/pets/{petId}'] = _.cloneDeep(swaggerObject.paths['/pets/{id}']);
         swaggerObject.paths['/pets/{petId}'].parameters[0].name = 'petId';
         swaggerObject.paths['/pets/{petId}'].delete.parameters[0].name = 'petId';
 
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.errors, [
-          {
-            code: 'DUPLICATE_API_PATH',
-            message: 'API path (or equivalent) already defined: /pets/{petId}',
-            data: '/pets/{petId}',
-            path: ['paths', '/pets/{petId}']
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.warnings.length, 0);
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'DUPLICATE_API_PATH',
+              message: 'API path (or equivalent) already defined: /pets/{petId}',
+              path: ['paths', '/pets/{petId}']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('duplicate API parameter', function () {
+      it('duplicate parameter (path)', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
         var cParam = _.cloneDeep(swaggerObject.paths['/pets/{id}'].parameters[0]);
-        var result;
 
         // Make the parameter not identical but still having the same id
         cParam.type = 'string';
@@ -200,45 +250,83 @@ describe('Specification v2.0', function () {
 
         swaggerObject.paths['/pets/{id}'].parameters.push(cParam);
 
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.errors, [
-          {
-            code: 'DUPLICATE_API_PARAMETER',
-            message: 'API parameter already defined: id',
-            data: 'id',
-            path: ['paths', '/pets/{id}', 'parameters', '1', 'name']
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.warnings.length, 0);
+
+          // Since this is a path level parameter, all operations that do not override the property will get the error
+          assert.deepEqual(result.errors, [
+            {
+              code: 'DUPLICATE_PARAMETER',
+              message: 'Parameter already defined: id',
+              path: ['paths', '/pets/{id}', 'parameters', '1', 'name']
+            },
+            {
+              code: 'DUPLICATE_PARAMETER',
+              message: 'Parameter already defined: id',
+              path: ['paths', '/pets/{id}', 'get', 'parameters', '1', 'name']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('unresolvable API parameter', function () {
+      it('duplicate parameter (path remote)', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
-        var newParam = _.cloneDeep(swaggerObject.paths['/pets/{id}'].parameters[0]);
-        var result;
+        var cPath = _.cloneDeep(swaggerObject.paths['/pets/{id}']);
+        var cParam = _.cloneDeep(cPath.parameters[0]);
 
-        newParam.name = 'petId';
+        // Make the parameter not identical but still having the same id
+        cParam.type = 'string';
 
-        swaggerObject.paths['/pets/{id}'].parameters.push(newParam);
+        delete cParam.format;
 
-        result = spec.validate(swaggerObject);
+        cPath.parameters.push(cParam);
 
-        assert.deepEqual(result.errors, [
-          {
-            code: 'UNRESOLVABLE_API_PATH_PARAMETER',
-            message: 'API path parameter could not be resolved: ' + newParam.name,
-            data: newParam.name,
-            path: ['paths', '/pets/{id}', 'parameters', '1', 'name']
+        swaggerObject.paths['/people/{id}'] = {
+          $ref: 'http://localhost:3000/people.json#/paths/~1people~1{id}'
+        };
+
+        server = createServer({
+          '/people.json': {
+            paths: {
+              '/people/{id}': cPath
+            }
           }
-        ]);
-        assert.equal(result.warnings.length, 0);
+        });
+
+        server.listen(3000, function () {
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            // Since this is a path level parameter, all operations that do not override the property will get the error
+            assert.deepEqual(result.errors, [
+              {
+                code: 'DUPLICATE_PARAMETER',
+                message: 'Parameter already defined: id',
+                path: ['paths', '/people/{id}', 'parameters', '1', 'name']
+              },
+              {
+                code: 'DUPLICATE_PARAMETER',
+                message: 'Parameter already defined: id',
+                path: ['paths', '/people/{id}', 'get', 'parameters', '1', 'name']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
       });
 
-      it('duplicate operation parameter', function () {
+      it('duplicate parameter (operation)', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
         var cParam = _.cloneDeep(swaggerObject.paths['/pets/{id}'].delete.parameters[0]);
-        var result;
 
         // Make the parameter not identical but still having the same id
         cParam.type = 'string';
@@ -247,108 +335,240 @@ describe('Specification v2.0', function () {
 
         swaggerObject.paths['/pets/{id}'].delete.parameters.push(cParam);
 
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.errors, [
-          {
-            code: 'DUPLICATE_OPERATION_PARAMETER',
-            message: 'Operation parameter already defined: id',
-            data: 'id',
-            path: ['paths', '/pets/{id}', 'delete', 'parameters', '1', 'name']
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.warnings.length, 0);
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'DUPLICATE_PARAMETER',
+              message: 'Parameter already defined: id',
+              path: ['paths', '/pets/{id}', 'delete', 'parameters', '1', 'name']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('unresolvable operation parameter', function () {
+      it('unresolvable API parameter', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
-        var newParam = _.cloneDeep(swaggerObject.paths['/pets/{id}'].delete.parameters[0]);
-        var result;
+        var newParam = _.cloneDeep(swaggerObject.paths['/pets/{id}'].parameters[0]);
 
         newParam.name = 'petId';
 
         swaggerObject.paths['/pets/{id}'].delete.parameters.push(newParam);
 
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.errors, [
-          {
-            code: 'UNRESOLVABLE_API_PATH_PARAMETER',
-            message: 'API path parameter could not be resolved: ' + newParam.name,
-            data: newParam.name,
-            path: ['paths', '/pets/{id}', 'delete', 'parameters', '1', 'name']
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.warnings.length, 0);
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'UNRESOLVABLE_API_PATH_PARAMETER',
+              message: 'API path parameter could not be resolved: ' + newParam.name,
+              path: ['paths', '/pets/{id}', 'delete', 'parameters', '1', 'name']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('missing API parameter', function () {
+      it('duplicate operation parameter', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
-        var result;
+        var cParam = _.cloneDeep(swaggerObject.paths['/pets/{id}'].delete.parameters[0]);
+
+        // Make the parameter not identical but still having the same id
+        cParam.type = 'string';
+
+        delete cParam.format;
+
+        swaggerObject.paths['/pets/{id}'].delete.parameters.push(cParam);
+
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'DUPLICATE_PARAMETER',
+              message: 'Parameter already defined: id',
+              path: ['paths', '/pets/{id}', 'delete', 'parameters', '1', 'name']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
+      });
+
+      it('unresolvable operation parameter', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var newParam = _.cloneDeep(swaggerObject.paths['/pets/{id}'].delete.parameters[0]);
+
+        newParam.name = 'petId';
+
+        swaggerObject.paths['/pets/{id}'].delete.parameters.push(newParam);
+
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'UNRESOLVABLE_API_PATH_PARAMETER',
+              message: 'API path parameter could not be resolved: ' + newParam.name,
+              path: ['paths', '/pets/{id}', 'delete', 'parameters', '1', 'name']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
+      });
+
+      it('missing API parameter', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
 
         delete swaggerObject.paths['/pets/{id}'].parameters;
         delete swaggerObject.paths['/pets/{id}'].delete.parameters;
 
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.errors, [
-          {
-            code: 'MISSING_API_PATH_PARAMETER',
-            message: 'API requires path parameter but it is not defined: id',
-            data: '/pets/{id}',
-            path: ['paths', '/pets/{id}']
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.warnings.length, 0);
+
+          // Since this is a path level parameter, all operations will get the same error
+          assert.deepEqual(result.errors, [
+            {
+              code: 'MISSING_API_PATH_PARAMETER',
+              message: 'API requires path parameter but it is not defined: id',
+              path: ['paths', '/pets/{id}']
+            },
+            {
+              code: 'MISSING_API_PATH_PARAMETER',
+              message: 'API requires path parameter but it is not defined: id',
+              path: ['paths', '/pets/{id}', 'delete']
+            },
+            {
+              code: 'MISSING_API_PATH_PARAMETER',
+              message: 'API requires path parameter but it is not defined: id',
+              path: ['paths', '/pets/{id}', 'get']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('missing required model property', function() {
+      it('missing required model property', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
-        var result;
 
         delete swaggerObject.definitions.Pet.properties.name;
 
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.errors, [
-          {
-            code: 'MISSING_REQUIRED_MODEL_PROPERTY',
-            message: 'Model requires property but it is not defined: name',
-            data: 'name',
-            path: ['definitions', 'Pet', 'required', '1']
-          },
-          {
-            code: 'MISSING_REQUIRED_MODEL_PROPERTY',
-            message: 'Model requires property but it is not defined: name',
-            data: 'name',
-            path: ['definitions', 'newPet', 'required', '0']
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.warnings.length, 0);
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'MISSING_REQUIRED_MODEL_PROPERTY',
+              message: 'Model requires property but it is not defined: name',
+              path: ['definitions', 'Pet', 'required', '1']
+            },
+            {
+              code: 'MISSING_REQUIRED_MODEL_PROPERTY',
+              message: 'Model requires property but it is not defined: name',
+              path: ['definitions', 'newPet', 'required', '0']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('unresolvable model', function() {
+      it('unresolvable model (model definition)', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
-        var result;
 
-        swaggerObject.paths['/pets'].get.responses.default.schema.$ref = 'Fake';
-
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.errors, [
-          {
-            code: 'UNRESOLVABLE_MODEL',
-            message: 'Model could not be resolved: #/definitions/Fake',
-            data: '#/definitions/Fake',
-            path: ['paths', '/pets', 'get', 'responses', 'default', 'schema', '$ref']
+        swaggerObject.definitions.Fake = {
+          properties: {
+            project: {
+              $ref: '#/definitions/Project'
+            }
           }
-        ]);
-        assert.equal(result.warnings.length, 0);
+        };
+
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'UNRESOLVABLE_DEFINITION',
+              message: 'Definition could not be resolved: #/definitions/Project',
+              path: ['definitions', 'Fake', 'properties', 'project', '$ref']
+            }
+          ]);
+          assert.deepEqual(result.warnings, [
+            {
+              code: 'UNUSED_DEFINITION',
+              message: 'Definition is defined but is not used: #/definitions/Fake',
+              path: [
+                'definitions',
+                'Fake'
+              ]
+            }
+          ]);
+
+          done();
+        });
       });
 
-      it('unused model', function() {
+      it('unresolvable model (parameter)', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
-        var result;
+
+        swaggerObject.paths['/pets'].post.parameters[0].schema.$ref = '#/definitions/Fake';
+
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'UNRESOLVABLE_DEFINITION',
+              message: 'Definition could not be resolved: #/definitions/Fake',
+              path: ['paths', '/pets', 'post', 'parameters', '0', 'schema', '$ref']
+            }
+          ]);
+          assert.deepEqual(result.warnings, [
+            {
+              code: 'UNUSED_DEFINITION',
+              message: 'Definition is defined but is not used: #/definitions/newPet',
+              path: [
+                'definitions',
+                'newPet'
+              ]
+            }
+          ]);
+
+          done();
+        });
+      });
+
+      it('unused model', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
 
         swaggerObject.definitions.Person = {
           properties: {
@@ -361,27 +581,31 @@ describe('Specification v2.0', function () {
           }
         };
 
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.warnings, [
-          {
-            code: 'UNUSED_MODEL',
-            message: 'Model is defined but is not used: #/definitions/Person',
-            data: swaggerObject.definitions.Person,
-            path: ['definitions', 'Person']
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.errors.length, 0);
+
+          assert.deepEqual(result.warnings, [
+            {
+              code: 'UNUSED_DEFINITION',
+              message: 'Definition is defined but is not used: #/definitions/Person',
+              path: ['definitions', 'Person']
+            }
+          ]);
+          assert.equal(result.errors.length, 0);
+
+          done();
+        });
       });
 
-      it('child model redeclares property', function() {
+      it('child model redeclares property', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
-        var result;
 
         swaggerObject.definitions.Person = {
           allOf: [
             {
-              $ref: 'Pet'
+              $ref: '#/definitions/Pet'
             }
           ],
           properties: {
@@ -396,28 +620,32 @@ describe('Specification v2.0', function () {
 
         swaggerObject.paths['/pets'].get.responses.default.schema.$ref = '#/definitions/Person';
 
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.errors, [
-          {
-            code: 'CHILD_MODEL_REDECLARES_PROPERTY',
-            message: 'Child model declares property already declared by ancestor: name',
-            data: swaggerObject.definitions.Person.properties.name,
-            path: ['definitions', 'Person', 'properties', 'name']
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.warnings.length, 0);
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'CHILD_DEFINITION_REDECLARES_PROPERTY',
+              message: 'Child definition declares property already declared by ancestor: name',
+              path: ['definitions', 'Person', 'properties', 'name']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('cyclical model inheritance', function() {
+      it('cyclical model inheritance', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
-        var result;
 
         _.merge(swaggerObject.definitions, {
           Bar: {
             allOf: [
               {
-                $ref: 'Baz'
+                $ref: '#/definitions/Baz'
               }
             ],
             properties: {
@@ -429,7 +657,7 @@ describe('Specification v2.0', function () {
           Baz: {
             allOf: [
               {
-                $ref: 'Bar'
+                $ref: '#/definitions/Bar'
               }
             ],
             properties: {
@@ -440,41 +668,57 @@ describe('Specification v2.0', function () {
           }
         });
 
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.errors, [
-          {
-            code: 'CYCLICAL_MODEL_INHERITANCE',
-            message: 'Model has a circular inheritance: #/definitions/Baz -> #/definitions/Bar -> #/definitions/Baz',
-            data: swaggerObject.definitions.Baz.allOf,
-            path: ['definitions', 'Baz', 'allOf']
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.warnings.length, 0);
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'CYCLICAL_DEFINITION_INHERITANCE',
+              message: 'Definition has a circular inheritance: #/definitions/Bar -> #/definitions/Baz -> ' +
+                         '#/definitions/Bar',
+              path: ['definitions', 'Bar', 'allOf']
+            },
+            {
+              code: 'CYCLICAL_DEFINITION_INHERITANCE',
+              message: 'Definition has a circular inheritance: #/definitions/Baz -> #/definitions/Bar -> ' +
+                         '#/definitions/Baz',
+              path: ['definitions', 'Baz', 'allOf']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
       });
 
       // This should be removed when the upstream bug in the Swagger schema is fixed
       //   https://github.com/swagger-api/swagger-spec/issues/174
-      it('missing items property for array type (Issue 62)', function() {
+      it('missing items property for array type (Issue 62)', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
-        var result;
 
         delete swaggerObject.paths['/pets'].get.responses['200'].schema.items;
 
-        result = spec.validate(swaggerObject);
-
-        assert.deepEqual(result.errors, [
-          {
-            code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
-            message: 'Missing required property: items',
-            data: swaggerObject.paths['/pets'].get.responses['200'].schema,
-            path: ['paths', '/pets', 'get', 'responses', '200', 'schema']
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.warnings.length, 0);
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
+              message: 'Missing required property: items',
+              path: ['paths', '/pets', 'get', 'responses', '200', 'schema']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('should not report missing model for inlines model schemas (Issue 61)', function() {
+      it('should not report missing model for inlines model schemas (Issue 61)', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
 
         swaggerObject.definitions.Pet.properties.extraCategories = {
@@ -482,40 +726,1276 @@ describe('Specification v2.0', function () {
           items: _.cloneDeep(swaggerObject.definitions.Category)
         };
 
-        assert.ok(_.isUndefined(spec.validate(swaggerObject)));
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.ok(_.isUndefined(result));
+
+          done();
+        });
       });
+
+      describe('definition property constraint validation', function () {
+        it('wrong type', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.definitions.Pet.properties.fake = {
+            type: 'integer',
+            default: 'fake'
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['definitions', 'Pet', 'properties', 'fake', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('enum mismatch', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.definitions.Pet.properties.fake = {
+            type: 'string',
+            enum: ['A', 'B'],
+            default: 'fake'
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'ENUM_MISMATCH',
+                message: 'Not an allowable value (A, B): fake',
+                path: ['definitions', 'Pet', 'properties', 'fake', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('maximum', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.definitions.Pet.properties.fake = {
+            type: 'integer',
+            maximum: 0,
+            default: 1
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'MAXIMUM',
+                message: 'Greater than the configured maximum (0): 1',
+                path: ['definitions', 'Pet', 'properties', 'fake', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('maximum (exclusive)', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.definitions.Pet.properties.fake = {
+            type: 'integer',
+            maximum: 1,
+            default: 1,
+            exclusiveMaximum: true
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'MAXIMUM_EXCLUSIVE',
+                message: 'Greater than or equal to the configured maximum (1): 1',
+                path: ['definitions', 'Pet', 'properties', 'fake', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('maxItems', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.definitions.Pet.properties.fake = {
+            type: 'array',
+            items: {
+              type: 'string'
+            },
+            maxItems: 1,
+            default: ['A', 'B']
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'ARRAY_LENGTH_LONG',
+                message: 'Array is too long (2), maximum 1',
+                path: ['definitions', 'Pet', 'properties', 'fake', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('maxLength', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.definitions.Pet.properties.fake = {
+            type: 'string',
+            maxLength: 3,
+            default: 'fake'
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'MAX_LENGTH',
+                message: 'String is too long (4 chars), maximum 3',
+                path: ['definitions', 'Pet', 'properties', 'fake', 'default']
+              }
+              ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('maxProperties', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.definitions.Pet.properties.fake = {
+            type: 'object',
+            maxProperties: 1,
+            default: {
+              a: 'a',
+              b: 'b'
+            }
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'MAX_PROPERTIES',
+                message: 'Number of properties is too many (2 properties), maximum 1',
+                path: ['definitions', 'Pet', 'properties', 'fake', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('minimum', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.definitions.Pet.properties.fake = {
+            type: 'integer',
+            minimum: 1,
+            default: 0
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'MINIMUM',
+                message: 'Less than the configured minimum (1): 0',
+                path: ['definitions', 'Pet', 'properties', 'fake', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('minItems', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.definitions.Pet.properties.fake = {
+            type: 'array',
+            items: {
+              type: 'string'
+            },
+            minItems: 2,
+            default: ['A']
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'ARRAY_LENGTH_SHORT',
+                message: 'Array is too short (1), minimum 2',
+                path: ['definitions', 'Pet', 'properties', 'fake', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('minLength', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.definitions.Pet.properties.fake = {
+            type: 'string',
+            minLength: 5,
+            default: 'fake'
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'MIN_LENGTH',
+                message: 'String is too short (4 chars), minimum 5',
+                path: ['definitions', 'Pet', 'properties', 'fake', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('minProperties', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.definitions.Pet.properties.fake = {
+            type: 'object',
+            minProperties: 2,
+            default: {
+              a: 'a'
+            }
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'MIN_PROPERTIES',
+                message: 'Number of properties is too few (1 properties), minimum 2',
+                path: ['definitions', 'Pet', 'properties', 'fake', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('multipleOf', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.definitions.Pet.properties.fake = {
+            type: 'integer',
+            multipleOf: 3,
+            default: 5
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'MULTIPLE_OF',
+                message: 'Not a multiple of 3',
+                path: ['definitions', 'Pet', 'properties', 'fake', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('pattern', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.definitions.Pet.properties.fake = {
+            type: 'string',
+            pattern: '^#.*',
+            default: 'fake'
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'PATTERN',
+                message: 'Does not match required pattern: ^#.*',
+                path: ['definitions', 'Pet', 'properties', 'fake', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+      });
+
+      it('unused parameter', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.parameters = {
+          fake: {
+            name: 'fake',
+            type: 'string',
+            in: 'path'
+          }
+        };
+
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.equal(result.errors.length, 0);
+          assert.deepEqual(result.warnings, [
+            {
+              code: 'UNUSED_PARAMETER',
+              message: 'Parameter is defined but is not used: #/parameters/fake',
+              path: ['parameters', 'fake']
+            }
+            ]);
+
+
+          done();
+        });
+      });
+
+      describe('parameter definition constraint validation', function () {
+        it('inline schema', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.parameters = {
+            fake: {
+              name: 'fake',
+              type: 'integer',
+              in: 'query',
+              default: 'fake'
+            }
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['parameters', 'fake', 'default']
+              }
+            ]);
+            assert.deepEqual(result.warnings, [
+              {
+                code: 'UNUSED_PARAMETER',
+                message: 'Parameter is defined but is not used: #/parameters/fake',
+                path: ['parameters', 'fake']
+              }
+            ]);
+
+            done();
+          });
+        });
+
+        it('schema object', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.parameters = {
+            fake: {
+              name: 'fake',
+              in: 'body',
+              schema: {
+                type: 'integer',
+                default: 'fake'
+              }
+            }
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['parameters', 'fake', 'schema', 'default']
+              }
+            ]);
+            assert.deepEqual(result.warnings, [
+              {
+                code: 'UNUSED_PARAMETER',
+                message: 'Parameter is defined but is not used: #/parameters/fake',
+                path: ['parameters', 'fake']
+              }
+            ]);
+
+            done();
+          });
+        });
+
+        it('schema reference', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.definitions.fake = {
+            type: 'integer',
+            default: 'fake'
+          };
+          swaggerObject.parameters = {
+            fake: {
+              name: 'fake',
+              in: 'body',
+              schema: {
+                $ref: '#/definitions/fake'
+              }
+            }
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['parameters', 'fake', 'schema', 'default']
+              },
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['definitions', 'fake', 'default']
+              }
+            ]);
+            assert.deepEqual(result.warnings, [
+              {
+                code: 'UNUSED_PARAMETER',
+                message: 'Parameter is defined but is not used: #/parameters/fake',
+                path: ['parameters', 'fake']
+              }
+            ]);
+
+            done();
+          });
+        });
+
+        // Testing all other constraints is unnecessary since the same code that validates them is tested above
+      });
+
+      describe('operation parameter constraint validation', function () {
+        it('inline schema', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.paths['/pets'].post.parameters.push({
+            name: 'fake',
+            type: 'integer',
+            in: 'query',
+            default: 'fake'
+          });
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['paths', '/pets', 'post', 'parameters', '1', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('schema object', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.paths['/pets'].post.parameters.push({
+            name: 'fake',
+            in: 'body',
+            schema: {
+              type: 'integer',
+              default: 'fake'
+            }
+          });
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['paths', '/pets', 'post', 'parameters', '1', 'schema', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('inline reference', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.parameters = {
+            fake: {
+              name: 'fake',
+              in: 'query',
+              type: 'integer',
+              default: 'fake'
+            }
+          };
+          swaggerObject.paths['/pets'].post.parameters.push({
+            $ref: '#/parameters/fake'
+          });
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['parameters', 'fake', 'default']
+              },
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['paths', '/pets', 'post', 'parameters', '1', 'default']
+              }
+              ]);
+              assert.equal(result.warnings.length, 0);
+
+              done();
+            });
+          });
+
+        it('schema reference', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.definitions.fake = {
+            type: 'integer',
+            default: 'fake'
+          };
+          swaggerObject.paths['/pets'].post.parameters.push({
+            name: 'fake',
+            in: 'body',
+            schema: {
+              $ref: '#/definitions/fake'
+            }
+          });
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['definitions', 'fake', 'default']
+              },
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['paths', '/pets', 'post', 'parameters', '1', 'schema', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        // Testing all other constraints is unnecessary since the same code that validates them is tested above
+      });
+
+      describe('operation response constraint validation', function () {
+        it('schema object', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.paths['/pets'].get.responses['201'] = {
+            description: 'Fake response',
+            schema: {
+              type: 'integer',
+              default: 'fake'
+            }
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['paths', '/pets', 'get', 'responses', '201', 'schema', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('schema reference', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.definitions.fake = {
+            type: 'integer',
+            default: 'fake'
+          };
+          swaggerObject.paths['/pets'].get.responses['201'] = {
+            description: 'Fake response',
+            schema: {
+              $ref: '#/definitions/fake'
+            }
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['definitions', 'fake', 'default']
+              },
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['paths', '/pets', 'get', 'responses', '201', 'schema', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        // Testing all other constraints is unnecessary since the same code that validates them is tested above
+      });
+
+      describe('path parameter constraint validation', function () {
+        it('inline schema', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.paths['/pets'].parameters = [
+            {
+              name: 'fake',
+              type: 'integer',
+              in: 'query',
+              default: 'fake'
+            }
+          ];
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            // Since this is a path level parameter, all operations will get the same error
+            assert.deepEqual(result.errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['paths', '/pets', 'parameters', '0', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('schema object', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.paths['/pets'].parameters = [
+            {
+              name: 'fake',
+              in: 'body',
+              schema: {
+                type: 'integer',
+                default: 'fake'
+              }
+            }
+          ];
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            // Since this is a path level parameter, all operations will get the same error
+            assert.deepEqual(result.errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['paths', '/pets', 'parameters', '0', 'schema', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('inline reference', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.parameters = {
+            fake: {
+              name: 'fake',
+              in: 'query',
+              type: 'integer',
+              default: 'fake'
+            }
+          };
+          swaggerObject.paths['/pets'].parameters = [
+            {
+              $ref: '#/parameters/fake'
+            }
+          ];
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            // Since this is a path level parameter, all operations will get the same error
+            assert.deepEqual(result.errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['parameters', 'fake', 'default']
+              },
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['paths', '/pets', 'parameters', '0', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('schema reference', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.definitions.fake = {
+            type: 'integer',
+            default: 'fake'
+          };
+          swaggerObject.paths['/pets'].parameters = [
+            {
+              name: 'fake',
+              in: 'body',
+              schema: {
+                $ref: '#/definitions/fake'
+              }
+            }
+          ];
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            // Since this is a path level parameter, all operations will get the same error
+            assert.deepEqual(result.errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['definitions', 'fake', 'default']
+              },
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['paths', '/pets', 'parameters', '0', 'schema', 'default']
+              }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
+        // Testing all other constraints is unnecessary since the same code that validates them is tested above
+      });
+
+      it('unused response', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.responses = {
+          fake: {
+            description: 'Fake response',
+            schema: {
+              type: 'string'
+            }
+          }
+        };
+
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.equal(result.errors.length, 0);
+          assert.deepEqual(result.warnings, [
+            {
+              code: 'UNUSED_RESPONSE',
+              message: 'Response is defined but is not used: #/responses/fake',
+              path: ['responses', 'fake']
+            }
+          ]);
+
+          done();
+        });
+      });
+
+      describe('response definition constraint validation', function () {
+        it('schema object', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.responses = {
+            fake: {
+              description: 'Fake response',
+              schema: {
+                type: 'integer',
+                default: 'fake'
+              }
+            }
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['responses', 'fake', 'schema', 'default']
+              }
+            ]);
+            assert.deepEqual(result.warnings, [
+              {
+                code: 'UNUSED_RESPONSE',
+                message: 'Response is defined but is not used: #/responses/fake',
+                path: ['responses', 'fake']
+              }
+            ]);
+
+            done();
+          });
+        });
+
+        it('schema reference', function (done) {
+          var swaggerObject = _.cloneDeep(petStoreJson);
+
+          swaggerObject.definitions.fake = {
+            type: 'integer',
+            default: 'fake'
+          };
+          swaggerObject.responses = {
+            fake: {
+              description: 'Fake response',
+              schema: {
+                $ref: '#/definitions/fake'
+              }
+            }
+          };
+
+          spec.validate(swaggerObject, function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['responses', 'fake', 'schema', 'default']
+              },
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['definitions', 'fake', 'default']
+              }
+            ]);
+            assert.deepEqual(result.warnings, [
+              {
+                code: 'UNUSED_RESPONSE',
+                message: 'Response is defined but is not used: #/responses/fake',
+                path: ['responses', 'fake']
+              }
+            ]);
+
+            done();
+          });
+        });
+
+        // Testing all other constraints is unnecessary since the same code that validates them is tested above
+      });
+
+      // TODO: Validate duplicate authorization scope reference (API Declaration)
+      //  Not possible due to https://github.com/swagger-api/swagger-spec/issues/159
+
+      it('duplicate security definition reference (global)', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.security = [
+          {
+            oauth2: ['write']
+          },
+          {
+            oauth2: ['read']
+          }
+        ];
+
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.warnings, [
+            {
+              code: 'DUPLICATE_SECURITY_DEFINITION_REFERENCE',
+              message: 'Security definition reference already defined: oauth2',
+              path: ['security', '1', 'oauth2']
+            }
+          ]);
+          assert.equal(result.errors.length, 0);
+
+          done();
+        });
+      });
+
+      it('duplicate security definition reference (operation)', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.paths['/pets'].get.security = [
+          {
+            oauth2: ['write']
+          },
+          {
+            oauth2: ['read']
+          }
+        ];
+
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.warnings, [
+            {
+              code: 'DUPLICATE_SECURITY_DEFINITION_REFERENCE',
+              message: 'Security definition reference already defined: oauth2',
+              path: ['paths', '/pets', 'get', 'security', '1', 'oauth2']
+            }
+          ]);
+          assert.equal(result.errors.length, 0);
+
+          done();
+        });
+      });
+
+      it('unresolvable security definition (global)', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.security = [
+          {
+            oauth3: ['write']
+          }
+        ];
+
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'UNRESOLVABLE_SECURITY_DEFINITION',
+              message: 'Security definition could not be resolved: #/securityDefinitions/oauth3',
+              path: ['security', '0', 'oauth3']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
+      });
+
+      it('unresolvable security definition (operation)', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.paths['/pets'].get.security = [
+          {
+            oauth3: ['write']
+          }
+        ];
+
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'UNRESOLVABLE_SECURITY_DEFINITION',
+              message: 'Security definition could not be resolved: #/securityDefinitions/oauth3',
+              path: ['paths', '/pets', 'get', 'security', '0', 'oauth3']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
+      });
+
+      it('unresolvable security definition scope (global)', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.security = [
+          {
+            oauth2: ['fake']
+          }
+        ];
+
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'UNRESOLVABLE_SECURITY_DEFINITION_SCOPE',
+              message: 'Security definition scope could not be resolved: #/securityDefinitions/oauth2/scopes/fake',
+              path: ['security', '0', 'oauth2', '0']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
+      });
+
+      it('unresolvable security definition scope (operation)', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.paths['/pets'].get.security = [
+          {
+            oauth2: ['fake']
+          }
+        ];
+
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'UNRESOLVABLE_SECURITY_DEFINITION_SCOPE',
+              message: 'Security definition scope could not be resolved: #/securityDefinitions/oauth2/scopes/fake',
+              path: ['paths', '/pets', 'get', 'security', '0', 'oauth2', '0']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
+      });
+
+      it('unused security definition', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.securityDefinitions.internalApiKey = {
+          type: 'apiKey',
+          in: 'header',
+          name: 'api_key'
+        };
+
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.warnings, [
+            {
+              code: 'UNUSED_SECURITY_DEFINITION',
+              message: 'Security definition is defined but is not used: #/securityDefinitions/internalApiKey',
+              path: ['securityDefinitions', 'internalApiKey']
+            }
+          ]);
+          assert.equal(result.errors.length, 0);
+
+          done();
+        });
+      });
+
+      it('unused security definition scope', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.securityDefinitions.oauth2.scopes.fake = 'Fake security scope';
+
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.warnings, [
+            {
+              code: 'UNUSED_SECURITY_DEFINITION_SCOPE',
+              message: 'Security definition scope is defined but is not used: #/securityDefinitions/oauth2/scopes/fake',
+              path: ['securityDefinitions', 'oauth2', 'scopes', 'fake']
+            }
+          ]);
+          assert.equal(result.errors.length, 0);
+
+          done();
+        });
+      });
+
+      // TODO: Add parameter constraint validations
+      // TODO: Add model constraint validations
+      // TODO: Test with $ref and schema where applicable
     });
   });
 
-  describe('#composeModel', function () {
+  describe('#composeSchema', function () {
     it('should fail when passed the wrong arguments', function () {
       var swaggerObject = _.cloneDeep(petStoreJson);
       var errors = {
         'swaggerObject is required': [],
         'swaggerObject must be an object': ['wrongType'],
-        'modelIdOrPath is required': [swaggerObject]
+        'modelRef is required': [swaggerObject],
+        'callback is required': [swaggerObject, '#/definitions/Pet'],
+        'callback must be a function': [swaggerObject, '#/definitions/Pet', 'wrongType'],
+        'modelRef must be a JSON Pointer': [swaggerObject, 'Pet', function() {}, 'wrongType']
       };
 
       _.each(errors, function (args, message) {
         try {
-          spec.composeModel.apply(spec, args);
+          spec.composeSchema.apply(spec, args);
         } catch (err) {
           assert.equal(message, err.message);
         }
       });
     });
 
-    it('should return undefined for unresolvable model', function () {
-      assert.ok(_.isUndefined(spec.composeModel(_.cloneDeep(petStoreJson), 'Liger')));
+    it('should return undefined for unresolvable model', function (done) {
+      spec.composeSchema(_.cloneDeep(petStoreJson), '#/definitions/Liger', function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.ok(_.isUndefined(result));
+
+        done();
+      });
     });
 
-    it('should throw an Error for an API Declaration that has invalid models', function () {
+    it('should throw an Error for an API Declaration that has invalid models', function (done) {
       var swaggerObject = _.cloneDeep(petStoreJson);
 
       swaggerObject.definitions.Person = {
         allOf: [
           {
-            $ref: 'Pet'
+            $ref: '#/definitions/Pet'
           }
         ],
         properties: {
@@ -530,25 +2010,29 @@ describe('Specification v2.0', function () {
 
       swaggerObject.paths['/pets'].get.responses.default.schema.$ref = '#/definitions/Person';
 
-      try {
-        spec.composeModel(swaggerObject, 'Pet');
-        assert.fail(null, null, 'Should had failed above');
-      } catch (err) {
-        assert.equal('The models are invalid and model composition is not possible', err.message);
+      spec.composeSchema(swaggerObject, '#/definitions/Pet', function (err, result) {
+        assert.ok(_.isUndefined(result));
+
+        assert.equal('The Swagger document is invalid and model composition is not possible', err.message);
         assert.equal(1, err.errors.length);
         assert.equal(0, err.warnings.length);
         assert.deepEqual({
-          code: 'CHILD_MODEL_REDECLARES_PROPERTY',
-          message: 'Child model declares property already declared by ancestor: name',
-          data: swaggerObject.definitions.Person.properties.name,
+          code: 'CHILD_DEFINITION_REDECLARES_PROPERTY',
+          message: 'Child definition declares property already declared by ancestor: name',
           path: ['definitions', 'Person', 'properties', 'name']
         }, err.errors[0]);
-      }
+
+        done();
+      });
     });
 
-    it('should return a valid composed model', function () {
+    it('should return a valid composed model', function (done) {
       var swaggerObject = _.cloneDeep(petStoreJson);
-      var cPet = _.cloneDeep(swaggerObject.definitions.Pet);
+      var ePet = _.cloneDeep(swaggerObject.definitions.Pet);
+      var eResults = [];
+      var eCompany;
+      var eEmployee;
+      var ePerson;
 
       swaggerObject.definitions.Person = {
         properties: {
@@ -566,7 +2050,7 @@ describe('Specification v2.0', function () {
       swaggerObject.definitions.Employee = {
         allOf: [
           {
-            $ref: 'Person'
+            $ref: '#/definitions/Person'
           }
         ],
         properties: {
@@ -588,81 +2072,99 @@ describe('Specification v2.0', function () {
           employees: {
             type: 'array',
             items: {
-              $ref: 'Employee'
+              $ref: '#/definitions/Employee'
             }
           }
         }
       };
 
-      // Add a reference so an error isn't thrown for a missing reference
-      swaggerObject.paths['/pets'].get.responses.default.schema.$ref = 'Person';
+      // Create expected Employee
+      eEmployee = _.cloneDeep(swaggerObject.definitions.Employee);
 
-      assert.deepEqual(spec.composeModel(swaggerObject, 'Employee'), {
-        title: 'Composed #/definitions/Employee',
-        type: 'object',
-        properties: _.merge(_.cloneDeep(swaggerObject.definitions.Person.properties),
-                            _.cloneDeep(swaggerObject.definitions.Employee.properties)),
-        required: _.uniq([].concat(swaggerObject.definitions.Person.required,
-                                   swaggerObject.definitions.Employee.required))
-      });
+      eEmployee.title = 'Composed #/definitions/Employee';
+      eEmployee.type = 'object';
+      eEmployee.allOf = [
+      _.cloneDeep(swaggerObject.definitions.Person)
+      ];
 
-      assert.deepEqual(spec.composeModel(swaggerObject, 'Person'), {
-        title: 'Composed #/definitions/Person',
-        type: 'object',
-        properties: swaggerObject.definitions.Person.properties,
-        required: swaggerObject.definitions.Person.required
-      });
+      delete eEmployee.id;
+      delete eEmployee.allOf[0].id;
+      delete eEmployee.allOf[0].subTypes;
 
-      assert.deepEqual(spec.composeModel(swaggerObject, 'Company'), {
-        title: 'Composed #/definitions/Company',
-        type: 'object',
-        properties: {
-          name: {
-            type: 'string'
-          },
-          employees: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: _.merge(_.cloneDeep(swaggerObject.definitions.Person.properties),
-                                  _.cloneDeep(swaggerObject.definitions.Employee.properties)),
-              required: _.uniq([].concat(swaggerObject.definitions.Person.required,
-                                         swaggerObject.definitions.Employee.required))
-            }
-          }
-        }
-      });
+      // Create expected Person
+      ePerson = _.cloneDeep(swaggerObject.definitions.Person);
 
-      // Prepare our Pet for comparison
+      ePerson.title = 'Composed #/definitions/Person';
+      ePerson.type = 'object';
 
-      delete cPet.id;
+      delete ePerson.id;
+      delete ePerson.subTypes;
 
-      cPet.title = 'Composed #/definitions/Pet';
-      cPet.type = 'object';
-      cPet.properties.category = {
-        properties: swaggerObject.definitions.Category.properties,
-        type: 'object'
+      // Create expected Company
+      eCompany = _.cloneDeep(swaggerObject.definitions.Company);
+
+      eCompany.title = 'Composed #/definitions/Company';
+      eCompany.type = 'object';
+      eCompany.properties.employees.items = {
+        allOf: [
+        _.cloneDeep(swaggerObject.definitions.Person)
+        ],
+        properties: _.cloneDeep(swaggerObject.definitions.Employee.properties),
+        required: _.cloneDeep(swaggerObject.definitions.Employee.required)
       };
-      cPet.properties.tags = {
+
+      delete eCompany.id;
+      delete eCompany.properties.employees.items.allOf[0].id;
+      delete eCompany.properties.employees.items.allOf[0].subTypes;
+
+      // Create expected Pet
+      ePet.title = 'Composed #/definitions/Pet';
+      ePet.type = 'object';
+      ePet.properties.category = _.cloneDeep(swaggerObject.definitions.Category);
+      ePet.properties.id.maximum = 100;
+      ePet.properties.id.minimum = 0;
+      ePet.properties.tags = {
         items: {
-          properties: swaggerObject.definitions.Tag.properties,
-          type: 'object'
+          properties: _.cloneDeep(swaggerObject.definitions.Tag.properties)
         },
         type: 'array'
       };
 
-      assert.deepEqual(spec.composeModel(swaggerObject, 'Pet'), cPet);
+      delete ePet.id;
+      delete ePet.properties.category.id;
+
+      // Collect our expected results
+      eResults.push(eEmployee);
+      eResults.push(ePerson);
+      eResults.push(eCompany);
+      eResults.push(ePet);
+
+      async.map(['Employee', 'Person', 'Company', 'Pet'], function (modelId, callback) {
+        spec.composeSchema(swaggerObject, '#/definitions/' + modelId, function (err, results) {
+          callback(err, results);
+        });
+      }, function (err, results) {
+        if (err) {
+          throw err;
+        }
+
+        _.each(results, function (result, index) {
+          assert.deepEqual(eResults[index], result);
+        });
+
+        done();
+      });
     });
   });
 
   describe('#validateModel', function () {
-    it('should throw an Error for an API Declaration that has invalid models', function () {
+    it('should throw an Error for an API Declaration that has invalid models', function (done) {
       var swaggerObject = _.cloneDeep(petStoreJson);
 
       swaggerObject.definitions.Person = {
         allOf: [
           {
-            $ref: 'Pet'
+            $ref: '#/definitions/Pet'
           }
         ],
         properties: {
@@ -677,45 +2179,59 @@ describe('Specification v2.0', function () {
 
       swaggerObject.paths['/pets'].get.responses.default.schema.$ref = '#/definitions/Person';
 
-      try {
-        spec.composeModel(swaggerObject, 'Pet');
-        assert.fail(null, null, 'Should had failed above');
-      } catch (err) {
-        assert.equal('The models are invalid and model composition is not possible', err.message);
+      spec.composeSchema(swaggerObject, '#/definitions/Pet', function (err, result) {
+        assert.ok(_.isUndefined(result));
+
+        assert.equal('The Swagger document is invalid and model composition is not possible', err.message);
         assert.equal(1, err.errors.length);
         assert.equal(0, err.warnings.length);
         assert.deepEqual({
-          code: 'CHILD_MODEL_REDECLARES_PROPERTY',
-          message: 'Child model declares property already declared by ancestor: name',
-          data: swaggerObject.definitions.Person.properties.name,
+          code: 'CHILD_DEFINITION_REDECLARES_PROPERTY',
+          message: 'Child definition declares property already declared by ancestor: name',
           path: ['definitions', 'Person', 'properties', 'name']
         }, err.errors[0]);
-      }
-    });
 
-    it('should return errors/warnings for invalid model', function () {
-      var swaggerObject = _.cloneDeep(petStoreJson);
-      var result = spec.validateModel(swaggerObject, 'Pet', {
-        id: 1
+        done();
       });
-
-      assert.deepEqual(result.errors, [
-        {
-          code: 'VALIDATION_OBJECT_REQUIRED',
-          message: 'Missing required property: name',
-          path: ['name']
-        }
-      ]);
     });
 
-    it('should return undefined for valid model', function () {
+    it('should return errors/warnings for invalid model', function (done) {
       var swaggerObject = _.cloneDeep(petStoreJson);
-      var result = spec.validateModel(swaggerObject, 'Pet', {
+
+      spec.validateModel(swaggerObject, '#/definitions/Pet', {
+        id: 1
+      }, function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
+            message: 'Missing required property: name',
+            path: []
+          }
+        ]);
+
+        done();
+      });
+    });
+
+    it('should return undefined for valid model', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      spec.validateModel(swaggerObject, '#/definitions/Pet', {
         id: 1,
         name: 'Jeremy'
-      });
+      }, function (err, result) {
+        if (err) {
+          throw err;
+        }
 
-      assert.ok(_.isUndefined(result));
+        assert.ok(_.isUndefined(result));
+
+        done();
+      });
     });
   });
 });

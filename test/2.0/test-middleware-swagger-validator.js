@@ -30,138 +30,127 @@
 process.env.NODE_ENV = 'test';
 
 var _ = require('lodash');
-var assert = require('assert');
+var async = require('async');
 var helpers = require('../helpers');
-var middleware = require('../../').middleware.v2_0.swaggerValidator; // jshint ignore:line
-var petStoreJson = require('../../samples/2.0/petstore.json');
 var request = require('supertest');
 
-var createServer = helpers.createServer;
+var petStoreJson = require('../../samples/2.0/petstore.json');
 
 describe('Swagger Validator Middleware v2.0', function () {
-  it('should return a function when passed the right arguments', function () {
-    try {
-      assert.ok(_.isFunction(middleware()));
-    } catch (err) {
-      assert.fail(null, null, err.message);
-    }
-  });
-
-  it('should not validate request when there are no operations', function () {
-    request(createServer([petStoreJson], [middleware()]))
+  it('should not validate request when there are no operations', function (done) {
+    helpers.createServer([petStoreJson], {}, function (app) {
+      request(app)
       .get('/api/foo')
       .expect(200)
-      .end(helpers.expectContent('OK'));
+      .end(helpers.expectContent('OK', done));
+    });
   });
 
-  it('should return an error for invalid request content type based on POST/PUT operation consumes', function () {
+  it('should return an error for invalid request content type based on POST/PUT operation consumes', function (done) {
     var swaggerObject = _.cloneDeep(petStoreJson);
 
-    swaggerObject.paths['/pets'].post.consumes = ['application/json'];
+    swaggerObject.paths['/pets'].post.consumes = ['application/xml'];
 
-    request(createServer([swaggerObject], [middleware()]))
+    helpers.createServer([swaggerObject], {}, function (app) {
+      request(app)
+        .post('/api/pets')
+        .send({
+          id: 1,
+          name: 'Fake Pet'
+        })
+        .expect(400)
+        .end(helpers.expectContent('Invalid content type (application/json).  These are valid: ' +
+                                     'application/xml', done));
+    });
+  });
+
+  it('should not return an error for invalid request content type for non-POST/PUT', function (done) {
+    var swaggerObject = _.cloneDeep(petStoreJson);
+
+    swaggerObject.paths['/pets'].get.consumes = ['application/xml'];
+
+    helpers.createServer([swaggerObject], {}, function (app) {
+      request(app)
+        .get('/api/pets')
+        .expect(200)
+        .end(helpers.expectContent('OK', done));
+    });
+  });
+
+  it('should not return an error for valid request content type', function (done) {
+    var swaggerObject = _.cloneDeep(petStoreJson);
+
+    swaggerObject.paths['/pets'].post.consumes = ['application/xml', 'application/json'];
+
+    helpers.createServer([swaggerObject], {}, function (app) {
+      request(app)
       .post('/api/pets')
-      .expect(400)
-      .end(helpers.expectContent('Invalid content type (application/octet-stream).  These are valid: ' +
-                                   'application/json'));
-  });
-
-  it('should not return an error for invalid request content type for non-POST/PUT', function () {
-    var swaggerObject = _.cloneDeep(petStoreJson);
-
-    swaggerObject.consumes = ['application/json'];
-
-    request(createServer([swaggerObject]))
-      .get('/api/pets')
+      .send({
+        id: 1,
+        name: 'Fake Pet'
+      })
       .expect(200)
-      .end(helpers.expectContent('OK'));
+      .end(helpers.expectContent('OK', done));
+    });
   });
 
-  it('should not return an error for valid request content type', function () {
+  it('should not return an error for valid request content type with charset', function (done) {
     var swaggerObject = _.cloneDeep(petStoreJson);
 
-    swaggerObject.consumes = ['application/json'];
+    swaggerObject.paths['/pets'].post.consumes = ['application/xml', 'application/json'];
 
-    request(createServer([swaggerObject], [middleware()]))
-      .post('/api/pets/1')
-      .set('Content-Type', 'application/json')
-      .send({})
-      .expect(200)
-      .end(helpers.expectContent('OK'));
-  });
-
-  it('should not return an error for valid request content type with charset', function () {
-    var swaggerObject = _.cloneDeep(petStoreJson);
-
-    swaggerObject.consumes = ['application/json'];
-
-    request(createServer([swaggerObject], [middleware()]))
-      .post('/api/pets/1')
+    helpers.createServer([swaggerObject], {}, function (app) {
+      request(app)
+      .post('/api/pets')
+      .send({
+        id: 1,
+        name: 'Fake Pet'
+      })
       .set('Content-Type', 'application/json; charset=utf-8')
-      .send({})
       .expect(200)
-      .end(helpers.expectContent('OK'));
+      .end(helpers.expectContent('OK', done));
+    });
   });
 
-  it('should return an error for missing required parameters', function () {
+  it('should return an error for missing required parameters', function (done) {
     var swaggerObject = _.cloneDeep(petStoreJson);
 
-    swaggerObject.paths['/pets/{id}'].get.parameters = [
-      {
-        name: 'mock',
-        in: 'query',
-        description: 'Whether or not to use mock mode',
-        required: true,
-        type: 'boolean'
-      }
-    ];
+    swaggerObject.paths['/pets'].get.parameters[0].required = true;
 
-    request(createServer([swaggerObject], [middleware()]))
-      .get('/api/pets/1')
-      .expect(400)
-      .end(helpers.expectContent('Parameter (mock) is required'));
+    helpers.createServer([swaggerObject], {}, function (app) {
+      request(app)
+        .get('/api/pets')
+        .expect(400)
+        .end(helpers.expectContent('Parameter (status) is required', done));
+    });
   });
 
-  it('should not return an error for missing required parameters with defaultValue', function () {
+  it('should not return an error for missing required parameters with a default value', function (done) {
     var swaggerObject = _.cloneDeep(petStoreJson);
 
-    swaggerObject.paths['/pets/{id}'].get.parameters = [
-      {
-        name: 'mock',
-        in: 'query',
-        description: 'Whether or not to use mock mode',
-        required: true,
-        schema: {
-          type: 'boolean',
-          default: 'true'
-        }
-      }
-    ];
+    swaggerObject.paths['/pets'].get.parameters[0].default = true;
+    swaggerObject.paths['/pets'].get.parameters[0].required = true;
 
-    request(createServer([swaggerObject], [middleware()]))
-      .get('/api/pet/1')
-      .expect(200)
-      .end(helpers.expectContent('OK'));
+    helpers.createServer([swaggerObject], {}, function (app) {
+      request(app)
+        .get('/api/pets')
+        .expect(200)
+        .end(helpers.expectContent('OK', done));
+    });
   });
 
-  it('should not return an error for provided required parameters', function () {
+  it('should not return an error for provided required parameters', function (done) {
     var swaggerObject = _.cloneDeep(petStoreJson);
 
-    swaggerObject.paths['/pets/{id}'].get.parameters = [
-      {
-        name: 'mock',
-        in: 'query',
-        description: 'Whether or not to use mock mode',
-        required: true,
-        type: 'boolean'
-      }
-    ];
+    swaggerObject.paths['/pets'].get.parameters[0].required = true;
 
-    request(createServer([swaggerObject], [middleware()]))
-      .get('/api/pets/1')
+    helpers.createServer([swaggerObject], {}, function (app) {
+      request(app)
+      .get('/api/pets')
+      .query({status: 'waiting'})
       .expect(200)
-      .query({mock: 'true'})
-      .end(helpers.expectContent('OK'));
+      .end(helpers.expectContent('OK', done));
+    });
   });
 
   it('should return an error for invalid parameter values based on type/format', function () {
@@ -176,64 +165,40 @@ describe('Swagger Validator Middleware v2.0', function () {
       {in: 'query', name: argName, type: 'array', items: {type: 'integer'}}
     ];
 
-    _.each(testScenarios, function (scenario) {
-      _.times(2, function (n) {
-        var swaggerObject = _.cloneDeep(petStoreJson);
-        var clonedS = _.cloneDeep(scenario);
-        var content = {};
-        var app;
-        var expectedMessage;
-        var r;
+    async.map(testScenarios, function (scenario, callback) {
+      var cPetStore = _.cloneDeep(petStoreJson);
+      var cScenario = _.cloneDeep(scenario);
+      var content = {arg0: scenario.type === 'array' ? [1, 'fake'] : badValue};
+      var expectedMessage;
 
-        // We don't test default value with arrays
-        if (n === 0) {
-          content = {arg0: scenario.type === 'array' ? [1, 'fake'] : badValue};
-        } else if (n === 1) {
-          if (scenario.type === 'array') {
-            return;
-          } else {
-            // We have to put this into the 'schema' object
-            delete clonedS.format;
-            delete clonedS.type;
+      cPetStore.paths['/pets/{id}'].get.parameters = [cScenario];
 
-            clonedS.schema = {
-              default: badValue
-            };
+      if (scenario.type === 'array') {
+        expectedMessage = 'Parameter (' + argName + ') at index 1 is not a valid integer: fake';
+      } else {
+        expectedMessage = 'Parameter (' + scenario.name + ') is not a valid ' +
+                            (_.isUndefined(scenario.format) ?
+                               '' :
+                               scenario.format + ' ') + scenario.type + ': ' + badValue;
+      }
 
-            if (scenario.format) {
-              clonedS.schema.format = scenario.format;
-            }
-
-            if (scenario.type) {
-              clonedS.schema.type = scenario.type;
-            }
-          }
-        }
-
-        swaggerObject.paths['/pets/{id}'].get.parameters = [
-          clonedS
-        ];
-
-        app = createServer([swaggerObject], [middleware()]);
-        r = request(app)
+      helpers.createServer([cPetStore], {}, function (app) {
+        request(app)
           .get('/api/pets/1')
           .query(content)
-          .expect(400);
+          .expect(400)
+          .end(function (err, res) {
+            if (res) {
+              res.expectedMessage = expectedMessage;
+            }
 
-        if (scenario.type === 'array') {
-          expectedMessage = 'Parameter (' + argName + ') at index 1 is not a valid integer: fake';
-        } else {
-          expectedMessage = 'Parameter (' + scenario.name + ') is not a valid ' +
-                       (_.isUndefined(scenario.format) ? '' : scenario.format + ' ') + scenario.type + ': ' +
-                       badValue;
-        }
-
-        r.end(helpers.expectContent(expectedMessage));
+            callback(err, res);
+          });
       });
     });
   });
 
-  it('should not return an error for valid parameter values based on type/format', function () {
+  it('should not return an error for valid parameter values based on type/format', function (done) {
     var argName = 'arg0';
     var testScenarios = [
       {in: 'query', name: argName, type: 'boolean'},
@@ -241,173 +206,211 @@ describe('Swagger Validator Middleware v2.0', function () {
       {in: 'query', name: argName, type: 'number'},
       {in: 'query', name: argName, type: 'string', format: 'date'},
       {in: 'query', name: argName, type: 'string', format: 'date-time'},
+      {in: 'query', name: argName, type: 'array', items: {type: 'integer'}}
     ];
     var values = [
-      'true',
-      '1',
-      '1.1',
+      true,
+      1,
+      1.1,
       '1981-03-12',
-      '1981-03-12T08:16:00-04:00'
+      '1981-03-12T08:16:00-04:00',
+      [1, 2]
     ];
+    var index = 0;
 
-    _.each(testScenarios, function (scenario, index) {
-      _.times(2, function (n) {
-        var swaggerObject = _.cloneDeep(petStoreJson);
-        var clonedS = _.cloneDeep(scenario);
-        var content = {};
-        var value = values[index];
+    async.map(testScenarios, function (scenario, callback) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+      var cScenario = _.cloneDeep(scenario);
 
-        if (n === 0) {
-          content = {arg0: value};
-        } else {
-          clonedS.schema = {
-            default: value,
-            type: scenario.type
-          };
+      cPetStoreJson.paths['/pets/{id}'].get.parameters = [cScenario];
 
-          delete clonedS.type;
-
-          if (clonedS.format) {
-            delete clonedS.format;
-
-            clonedS.format = scenario.format;
-          }
-        }
-
-        swaggerObject.paths['/pets/{id}'].get.parameters = [
-          clonedS
-        ];
-
-        request(createServer([swaggerObject], [middleware()]))
+      helpers.createServer([cPetStoreJson], {}, function (app) {
+        request(app)
           .get('/api/pets/1')
-          .query(content)
+          .query({arg0: values[index]})
           .expect(200)
-          .end(helpers.expectContent('OK'));
+          .end(function (err, res) {
+            if (err) {
+              throw err;
+            }
+
+            helpers.expectContent('OK')(undefined, res);
+
+            callback();
+          });
       });
+
+      index++;
+    }, function (err) {
+      if (err) {
+        throw err;
+      }
+
+      done();
     });
   });
 
-  it('should return an error for invalid parameter values not based on type/format', function () {
+  it('should return an error for invalid parameter values not based on type/format', function (done) {
     var argName = 'arg0';
     var testScenarios = [
-      {enum: ['1', '2', '3'], type: 'string'},
-      {maximum: '1.0', type: 'integer'},
-      {maximum: '1.0', exclusiveMaximum: true, type: 'integer'},
-      {maxItems: '1', type: 'array', items: {type: 'string'}},
-      {maxLength: '1', type: 'string'},
-      {minimum: '1.0', type: 'integer'},
-      {minimum: '1.0', exclusiveMinimum: true, type: 'integer'},
-      {minItems: '2', type: 'array', items: {type: 'string'}},
-      {minLength: '2', type: 'string'},
-      {pattern: '[bc]+', type: 'string'},
-      {type: 'array', items: {type: 'string'}, uniqueItems: true}
+      {name: argName, in: 'query', enum: ['1', '2', '3'], type: 'string'},
+      {name: argName, in: 'query', maximum: 1, type: 'integer'},
+      {name: argName, in: 'query', maximum: 1, exclusiveMaximum: true, type: 'integer'},
+      {name: argName, in: 'query', maxItems: 1, type: 'array', items: {type: 'string'}},
+      {name: argName, in: 'query', maxLength: 1, type: 'string'},
+      {name: argName, in: 'query', minimum: 1, type: 'integer'},
+      {name: argName, in: 'query', minimum: 1, exclusiveMinimum: true, type: 'integer'},
+      {name: argName, in: 'query', minItems: 2, type: 'array', items: {type: 'string'}},
+      {name: argName, in: 'query', minLength: 2, type: 'string'},
+      {name: argName, in: 'query', multipleOf: 3, type: 'integer'},
+      {name: argName, in: 'query', pattern: '[bc]+', type: 'string'},
+      {name: argName, in: 'query', type: 'array', items: {type: 'string'}, uniqueItems: true}
     ];
     var values = [
       'fake',
-      '2',
-      '1',
+      2,
+      1,
       ['1', '2'],
       'fake',
-      '0',
-      '1',
+      0,
+      1,
       ['1'],
       'f',
+      5,
       'fake',
       ['fake', 'fake']
     ];
     var errors = [
       'Parameter (' + argName + ') is not an allowable value (1, 2, 3): fake',
-      'Parameter (' + argName + ') is greater than the configured maximum (1.0): 2',
-      'Parameter (' + argName + ') is greater than or equal to the configured maximum (1.0): 1',
-      'Parameter (' + argName + ') contains more items than allowed: 1',
-      'Parameter (' + argName + ') is longer than allowed: 1',
-      'Parameter (' + argName + ') is less than the configured minimum (1.0): 0',
-      'Parameter (' + argName + ') is less than or equal to the configured minimum (1.0): 1',
-      'Parameter (' + argName + ') contains fewer items than allowed: 2',
-      'Parameter (' + argName + ') is shorter than allowed: 2',
+      'Parameter (' + argName + ') is greater than the configured maximum (1): 2',
+      'Parameter (' + argName + ') is greater than or equal to the configured maximum (1): 1',
+      'Parameter (' + argName + ') is too long (2), maximum 1',
+      'Parameter (' + argName + ') is too long (4 chars), maximum 1',
+      'Parameter (' + argName + ') is less than the configured minimum (1): 0',
+      'Parameter (' + argName + ') is less than or equal to the configured minimum (1): 1',
+      'Parameter (' + argName + ') is too short (1), minimum 2',
+      'Parameter (' + argName + ') is too short (1 chars), minimum 2',
+      'Parameter (' + argName + ') is not a multiple of 3',
       'Parameter (' + argName + ') does not match required pattern: [bc]+',
       'Parameter (' + argName + ') does not allow duplicate values: fake, fake'
     ];
+    var index = 0;
 
-    _.each(testScenarios, function (scenario, index) {
-      var swaggerObject = _.cloneDeep(petStoreJson);
+    async.map(testScenarios, function (scenario, callback) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+      var expectedMessage = errors[index];
+      var testValue = values[index];
 
-      swaggerObject.paths['/pets/{id}'].get.parameters = [
-        {in: 'query', name: argName, schema: scenario}
-      ];
+      cPetStoreJson.paths['/pets/{id}'].get.parameters = [scenario];
 
-      request(createServer([swaggerObject], [middleware()]))
-        .get('/api/pets/1')
-        .query({arg0: values[index]})
-        .expect(400)
-        .end(helpers.expectContent(errors[index]));
+      helpers.createServer([cPetStoreJson], {}, function (app) {
+        request(app)
+          .get('/api/pets/1')
+          .query({
+            arg0: testValue
+          })
+          .expect(400)
+          .end(function (err, res) {
+            if (res) {
+              res.expectedMessage = expectedMessage;
+            }
+
+            callback(err, res);
+          });
+      });
+
+      index++;
+    }, function (err, responses) {
+      if (err) {
+        throw err;
+      }
+
+      _.each(responses, function (res) {
+        helpers.expectContent(res.expectedMessage)(undefined, res);
+      });
+
+      done();
     });
   });
 
-  it('should not return an error for valid parameter values not based on type/format', function () {
+  it('should not return an error for valid parameter values not based on type/format', function (done) {
     var argName = 'arg0';
     var testScenarios = [
-      {enum: ['1', '2', '3'], type: 'string'},
-      {maximum: '1.0', type: 'integer'},
-      {maximum: '1.0', exclusiveMaximum: true, type: 'integer'},
-      {maxItems: '1', type: 'array', items: {type: 'string'}},
-      {maxLength: '1', type: 'string'},
-      {minimum: '1.0', type: 'integer'},
-      {minimum: '1.0', exclusiveMinimum: true, type: 'integer'},
-      {minItems: '2', type: 'array', items: {type: 'string'}},
-      {minLength: '2', type: 'string'},
-      {pattern: '[abc]+', type: 'string'},
-      {type: 'array', items: {type: 'string'}, uniqueItems: true}
+      {name: argName, in: 'query', enum: ['1', '2', '3'], type: 'string'},
+      {name: argName, in: 'query', maximum: 1, type: 'integer'},
+      {name: argName, in: 'query', maximum: 1, exclusiveMaximum: true, type: 'integer'},
+      {name: argName, in: 'query', maxItems: 1, type: 'array', items: {type: 'string'}},
+      {name: argName, in: 'query', maxLength: 5, type: 'string'},
+      {name: argName, in: 'query', minimum: 1, type: 'integer'},
+      {name: argName, in: 'query', minimum: 0, exclusiveMinimum: true, type: 'integer'},
+      {name: argName, in: 'query', minItems: 2, type: 'array', items: {type: 'string'}},
+      {name: argName, in: 'query', minLength: 2, type: 'string'},
+      {name: argName, in: 'query', multipleOf: 3, type: 'integer'},
+      {name: argName, in: 'query', pattern: '[abc]+', type: 'string'},
+      {name: argName, in: 'query', type: 'array', items: {type: 'string'}, uniqueItems: true}
     ];
     var values = [
-      '1',
-      '1',
-      '0',
+      '2',
+      1,
+      0,
       ['1'],
-      'a',
-      '2',
-      '2',
+      'fake',
+      1,
+      1,
       ['1', '2'],
       'fake',
+      9,
       'fake',
       ['fake', 'faker']
     ];
+    var index = 0;
 
-    _.each(testScenarios, function (scenario, index) {
-      var swaggerObject = _.cloneDeep(petStoreJson);
+    async.map(testScenarios, function (scenario, callback) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+      var testValue = values[index];
 
-      swaggerObject.paths['/pets/{id}'].get.parameters = [
-        {in: 'query', name: argName, schema: scenario}
-      ];
+      cPetStoreJson.paths['/pets/{id}'].get.parameters = [scenario];
 
-      request(createServer([swaggerObject], [middleware()]))
+      helpers.createServer([cPetStoreJson], {}, function (app) {
+        request(app)
         .get('/api/pets/1')
-        .query({arg0: values[index]})
+        .query({
+          arg0: testValue
+        })
         .expect(200)
-        .end(helpers.expectContent('OK'));
+        .end(helpers.expectContent('OK', callback));
+      });
+
+      index++;
+    }, function (err) {
+      if (err) {
+        throw err;
+      }
+
+      done();
     });
   });
 
-  it('should return an error for an invalid model parameter', function () {
-    var swaggerObject = _.cloneDeep(petStoreJson);
-
-    request(createServer([swaggerObject], [middleware()]))
-      .post('/api/pets')
-      .send({})
-      .expect(400)
-      .end(helpers.expectContent('Parameter (pet) is not a valid #/definitions/newPet model'));
+  it('should return an error for an invalid model parameter', function (done) {
+    helpers.createServer([petStoreJson], {}, function (app) {
+      request(app)
+        .post('/api/pets')
+        .send({})
+        .expect(400)
+        .end(helpers.expectContent('Parameter (pet) failed schema validation', done));
+    });
   });
 
-  it('should not return an error for a valid model parameter', function () {
-    var swaggerObject = _.cloneDeep(petStoreJson);
-
-    request(createServer([swaggerObject], [middleware()]))
-      .post('/api/pets')
-      .send({
-        id: 1,
-        name: 'Test Pet'
-      })
-      .expect(200)
-      .end(helpers.expectContent('OK'));
+  it('should not return an error for a valid model parameter', function (done) {
+    helpers.createServer([petStoreJson], {}, function (app) {
+      request(app)
+        .post('/api/pets')
+        .send({
+          id: 1,
+          name: 'Fake Pet'
+        })
+        .expect(200)
+        .end(helpers.expectContent('OK', done));
+    });
   });
 });

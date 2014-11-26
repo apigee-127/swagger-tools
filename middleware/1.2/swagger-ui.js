@@ -50,7 +50,6 @@ var staticOptions = {};
 exports = module.exports = function swaggerUIMiddleware (resourceList, resources, options) {
   var apiDocsCache = {}; // Swagger document endpoints cache
   var apiDocsPaths = [];
-  var rlApiPaths = [];
   var staticMiddleware = serveStatic(path.join(__dirname, '..', 'swagger-ui'), staticOptions);
   var apiDocsHandler = function apiDocsHandler (res, path) {
     res.setHeader('Content-Type', 'application/json');
@@ -82,24 +81,11 @@ exports = module.exports = function swaggerUIMiddleware (resourceList, resources
     options.swaggerUi = options.swaggerUi.substring(0, options.swaggerUi.length - 1);
   }
 
-  // Create the apiPaths list
-  _.each(resourceList.apis, function (api) {
-    if (rlApiPaths.indexOf(api.path) > -1) {
-      throw new Error('API path declared multiple times: ' + api.path);
-    }
-
-    rlApiPaths.push(api.path);
-  });
-
   // Add the Resource Listing to the response cache
   apiDocsCache[options.apiDocs] = JSON.stringify(resourceList, null, 2);
 
   // Add API Declarations to the response cache
   _.each(resources, function (resource, resourcePath) {
-    if (rlApiPaths.indexOf(resourcePath) === -1) {
-      throw new Error('resource path is not defined in the resource listing: ' + resourcePath);
-    }
-
     // Respond with pretty JSON (Configurable?)
     apiDocsCache[options.apiDocs + resourcePath] = JSON.stringify(resource, null, 2);
   });

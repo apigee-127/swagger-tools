@@ -28,6 +28,7 @@
 
 var _ = require('lodash');
 var assert = require('assert');
+var async = require('async');
 var fs = require('fs');
 var path = require('path');
 var spec = require('../../').specs.v1_2; // jshint ignore:line
@@ -46,9 +47,9 @@ fs.readdirSync(path.join(__dirname, '..', '..', 'samples', '1.2'))
 describe('Specification v1.2', function () {
   describe('metadata', function () {
     it('should have proper docsUrl, primitives, options, schemasUrl and verison properties', function () {
-      assert.strictEqual(spec.docsUrl, 'https://github.com/wordnik/swagger-spec/blob/master/versions/1.2.md');
+      assert.strictEqual(spec.docsUrl, 'https://github.com/swagger-api/swagger-spec/blob/master/versions/1.2.md');
       assert.deepEqual(spec.primitives, ['string', 'number', 'boolean', 'integer', 'array', 'void', 'File']);
-      assert.strictEqual(spec.schemasUrl, 'https://github.com/wordnik/swagger-spec/tree/master/schemas/v1.2');
+      assert.strictEqual(spec.schemasUrl, 'https://github.com/swagger-api/swagger-spec/tree/master/schemas/v1.2');
       assert.strictEqual(spec.version, '1.2');
     });
   });
@@ -94,7 +95,9 @@ describe('Specification v1.2', function () {
         'resourceListing is required': [],
         'resourceListing must be an object': ['wrongType'],
         'apiDeclarations is required': [allSampleFiles['resource-listing.json']],
-        'apiDeclarations must be an array': [allSampleFiles['resource-listing.json'], 'wrongType']
+        'apiDeclarations must be an array': [allSampleFiles['resource-listing.json'], 'wrongType'],
+        'callback is required': [allSampleFiles['resource-listing.json'], []],
+        'callback must be a function': [allSampleFiles['resource-listing.json'], [], 'wrongType']
       };
 
       _.each(errors, function (args, message) {
@@ -106,264 +109,297 @@ describe('Specification v1.2', function () {
       });
     });
 
-    it('should return true for valid JSON files', function () {
+    it('should return undefined for valid JSON files', function (done) {
       var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
       var petJson = _.cloneDeep(allSampleFiles['pet.json']);
       var storeJson = _.cloneDeep(allSampleFiles['store.json']);
       var userJson = _.cloneDeep(allSampleFiles['user.json']);
 
-      assert.ok(_.isUndefined(spec.validate(rlJson, [petJson, storeJson, userJson])));
+      spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        assert.ok(_.isUndefined(err));
+        assert.ok(_.isUndefined(result));
+
+        done();
+      });
     });
 
     describe('should return errors for structurally invalid JSON files', function () {
-      it('extra property', function() {
+      it('extra property', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
 
         // Extra property
         userJson.apis[0].operations[0].authorizations.oauth2[0].extra = 'value';
 
-        result = spec.validate(rlJson, [userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'VALIDATION_ADDITIONAL_PROPERTIES',
-            message: 'Additional properties not allowed: extra',
-            data: 'value',
-            path: ['apis', '0', 'operations', '0', 'authorizations', 'oauth2', '0', 'extra']
+        spec.validate(rlJson, [userJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'OBJECT_ADDITIONAL_PROPERTIES',
+              message: 'Additional properties not allowed: extra',
+              path: ['apis', '0', 'operations', '0', 'authorizations', 'oauth2', '0']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('invalid type', function() {
+      it('invalid type', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var result;
 
         storeJson.models.Order.description = false;
 
-        result = spec.validate(rlJson, [storeJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'VALIDATION_INVALID_TYPE',
-            message: 'Invalid type: boolean should be string',
-            data: false,
-            path: ['models', 'Order', 'description']
+        spec.validate(rlJson, [storeJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'INVALID_TYPE',
+              message: 'Expected type string but found type boolean',
+              path: ['models', 'Order', 'description']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('missing required value', function() {
+      it('missing required value', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var result;
 
         delete rlJson.apis;
 
-        result = spec.validate(rlJson, [petJson]);
-
-        assert.deepEqual(result.errors, [
-          {
-            code: 'VALIDATION_OBJECT_REQUIRED',
-            message: 'Missing required property: apis',
-            path: ['apis']
+        spec.validate(rlJson, [petJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.warnings, 0);
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
+              message: 'Missing required property: apis',
+              path: []
+            }
+          ]);
+          assert.equal(result.warnings, 0);
+
+          done();
+        });
       });
 
-      it('wrong enum value', function() {
+      it('wrong enum value', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var result;
 
         petJson.apis[1].operations[0].parameters[1].paramType = 'fake';
 
-        result = spec.validate(rlJson, [petJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'VALIDATION_FAILED',
-            message: 'Validation error: enum',
-            data: 'fake',
-            path: ['apis', '1', 'operations', '0', 'parameters', '1', 'paramType']
+        spec.validate(rlJson, [petJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'ONE_OF_MISSING',
+              message: 'Data does not match any schemas from \'oneOf\'',
+              path: [
+                'apis',
+                '1',
+                'operations',
+                '0',
+                'parameters',
+                '1'
+              ],
+              description: 'type File requires special paramType and consumes',
+              inner: [
+                {
+                  code: 'NOT_PASSED',
+                  message: 'Data matches schema from \'not\'',
+                  path: [
+                    'apis',
+                    '1',
+                    'operations',
+                    '0',
+                    'parameters',
+                    '1',
+                    'type'
+                  ]
+                },
+                {
+                  code: 'ENUM_MISMATCH',
+                  message: 'No enum match for: fake',
+                  path: [
+                    'apis',
+                    '1',
+                    'operations',
+                    '0',
+                    'parameters',
+                    '1',
+                    'paramType'
+                  ]
+                }
+              ]
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
       });
     });
 
     describe('should return errors for semantically invalid JSON files', function () {
-      it('duplicate api paths in resource listing', function() {
+      it('duplicate api paths in resource listing', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
 
-        rlJson.apis[2].path = rlJson.apis[0].path;
+        rlJson.apis.push(rlJson.apis[0]);
 
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.errors, [
-          {
-            code: 'DUPLICATE_RESOURCE_PATH',
-            message: 'Resource path already defined: /pet',
-            data: rlJson.apis[0].path,
-            path: ['apis', '2', 'path']
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.warnings.length, 0);
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'DUPLICATE_RESOURCE_PATH',
+              message: 'Resource path already defined: /pet',
+              path: ['apis', '3', 'path']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('unused api path in resource listing', function() {
+      it('unused api path in resource listing', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
 
         rlJson.apis.push({
           description: 'Operations on people',
           path: '/people'
         });
 
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.errors, [
-          {
-            code: 'UNUSED_RESOURCE_PATH',
-            message: 'Resource path is defined but is not used: /people',
-            data: rlJson.apis[3].path,
-            path: ['apis', '3', 'path']
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.warnings.length, 0);
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'UNUSED_RESOURCE_PATH',
+              message: 'Resource path is defined but is not used: /people',
+              path: ['apis', '3', 'path']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('duplicate consumes in API declaration', function() {
+      it('duplicate resource path in API declaration', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
-
-        petJson.consumes = ['application/json', 'application/xml', 'application/json'];
-
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].warnings, [
-          {
-            code: 'DUPLICATE_API_CONSUMES',
-            message: 'API consumes has duplicate items',
-            data: petJson.consumes,
-            path: ['consumes']
-          }
-        ]);
-        assert.equal(result.apiDeclarations[0].errors.length, 0);
-      });
-
-      it('duplicate produces in API declaration', function() {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
-
-        petJson.produces = ['application/json', 'application/xml', 'application/json'];
-
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].warnings, [
-          {
-            code: 'DUPLICATE_API_PRODUCES',
-            message: 'API produces has duplicate items',
-            data: petJson.produces,
-            path: ['produces']
-          }
-        ]);
-        assert.equal(result.apiDeclarations[0].errors.length, 0);
-      });
-
-      it('duplicate resource path in API declaration', function() {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
 
         userJson.resourcePath = petJson.resourcePath;
 
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[2].errors, [
-          {
-            code: 'DUPLICATE_RESOURCE_PATH',
-            message: 'Resource path already defined: /pet',
-            data: rlJson.apis[0].path,
-            path: ['resourcePath']
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.apiDeclarations[2].warnings.length, 0);
+
+          assert.deepEqual(result.apiDeclarations[2].errors, [
+            {
+              code: 'DUPLICATE_RESOURCE_PATH',
+              message: 'Resource path already defined: /pet',
+              path: ['resourcePath']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[2].warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('unresolvable resource path in API declaration', function() {
+      it('unresolvable resource path in API declaration', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
         var newResourcePath = userJson.resourcePath + '/fake';
-        var result;
 
         userJson.resourcePath = newResourcePath;
 
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[2].errors, [
-          {
-            code: 'UNRESOLVABLE_RESOURCE_PATH',
-            message: 'Resource path could not be resolved: ' + newResourcePath,
-            data: newResourcePath,
-            path: ['resourcePath']
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.apiDeclarations[2].warnings.length, 0);
+
+          assert.deepEqual(result.apiDeclarations[2].errors, [
+            {
+              code: 'UNRESOLVABLE_RESOURCE_PATH',
+              message: 'Resource path could not be resolved: ' + newResourcePath,
+              path: ['resourcePath']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[2].warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('duplicate api paths (verbatim) in API declaration', function() {
+      it('duplicate api paths (verbatim) in API declaration', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
         var newPath = _.cloneDeep(petJson.apis[0]);
-        var result;
 
         petJson.apis.push(newPath);
 
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'DUPLICATE_API_PATH',
-            message: 'API path (or equivalent) already defined: /pet/{petId}',
-            data: newPath.path,
-            path: ['apis', petJson.apis.length - 1, 'path']
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'DUPLICATE_API_PATH',
+              message: 'API path (or equivalent) already defined: /pet/{petId}',
+              path: ['apis', petJson.apis.length - 1, 'path']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('duplicate api paths (equivalent) in API declaration', function() {
+      it('duplicate api paths (equivalent) in API declaration', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
         var newPath = petJson.apis[0];
-        var result;
 
         newPath.path = newPath.path.replace(/petId/, 'id');
 
@@ -377,212 +413,170 @@ describe('Specification v1.2', function () {
 
         petJson.apis.push(newPath);
 
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'DUPLICATE_API_PATH',
-            message: 'API path (or equivalent) already defined: /pet/{id}',
-            data: newPath.path,
-            path: ['apis', petJson.apis.length - 1, 'path']
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'DUPLICATE_API_PATH',
+              message: 'API path (or equivalent) already defined: /pet/{id}',
+              path: ['apis', petJson.apis.length - 1, 'path']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('duplicate operation consumes in API declaration', function() {
+      it('duplicate operation method in API declaration', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
-
-        petJson.apis[0].operations[0].consumes = ['application/json', 'application/xml', 'application/json'];
-
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].warnings, [
-          {
-            code: 'DUPLICATE_OPERATION_CONSUMES',
-            message: 'Operation consumes has duplicate items',
-            data: petJson.apis[0].operations[0].consumes,
-            path: ['apis', '0', 'operations', '0', 'consumes']
-          }
-        ]);
-        assert.equal(result.apiDeclarations[0].errors.length, 0);
-      });
-
-      it('duplicate operation produces in API declaration', function() {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
-
-        petJson.apis[0].operations[0].produces = ['application/json', 'application/xml', 'application/json'];
-
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].warnings, [
-          {
-            code: 'DUPLICATE_OPERATION_PRODUCES',
-            message: 'Operation produces has duplicate items',
-            data: petJson.apis[0].operations[0].produces,
-            path: ['apis', '0', 'operations', '0', 'produces']
-          }
-        ]);
-        assert.equal(result.apiDeclarations[0].errors.length, 0);
-      });
-
-      it('duplicate operation method in API declaration', function() {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
 
         petJson.apis[0].operations[1].method = petJson.apis[0].operations[0].method;
 
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'DUPLICATE_OPERATION_METHOD',
-            message: 'Operation method already defined: GET',
-            data: petJson.apis[0].operations[1].method,
-            path: ['apis', '0', 'operations', '1', 'method']
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'DUPLICATE_OPERATION_METHOD',
+              message: 'Operation method already defined: GET',
+              path: ['apis', '0', 'operations', '1', 'method']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('unresolvable operation authorization in API declaration', function() {
+      it('duplicate authorization scope definition', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
+        var scope = rlJson.authorizations.oauth2.scopes[0];
+
+        rlJson.authorizations.oauth2.scopes.push(scope);
+
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.warnings, [
+            {
+              code: 'DUPLICATE_AUTHORIZATION_SCOPE_DEFINITION',
+              message: 'Authorization scope definition already defined: ' + scope.scope,
+              path: ['authorizations', 'oauth2', 'scopes', (rlJson.authorizations.oauth2.scopes.length - 1).toString(), 'scope']
+            }
+            ]);
+          assert.equal(result.errors.length, 0);
+
+          done();
+        });
+      });
+
+      // TODO: Validate duplicate authorization scope reference (API Declaration)
+      //  Not possible due to https://github.com/swagger-api/swagger-spec/issues/159
+
+      it('duplicate authorization scope reference (operation)', function (done) {
+        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var scope = petJson.apis[0].operations[1].authorizations.oauth2[0];
+
+        petJson.apis[0].operations[1].authorizations.oauth2.push(scope);
+
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.apiDeclarations[0].warnings, [
+            {
+              code: 'DUPLICATE_AUTHORIZATION_SCOPE_REFERENCE',
+              message: 'Authorization scope reference already defined: ' + scope.scope,
+              path: ['apis', '0', 'operations', '1', 'authorizations', 'oauth2',
+                     petJson.apis[0].operations[1].authorizations.oauth2.length - 1, 'scope']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].errors.length, 0);
+
+          done();
+        });
+      });
+
+      it('unresolvable authorization', function (done) {
+        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+        var userJson = _.cloneDeep(allSampleFiles['user.json']);
 
         petJson.apis[0].operations[1].authorizations.oauth3 =
           _.cloneDeep(petJson.apis[0].operations[1].authorizations.oauth2);
 
         delete petJson.apis[0].operations[1].authorizations.oauth2;
 
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'UNRESOLVABLE_AUTHORIZATION',
-            message: 'Authorization could not be resolved: oauth3',
-            data: 'oauth3',
-            path: ['apis', '0', 'operations', '1', 'authorizations', 'oauth3']
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'UNRESOLVABLE_AUTHORIZATION',
+              message: 'Authorization could not be resolved: oauth3',
+              path: ['apis', '0', 'operations', '1', 'authorizations', 'oauth3']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('unresolvable operation authorization scope in API declaration', function() {
+      it('unresolvable authorization scope', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
 
         petJson.apis[0].operations[1].authorizations.oauth2[0].scope = 'fake';
 
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'UNRESOLVABLE_AUTHORIZATION_SCOPE',
-            message: 'Authorization scope could not be resolved: fake',
-            data: 'fake',
-            path: ['apis', '0', 'operations', '1', 'authorizations', 'oauth2', '0', 'scope']
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'UNRESOLVABLE_AUTHORIZATION_SCOPE',
+              message: 'Authorization scope could not be resolved: fake',
+              path: ['apis', '0', 'operations', '1', 'authorizations', 'oauth2', '0', 'scope']
+            }
+            ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
       });
 
-      // Should we be writing tests for the operation parameter constraints (default values) even though the same code
-      // to validate them is the same one for swagger-validator which is already tested?
-
-      it('duplicate operation responseMessage code in API declaration', function() {
+      it('unused authorization', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
 
-        petJson.apis[0].operations[0].responseMessages.push(petJson.apis[0].operations[0].responseMessages[0]);
-
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'DUPLICATE_RESPONSE_MESSAGE_CODE',
-            message: 'Response message code already defined: ' + petJson.apis[0].operations[0].responseMessages[0].code,
-            data: petJson.apis[0].operations[0].responseMessages[0].code,
-            path: ['apis', '0', 'operations', '0', 'responseMessages', '2', 'code']
-          }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
-      });
-
-      it('duplicate model id in API declaration', function() {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
-
-        petJson.models.Duplicate = _.cloneDeep(petJson.models.Category);
-
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'DUPLICATE_MODEL_DEFINITION',
-            message: 'Model already defined: ' + petJson.models.Category.id,
-            data: petJson.models.Category.id,
-            path: ['models', 'Duplicate', 'id']
-          }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
-      });
-
-      // Should we be writing tests for the model property constraints (default values) even though the same code to
-      // validate them is the same one for swagger-validator which is already tested?
-
-      it('missing required model property in API declaration', function() {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
-
-        petJson.models.Category.required = ['name', 'tags'];
-
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'MISSING_REQUIRED_MODEL_PROPERTY',
-            message: 'Model requires property but it is not defined: tags',
-            data: 'tags',
-            path: ['models', 'Category', 'required', '1']
-          }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
-      });
-
-      it('unused authorization in API declaration', function() {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
-
-        petJson.authorizations = {
+        rlJson.authorizations = {
           apiKey: {
             type: 'apiKey',
             passAs: 'header',
@@ -590,69 +584,473 @@ describe('Specification v1.2', function () {
           }
         };
 
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].warnings, [
-          {
-            code: 'UNUSED_AUTHORIZATION',
-            message: 'Authorization is defined but is not used: apiKey',
-            data: petJson.authorizations.apiKey,
-            path: ['authorizations', 'apiKey']
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.apiDeclarations[0].errors.length, 0);
+
+          assert.deepEqual(result.warnings, [
+            {
+              code: 'UNUSED_AUTHORIZATION',
+              message: 'Authorization is defined but is not used: apiKey',
+              path: ['authorizations', 'apiKey']
+            }
+          ]);
+          assert.equal(result.errors.length, 0);
+
+          done();
+        });
       });
 
-      it('unused authorization scope in API declaration', function() {
+      it('unused authorization scope', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
 
-        petJson.authorizations = _.cloneDeep(rlJson.authorizations);
+        rlJson.authorizations.oauth2.scopes.push({
+          description: 'Fake authorization scope',
+          scope: 'fake'
+        });
 
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].warnings, [
-          {
-            code: 'UNUSED_AUTHORIZATION_SCOPE',
-            message: 'Authorization scope is defined but is not used: test:anything',
-            data: petJson.authorizations.oauth2.scopes[2],
-            path: ['authorizations', 'oauth2', 'scopes', '2']
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.apiDeclarations[0].errors.length, 0);
+
+          assert.deepEqual(result.warnings, [
+            {
+              code: 'UNUSED_AUTHORIZATION_SCOPE',
+              message: 'Authorization scope is defined but is not used: fake',
+              path: ['authorizations', 'oauth2', 'scopes', '3']
+            }
+            ]);
+          assert.equal(result.errors.length, 0);
+
+          done();
+        });
       });
 
-      it('unresolvable model in API declaration', function() {
+      describe('operation constraint validation', function () {
+        it('wrong type', function (done) {
+          var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+          var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+          var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+          var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+          petJson.apis[0].operations[0].type = 'integer';
+          petJson.apis[0].operations[0].defaultValue = 'fake';
+
+          spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.apiDeclarations[0].errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['apis', '0', 'operations', '0', 'defaultValue']
+              }
+            ]);
+            assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+            done();
+          });
+        });
+
+        it('enum mismatch', function (done) {
+          var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+          var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+          var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+          var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+          petJson.apis[0].operations[0].type = 'string';
+          petJson.apis[0].operations[0].enum = ['A', 'B'];
+          petJson.apis[0].operations[0].defaultValue = 'fake';
+
+          spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.apiDeclarations[0].errors, [
+              {
+                code: 'ENUM_MISMATCH',
+                message: 'Not an allowable value (A, B): fake',
+                path: ['apis', '0', 'operations', '0', 'defaultValue']
+              }
+            ]);
+            assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+            done();
+          });
+        });
+
+        // Cannot validate default values for models because the schema does not allow it
+
+        it('maximum', function (done) {
+          var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+          var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+          var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+          var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+          petJson.apis[0].operations[0].defaultValue = '1';
+          petJson.apis[0].operations[0].maximum = '0';
+          petJson.apis[0].operations[0].type = 'integer';
+
+          spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.apiDeclarations[0].errors, [
+              {
+                code: 'MAXIMUM',
+                message: 'Greater than the configured maximum (0): 1',
+                path: ['apis', '0', 'operations', '0', 'defaultValue']
+              }
+            ]);
+            assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+            done();
+          });
+
+          it('minimum', function (done) {
+            var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+            var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+            var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+            var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+            petJson.apis[0].operations[0].defaultValue = '0';
+            petJson.apis[0].operations[0].minimum = '1';
+            petJson.apis[0].operations[0].type = 'integer';
+
+            spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+              if (err) {
+                throw err;
+              }
+
+              assert.deepEqual(result.apiDeclarations[0].errors, [
+                {
+                  code: 'MAXIMUM',
+                  message: 'Less than the configured minimum (1): 0',
+                  path: ['apis', '0', 'operations', '0', 'defaultValue']
+                }
+              ]);
+              assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+              done();
+            });
+          });
+        });
+      });
+
+      describe('parameter constraint validation', function () {
+        it('wrong type', function (done) {
+          var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+          var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+          var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+          var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+          petJson.apis[0].operations[0].parameters[0].defaultValue = 'fake';
+
+          spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+            if (err) {
+              throw err;
+            }
+
+            assert.deepEqual(result.apiDeclarations[0].errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid int64 integer: fake',
+                path: ['apis', '0', 'operations', '0', 'parameters', '0', 'defaultValue']
+              }
+            ]);
+            assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+            done();
+          });
+        });
+
+        // Testing all other constraints is unnecessary since the same code that validates them is tested above
+      });
+
+      it('duplicate operation responseMessage code in API declaration', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
+
+        petJson.apis[0].operations[0].responseMessages.push(petJson.apis[0].operations[0].responseMessages[0]);
+
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'DUPLICATE_RESPONSE_MESSAGE_CODE',
+              message: 'Response message code already defined: ' + petJson.apis[0].operations[0].responseMessages[0].code,
+              path: ['apis', '0', 'operations', '0', 'responseMessages', '2', 'code']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
+      });
+
+      it('duplicate operation parameter in API declaration', function (done) {
+        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+        petJson.apis[0].operations[0].parameters.push(petJson.apis[0].operations[0].parameters[0]);
+
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'DUPLICATE_PARAMETER',
+              message: 'Parameter already defined: petId',
+              path: ['apis', '0', 'operations', '0', 'parameters', '1', 'name']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
+      });
+
+      it('unresolvable operation path parameter in API declaration', function (done) {
+        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var newParam = _.cloneDeep(petJson.apis[0].operations[0].parameters[0]);
+
+        newParam.name = 'fake';
+
+        petJson.apis[0].operations[0].parameters.push(newParam);
+
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'UNRESOLVABLE_API_PATH_PARAMETER',
+              message: 'API path parameter could not be resolved: ' + newParam.name,
+              path: ['apis', '0', 'operations', '0', 'parameters', '1', 'name']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
+      });
+
+      it('missing operation path parameter in API declaration', function (done) {
+        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+        petJson.apis[0].operations[0].parameters = [];
+
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'MISSING_API_PATH_PARAMETER',
+              message: 'API requires path parameter but it is not defined: petId',
+              path: ['apis', '0', 'path']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
+      });
+
+      // This should be removed when the upstream bug in the Swagger schema is fixed
+      //   https://github.com/swagger-api/swagger-spec/issues/174
+      it('missing items property for operation array type (Issue 61)', function (done) {
+        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+        delete petJson.apis[0].operations[2].items;
+
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
+              message: 'Missing required property: items',
+              path: ['apis', '0', 'operations', '2']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
+      });
+
+      it('missing items property for parameter array type (Issue 61)', function (done) {
+        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+        petJson.apis[0].operations[0].parameters.push({
+          paramType: 'query',
+          type: 'array',
+          name: 'fake'
+        });
+
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
+              message: 'Missing required property: items',
+              path: ['apis', '0', 'operations', '0', 'parameters', '1']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
+      });
+
+      it('unresolvable operation responseMessage responseModel in API declaration', function (done) {
+        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+        petJson.apis[0].operations[0].responseMessages[0].responseModel = 'FakeError';
+
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'UNRESOLVABLE_MODEL',
+              message: 'Model could not be resolved: FakeError',
+              path: ['apis', '0', 'operations', '0', 'responseMessages', '0', 'responseModel']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
+      });
+
+      // https://github.com/apigee-127/swagger-tools/issues/71
+      it('model id mismatch API declaration', function (done) {
+        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+        petJson.models.Category.id = 'NotCategory';
+
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'MODEL_ID_MISMATCH',
+              message: 'Model id does not match id in models object: ' + petJson.models.Category.id,
+              path: ['models', 'Category', 'id']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
+      });
+
+      it('missing required model property in API declaration', function (done) {
+        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+        petJson.models.Category.required = ['name', 'tags'];
+
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'MISSING_REQUIRED_MODEL_PROPERTY',
+              message: 'Model requires property but it is not defined: tags',
+              path: ['models', 'Category', 'required', '1']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
+      });
+
+      it('unresolvable model in API declaration', function (done) {
+        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+        var userJson = _.cloneDeep(allSampleFiles['user.json']);
 
         petJson.apis[0].operations[0].type = 'Fake';
 
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'UNRESOLVABLE_MODEL',
-            message: 'Model could not be resolved: Fake',
-            data: 'Fake',
-            path: ['apis', '0', 'operations', '0', 'type']
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'UNRESOLVABLE_MODEL',
+              message: 'Model could not be resolved: Fake',
+              path: ['apis', '0', 'operations', '0', 'type']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('unused model in API declaration', function() {
+      it('unused model in API declaration', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
 
         petJson.models.Person = {
           id: 'Person',
@@ -666,25 +1064,29 @@ describe('Specification v1.2', function () {
           }
         };
 
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].warnings, [
-          {
-            code: 'UNUSED_MODEL',
-            message: 'Model is defined but is not used: Person',
-            data: petJson.models.Person,
-            path: ['models', 'Person']
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.apiDeclarations[0].errors.length, 0);
+
+          assert.deepEqual(result.apiDeclarations[0].warnings, [
+            {
+              code: 'UNUSED_MODEL',
+              message: 'Model is defined but is not used: Person',
+              path: ['models', 'Person']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].errors.length, 0);
+
+          done();
+        });
       });
 
-      it('child model redeclares property in API declaration', function() {
+      it('child model redeclares property in API declaration', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
 
         petJson.models.Person = {
           id: 'Person',
@@ -701,25 +1103,29 @@ describe('Specification v1.2', function () {
         petJson.models.Tag.discriminator = 'name';
         petJson.models.Tag.subTypes = ['Person'];
 
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'CHILD_MODEL_REDECLARES_PROPERTY',
-            message: 'Child model declares property already declared by ancestor: name',
-            data: petJson.models.Person.properties.name,
-            path: ['models', 'Person', 'properties', 'name']
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'CHILD_MODEL_REDECLARES_PROPERTY',
+              message: 'Child model declares property already declared by ancestor: name',
+              path: ['models', 'Person', 'properties', 'name']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('model multiple inheritance in API declaration', function() {
+      it('model multiple inheritance in API declaration', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
 
         petJson.models.Person = {
           id: 'Person',
@@ -747,25 +1153,29 @@ describe('Specification v1.2', function () {
         // Add a reference so an error isn't thrown for a missing reference
         petJson.apis[0].operations[0].type = 'Human';
 
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'MULTIPLE_MODEL_INHERITANCE',
-            message: 'Child model is sub type of multiple models: Tag && Human',
-            data: petJson.models.Person,
-            path: ['models', 'Person']
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'MULTIPLE_MODEL_INHERITANCE',
+              message: 'Child model is sub type of multiple models: Tag && Human',
+              path: ['models', 'Person']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('cyclical model inheritance in API declaration', function() {
+      it('cyclical model inheritance in API declaration', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
         var storeJson = _.cloneDeep(allSampleFiles['store.json']);
         var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
 
         _.merge(petJson.models, {
           Bar: {
@@ -790,137 +1200,97 @@ describe('Specification v1.2', function () {
           }
         });
 
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'CYCLICAL_MODEL_INHERITANCE',
-            message: 'Model has a circular inheritance: Baz -> Bar -> Baz',
-            data: ['Bar'],
-            path: ['models', 'Baz', 'subTypes']
+        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
           }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'CYCLICAL_MODEL_INHERITANCE',
+              message: 'Model has a circular inheritance: Bar -> Baz -> Bar',
+              path: ['models', 'Bar', 'subTypes']
+            },
+            {
+              code: 'CYCLICAL_MODEL_INHERITANCE',
+              message: 'Model has a circular inheritance: Baz -> Bar -> Baz',
+              path: ['models', 'Baz', 'subTypes']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
       });
 
-      it('duplicate operation parameter in API declaration', function() {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
+      describe('model property constraint validation', function () {
+        it('wrong type', function (done) {
+          var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+          var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+          var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+          var userJson = _.cloneDeep(allSampleFiles['user.json']);
 
-        petJson.apis[0].operations[0].parameters.push(petJson.apis[0].operations[0].parameters[0]);
+          petJson.models.Pet.properties.fake = {
+            type: 'integer',
+            defaultValue: 'fake'
+          };
 
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
+          spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+            if (err) {
+              throw err;
+            }
 
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'DUPLICATE_OPERATION_PARAMETER',
-            message: 'Operation parameter already defined: petId',
-            data: 'petId',
-            path: ['apis', '0', 'operations', '0', 'parameters', '1', 'name']
-          }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
-      });
+            assert.deepEqual(result.apiDeclarations[0].errors, [
+              {
+                code: 'INVALID_TYPE',
+                message: 'Not a valid integer: fake',
+                path: ['models', 'Pet', 'properties', 'fake', 'defaultValue']
+              }
+            ]);
+            assert.equal(result.apiDeclarations[0].warnings.length, 0);
 
-      it('unresolvable operation path parameter in API declaration', function() {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var newParam = _.cloneDeep(petJson.apis[0].operations[0].parameters[0]);
-        var result;
+            done();
+          });
+        });
 
-        newParam.name = 'fake';
-
-        petJson.apis[0].operations[0].parameters.push(newParam);
-
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'UNRESOLVABLE_API_PATH_PARAMETER',
-            message: 'API path parameter could not be resolved: ' + newParam.name,
-            data: newParam.name,
-            path: ['apis', '0', 'operations', '0', 'parameters', '1', 'name']
-          }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
-      });
-
-      it('missing operation path parameter in API declaration', function() {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
-
-        petJson.apis[0].operations[0].parameters = [];
-
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'MISSING_API_PATH_PARAMETER',
-            message: 'API requires path parameter but it is not defined: petId',
-            data: petJson.apis[0].path,
-            path: ['apis', '0', 'path']
-          }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
-      });
-
-      // This should be removed when the upstream bug in the Swagger schema is fixed
-      //   https://github.com/swagger-api/swagger-spec/issues/174
-      it('missing items property for array type (Issue 61)', function() {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var result;
-
-        delete petJson.apis[0].operations[2].items;
-
-        result = spec.validate(rlJson, [petJson, storeJson, userJson]);
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
-            message: 'Missing required property: items',
-            data: petJson.apis[0].operations[2],
-            path: ['apis', '0', 'operations', '2']
-          }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+        // Testing all other constraints is unnecessary since the same code that validates them is tested above
       });
     });
   });
 
-  describe('#composeModel', function () {
+  describe('#composeSchema', function () {
     it('should fail when passed the wrong arguments', function () {
       var petJson = _.cloneDeep(allSampleFiles['pet.json']);
       var errors = {
         'apiDeclaration is required': [],
         'apiDeclaration must be an object': ['wrongType'],
-        'modelId is required': [petJson]
+        'modelId is required': [petJson],
+        'callback is required': [petJson, 'Pet'],
+        'callback must be a function': [petJson, 'Pet', 'wrongType']
       };
 
       _.each(errors, function (args, message) {
         try {
-          spec.composeModel.apply(spec, args);
+          spec.composeSchema.apply(spec, args);
         } catch (err) {
           assert.equal(message, err.message);
         }
       });
     });
 
-    it('should return undefined for unresolvable model', function () {
-      assert.ok(_.isUndefined(spec.composeModel(_.cloneDeep(allSampleFiles['pet.json']), 'Liger')));
+    it('should return undefined for unresolvable model', function (done) {
+      spec.composeSchema(_.cloneDeep(allSampleFiles['pet.json']), 'Liger', function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.ok(_.isUndefined(result));
+
+        done();
+      });
     });
 
-    it('should throw an Error for an API Declaration that has invalid models', function () {
+    it('should throw an Error for an API Declaration that has invalid models', function (done) {
       var petJson = _.cloneDeep(allSampleFiles['pet.json']);
 
       petJson.models.Person = {
@@ -938,25 +1308,29 @@ describe('Specification v1.2', function () {
       petJson.models.Tag.discriminator = 'name';
       petJson.models.Tag.subTypes = ['Person'];
 
-      try {
-        spec.composeModel(petJson, 'Person');
-        assert.fail(null, null, 'Should had failed above');
-      } catch (err) {
-        assert.equal('The models are invalid and model composition is not possible', err.message);
+      spec.composeSchema(petJson, 'Person', function (err, result) {
+        assert.equal('The Swagger document is invalid and model composition is not possible', err.message);
         assert.equal(1, err.errors.length);
         assert.equal(0, err.warnings.length);
         assert.deepEqual({
           code: 'CHILD_MODEL_REDECLARES_PROPERTY',
           message: 'Child model declares property already declared by ancestor: name',
-          data: petJson.models.Person.properties.name,
           path: ['models', 'Person', 'properties', 'name']
         }, err.errors[0]);
-      }
+
+        assert.ok(_.isUndefined(result));
+
+        done();
+      });
     });
 
-    it('should return a valid composed model', function () {
+    it('should return a valid composed model', function (done) {
       var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-      var cPet = _.cloneDeep(petJson.models.Pet);
+      var ePet = _.cloneDeep(petJson.models.Pet);
+      var eResults = [];
+      var eCompany;
+      var eEmployee;
+      var ePerson;
 
       petJson.models.Person = {
         id: 'Person',
@@ -986,48 +1360,135 @@ describe('Specification v1.2', function () {
         required: ['company', 'email']
       };
 
-      // Add a reference so an error isn't thrown for a missing reference
-      petJson.apis[0].operations[0].type = 'Person';
+      petJson.models.Company = {
+        id: 'Company',
+        properties: {
+          name: {
+            type: 'string'
+          },
+          employees: {
+            type: 'array',
+            items: {
+              $ref: 'Employee'
+            }
+          }
+        }
+      };
 
-      assert.deepEqual(spec.composeModel(petJson, 'Employee'), {
+      // Create expected Employee
+      eEmployee = _.cloneDeep(petJson.models.Employee);
+
+      eEmployee.title = 'Composed Employee';
+      eEmployee.type = 'object';
+      eEmployee.allOf = [
+        _.cloneDeep(petJson.models.Person)
+      ];
+
+      eEmployee.allOf[0].title = 'Composed Person';
+      eEmployee.allOf[0].type = 'object';
+
+      delete eEmployee.id;
+      delete eEmployee.allOf[0].id;
+      delete eEmployee.allOf[0].subTypes;
+
+      // Create expected Person
+      ePerson = _.cloneDeep(petJson.models.Person);
+
+      ePerson.title = 'Composed Person';
+      ePerson.type = 'object';
+
+      delete ePerson.id;
+      delete ePerson.subTypes;
+
+      // Create expected Company
+      eCompany = _.cloneDeep(petJson.models.Company);
+
+      eCompany.title = 'Composed Company';
+      eCompany.type = 'object';
+      eCompany.properties.employees.items = {
         title: 'Composed Employee',
         type: 'object',
-        properties: _.merge(_.cloneDeep(petJson.models.Person.properties),
-                            _.cloneDeep(petJson.models.Employee.properties)),
-        required: _.uniq([].concat(petJson.models.Person.required, petJson.models.Employee.required))
-      });
-
-      assert.deepEqual(spec.composeModel(petJson, 'Person'), {
-        title: 'Composed Person',
-        type: 'object',
-        properties: petJson.models.Person.properties,
-        required: petJson.models.Person.required
-      });
-
-      // Prepare our Pet for comparison
-
-      delete cPet.id;
-
-      cPet.title = 'Composed Pet';
-      cPet.type = 'object';
-      cPet.properties.category = {
-        properties: petJson.models.Category.properties,
-        type: 'object'
+        allOf: [
+          _.cloneDeep(petJson.models.Person)
+        ],
+        properties: _.cloneDeep(petJson.models.Employee.properties),
+        required: _.cloneDeep(petJson.models.Employee.required)
       };
-      cPet.properties.tags = {
+
+      delete eCompany.id;
+      delete eCompany.properties.employees.items.allOf[0].id;
+      delete eCompany.properties.employees.items.allOf[0].subTypes;
+
+      eCompany.properties.employees.items.allOf[0].title = 'Composed Person';
+      eCompany.properties.employees.items.allOf[0].type = 'object';
+
+      // Create expected Pet
+      ePet.title = 'Composed Pet';
+      ePet.type = 'object';
+      ePet.properties.category = _.cloneDeep(petJson.models.Category);
+      ePet.properties.id.maximum = 100;
+      ePet.properties.id.minimum = 0;
+      ePet.properties.tags = {
         items: {
-          properties: petJson.models.Tag.properties,
-          type: 'object'
+          title: 'Composed Tag',
+          type: 'object',
+          properties: _.cloneDeep(petJson.models.Tag.properties)
         },
         type: 'array'
       };
 
-      assert.deepEqual(spec.composeModel(petJson, 'Pet'), cPet);
+      delete ePet.id;
+      delete ePet.properties.category.id;
+
+      ePet.properties.category.title = 'Composed Category';
+      ePet.properties.category.type = 'object';
+
+      // Collect our expected results
+      eResults.push(eEmployee);
+      eResults.push(ePerson);
+      eResults.push(eCompany);
+      eResults.push(ePet);
+
+      async.map(['Employee', 'Person', 'Company', 'Pet'], function (modelId, callback) {
+        spec.composeSchema(petJson, modelId, function (err, results) {
+          callback(err, results);
+        });
+      }, function (err, results) {
+        if (err) {
+          throw err;
+        }
+
+        _.each(results, function (result, index) {
+          assert.deepEqual(eResults[index], result);
+        });
+
+        done();
+      });
     });
   });
 
   describe('#validateModel', function () {
-    it('should throw an Error for an API Declaration that has invalid models', function () {
+    it('should fail when passed the wrong arguments', function () {
+      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+      var errors = {
+        'apiDeclaration is required': [],
+        'apiDeclaration must be an object': ['wrongType'],
+        'modelId is required': [petJson],
+        'data is required': [petJson, 'Pet'],
+        'callback is required': [petJson, 'Pet', {}],
+        'callback must be a function': [petJson, 'Pet', {}, 'wrongType']
+      };
+
+      _.each(errors, function (args, message) {
+        try {
+          spec.validateModel.apply(spec, args);
+        } catch (err) {
+          assert.equal(message, err.message);
+        }
+      });
+    });
+
+    it('should throw an Error for an API Declaration that has invalid models', function (done) {
       var petJson = _.cloneDeep(allSampleFiles['pet.json']);
 
       petJson.models.Person = {
@@ -1045,45 +1506,60 @@ describe('Specification v1.2', function () {
       petJson.models.Tag.discriminator = 'name';
       petJson.models.Tag.subTypes = ['Person'];
 
-      try {
-        spec.composeModel(petJson, 'Person');
-        assert.fail(null, null, 'Should had failed above');
-      } catch (err) {
-        assert.equal('The models are invalid and model composition is not possible', err.message);
+      spec.validateModel(petJson, 'Person', {}, function (err, result) {
+        assert.equal('The Swagger document is invalid and model composition is not possible', err.message);
         assert.equal(1, err.errors.length);
         assert.equal(0, err.warnings.length);
         assert.deepEqual({
           code: 'CHILD_MODEL_REDECLARES_PROPERTY',
           message: 'Child model declares property already declared by ancestor: name',
-          data: petJson.models.Person.properties.name,
           path: ['models', 'Person', 'properties', 'name']
         }, err.errors[0]);
-      }
-    });
 
-    it('should return errors/warnings for invalid model', function () {
-      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-      var result = spec.validateModel(petJson, 'Pet', {
-        id: 1
+        assert.ok(_.isUndefined(result));
+
+        done();
       });
-
-      assert.deepEqual(result.errors, [
-        {
-          code: 'VALIDATION_OBJECT_REQUIRED',
-          message: 'Missing required property: name',
-          path: ['name']
-        }
-      ]);
     });
 
-    it('should return undefined for valid model', function () {
+    it('should return errors/warnings for invalid model', function (done) {
       var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-      var result = spec.validateModel(petJson, 'Pet', {
+
+      spec.validateModel(petJson, 'Pet', {
+        id: 1
+      }, function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
+            message: 'Missing required property: name',
+            path: []
+          }
+        ]);
+
+        done();
+      });
+    });
+
+    it('should return undefined for valid model', function (done) {
+      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+      spec.validateModel(petJson, 'Pet', {
         id: 1,
         name: 'Jeremy'
-      });
+      }, function (err, result) {
+        if (err) {
+          throw err;
+        }
 
-      assert.ok(_.isUndefined(result));
+        assert.ok(_.isUndefined(result));
+
+        done();
+      });
     });
   });
 });

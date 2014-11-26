@@ -30,211 +30,222 @@
 process.env.NODE_ENV = 'test';
 
 var _ = require('lodash');
-var assert = require('assert');
-var helpers = require('../helpers');
-var middleware = require('../../').middleware.v2_0.swaggerRouter; // jshint ignore:line
-var petStoreJson = require('../../samples/2.0/petstore.json');
+var async = require('async');
 var path = require('path');
 var request = require('supertest');
+var helpers = require('../helpers');
 
-var createServer = helpers.createServer;
+// Cloned to avoid mucking with the module result directly (Node.js race conditions can occur)
+var petStoreJson = _.cloneDeep(require('../../samples/2.0/petstore.json'));
 var optionsWithControllersDir = {
   controllers: path.join(__dirname, '..', 'controllers')
 };
-var testScenarios = {};
+var samplePet = {
+  category: {
+    id: 1,
+    name: 'Sample text'
+  },
+  id: 1,
+  name: 'Sample text',
+  photoUrls: [
+    'Sample text'
+  ],
+  status: 'available',
+  tags: [
+    {
+      id: 1,
+      name: 'Sample text'
+    }
+  ]
+};
 
-_.each(['', '/api/v1'], function (basePath) {
-  var clonedP = _.cloneDeep(petStoreJson);
-
-  // Add nicknames the router understands for the operations we're testing
-  clonedP.paths['/pets']['x-swagger-router-controller'] = 'Pets';
-  clonedP.paths['/pets/{id}'].get['x-swagger-router-controller'] = 'Pets';
-  clonedP.paths['/pets/{id}'].delete['x-swagger-router-controller'] = 'Pets';
-
-  // Setup the proper basePath
-  switch (basePath) {
-  case '':
-    delete clonedP.basePath;
-
-    break;
-
-  case '/api/v1':
-    clonedP.basePath = 'http://localhost/api/v1';
-
-    break;
-  }
-
-  testScenarios[basePath] = clonedP;
-});
+// Add nicknames the router understands for the operations we're testing
+petStoreJson.paths['/pets']['x-swagger-router-controller'] = 'Pets';
+petStoreJson.paths['/pets/{id}'].get['x-swagger-router-controller'] = 'Pets';
+petStoreJson.paths['/pets/{id}'].delete['x-swagger-router-controller'] = 'Pets';
 
 describe('Swagger Router Middleware v2.0', function () {
-  it('should return a function when passed the right arguments', function () {
-    try {
-      assert.ok(_.isFunction(middleware(optionsWithControllersDir)));
-    } catch (err) {
-      assert.fail(null, null, err.message);
-    }
-  });
-
-  it('should do no routing when there is no route match', function () {
-    ['', '/api/v1'].forEach(function (basePath) {
-      request(createServer([testScenarios[basePath]], [middleware(optionsWithControllersDir)]))
-        .put(basePath + '/foo')
+  it('should do no routing when there is no route match', function (done) {
+    helpers.createServer([petStoreJson], {
+      swaggerRouterOptions: optionsWithControllersDir
+    }, function (app) {
+      request(app)
+        .get('/foo')
         .expect(200)
-        .end(helpers.expectContent('OK'));
+        .end(helpers.expectContent('OK', done));
     });
   });
 
-  it('should return a 405 when thre is a route match but there are no operations', function () {
-    ['', '/api/v1'].forEach(function (basePath) {
-      request(createServer([testScenarios[basePath]], [middleware(optionsWithControllersDir)]))
-        .put(basePath + '/pets/1')
+  it('should return a 405 when thre is a route match but there are no operations', function (done) {
+    helpers.createServer([petStoreJson], {
+      swaggerRouterOptions: optionsWithControllersDir
+    }, function (app) {
+      request(app)
+        .put('/api/pets/1')
         .expect(405)
         .expect('Allow', 'DELETE, GET')
-        .end(helpers.expectContent('Route defined in Swagger specification (/pets/{id}) but there is no defined put ' +
-                                     'operation.'));
+        .end(helpers.expectContent('Route defined in Swagger specification (/pets/{id}) but there is no defined ' +
+                                   'put operation.', done));
     });
   });
 
-  it('should do routing when options.controllers is a valid directory path', function () {
-    ['', '/api/v1'].forEach(function (basePath) {
-      request(createServer([testScenarios[basePath]], [middleware(optionsWithControllersDir)]))
-        .get(basePath + '/pets/1')
+  it('should do routing when options.controllers is a valid directory path', function (done) {
+    helpers.createServer([petStoreJson], {
+      swaggerRouterOptions: optionsWithControllersDir
+    }, function (app) {
+      request(app)
+        .get('/api/pets/1')
         .expect(200)
-        .end(helpers.expectContent(require('../controllers/Pets').response));
+        .end(helpers.expectContent(require('../controllers/Pets').response, done));
     });
   });
 
-  it('should do routing when options.controllers is a valid directory path', function () {
-    ['', '/api/v1'].forEach(function (basePath) {
-      request(createServer([testScenarios[basePath]], [middleware({
+  it('should do routing when options.controllers is a valid array of directory paths', function (done) {
+    helpers.createServer([petStoreJson], {
+      swaggerRouterOptions: {
         controllers: [
           path.join(__dirname, '..', 'controllers'),
           path.join(__dirname, '..', 'controllers2')
         ]
-      })]))
-        .post(basePath + '/pets')
-        .send({})
+      }
+    }, function (app) {
+      request(app)
+        .get('/api/pets/1')
         .expect(200)
-        .end(helpers.expectContent(require('../controllers2/Pets').response));
+        .end(helpers.expectContent(require('../controllers/Pets').response, done));
     });
   });
 
-  it('should do routing when options.controllers is a valid controller map', function () {
-    var controller = require('../controllers/Pets');
+  it('should do routing when options.controllers is a valid controller map', function (done) {
+    var cPetStoreJson = _.cloneDeep(petStoreJson);
+    var controller = require('../controllers/Users');
 
-    ['', '/api/v1'].forEach(function (basePath) {
-      request(createServer([testScenarios[basePath]], [middleware({
+    // Use Users controller
+    cPetStoreJson.paths['/pets/{id}'].get['x-swagger-router-controller'] = 'Users';
+    cPetStoreJson.paths['/pets/{id}'].get.operationId = 'getById';
+
+    helpers.createServer([cPetStoreJson], {
+      swaggerRouterOptions: {
         controllers: {
-          'Pets_getPetById': controller.getPetById
+          'Users_getById': controller.getById
         }
-      })]))
-        .get(basePath + '/pets/1')
+      }
+    }, function (app) {
+      request(app)
+        .get('/api/pets/1')
         .expect(200)
-        .end(helpers.expectContent(controller.response));
+        .end(helpers.expectContent(controller.response, done));
     });
   });
 
-  it('should not do any routing when there is no controller and use of stubs is off', function () {
-    ['', '/api/v1'].forEach(function (basePath) {
-      var swaggerObject = _.cloneDeep(testScenarios[basePath]);
-
-      swaggerObject.paths['/pets/{id}'].get['x-swagger-router-controller'] = 'PetsAdmin';
-
-      request(createServer([swaggerObject], [middleware(optionsWithControllersDir)],
-              function (req, res) {
-                res.end('NOT OK');
-              }))
-        .get(basePath + '/pets/1')
-        .expect(200)
-        .end(helpers.expectContent('NOT OK'));
-    });
-  });
-
-  it('should do routing when there is no controller and use of stubs is on', function () {
-    var options = _.cloneDeep(optionsWithControllersDir);
-
-    options.useStubs = true;
-
-    ['', '/api/v1'].forEach(function (basePath) {
-      var swaggerObject = _.cloneDeep(testScenarios[basePath]);
-
-      swaggerObject.paths['/pets/{id}'].get['x-swagger-router-controller'] = 'PetsAdmin';
-
-      request(createServer([swaggerObject], [middleware(options)], function (req, res) {
+  it('should not do any routing when there is no controller and use of stubs is off', function (done) {
+    helpers.createServer([petStoreJson], {
+      handler: function (req, res) {
         res.end('NOT OK');
-      }))
-        .get(basePath + '/pets/1')
+      },
+      swaggerRouterOptions: optionsWithControllersDir
+    }, function (app) {
+      request(app)
+        .get('/api/pet/1')
         .expect(200)
-        .end(helpers.expectContent({
-            category: {
-              id: 1,
-              name: 'Sample text'
-            },
-            id: 1,
-            name: 'Sample text',
-            photoUrls: [
-              'Sample text'
-            ],
-            status: 'available',
-            tags: [
-              {
-                id: 1,
-                name: 'Sample text'
-              }
-            ]
-          }));
+        .end(helpers.expectContent('NOT OK', done));
     });
   });
 
-  it('should do routing when controller method starts with an underscore', function () {
-    ['', '/api/v1'].forEach(function (basePath) {
-      var swaggerObject = testScenarios[basePath];
+  it('should do routing when there is no controller and use of stubs is on', function (done) {
+    var cPetStoreJson = _.cloneDeep(petStoreJson);
+    var cOptions = _.cloneDeep(optionsWithControllersDir);
 
-      swaggerObject.paths['/pets'].get.operationId = '_getAllPets';
+    cOptions.useStubs = true;
 
-      request(createServer([swaggerObject], [middleware(optionsWithControllersDir)]))
-        .get(basePath + '/pets')
+    delete cPetStoreJson.paths['/pets']['x-swagger-router-controller'];
+    delete cPetStoreJson.paths['/pets/{id}'].get['x-swagger-router-controller'];
+    delete cPetStoreJson.paths['/pets/{id}'].delete['x-swagger-router-controller'];
+
+    helpers.createServer([cPetStoreJson], {
+      handler: function (req, res) {
+        res.end('NOT OK');
+      },
+      swaggerRouterOptions: cOptions
+    }, function (app) {
+      request(app)
+        .get('/api/pets/1')
         .expect(200)
-        .end(helpers.expectContent(require('../controllers/Pets').response));
+        .end(helpers.expectContent(samplePet, done));
     });
   });
 
-  it('should do routing when controller is provided but operationId is missing', function () {
-    ['', '/api/v1'].forEach(function (basePath) {
-      var swaggerObject = testScenarios[basePath];
+  it('should do routing when controller method starts with an underscore', function (done) {
+    var cPetStoreJson = _.cloneDeep(petStoreJson);
 
-      delete swaggerObject.paths['/pets/{id}'].delete.operationId;
+    cPetStoreJson.paths['/pets/{id}'].get.operationId = '_getPetById';
 
-      request(createServer([swaggerObject], [middleware(optionsWithControllersDir)]))
-        .delete(basePath + '/pets/1')
+    helpers.createServer([cPetStoreJson], {
+      swaggerRouterOptions: optionsWithControllersDir
+    }, function (app) {
+      request(app)
+        .get('/api/pets/1')
+        .expect(200)
+        .end(helpers.expectContent(require('../controllers/Pets').response, done));
+    });
+  });
+
+  it('should do routing when controller is provided but operationId is missing', function (done) {
+    var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+    delete cPetStoreJson.paths['/pets/{id}'].delete.operationId;
+
+    helpers.createServer([cPetStoreJson], {
+      swaggerRouterOptions: optionsWithControllersDir
+    }, function (app) {
+      request(app)
+        .delete('/api/pets/1')
         .expect(204)
-        .end(helpers.expectContent(''));
+        .end(helpers.expectContent('', done));
     });
   });
 
-  it('should do indicate whether or not useStubs is on or not', function () {
-    ['', '/api/v1'].forEach(function (basePath) {
-      _.times(2, function (n) {
-        var useStubs = n === 1 ? true : false;
-        var options = {
-          controllers: {
-            'Pets_getPetById': function (req, res) {
-              if (useStubs === req.swagger.useStubs) {
-                res.end('OK');
-              } else {
-                res.end('NOT OK');
-              }
+  it('should indicate whether or not useStubs is on or not', function (done) {
+    async.map([0, 1], function (n, callback) {
+      var useStubs = n === 1 ? true : false;
+      var options = {
+        controllers: {
+          'Pets_getById': function (req, res) {
+            if (useStubs === req.swagger.useStubs) {
+              res.end('OK');
+            } else {
+              res.end('NOT OK');
             }
-          },
-          useStubs: useStubs
-        };
+          }
+        },
+        useStubs: useStubs
+      };
+      var expectedMessage = n === 1 ? samplePet : 'OK';
 
-        request(createServer([testScenarios[basePath]], [middleware(options)]))
-          .get(basePath + '/pets/1')
+      helpers.createServer([petStoreJson], {
+        swaggerRouterOptions: options,
+      }, function (app) {
+        request(app)
+          .get('/api/pets/1')
           .expect(200)
-          .end(helpers.expectContent('OK'));
+          .end(function (err, res) {
+            if (res) {
+              res.expectedMessage = expectedMessage;
+            }
+
+            callback(err, res);
+          });
       });
+    }, function (err, responses) {
+      if (err) {
+        throw err;
+      }
+
+      _.each(responses, function (res) {
+        helpers.expectContent(res.expectedMessage)(undefined, res);
+      });
+
+      done();
     });
   });
 });

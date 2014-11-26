@@ -29,6 +29,32 @@ var helpers = require('../helpers');
 var expressStylePath = helpers.expressStylePath;
 var parseurl = require('parseurl');
 var pathToRegexp = require('path-to-regexp');
+var spec = require('../../lib/helpers').getSpec('2.0');
+
+var composeParameters = function composeParameters (apiPath, method, path, operation) {
+  var cParams = [];
+  var seenParams = [];
+
+  _.each(operation.parameters, function (parameter, index) {
+    cParams.push({
+      path: apiPath.concat([method, 'parameters', index.toString()]),
+      schema: parameter
+    });
+
+    seenParams.push(parameter.name + ':' + parameter.in);
+  });
+
+  _.each(path.parameters, function (parameter, index) {
+    if (seenParams.indexOf(parameter.name + ':' + parameter.in) === -1) {
+      cParams.push({
+        path: apiPath.concat(['parameters', index.toString()]),
+        schema: parameter
+      });
+    }
+  });
+
+  return cParams;
+};
 
 /**
  * Middleware for providing Swagger information to downstream middleware and request handlers.  'req.swagger' will be
@@ -56,129 +82,86 @@ exports = module.exports = function swaggerMetadataMiddleware (swaggerObject) {
     throw new TypeError('swaggerObject must be an object');
   }
 
-  var paths = {};
+  var apiCache = {};
 
-  // Gather the paths, their path regex patterns and the corresponding operations
-  _.each(swaggerObject.paths, function (path, pathName) {
-    var keys = [];
-    var re = pathToRegexp(expressStylePath(swaggerObject.basePath, pathName), keys);
-    var reStr = re.toString();
+  // To avoid running into issues with references throughout the Swagger object we will use the resolved version.
+  // Getting the resolved version is an asynchronous process but since initializeMetadata caches the resolved document
+  // this is a synchronous action at this point.
+  spec.resolve(swaggerObject, function (err, resolved) {
+    // Gather the paths, their path regex patterns and the corresponding operations
+    _.each(resolved.paths, function (path, pathName) {
+      var expressPath = expressStylePath(resolved.basePath, pathName);
+      var keys = [];
+      var re = pathToRegexp(expressPath, keys);
+      var cacheKey = re.toString();
 
-    paths[reStr] = {
-      apiPath: pathName,
-      path: path,
-      keys: keys,
-      re: re,
-      operations: {}
-    };
-
-    _.each(['get', 'put', 'post', 'delete', 'options', 'head', 'patch'], function (method) {
-      var operation = path[method];
-
-      if (!_.isUndefined(operation)) {
-        paths[reStr].operations[method] = operation;
+      // This is an absolute path, use it as the cache key
+      if (expressPath.indexOf('{') === -1) {
+        cacheKey = expressPath;
       }
+
+      apiCache[cacheKey] = {
+        apiPath: pathName,
+        path: path,
+        keys: keys,
+        re: re,
+        operations: {},
+        swaggerObject: {
+          original: swaggerObject,
+          resolved: resolved
+        }
+      };
+
+      _.each(['get', 'put', 'post', 'delete', 'options', 'head', 'patch'], function (method) {
+        var operation = path[method];
+
+        if (!_.isUndefined(operation)) {
+          apiCache[cacheKey].operations[method] = {
+            operation: operation,
+            parameters: composeParameters(['paths', pathName], method, path, operation)
+          };
+        }
+      });
     });
   });
 
   return function swaggerMetadata (req, res, next) {
-    var rPath = parseurl(req).pathname;
+    var path = parseurl(req).pathname;
     var match;
-    var path = _.find(paths, function (path) {
-      match = path.re.exec(rPath);
+    var pathMetadata = apiCache[path] || _.find(apiCache, function (metadata) {
+      match = metadata.re.exec(path);
       return _.isArray(match);
     });
-    var metadata = {
-      apiPath : path ? path.apiPath : undefined,
-      path: path ? path.path : undefined,
-      operation: path ? path.operations[req.method.toLowerCase()] : undefined,
-      params: {},
-      swaggerObject: swaggerObject
-    };
+    var metadata;
 
-    // Attach Swagger metadata to the request
-    if (!_.isUndefined(path)) {
+    if (pathMetadata) {
+      metadata = {
+        apiPath : pathMetadata.apiPath,
+        path: pathMetadata.path,
+        params: {},
+        swaggerObject: pathMetadata.swaggerObject.resolved
+      };
+
+      if (_.isPlainObject(pathMetadata.operations[req.method.toLowerCase()])) {
+        metadata.operation = pathMetadata.operations[req.method.toLowerCase()].operation;
+        metadata.operationParameters = pathMetadata.operations[req.method.toLowerCase()].parameters || [];
+        metadata.security = metadata.operation.security || metadata.swaggerObject.resolved.security || [];
+      }
+
       req.swagger = metadata;
     }
 
+
     // Collect the parameter values
-    if (!_.isUndefined(metadata.operation)) {
+    if (metadata && metadata.operation) {
       try {
-        // Until Swagger 2.0 documentation comes out, I'm going to assume that you cannot override "path" parameters
-        // with operation parameters.  That's why we start with the path parameters first and then the operation
-        // parameters.  (Note: "path" in this context is a path entry at #/paths in the Swagger Object)
-        _.each(_.union(metadata.path.parameters, metadata.operation.parameters), function (param) {
-          var paramPath = ['paths', path.apiPath];
-          var paramType = param.in;
-          var findIndex = function (params, name) {
-            var foundIndex;
+        _.each(metadata.operationParameters, function (paramMetadata) {
+          var parameter = paramMetadata.schema;
+          var val = helpers.getParameterValue('2.0', parameter, pathMetadata.keys, match, req);
 
-            _.each(params, function (param, index) {
-              if (param.in === paramType && param.name === name) {
-                foundIndex = index;
-                return false;
-              }
-            });
-
-            return foundIndex;
-          };
-          var paramIndex = findIndex(metadata.path.parameters, param.name);
-          var val;
-
-          // Get the value to validate based on the operation parameter type
-          switch (paramType) {
-          case 'body':
-          case 'formData':
-            if (!req.body) {
-              throw new Error('Server configuration error: req.body is not defined but is required');
-            }
-
-            if (helpers.isModelParameter('2.0', param)) {
-              val = req.body;
-            } else {
-              val = req.body[param.name];
-            }
-
-            break;
-          case 'header':
-            val = req.headers[param.name];
-
-            break;
-          case 'path':
-            _.each(path.keys, function (key, index) {
-              if (key.name === param.name) {
-                val = match[index + 1];
-              }
-            });
-
-            break;
-          case 'query':
-            if (!req.query) {
-              throw new Error('Server configuration error: req.query is not defined but is required');
-            }
-
-            val = req.query[param.name];
-
-            break;
-          }
-
-          // Use the default value when necessary
-          if (_.isUndefined(val) && !_.isUndefined(param.schema) && !_.isUndefined(param.schema.default)) {
-            val = param.schema.default;
-          }
-
-          // Figure out the parameter path
-          if (_.isUndefined(paramIndex)) {
-            paramPath.push(req.method.toLowerCase());
-
-            paramIndex = findIndex(metadata.operation.parameters, param.name);
-          }
-
-          paramPath.push('parameters', paramIndex);
-
-          metadata.params[param.name] = {
-            path: paramPath,
-            schema: param,
+          metadata.params[parameter.name] = {
+            path: paramMetadata.path,
+            schema: parameter,
             value: val
           };
         });

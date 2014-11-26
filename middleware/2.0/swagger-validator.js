@@ -25,9 +25,8 @@
 'use strict';
 
 var _ = require('lodash');
+var async = require('async');
 var helpers = require('../helpers');
-var isModelParameter = helpers.isModelParameter;
-var toJsonPointer = require('../../lib/helpers').toJsonPointer;
 var send400 = helpers.send400;
 var validators = require('../../lib/validators');
 
@@ -44,80 +43,68 @@ exports = module.exports = function swaggerValidatorMiddleware () {
     var operation = req.swagger ? req.swagger.operation : undefined;
 
     if (!_.isUndefined(operation)) {
+      var paramName; // Here since we use it in the catch block
+      var paramPath; // Here since we use it in the catch block
+
       // Validate the request
       try {
         // Validate the content type
         validators.validateContentType(req.swagger.swaggerObject.consumes, operation.consumes, req);
 
-        _.each(_.union(req.swagger.path.parameters, operation.parameters), function (param) {
-          var paramName = param.name;
-          var paramPath = req.swagger.params[paramName].path;
-          var val = req.swagger.params[paramName].value;
+        async.map(req.swagger.operationParameters, function (paramMetadata, oCallback) {
+          var parameter = paramMetadata.schema;
+          var isModel = helpers.isModelParameter('2.0', parameter);
+          var val;
+
+          paramName = parameter.name;
+          paramPath = paramMetadata.path;
+          val = req.swagger.params[paramName].value;
 
           // Validate requiredness
-          validators.validateRequiredness(paramName, val, param.required);
+          validators.validateRequiredness(val, parameter.required);
 
           // Quick return if the value is not present
           if (_.isUndefined(val)) {
-            return;
+            return oCallback();
           }
 
-          if (isModelParameter('2.0', param)) {
-            if (param.schema) {
-              paramPath.push('schema');
-            }
+          validators.validateSchemaConstraints('2.0', parameter, paramPath, val);
 
-            // Validate the model
-            validators.validateModel(paramName, val, '2.0', req.swagger.swaggerObject,
-                                     _.isUndefined(param.schema.$ref) ?
-                                      toJsonPointer(paramPath) :
-                                      param.schema.$ref);
+          if (isModel) {
+            async.map(parameter.type === 'array' ? val : [val], function (aVal, callback) {
+              try {
+                validators.validateAgainstSchema(parameter.schema, val);
+              } catch (err) {
+                return callback(err);
+              }
+
+              return callback();
+            }, function (err) {
+              oCallback(err);
+            });
           } else {
-            // Constraints can appear in the parameter itself (type/format) and in the parameter's schema (if available)
-            if (param.schema) {
-              param = param.schema;
-            }
-
-            // Validate the value type/format
-            validators.validateTypeAndFormat(paramName, val,
-                                             param.type === 'array' ? param.items.type : param.type,
-                                             param.type === 'array' && param.items.format ?
-                                               param.items.format :
-                                               param.format);
-
-            // Validate enum
-            validators.validateEnum(paramName, val, param.enum);
-
-            // Validate maximum
-            validators.validateMaximum(paramName, val, param.maximum, param.type, param.exclusiveMaximum);
-
-            // Validate maximum items
-            validators.validateMaxItems(paramName, val, param.maxItems);
-
-            // Validate maximum length
-            validators.validateMaxLength(paramName, val, param.maxLength);
-
-            // Validate minimum
-            validators.validateMinimum(paramName, val, param.minimum, param.type, param.exclusiveMinimum);
-
-            // Validate minimum items
-            validators.validateMinItems(paramName, val, param.minItems);
-
-            // Validate minimum length
-            validators.validateMinLength(paramName, val, param.minLength);
-
-            // Validate pattern
-            validators.validatePattern(paramName, val, param.pattern);
-
-            // Validate uniqueItems
-            validators.validateUniqueItems(paramName, val, param.uniqueItems);
+            oCallback();
+          }
+        }, function (err) {
+          if (err) {
+            throw err;
+          } else {
+            return next();
           }
         });
       } catch (err) {
+        if (err.failedValidation === true) {
+          if (!err.path) {
+            err.path = paramPath;
+          }
+
+          err.paramName = paramName;
+        }
+
         return send400(req, res, next, err);
       }
+    } else {
+      return next();
     }
-
-    return next();
   };
 };

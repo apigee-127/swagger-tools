@@ -35,6 +35,10 @@ var errorHandler = module.exports.errorHandler = function errorHandler() {
         res.statusCode = 500;
       }
 
+      // Useful for debugging
+      // console.log(err);
+      // console.log(err.stack);
+
       res.end(err.message);
     } else {
       return next();
@@ -42,59 +46,56 @@ var errorHandler = module.exports.errorHandler = function errorHandler() {
   };
 };
 
-module.exports.createServer = function createServer (middlewareArgs, middlewares, handler) {
-  var swaggerMetadata;
+module.exports.createServer = function createServer (initArgs, options, callback) {
   var app = require('connect')();
   var bodyParser = require('body-parser');
   var parseurl = require('parseurl');
   var qs = require('qs');
+  var serverInit = function (middleware) {
+    var handler = options.handler || function(req, res) {
+      res.end('OK');
+    };
+    var useBodyParser = options.useBodyParser !== false;
+    var useQuery = options.useQuery !== false;
 
-  switch (middlewareArgs.length) {
-  case 2:
-    swaggerMetadata = swagger.middleware.v1_2.swaggerMetadata; // jshint ignore:line
-    break;
-
-  case 1:
-    swaggerMetadata = swagger.middleware.v2_0.swaggerMetadata; // jshint ignore:line
-    break;
-  }
-
-  // Required middleware
-  app.use(bodyParser.json());
-  app.use(bodyParser.urlencoded({ extended: false }));
-  app.use(function (req, res, next) {
-    if (!req.query) {
-      req.query = req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
+    if (useBodyParser) {
+      app.use(bodyParser.json());
+      app.use(bodyParser.urlencoded({ extended: false }));
     }
 
-    return next();
-  });
+    if (useQuery) {
+      app.use(function (req, res, next) {
+        if (!req.query) {
+          req.query = req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
+        }
 
-  app.use(swaggerMetadata.apply(swaggerMetadata, middlewareArgs));
+        return next();
+      });
+    }
 
-  _.each(middlewares || [], function (middleware) {
-    app.use(middleware);
-  });
+    app.use(middleware.swaggerMetadata());
+    app.use(middleware.swaggerValidator());
+    app.use(middleware.swaggerRouter(options.swaggerRouterOptions));
+    app.use(middleware.swaggerUi(options.swaggerUiOptions));
 
-  if (handler) {
     app.use(handler);
-  } else {
-    app.use(function(req, res){
-      res.end('OK');
-    });
-  }
 
-  // Error handler middleware to pass errors downstream as JSON
-  app.use(errorHandler());
+    // Error handler middleware to pass errors downstream as JSON
+    app.use(errorHandler());
 
-  return app;
+    callback(app);
+  };
+
+  initArgs.push(serverInit);
+
+  swagger.initializeMiddleware.apply(undefined, initArgs);
 };
 
 var prepareText = module.exports.prepareText = function prepareText (text) {
   return text.replace(/&nbsp;/g, ' ').replace(/\n/g, '');
 };
 
-module.exports.expectContent = function expectContent (content) {
+module.exports.expectContent = function expectContent (content, done) {
   return function (err, res) {
     if (err) {
       throw err;
@@ -104,6 +105,10 @@ module.exports.expectContent = function expectContent (content) {
       assert.deepEqual(JSON.parse(prepareText(res.text)), content);
     } else {
       assert.equal(prepareText(res.text), content);
+    }
+
+    if (_.isFunction(done)) {
+      done();
     }
   };
 };

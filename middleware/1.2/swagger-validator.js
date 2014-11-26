@@ -25,9 +25,10 @@
 'use strict';
 
 var _ = require('lodash');
+var async = require('async');
 var helpers = require('../helpers');
-var isModelParameter = helpers.isModelParameter;
 var send400 = helpers.send400;
+var spec = require('../../lib/helpers').getSpec('1.2');
 var validators = require('../../lib/validators');
 
 /**
@@ -43,55 +44,82 @@ exports = module.exports = function swaggerValidatorMiddleware () {
     var operation = req.swagger ? req.swagger.operation : undefined;
 
     if (!_.isUndefined(operation)) {
+      var paramIndex = 0;
+      var paramName; // Here since we use it in the catch block
+      var paramPath; // Here since we use it in the catch block
+
       // Validate the request
       try {
         // Validate the content type
         validators.validateContentType(req.swagger.api.consumes, operation.consumes, req);
 
-        _.each(operation.parameters || [], function (param) {
-          var paramName = param.name;
-          var val = req.swagger.params[paramName].value;
+        async.map(operation.parameters, function (parameter, oCallback) {
+          var isModel = helpers.isModelParameter('1.2', parameter);
+          var val;
+
+          paramName = parameter.name;
+          paramPath = req.swagger.operationPath.concat(['params', paramIndex.toString()]);
+          val = req.swagger.params[paramName].value;
 
           // Validate requiredness
-          validators.validateRequiredness(paramName, val, param.required);
+          validators.validateRequiredness(val, parameter.required);
 
           // Quick return if the value is not present
           if (_.isUndefined(val)) {
-            return;
+            return oCallback();
           }
 
-          if (isModelParameter('1.2', param)) {
-            // Validate the model
-            validators.validateModel(paramName, val, '1.2', req.swagger.apiDeclaration,
-                                     param.type === 'array' && !_.isUndefined(param.items.$ref) ?
-                                       param.items.$ref :
-                                       param.type);
+          validators.validateSchemaConstraints('1.2', parameter, paramPath, val);
+
+          if (isModel) {
+            async.map(parameter.type === 'array' ? val : [val], function (aVal, callback) {
+              spec.validateModel(req.swagger.apiDeclaration,
+                                 '#/models/' + (parameter.items ?
+                                                  parameter.items.type || parameter.items.$ref :
+                                                  parameter.type),
+                                 aVal, callback);
+            }, function (err, allResults) {
+              if (!err) {
+                _.each(allResults, function (results) {
+                  if (results) {
+                    err = new Error('Failed schema validation');
+
+                    err.code = 'SCHEMA_VALIDATION_FAILED';
+                    err.errors = results.errors;
+                    err.failedValidation = true;
+
+                    return false;
+                  }
+                });
+              }
+
+              oCallback(err);
+            });
           } else {
-            // Validate the value type/format
-            validators.validateTypeAndFormat(paramName, val,
-                                             param.type === 'array' ? param.items.type : param.type,
-                                             param.type === 'array' && param.items.format ?
-                                               param.items.format :
-                                               param.format);
+            oCallback();
+          }
 
-            // Validate enum
-            validators.validateEnum(paramName, val, param.enum);
-
-            // Validate maximum
-            validators.validateMaximum(paramName, val, param.maximum, param.type);
-
-            // Validate minimum
-            validators.validateMinimum(paramName, val, param.minimum, param.type);
-
-            // Validate uniqueItems
-            validators.validateUniqueItems(paramName, val, param.uniqueItems);
+          paramIndex++;
+        }, function (err) {
+          if (err) {
+            throw err;
+          } else {
+            return next();
           }
         });
       } catch (err) {
+        if (err.failedValidation === true) {
+          if (!err.path) {
+            err.path = paramPath;
+          }
+
+          err.paramName = paramName;
+        }
+
         return send400(req, res, next, err);
       }
+    } else {
+      return next();
     }
-
-    return next();
   };
 };

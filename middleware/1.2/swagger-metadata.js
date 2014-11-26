@@ -26,7 +26,6 @@
 
 var _ = require('lodash');
 var helpers = require('../helpers');
-var expressStylePath = helpers.expressStylePath;
 var parseurl = require('parseurl');
 var pathToRegexp = require('path-to-regexp');
 
@@ -64,111 +63,82 @@ exports = module.exports = function swaggerMetadataMiddleware (resourceList, res
     throw new TypeError('resources must be an array');
   }
 
-  var apis = {};
+  var apiCache = {};
 
   // Gather the apis, their path regex patterns and the corresponding operations
-  _.each(resources, function (resource, index) {
-    _.each(resource.apis, function (api) {
+  _.each(resources, function (resource, resourceIndex) {
+    _.each(resource.apis, function (api, apiIndex) {
+      var expressPath = helpers.expressStylePath(resource.basePath, api.path);
       var keys = [];
-      var re = pathToRegexp(expressStylePath(resource.basePath, api.path), keys);
-      var reStr = re.toString();
+      var re = pathToRegexp(expressPath, keys);
+      var cacheKey = re.toString();
 
-      if (Object.keys(apis).indexOf(reStr) !== -1) {
-        throw new Error('Duplicate API path/pattern: ' + api.path);
+      // This is an absolute path, use it as the cache key
+      if (expressPath.indexOf('{') === -1) {
+        cacheKey = expressPath;
       }
 
-      apis[reStr] = {
+      // For absolute paths, store it instead of its regex
+      apiCache[cacheKey] = {
         api: api,
+        apiDeclaration: resource,
+        apiIndex: apiIndex,
         keys: keys,
+        params: {},
         re: re,
-        resourceIndex: index,
-        operations: {}
+        operations: {},
+        resourceIndex: resourceIndex,
+        resourceListing: resourceList
       };
 
-      _.each(api.operations, function (operation) {
+      _.each(api.operations, function (operation, operationIndex) {
         var method = operation.method;
 
-        if (!_.isUndefined(apis[reStr][method])) {
-          throw new Error('Duplicate API operation (' + api.path + ') method: ' + method);
-        }
-
-        apis[reStr].operations[method] = operation;
+        apiCache[cacheKey].operations[method] = {
+          operation: operation,
+          operationPath: ['apis', apiIndex.toString(), 'operations', operationIndex.toString()]
+        };
       });
     });
   });
 
   return function swaggerMetadata (req, res, next) {
-    var path = parseurl(req).pathname;
     var match;
-    var api = _.find(apis, function (api) {
-      match = api.re.exec(path);
+    var path = parseurl(req).pathname;
+    var apiMetadata = apiCache[path] || _.find(apiCache, function (metadata) {
+      match = metadata.re.exec(path);
       return _.isArray(match);
     });
-    var metadata = {
-      api: api ? api.api : undefined,
-      apiDeclaration: api ? resources[api.resourceIndex] : undefined,
-      authorizations: resourceList.authorizations || {},
-      models: api ? resources[api.resourceIndex].models || {} : {},
-      operation: api ? api.operations[req.method] : undefined,
-      params: {},
-      resourceListing: resourceList
-    };
+    var metadata;
 
-    // Attach Swagger metadata to the request
-    if (!_.isUndefined(api)) {
+    if (apiMetadata) {
+      metadata = {
+        api: apiMetadata.api,
+        apiDeclaration: apiMetadata.apiDeclaration,
+        apiIndex: apiMetadata.apiIndex,
+        params: {},
+        resourceIndex: apiMetadata.resourceIndex,
+        resourceListing: apiMetadata.resourceListing
+      };
+
+      if (_.isPlainObject(apiMetadata.operations[req.method])) {
+        metadata.operation = apiMetadata.operations[req.method].operation;
+        metadata.operationPath = apiMetadata.operations[req.method].operationPath;
+        metadata.authorizations = metadata.operation.authorizations || apiMetadata.apiDeclaration.authorizations || {};
+      }
+
       req.swagger = metadata;
     }
 
     // Collect the parameter values
-    if (!_.isUndefined(metadata.operation)) {
+    if (metadata && metadata.operation) {
       try {
-        _.each(metadata.operation.parameters, function (param) {
-          var val;
+        _.each(metadata.operation.parameters, function (parameter, index) {
+          var val = helpers.getParameterValue('1.2', parameter, apiMetadata.keys, match, req);
 
-          // Get the value to validate based on the operation parameter type
-          switch (param.paramType) {
-          case 'body':
-          case 'form':
-            if (!req.body) {
-              throw new Error('Server configuration error: req.body is not defined but is required');
-            }
-
-            if (helpers.isModelParameter('1.2', param)) {
-              val = req.body;
-            } else {
-              val = req.body[param.name];
-            }
-
-            break;
-          case 'header':
-            val = req.headers[param.name];
-
-            break;
-          case 'path':
-            _.each(api.keys, function (key, index) {
-              if (key.name === param.name) {
-                val = match[index + 1];
-              }
-            });
-
-            break;
-          case 'query':
-            if (!req.query) {
-              throw new Error('Server configuration error: req.query is not defined but is required');
-            }
-
-            val = req.query[param.name];
-
-            break;
-          }
-
-          // Use the default value when necessary
-          if (_.isUndefined(val) && !_.isUndefined(param.defaultValue)) {
-            val = param.defaultValue;
-          }
-
-          metadata.params[param.name] = {
-            schema: param,
+          metadata.params[parameter.name] = {
+            path: metadata.operationPath.concat(['parameters', index.toString()]),
+            schema: parameter,
             value: val
           };
         });

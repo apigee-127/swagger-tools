@@ -56,10 +56,12 @@ gulp.task('browserify', function () {
     if (!isStandalone) {
       // Expose Bower modules so they can be required
       exposify.config = {
+        'async': 'async',
+        'json-refs': 'JsonRefs',
         'lodash': '_',
-        'jjv': 'jjv',
         'spark-md5': 'SparkMD5',
-        'traverse': 'traverse'
+        'traverse': 'traverse',
+        'z-schema': 'ZSchema'
       };
 
       b.transform('exposify');
