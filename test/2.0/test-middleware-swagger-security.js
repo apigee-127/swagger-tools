@@ -38,10 +38,10 @@ var SecurityDef = function(allow) {
   if (allow === undefined) { allow = true; }
   this.called = false;
   var self = this;
-  this.func = function(request, securityDefinition, scopes) {
+  this.func = function(request, securityDefinition, scopes, cb) {
     assert(Array.isArray(scopes));
     self.called = true;
-    return allow;
+    cb(allow);
   }
 };
 
