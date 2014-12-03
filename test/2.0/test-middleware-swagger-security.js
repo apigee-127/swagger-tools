@@ -44,7 +44,7 @@ var SecurityDef = function(allow) {
   }
 };
 
-describe.only('Swagger Security Middleware v2.0', function() {
+describe('Swagger Security Middleware v2.0', function() {
 
   describe('with global requirements', function() {
 
