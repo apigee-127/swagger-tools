@@ -1,0 +1,71 @@
+{
+  "swagger": "2.0",
+  "basePath": "/api",
+  "paths": {
+    "/unsecured": {
+      "get": {
+      }
+    },
+    "/secured": {
+      "get": {
+        "security": [
+          {
+            "local": [
+              "read"
+            ]
+          }
+        ]
+      }
+    },
+    "/securedAnd": {
+      "get": {
+        "security": [
+          {
+            "local": [
+              "read"
+            ],
+            "local2": [
+              "read"
+            ]
+          }
+        ]
+      }
+    },
+    "/securedOr": {
+      "get": {
+        "security": [
+          {
+            "local": [
+              "read"
+            ]
+          },
+          {
+            "local2": [
+              "read"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "securityDefinitions": {
+    "local": {
+      "type": "oauth2",
+      "scopes": {
+        "read": "allow read"
+      },
+      "flow": "accessCode",
+      "authorizationUrl": "http://localhost/authorize",
+      "tokenUrl": "http://localhost/token"
+    },
+    "local2": {
+      "type": "oauth2",
+      "scopes": {
+        "read": "allow read"
+      },
+      "flow": "accessCode",
+      "authorizationUrl": "http://localhost/authorize",
+      "tokenUrl": "http://localhost/token"
+    }
+  }
+}

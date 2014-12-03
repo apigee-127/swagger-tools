@@ -35,5 +35,6 @@ module.exports.v2 = module.exports.v2_0 = { // jshint ignore:line
   swaggerMetadata: require('./2.0/swagger-metadata'),
   swaggerRouter: require('./2.0/swagger-router'),
   swaggerUi: require('./2.0/swagger-ui'),
-  swaggerValidator: require('./2.0/swagger-validator')
+  swaggerValidator: require('./2.0/swagger-validator'),
+  swaggerSecurity: require('./2.0/swagger-security')
 };
