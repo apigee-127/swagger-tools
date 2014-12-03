@@ -41,7 +41,7 @@ var async = require('async');
  * @param {object} [options] - The middleware options
  *                 [options.{name}={SecurityImplementation}] - the keys match SecurityDefinition names and associated
  *                                                             values are handler functions that accept the following:
- *                                                             (request, securityRequirement, securityDefinition)
+ *                                                             (request, securityDefinition, scopes)
  *
  * @returns the middleware function
  */
@@ -65,7 +65,7 @@ exports = module.exports = function swaggerSecurityMiddleware(options) {
 
         if (!(secDef && handler)) { return cb(false); }
 
-        var allow = handler(req, secReq, secDef);
+        var allow = handler(req, secDef, secReq[name]);
 
         cb(allow);
 
