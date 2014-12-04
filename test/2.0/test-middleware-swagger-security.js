@@ -41,7 +41,7 @@ var SecurityDef = function(allow) {
   this.func = function(request, securityDefinition, scopes, cb) {
     assert(Array.isArray(scopes));
     self.called = true;
-    cb(allow);
+    cb(allow ? null : new Error('disallowed'));
   }
 };
 
