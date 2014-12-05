@@ -30,19 +30,20 @@ var _ = require('lodash');
 var assert = require('assert');
 var swagger = require('../');
 
-var middlewares = ['swaggerMetadata', 'swaggerRouter', 'swaggerUi', 'swaggerValidator'];
+var middlewares_v1 = ['swaggerMetadata', 'swaggerRouter', 'swaggerUi', 'swaggerValidator'];
+var middlewares_v2 = middlewares_v1.slice(); middlewares_v2.push('swaggerSecurity');
 
 describe('swagger-tools', function () {
   describe('middleware', function () {
     it('should have proper exports', function () {
       assert.ok(_.isPlainObject(swagger.middleware.v1));
       assert.ok(_.isPlainObject(swagger.middleware.v1_2)); // jshint ignore:line
-      assert.deepEqual(middlewares, Object.keys(swagger.middleware.v1));
-      assert.deepEqual(middlewares, Object.keys(swagger.middleware.v1_2)); // jshint ignore:line
+      assert.deepEqual(middlewares_v1, Object.keys(swagger.middleware.v1));
+      assert.deepEqual(middlewares_v1, Object.keys(swagger.middleware.v1_2)); // jshint ignore:line
       assert.ok(_.isPlainObject(swagger.middleware.v2));
       assert.ok(_.isPlainObject(swagger.middleware.v2_0)); // jshint ignore:line
-      assert.deepEqual(middlewares, Object.keys(swagger.middleware.v2));
-      assert.deepEqual(middlewares, Object.keys(swagger.middleware.v2_0)); // jshint ignore:line
+      assert.deepEqual(middlewares_v2, Object.keys(swagger.middleware.v2));
+      assert.deepEqual(middlewares_v2, Object.keys(swagger.middleware.v2_0)); // jshint ignore:line
     });
   });
 
