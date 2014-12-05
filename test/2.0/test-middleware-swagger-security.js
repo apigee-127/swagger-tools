@@ -23,13 +23,14 @@
  */
 'use strict';
 
-var _ = require('lodash');
+/* global describe, it */
+
+
 var assert = require('assert');
 var helpers = require('../helpers');
 var createServer = helpers.createServer;
-var path = require('path');
 var request = require('supertest');
-var middleware = require('../../').middleware.v2_0.swaggerSecurity;
+var middleware = require('../../').middleware.v2_0.swaggerSecurity; // jshint ignore:line
 
 var localSecurity = require('./swagger-security.json');
 var globalSecurity = require('./swagger-global-security.json');
@@ -42,7 +43,7 @@ var SecurityDef = function(allow) {
     assert(Array.isArray(scopes));
     self.called = true;
     cb(allow ? null : new Error('disallowed'));
-  }
+  };
 };
 
 describe('Swagger Security Middleware v2.0', function() {
