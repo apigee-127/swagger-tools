@@ -451,11 +451,6 @@ describe('Specification v2.0', function () {
             {
               code: 'MISSING_API_PATH_PARAMETER',
               message: 'API requires path parameter but it is not defined: id',
-              path: ['paths', '/pets/{id}']
-            },
-            {
-              code: 'MISSING_API_PATH_PARAMETER',
-              message: 'API requires path parameter but it is not defined: id',
               path: ['paths', '/pets/{id}', 'delete']
             },
             {
@@ -689,50 +684,6 @@ describe('Specification v2.0', function () {
             }
           ]);
           assert.equal(result.warnings.length, 0);
-
-          done();
-        });
-      });
-
-      // This should be removed when the upstream bug in the Swagger schema is fixed
-      //   https://github.com/swagger-api/swagger-spec/issues/174
-      it('missing items property for array type (Issue 62)', function (done) {
-        var swaggerObject = _.cloneDeep(petStoreJson);
-
-        delete swaggerObject.paths['/pets'].get.responses['200'].schema.items;
-
-        spec.validate(swaggerObject, function (err, result) {
-          if (err) {
-            throw err;
-          }
-
-          assert.deepEqual(result.errors, [
-            {
-              code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
-              message: 'Missing required property: items',
-              path: ['paths', '/pets', 'get', 'responses', '200', 'schema']
-            }
-          ]);
-          assert.equal(result.warnings.length, 0);
-
-          done();
-        });
-      });
-
-      it('should not report missing model for inlines model schemas (Issue 61)', function (done) {
-        var swaggerObject = _.cloneDeep(petStoreJson);
-
-        swaggerObject.definitions.Pet.properties.extraCategories = {
-          type: 'array',
-          items: _.cloneDeep(swaggerObject.definitions.Category)
-        };
-
-        spec.validate(swaggerObject, function (err, result) {
-          if (err) {
-            throw err;
-          }
-
-          assert.ok(_.isUndefined(result));
 
           done();
         });
@@ -2295,6 +2246,101 @@ describe('Specification v2.0', function () {
 
           done();
         }));
+      });
+    });
+  });
+
+  describe('issues', function () {
+    // This should be removed when the upstream bug in the Swagger schema is fixed
+    //   https://github.com/swagger-api/swagger-spec/issues/174
+    it('missing items property for array type (Issue 62)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      delete swaggerObject.paths['/pets'].get.responses['200'].schema.items;
+
+      spec.validate(swaggerObject, function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
+            message: 'Missing required property: items',
+            path: ['paths', '/pets', 'get', 'responses', '200', 'schema']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+
+        done();
+      });
+    });
+
+    it('should not report missing model for inlines model schemas (Issue 61)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.definitions.Pet.properties.extraCategories = {
+        type: 'array',
+        items: _.cloneDeep(swaggerObject.definitions.Category)
+      };
+
+      spec.validate(swaggerObject, function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.ok(_.isUndefined(result));
+
+        done();
+      });
+    });
+
+    it('should handle path parameters that are not path segments (Issue 72)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.paths['/export/{collection}.{format}'] = {
+        get: {
+          operationId: 'exportData',
+          parameters: [
+            {
+              description: 'Collection name',
+              name: 'collection',
+              in: 'path',
+              type: 'string'
+            },
+            {
+              description: 'The export format',
+              name: 'format',
+              in: 'path',
+              type: 'string'
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Exported data',
+              schema: {
+                type: 'string'
+              }
+            },
+            default: {
+              description: 'Unexpected error',
+              schema: {
+                $ref: '#/definitions/Error'
+              }
+            }
+          },
+          summary: 'Export data in requested format'
+        }
+      };
+
+      spec.validate(swaggerObject, function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.ok(_.isUndefined(result));
+
+        done();
       });
     });
   });

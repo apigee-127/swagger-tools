@@ -883,64 +883,6 @@ describe('Specification v1.2', function () {
         });
       });
 
-      // This should be removed when the upstream bug in the Swagger schema is fixed
-      //   https://github.com/swagger-api/swagger-spec/issues/174
-      it('missing items property for operation array type (Issue 61)', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-
-        delete petJson.apis[0].operations[2].items;
-
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
-          if (err) {
-            throw err;
-          }
-
-          assert.deepEqual(result.apiDeclarations[0].errors, [
-            {
-              code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
-              message: 'Missing required property: items',
-              path: ['apis', '0', 'operations', '2']
-            }
-          ]);
-          assert.equal(result.apiDeclarations[0].warnings.length, 0);
-
-          done();
-        });
-      });
-
-      it('missing items property for parameter array type (Issue 61)', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-
-        petJson.apis[0].operations[0].parameters.push({
-          paramType: 'query',
-          type: 'array',
-          name: 'fake'
-        });
-
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
-          if (err) {
-            throw err;
-          }
-
-          assert.deepEqual(result.apiDeclarations[0].errors, [
-            {
-              code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
-              message: 'Missing required property: items',
-              path: ['apis', '0', 'operations', '0', 'parameters', '1']
-            }
-          ]);
-          assert.equal(result.apiDeclarations[0].warnings.length, 0);
-
-          done();
-        });
-      });
-
       it('unresolvable operation responseMessage responseModel in API declaration', function (done) {
         var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
         var petJson = _.cloneDeep(allSampleFiles['pet.json']);
@@ -959,33 +901,6 @@ describe('Specification v1.2', function () {
               code: 'UNRESOLVABLE_MODEL',
               message: 'Model could not be resolved: FakeError',
               path: ['apis', '0', 'operations', '0', 'responseMessages', '0', 'responseModel']
-            }
-          ]);
-          assert.equal(result.apiDeclarations[0].warnings.length, 0);
-
-          done();
-        });
-      });
-
-      // https://github.com/apigee-127/swagger-tools/issues/71
-      it('model id mismatch API declaration', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-
-        petJson.models.Category.id = 'NotCategory';
-
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
-          if (err) {
-            throw err;
-          }
-
-          assert.deepEqual(result.apiDeclarations[0].errors, [
-            {
-              code: 'MODEL_ID_MISMATCH',
-              message: 'Model id does not match id in models object: ' + petJson.models.Category.id,
-              path: ['models', 'Category', 'id']
             }
           ]);
           assert.equal(result.apiDeclarations[0].warnings.length, 0);
@@ -1580,6 +1495,137 @@ describe('Specification v1.2', function () {
         } catch (err) {
           assert.equal(message, err.message);
         }
+      });
+    });
+  });
+
+  describe('issues', function () {
+    // This should be removed when the upstream bug in the Swagger schema is fixed
+    //   https://github.com/swagger-api/swagger-spec/issues/174
+    it('missing items property for operation array type (Issue 61)', function (done) {
+      var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+      var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+      var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+      delete petJson.apis[0].operations[2].items;
+
+      spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.deepEqual(result.apiDeclarations[0].errors, [
+          {
+            code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
+            message: 'Missing required property: items',
+            path: ['apis', '0', 'operations', '2']
+          }
+        ]);
+        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+        done();
+      });
+    });
+
+    it('missing items property for parameter array type (Issue 61)', function (done) {
+      var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+      var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+      var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+      petJson.apis[0].operations[0].parameters.push({
+        paramType: 'query',
+        type: 'array',
+        name: 'fake'
+      });
+
+      spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.deepEqual(result.apiDeclarations[0].errors, [
+          {
+            code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
+            message: 'Missing required property: items',
+            path: ['apis', '0', 'operations', '0', 'parameters', '1']
+          }
+        ]);
+        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+        done();
+      });
+    });
+
+    it('model id mismatch API declaration (Issue 71)', function (done) {
+      var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+      var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+      var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+      petJson.models.Category.id = 'NotCategory';
+
+      spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.deepEqual(result.apiDeclarations[0].errors, [
+          {
+            code: 'MODEL_ID_MISMATCH',
+            message: 'Model id does not match id in models object: ' + petJson.models.Category.id,
+            path: ['models', 'Category', 'id']
+          }
+        ]);
+        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+        done();
+      });
+    });
+
+    it('should handle path parameters that are not path segments (Issue 72)', function (done) {
+      var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+      var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+      var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+      petJson.apis.push({
+        operations: [
+          {
+            authorizations: {},
+            method: 'GET',
+            nickname: 'exportData',
+            notes: 'Allow user to export data in supported format',
+            parameters: [
+              {
+                description: 'Collection name',
+                name: 'collection',
+                paramType: 'path',
+                type: 'string'
+              },
+              {
+                description: 'The export format',
+                name: 'format',
+                paramType: 'path',
+                type: 'string'
+              }
+            ],
+            summary: 'Export data in requested format',
+            type: 'string'
+          }
+        ],
+        path: '/export/{collection}.{format}'
+      });
+
+      spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.ok(_.isUndefined(result));
+
+        done();
       });
     });
   });
