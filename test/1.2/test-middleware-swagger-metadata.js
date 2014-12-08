@@ -129,4 +129,43 @@ describe('Swagger Metadata Middleware v1.2', function () {
            .end(helpers.expectContent('OK', done));
        });
   });
+
+  describe('issues', function () {
+    it('should handle non-lowercase header parameteters (Issue 82)', function (done) {
+      var cPetJson = _.cloneDeep(petJson);
+
+      // Add a header parameter
+      cPetJson.apis[0].operations[0].parameters.push({
+        description: 'Authentication token',
+        name: 'Auth-Token',
+        paramType: 'header',
+        required: true,
+        type: 'string'
+      });
+
+      helpers.createServer([rlJson, [cPetJson, storeJson, userJson]], {
+        handler: function (req, res, next) {
+
+          try {
+            assert.deepEqual(req.swagger.params['Auth-Token'], {
+              path: ['apis', '0', 'operations', '0', 'parameters', '1'],
+              schema: cPetJson.apis[0].operations[0].parameters[1],
+              value: 'fake'
+            });
+          } catch (err) {
+            console.log(err);
+            return next(err.message);
+          }
+
+          res.end('OK');
+        }
+      }, function (app) {
+        request(app)
+        .get('/api/pet/1')
+        .set('Auth-Token', 'fake')
+        .expect(200)
+        .end(helpers.expectContent('OK', done));
+      });
+    });
+  });
 });

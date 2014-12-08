@@ -362,7 +362,7 @@ module.exports.getParameterValue = function getParameterValue (version, paramete
 
     break;
   case 'header':
-    val = req.headers[parameter.name];
+    val = req.headers[parameter.name.toLowerCase()];
 
     break;
   case 'path':
