@@ -37,11 +37,13 @@ var defaultOptions = {
  *
  * This middleware also requires that you use the swagger-metadata middleware before this middleware.  This middleware
  * also makes no attempt to work around invalid Swagger documents.  If you would like to validate your requests using
- * the swagger-validator middleware, you must use it prior to using this middleware.
+ * the swagger-validator middleware, you must use it prior to using this middleware.  If you would like to apply the
+ * SecurityDefinitions in your Swagger document, you must include a properly configured swagger-security middleware
+ * before including this middleware.
  *
  * The routing works such that any Swagger operation is expected to have an "x-swagger-router-controller" that contains
  * the controller name and the "operationId" will contain the method to invoke within that controller.  (If you do not
- * supply an "operationId" for your operation, we will default to the method assocaited with the operation.)  We will
+ * supply an "operationId" for your operation, we will default to the method associated with the operation.)  We will
  * then identify the controller by name from the controllers path (configurable) and identify the route handler within
  * the controller by name.
  *

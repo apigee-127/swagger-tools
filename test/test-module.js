@@ -33,7 +33,7 @@ var _ = require('lodash');
 var assert = require('assert');
 var swagger = require('../');
 
-var middlewares = ['swaggerMetadata', 'swaggerRouter', 'swaggerUi', 'swaggerValidator'];
+var middlewares = ['swaggerMetadata', 'swaggerRouter', 'swaggerSecurity', 'swaggerUi', 'swaggerValidator'];
 var petJson = require('../samples/1.2/pet.json');
 var petStoreJson = require('../samples/2.0/petstore.json');
 var rlJson = require('../samples/1.2/resource-listing.json');
