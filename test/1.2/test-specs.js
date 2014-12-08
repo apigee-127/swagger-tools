@@ -1532,8 +1532,6 @@ describe('Specification v1.2', function () {
           throw err;
         }
 
-
-
         assert.deepEqual(result.errors, [
           {
             code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
@@ -1559,6 +1557,29 @@ describe('Specification v1.2', function () {
         assert.ok(_.isUndefined(result));
 
         done();
+      });
+    });
+  });
+
+  describe('#resolve', function () {
+    it('should throw errors for invalid arguments', function () {
+      var errors = {
+        'document is required': [],
+        'document must be an object': ['resource-listing.json'],
+        'callback is required': [{}],
+        'callback must be a function': [{}, 'wrong-type'],
+        'ptr must be a JSON Pointer string': [{}, [], function () {}],
+        'Swagger 1.2 is not supported': [_.cloneDeep(allSampleFiles['pet.json']), function () {}]
+      };
+
+      _.each(errors, function (args, message) {
+        try {
+          spec.resolve.apply(undefined, args);
+
+          assert.fail(null, null, 'Should had failed above');
+        } catch (err) {
+          assert.equal(message, err.message);
+        }
       });
     });
   });

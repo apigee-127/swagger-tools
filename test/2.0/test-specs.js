@@ -30,6 +30,7 @@ var _ = require('lodash');
 var assert = require('assert');
 var async = require('async');
 var http = require('http');
+var JsonRefs = require('json-refs');
 var url = require('url');
 var spec = require('../../').specs.v2_0; // jshint ignore:line
 
@@ -2231,6 +2232,69 @@ describe('Specification v2.0', function () {
         assert.ok(_.isUndefined(result));
 
         done();
+      });
+    });
+  });
+
+  describe('#resolve', function () {
+    it('should throw errors for invalid arguments', function () {
+      var errors = {
+        'document is required': [],
+        'document must be an object': ['resource-listing.json'],
+        'callback is required': [{}],
+        'callback must be a function': [{}, 'wrong-type'],
+        'ptr must be a JSON Pointer string': [{}, [], function () {}]
+      };
+
+      _.each(errors, function (args, message) {
+        try {
+          spec.resolve.apply(undefined, args);
+
+          assert.fail(null, null, 'Should had failed above');
+        } catch (err) {
+          assert.equal(message, err.message);
+        }
+      });
+    });
+
+    it('should return the whole document when there is no pointer argument', function (done) {
+      spec.resolve(petStoreJson, function (err, resolved) {
+        if (err) {
+          throw err;
+        }
+
+        assert.deepEqual(JsonRefs.resolveRefs(petStoreJson, function (err, json) {
+          if (err) {
+            throw err;
+          }
+
+          // swagger-tools adds a default type of 'object' to composed definitions so we need to reflect this
+          json.paths['/pets/{id}'].get.responses['200'].schema.properties.category.type = 'object';
+          json.paths['/pets/{id}'].get.responses['200'].schema.properties.tags.items.type = 'object';
+          json.paths['/pets/{id}'].get.responses['200'].schema.type = 'object';
+
+          assert.deepEqual(json, resolved);
+
+          done();
+        }));
+      });
+    });
+
+    it('should return the document fragment corresponding to the pointer argument', function (done) {
+      spec.resolve(petStoreJson, '#/definitions/Pet', function (err, resolved) {
+        if (err) {
+          throw err;
+        }
+
+        assert.deepEqual(JsonRefs.resolveRefs(petStoreJson, function (err, json) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(json.definitions.Pet, resolved);
+
+          done();
+        }));
       });
     });
   });
