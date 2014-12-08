@@ -128,33 +128,34 @@ exports = module.exports = function swaggerMetadataMiddleware (swaggerObject) {
   return function swaggerMetadata (req, res, next) {
     var path = parseurl(req).pathname;
     var match;
-    var pathMetadata = apiCache[path] || _.find(apiCache, function (metadata) {
-      match = metadata.re.exec(path);
-      return _.isArray(match);
-    });
     var metadata;
+    var pathMetadata;
 
-    if (pathMetadata) {
-      metadata = {
-        apiPath : pathMetadata.apiPath,
-        path: pathMetadata.path,
-        params: {},
-        swaggerObject: pathMetadata.swaggerObject.resolved
-      };
+    try {
+      pathMetadata = apiCache[path] || _.find(apiCache, function (metadata) {
+        match = metadata.re.exec(path);
+        return _.isArray(match);
+      });
 
-      if (_.isPlainObject(pathMetadata.operations[req.method.toLowerCase()])) {
-        metadata.operation = pathMetadata.operations[req.method.toLowerCase()].operation;
-        metadata.operationParameters = pathMetadata.operations[req.method.toLowerCase()].parameters || [];
-        metadata.security = metadata.operation.security || metadata.swaggerObject.resolved.security || [];
+      if (pathMetadata) {
+        metadata = {
+          apiPath : pathMetadata.apiPath,
+          path: pathMetadata.path,
+          params: {},
+          swaggerObject: pathMetadata.swaggerObject.resolved
+        };
+
+        if (_.isPlainObject(pathMetadata.operations[req.method.toLowerCase()])) {
+          metadata.operation = pathMetadata.operations[req.method.toLowerCase()].operation;
+          metadata.operationParameters = pathMetadata.operations[req.method.toLowerCase()].parameters || [];
+          metadata.security = metadata.operation.security || metadata.swaggerObject.security || [];
+        }
+
+        req.swagger = metadata;
       }
 
-      req.swagger = metadata;
-    }
-
-
-    // Collect the parameter values
-    if (metadata && metadata.operation) {
-      try {
+      // Collect the parameter values
+      if (metadata && metadata.operation) {
         _.each(metadata.operationParameters, function (paramMetadata) {
           var parameter = paramMetadata.schema;
           var val = helpers.getParameterValue('2.0', parameter, pathMetadata.keys, match, req);
@@ -165,9 +166,9 @@ exports = module.exports = function swaggerMetadataMiddleware (swaggerObject) {
             value: val
           };
         });
-      } catch (err) {
-        return next(err);
       }
+    } catch (err) {
+      return next(err);
     }
 
     return next();

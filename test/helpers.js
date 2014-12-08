@@ -74,8 +74,15 @@ module.exports.createServer = function createServer (initArgs, options, callback
     }
 
     app.use(middleware.swaggerMetadata());
+
+    // Conditionally enable security (To avoid having to rewrite all Swagger documents or all tests)
+    if (Object.keys(options.swaggerSecurityOptions || {}).length > 0) {
+      app.use(middleware.swaggerSecurity(options.swaggerSecurityOptions));
+    }
+
     app.use(middleware.swaggerValidator());
     app.use(middleware.swaggerRouter(options.swaggerRouterOptions));
+
     app.use(middleware.swaggerUi(options.swaggerUiOptions));
 
     app.use(handler);

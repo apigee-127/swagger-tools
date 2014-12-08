@@ -86,6 +86,7 @@ var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, cal
         return swaggerMetadata.apply(undefined, args.slice(0, args.length - 1));
       },
       swaggerRouter: require('./middleware/' + swaggerVersion + '/swagger-router'),
+      swaggerSecurity: require('./middleware/' + swaggerVersion + '/swagger-security'),
       // Create a wrapper to avoid having to pass the non-optional arguments back to the swaggerUi middleware
       swaggerUi: function (options) {
         var swaggerUi = require('./middleware/' + swaggerVersion + '/swagger-ui');

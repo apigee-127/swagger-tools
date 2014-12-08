@@ -33,7 +33,10 @@ var assert = require('assert');
 var helpers = require('../helpers');
 var request = require('supertest');
 
-var petStoreJson = _.cloneDeep(require('../../samples/2.0/petstore.json'));
+var petJson = _.cloneDeep(require('../../samples/1.2/pet.json'));
+var rlJson = _.cloneDeep(require('../../samples/1.2/resource-listing.json'));
+var storeJson = require('../../samples/1.2/store.json');
+var userJson = require('../../samples/1.2/user.json');
 
 var SecurityDef = function (allow) {
   var self = this;
@@ -54,51 +57,106 @@ var SecurityDef = function (allow) {
 };
 
 // Create security definitions
-petStoreJson.securityDefinitions.local = petStoreJson.securityDefinitions.local2 = {
-  type: 'oauth2',
-  scopes: {
-    read: 'allow read'
+rlJson.authorizations.local = rlJson.authorizations.local2 = {
+  grantTypes: {
+    'authorization_code': {
+      tokenEndpoint: {
+        tokenName: 'auth_code',
+        url: 'http://petstore.swagger.wordnik.com/oauth/token'
+      },
+      tokenRequestEndpoint: {
+        clientIdName: 'client_id',
+        clientSecretName: 'client_secret',
+        url: 'http://petstore.swagger.wordnik.com/oauth/requestToken'
+      }
+    },
+    implicit: {
+      loginEndpoint: {
+        url: 'http://petstore.swagger.wordnik.com/oauth/dialog'
+      },
+      tokenName: 'access_token'
+    }
   },
-  flow: 'accessCode',
-  authorizationUrl: 'http://localhost/authorize',
-  tokenUrl: 'http://localhost/token'
+  scopes: [
+    {
+      description: 'Modify pets in your account',
+      scope: 'write:pets'
+    },
+    {
+      description: 'Read your pets',
+      scope: 'read:pets'
+    },
+    {
+      description: 'Anything (testing)',
+      scope: 'test:anything'
+    }
+  ],
+  type: 'oauth2'
 };
 
 // Create paths
-petStoreJson.paths['/secured'] = _.cloneDeep(petStoreJson.paths['/pets']);
-petStoreJson.paths['/securedAnd'] = _.cloneDeep(petStoreJson.paths['/pets']);
-petStoreJson.paths['/securedOr'] = _.cloneDeep(petStoreJson.paths['/pets']);
-petStoreJson.paths['/unsecured'] = _.cloneDeep(petStoreJson.paths['/pets']);
+petJson.apis.push(_.cloneDeep(petJson.apis[4]));
+petJson.apis.push(_.cloneDeep(petJson.apis[4]));
+petJson.apis.push(_.cloneDeep(petJson.apis[4]));
+petJson.apis.push(_.cloneDeep(petJson.apis[4]));
+
+petJson.apis[5].path = '/secured';
+petJson.apis[6].path = '/securedAnd';
+petJson.apis[7].path = '/securedOr';
+petJson.apis[8].path = '/unsecured';
 
 // Add security to paths
-petStoreJson.paths['/secured'].get.security = [
-  {
-    local: ['read']
-  }
-];
-petStoreJson.paths['/securedAnd'].get.security = [
-  {
-    local: ['read']
-  }, {
-    local2: ['read']
-  }
-];
-petStoreJson.paths['/securedOr'].get.security = [
-  {
-    local: ['read']
-  }, {
-    local2: ['read']
-  }
-];
+petJson.apis[5].operations[0].authorizations = {
+  local: [
+    {
+      description: 'Read your',
+      scope: 'read:pets'
+    }
+  ]
+};
+petJson.apis[6].operations[0].authorizations = {
+  local: [
+    {
+      description: 'Read your',
+      scope: 'read:pets'
+    }
+  ],
+  local2: [
+    {
+      description: 'Read your',
+      scope: 'read:pets'
+    }
+  ]
+};
+petJson.apis[7].operations[0].authorizations = {
+  local: [
+    {
+      description: 'Read your',
+      scope: 'read:pets'
+    }
+  ],
+  local2: [
+    {
+      description: 'Read your',
+      scope: 'read:pets'
+    }
+  ]
+};
 
-delete petStoreJson.security;
-delete petStoreJson.paths['/unsecured'].get.security;
 
-describe('Swagger Security Middleware v2.0', function () {
+delete petJson.authorizations;
+delete petJson.apis[8].operations[0].authorizations;
+
+petJson.apis[5].operations[0].parameters[0].required = false;
+petJson.apis[6].operations[0].parameters[0].required = false;
+petJson.apis[7].operations[0].parameters[0].required = false;
+petJson.apis[8].operations[0].parameters[0].required = false;
+
+describe('Swagger Security Middleware v1.2', function () {
   it('should call middleware when secured', function(done) {
     var localDef = new SecurityDef();
 
-    helpers.createServer([petStoreJson], {
+    helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
       swaggerSecurityOptions: {
         local: localDef.func
       }
@@ -119,7 +177,7 @@ describe('Swagger Security Middleware v2.0', function () {
   it('should not call middleware when unsecured', function (done) {
     var localDef = new SecurityDef();
 
-    helpers.createServer([petStoreJson], {
+    helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
       swaggerSecurityOptions: {
         local: localDef.func
       }
@@ -140,7 +198,7 @@ describe('Swagger Security Middleware v2.0', function () {
   it('should not authorize if handler denies', function(done) {
     var localDef = new SecurityDef(false);
 
-    helpers.createServer([petStoreJson], {
+    helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
       swaggerSecurityOptions: {
         local: localDef.func
       }
@@ -152,100 +210,111 @@ describe('Swagger Security Middleware v2.0', function () {
     });
   });
 
-  describe('with global requirements', function () {
-    it('should call global middleware when unsecured locally', function (done) {
-      var cPetStoreJson = _.cloneDeep(petStoreJson);
-      var globalDef = new SecurityDef();
-      var localDef = new SecurityDef();
+  // Not possible due to https://github.com/swagger-api/swagger-spec/issues/159
 
-      cPetStoreJson.security = [
-        {
-          oauth2: ['read']
-        }
-      ];
-
-      helpers.createServer([cPetStoreJson], {
-        swaggerSecurityOptions: {
-          oauth2: globalDef.func,
-          local: localDef.func
-        }
-      }, function (app) {
-        request(app)
-          .get('/api/unsecured')
-          .expect(200)
-          .end(function(err) {
-            if (err) { return done(err); }
-
-            assert(globalDef.called);
-            assert(!localDef.called);
-
-            done();
-          });
-      });
-    });
-
-    it('should call local middleware when secured locally', function (done) {
-      var cPetStoreJson = _.cloneDeep(petStoreJson);
-      var globalDef = new SecurityDef();
-      var localDef = new SecurityDef();
-
-      cPetStoreJson.security = [
-        {
-          oauth2: ['read']
-        }
-      ];
-
-      helpers.createServer([cPetStoreJson], {
-        swaggerSecurityOptions: {
-          oauth2: globalDef.func,
-          local: localDef.func
-        }
-      }, function (app) {
-        request(app)
-          .get('/api/secured')
-          .expect(200)
-          .end(function(err) {
-            if (err) { return done(err); }
-
-            assert(localDef.called);
-            assert(!globalDef.called);
-
-            done();
-          });
-      });
-    });
-
-    it('should not authorize if handler denies', function (done) {
-      var cPetStoreJson = _.cloneDeep(petStoreJson);
-      var globalDef = new SecurityDef(false);
-      var localDef = new SecurityDef(true);
-
-      cPetStoreJson.security = [
-        {
-          oauth2: ['read']
-        }
-      ];
-
-      helpers.createServer([cPetStoreJson], {
-        swaggerSecurityOptions: {
-          oauth2: globalDef.func,
-          local: localDef.func
-        }
-      }, function (app) {
-        request(app)
-          .get('/api/unsecured')
-          .expect(403)
-          .end(done);
-      });
-    });
-  });
+  // describe('with global requirements', function () {
+  //   it('should call global middleware when unsecured locally', function (done) {
+  //     var cPetJson = _.cloneDeep(petJson);
+  //     var globalDef = new SecurityDef();
+  //     var localDef = new SecurityDef();
+  //
+  //     cPetJson.authorizations = {
+  //       oauth2: [
+  //         {
+  //           description: 'Read your pets',
+  //           scope: 'read:pets'
+  //         }
+  //       ]
+  //     };
+  //
+  //     helpers.createServer([rlJson, [cPetJson, storeJson, userJson]], {
+  //       swaggerSecurityOptions: {
+  //         oauth2: globalDef.func,
+  //         local: localDef.func
+  //       }
+  //     }, function (app) {
+  //       request(app)
+  //         .get('/api/unsecured')
+  //         .expect(200)
+  //         .end(function(err) {
+  //           if (err) { return done(err); }
+  //
+  //           assert(globalDef.called);
+  //           assert(!localDef.called);
+  //
+  //           done();
+  //         });
+  //     });
+  //   });
+  //
+  //   it('should call local middleware when secured locally', function (done) {
+  //     var cPetJson = _.cloneDeep(petJson);
+  //     var globalDef = new SecurityDef();
+  //     var localDef = new SecurityDef();
+  //
+  //     cPetJson.authorizations = {
+  //       oauth2: [
+  //         {
+  //           description: 'Read your pets',
+  //           scope: 'read:pets'
+  //         }
+  //       ]
+  //     };
+  //
+  //     helpers.createServer([rlJson, [cPetJson, storeJson, userJson]], {
+  //       swaggerSecurityOptions: {
+  //         oauth2: globalDef.func,
+  //         local: localDef.func
+  //       }
+  //     }, function (app) {
+  //       request(app)
+  //         .get('/api/secured')
+  //         .expect(200)
+  //         .end(function(err) {
+  //           if (err) { return done(err); }
+  //
+  //           assert(localDef.called);
+  //           assert(!globalDef.called);
+  //
+  //           done();
+  //         });
+  //     });
+  //   });
+  //
+  //   it('should not authorize if handler denies', function (done) {
+  //     var cPetJson = _.cloneDeep(petJson);
+  //     var globalDef = new SecurityDef(false);
+  //     var localDef = new SecurityDef(true);
+  //
+  //     cPetJson.authorizations = {
+  //       oauth2: [
+  //         {
+  //           description: 'Read your pets',
+  //           scope: 'read:pets'
+  //         }
+  //       ]
+  //     };
+  //
+  //     helpers.createServer([rlJson, [cPetJson, storeJson, userJson]], {
+  //       swaggerSecurityOptions: {
+  //         oauth2: globalDef.func,
+  //         local: localDef.func
+  //       }
+  //     }, function (app) {
+  //       request(app)
+  //         .get('/api/unsecured')
+  //         .expect(403)
+  //         .end(done);
+  //     });
+  //   });
+  // });
 
   describe('AND requirements', function() {
     it('should authorize if both are true', function (done) {
       var local = new SecurityDef(true);
       var local2 = new SecurityDef(true);
 
-      helpers.createServer([petStoreJson], {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
         swaggerSecurityOptions: {
           local: local.func,
           local2: local2.func
@@ -262,7 +331,7 @@ describe('Swagger Security Middleware v2.0', function () {
       var local = new SecurityDef(false);
       var local2 = new SecurityDef(true);
 
-      helpers.createServer([petStoreJson], {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
         swaggerSecurityOptions: {
           local: local.func,
           local2: local2.func
@@ -279,7 +348,7 @@ describe('Swagger Security Middleware v2.0', function () {
       var local = new SecurityDef(true);
       var local2 = new SecurityDef(false);
 
-      helpers.createServer([petStoreJson], {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
         swaggerSecurityOptions: {
           local: local.func,
           local2: local2.func
@@ -296,7 +365,7 @@ describe('Swagger Security Middleware v2.0', function () {
       var local = new SecurityDef(false);
       var local2 = new SecurityDef(false);
 
-      helpers.createServer([petStoreJson], {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
         swaggerSecurityOptions: {
           local: local.func,
           local2: local2.func
@@ -315,7 +384,7 @@ describe('Swagger Security Middleware v2.0', function () {
       var local = new SecurityDef(true);
       var local2 = new SecurityDef(true);
 
-      helpers.createServer([petStoreJson], {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
         swaggerSecurityOptions: {
           local: local.func,
           local2: local2.func
@@ -332,7 +401,7 @@ describe('Swagger Security Middleware v2.0', function () {
       var local = new SecurityDef(true);
       var local2 = new SecurityDef(false);
 
-      helpers.createServer([petStoreJson], {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
         swaggerSecurityOptions: {
           local: local.func,
           local2: local2.func
@@ -349,7 +418,7 @@ describe('Swagger Security Middleware v2.0', function () {
       var local = new SecurityDef(false);
       var local2 = new SecurityDef(true);
 
-      helpers.createServer([petStoreJson], {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
         swaggerSecurityOptions: {
           local: local.func,
           local2: local2.func
@@ -366,7 +435,7 @@ describe('Swagger Security Middleware v2.0', function () {
       var local = new SecurityDef(false);
       var local2 = new SecurityDef(false);
 
-      helpers.createServer([petStoreJson], {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
         swaggerSecurityOptions: {
           local: local.func,
           local2: local2.func

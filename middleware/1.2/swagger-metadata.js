@@ -103,36 +103,38 @@ exports = module.exports = function swaggerMetadataMiddleware (resourceList, res
   });
 
   return function swaggerMetadata (req, res, next) {
-    var match;
     var path = parseurl(req).pathname;
-    var apiMetadata = apiCache[path] || _.find(apiCache, function (metadata) {
-      match = metadata.re.exec(path);
-      return _.isArray(match);
-    });
+    var apiMetadata;
+    var match;
     var metadata;
 
-    if (apiMetadata) {
-      metadata = {
-        api: apiMetadata.api,
-        apiDeclaration: apiMetadata.apiDeclaration,
-        apiIndex: apiMetadata.apiIndex,
-        params: {},
-        resourceIndex: apiMetadata.resourceIndex,
-        resourceListing: apiMetadata.resourceListing
-      };
+    try {
+      apiMetadata = apiCache[path] || _.find(apiCache, function (metadata) {
+        match = metadata.re.exec(path);
+        return _.isArray(match);
+      });
 
-      if (_.isPlainObject(apiMetadata.operations[req.method])) {
-        metadata.operation = apiMetadata.operations[req.method].operation;
-        metadata.operationPath = apiMetadata.operations[req.method].operationPath;
-        metadata.authorizations = metadata.operation.authorizations || apiMetadata.apiDeclaration.authorizations || {};
+      if (apiMetadata) {
+        metadata = {
+          api: apiMetadata.api,
+          apiDeclaration: apiMetadata.apiDeclaration,
+          apiIndex: apiMetadata.apiIndex,
+          params: {},
+          resourceIndex: apiMetadata.resourceIndex,
+          resourceListing: apiMetadata.resourceListing
+        };
+
+        if (_.isPlainObject(apiMetadata.operations[req.method])) {
+          metadata.operation = apiMetadata.operations[req.method].operation;
+          metadata.operationPath = apiMetadata.operations[req.method].operationPath;
+          metadata.authorizations = metadata.operation.authorizations || apiMetadata.apiDeclaration.authorizations;
+        }
+
+        req.swagger = metadata;
       }
 
-      req.swagger = metadata;
-    }
-
-    // Collect the parameter values
-    if (metadata && metadata.operation) {
-      try {
+      // Collect the parameter values
+      if (metadata && metadata.operation) {
         _.each(metadata.operation.parameters, function (parameter, index) {
           var val = helpers.getParameterValue('1.2', parameter, apiMetadata.keys, match, req);
 
@@ -142,9 +144,9 @@ exports = module.exports = function swaggerMetadataMiddleware (resourceList, res
             value: val
           };
         });
-      } catch (err) {
-        return next(err);
       }
+    } catch (err) {
+      return next(err);
     }
 
     return next();

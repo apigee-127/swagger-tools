@@ -26,17 +26,19 @@
 var _ = require('lodash');
 var async = require('async');
 
-function handleSecurityError(err, res) {
+function handleSecurityError (err, res) {
   var body = {
     'error_description': err.message,
     state: err.state,
     error: err.code || 'server_error'
   };
+
   if (err.headers) {
     _.each(_.keys(err.headers), function(name) {
       res.setHeader(name, err.headers[name]);
     });
   }
+
   res.statusCode = err.statusCode || 403;
   res.end(JSON.stringify(body));
 }
@@ -66,40 +68,35 @@ function handleSecurityError(err, res) {
  *
  * @returns the middleware function
  */
-exports = module.exports = function swaggerSecurityMiddleware(options) {
+exports = module.exports = function swaggerSecurityMiddleware (options) {
 
   var handlers = options || {};
 
-  return function swaggerSecurity(req, res, next) {
-
-    if (!req.swagger) { return next(); }
+  return function swaggerSecurity (req, res, next) {
+    if (!req.swagger || !req.swagger.operation) { return next(); }
 
     var securityReqs = req.swagger.operation.security || req.swagger.swaggerObject.security;
+
     if (!securityReqs) { return next(); }
 
     async.map(securityReqs, function(secReq, cb) { // logical OR - any one can allow
-
       async.map(Object.keys(secReq), function(name, cb) { // logical AND - all must allow
-
         var secDef = req.swagger.swaggerObject.securityDefinitions[name];
-        if (!secDef) { return cb(new Error('unknown security definition: ' + name)); }
-
         var handler = handlers[name];
+
         if (!handler) { return cb(new Error('unknown security handler: ' + name)); }
 
         handler(req, secDef, secReq[name], cb);
-      },
-        function(err) {
-          // swap normal err and result to short-circuit the logical OR
-          if (err) { return cb(undefined, err); }
-          cb(new Error('OK'));
-        }
-      );
-    },
-      function(ok, errors) { // note swapped results
-        if (ok && ok.message === 'OK') { return next(); }
-        handleSecurityError(errors[0], res);
-      }
-    );
+      }, function (err) {
+        // swap normal err and result to short-circuit the logical OR
+        if (err) { return cb(undefined, err); }
+
+        cb(new Error('OK'));
+      });
+    }, function (ok, errors) { // note swapped results
+      if (ok && ok.message === 'OK') { return next(); }
+
+      handleSecurityError(errors[0], res);
+    });
   };
 };
