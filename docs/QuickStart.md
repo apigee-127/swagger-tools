@@ -80,20 +80,22 @@ To describe this API as a Swagger document, we would end up with something like 
             "in": "query",
             "description": "The unit, either 'C' or 'F'.",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "enum": ["C", "F"],
+            "default": "F"
           }
         ],
         "responses": {
           "default": {
             "description": "Invalid request.",
             "schema": {
-              "$ref": "Error"
+              "$ref": "#/definitions/Error"
             }
           },
           "200": {
             "description": "Successful request.",
             "schema": {
-              "$ref": "Weather"
+              "$ref": "#/definitions/Weather"
             }
           }
         }
@@ -217,15 +219,15 @@ To describe this API as a Swagger document, we would end up with something like 
     "Weather": {
       "properties": {
         "location": {
-          "$ref": "Location"
+          "$ref": "#/definitions/Location"
         },
         "current": {
-          "$ref": "CurrentWeather"
+          "$ref": "#/definitions/CurrentWeather"
         },
         "forecast": {
           "type": "array",
           "items": {
-            "$ref": "Forecast"
+            "$ref": "#/definitions/Forecast"
           }
         }
       },

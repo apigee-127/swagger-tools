@@ -142,6 +142,29 @@ describe('Specification v2.0', function () {
         });
       });
 
+      it('invalid reference', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.paths['/pets'].get.responses['200'].schema.items.$ref = 'Pet';
+
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.errors, [
+            {
+              code: 'INVALID_REFERENCE',
+              message: 'Not a valid JSON Reference',
+              path: ['paths', '/pets', 'get', 'responses', '200', 'schema', 'items', '$ref']
+            }
+            ]);
+            assert.equal(result.warnings.length, 0);
+
+            done();
+          });
+        });
+
       it('invalid type', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
 
