@@ -1,5 +1,5 @@
 // swagger-client.js
-// version 2.1.0-alpha.2
+// version 2.1.0-alpha.4
 /**
  * Array Model
  **/
@@ -87,15 +87,20 @@ SwaggerAuthorizations.prototype.apply = function(obj, authorizations) {
     }
   }
   else {
-    for(name in authorizations) {
-      for (key in this.authz) {
-        if(key == name) {
-          value = this.authz[key];
-          result = value.apply(obj, authorizations);
-          if (result === true)
-            status = true;
+    if(Array.isArray(authorizations)) {
+      var i;
+      for(i = 0; i < authorizations.length; i++) {
+        var auth = authorizations[i];
+        log(auth);
+        for (key in this.authz) {
+          var value = this.authz[key];
+          if(typeof value !== 'undefined') {
+            result = value.apply(obj, authorizations);
+            if (result === true)
+              status = true;
+          }
         }
-      }      
+      }
     }
   }
 
@@ -382,7 +387,10 @@ SwaggerClient.prototype.buildFromSpec = function(response) {
   this.apisArray = [];
   this.consumes = response.consumes;
   this.produces = response.produces;
-  this.authSchemes = response.authorizations;
+  this.securityDefinitions = response.securityDefinitions;
+
+  // legacy support
+  this.authSchemes = response.securityDefinitions;
 
   var location = this.parseUri(this.url);
   if(typeof this.schemes === 'undefined' || this.schemes.length === 0) {
@@ -415,6 +423,9 @@ SwaggerClient.prototype.buildFromSpec = function(response) {
     if(typeof response.paths[path] === 'object') {
       var httpMethod;
       for(httpMethod in response.paths[path]) {
+        if(['delete', 'get', 'head', 'options', 'patch', 'post', 'put'].indexOf(httpMethod) === -1) {
+          continue;
+        }
         var operation = response.paths[path][httpMethod];
         var tags = operation.tags;
         if(typeof tags === 'undefined') {
@@ -502,7 +513,11 @@ SwaggerClient.prototype.idFromOp = function(path, httpMethod, op) {
     return (op.operationId);
   }
   else {
-    return path.substring(1).replace(/\//g, "_").replace(/\{/g, "").replace(/\}/g, "") + "_" + httpMethod;
+    return path.substring(1)
+      .replace(/\//g, "_")
+      .replace(/\{/g, "")
+      .replace(/\}/g, "")
+      .replace(/\./g, "_") + "_" + httpMethod;
   }
 }
 
@@ -540,6 +555,7 @@ var Operation = function(parent, operationId, httpMethod, path, args, definition
   this.responses = (args.responses||{});
   this.type = null;
   this.security = args.security;
+  this.authorizations = args.security;
   this.description = args.description;
 
   var i;
@@ -550,7 +566,7 @@ var Operation = function(parent, operationId, httpMethod, path, args, definition
       param.allowMultiple = true;
     }
     var innerType = this.getType(param);
-    if(innerType.toString().toLowerCase() === 'boolean') {
+    if(innerType && innerType.toString().toLowerCase() === 'boolean') {
       param.allowableValues = {};
       param.isList = true;
       param.enum = ["true", "false"];
@@ -646,8 +662,8 @@ Operation.prototype.getType = function (param) {
     str = 'integer';
   else if(type === 'integer' && format === 'int64')
     str = 'long';
-  else if(type === 'integer' && typeof format === 'undefined')
-    str = 'long';
+  else if(type === 'integer')
+    str = 'integer'
   else if(type === 'string' && format === 'date-time')
     str = 'date-time';
   else if(type === 'string' && format === 'date')
@@ -656,7 +672,7 @@ Operation.prototype.getType = function (param) {
     str = 'float';
   else if(type === 'number' && format === 'double')
     str = 'double';
-  else if(type === 'number' && typeof format === 'undefined')
+  else if(type === 'number')
     str = 'double';
   else if(type === 'boolean')
     str = 'boolean';
@@ -828,7 +844,7 @@ Operation.prototype.execute = function(arg1, arg2, arg3, arg4, parent) {
         var reg = new RegExp('\{' + param.name + '[^\}]*\}', 'gi');
         requestUrl = requestUrl.replace(reg, this.encodePathParam(args[param.name]));
       }
-      else if (param.in === 'query') {
+      else if (param.in === 'query' && typeof args[param.name] !== 'undefined') {
         if(querystring === '')
           querystring += '?';
         else
@@ -866,7 +882,12 @@ Operation.prototype.execute = function(arg1, arg2, arg3, arg4, parent) {
     // todo append?
     args.body = encoded;
   }
-  var url = this.scheme + '://' + this.host + this.basePath + requestUrl + querystring;
+  var url = this.scheme + '://' + this.host;
+
+  if(this.basePath !== '/')
+    url += this.basePath;
+
+  url += requestUrl + querystring;
 
   var obj = {
     url: url,
@@ -915,7 +936,7 @@ Operation.prototype.setContentTypes = function(args, opts) {
   }
 
   // if there's a body, need to set the accepts header via requestContentType
-  if (body && (this.type === 'post' || this.type === 'put' || this.type === 'patch' || this.type === 'delete')) {
+  if (body && (this.method === 'post' || this.method === 'put' || this.method === 'patch' || this.method === 'delete')) {
     if (opts.requestContentType)
       consumes = opts.requestContentType;
   } else {
@@ -1091,14 +1112,11 @@ Model.prototype.getMockSignature = function(modelsToIgnore) {
 var Property = function(name, obj, required) {
   this.schema = obj;
   this.required = required;
-  if(obj['$ref']) {
-    var refType = obj['$ref'];
-    refType = refType.indexOf('#/definitions') === -1 ? refType : refType.substring('#/definitions').length;
-    this['$ref'] = refType;
-  }
+  if(obj['$ref'])
+    this['$ref'] = simpleRef(obj['$ref']);
   else if (obj.type === 'array') {
     if(obj.items['$ref'])
-      this['$ref'] = obj.items['$ref'];
+      this['$ref'] = simpleRef(obj.items['$ref']);
     else
       obj = obj.items;
   }
@@ -1129,7 +1147,8 @@ Property.prototype.sampleValue = function(isArray, ignoredModels) {
   var output;
 
   if(this['$ref']) {
-    var refModel = models[this['$ref']];
+    var refModelName = simpleRef(this['$ref']);
+    var refModel = models[refModelName];
     if(refModel && typeof ignoredModels[type] === 'undefined') {
       ignoredModels[type] = this;
       output = refModel.getSampleValue(ignoredModels);
@@ -1188,14 +1207,18 @@ getStringSignature = function(obj) {
     str += 'double';
   else if(obj.type === 'boolean')
     str += 'boolean';
+  else if(obj['$ref'])
+    str += simpleRef(obj['$ref']);
   else
-    str += obj.type || obj['$ref'];
+    str += obj.type;
   if(obj.type === 'array')
     str += ']';
   return str;
 }
 
 simpleRef = function(name) {
+  if(typeof name === 'undefined')
+    return null;
   if(name.indexOf("#/definitions/") === 0)
     return name.substring('#/definitions/'.length)
   else
@@ -1327,7 +1350,7 @@ JQueryHttpClient.prototype.execute = function(obj) {
   obj.data = obj.body;
   obj.complete = function(response, textStatus, opts) {
     var headers = {},
-        headerArray = response.getAllResponseHeaders().split("\n");
+      headerArray = response.getAllResponseHeaders().split("\n");
 
     for(var i = 0; i < headerArray.length; i++) {
       var toSplit = headerArray[i].trim();
@@ -1340,7 +1363,7 @@ JQueryHttpClient.prototype.execute = function(obj) {
         continue;
       }
       var name = toSplit.substring(0, separator).trim(),
-          value = toSplit.substring(separator + 1).trim();
+        value = toSplit.substring(separator + 1).trim();
       headers[name] = value;
     }
 
@@ -1356,8 +1379,15 @@ JQueryHttpClient.prototype.execute = function(obj) {
 
     if(contentType != null) {
       if(contentType.indexOf("application/json") == 0 || contentType.indexOf("+json") > 0) {
-        if(response.responseText && response.responseText !== "")
-          out.obj = JSON.parse(response.responseText);
+        if(response.responseText && response.responseText !== "") {
+          try {
+            out.obj = JSON.parse(response.content.data);
+          }
+          catch (ex) {
+            // do not set out.obj
+            log ("unable to parse JSON content");
+          }
+        }
         else
           out.obj = {}
       }
