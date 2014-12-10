@@ -22,75 +22,6 @@ var apiDeclarations = [
   require('./api/weather.json')
 ];
 
-// Validate the Swagger documents
-var result = swaggerTools.specs.v1.validate(apiDocJson, apiDeclarations);
-var errorCount = 0;
-
-if (typeof result !== 'undefined') {
-  console.log('The server could not start due to invalid Swagger document...');
-
-  console.log('');
-
-  if (result.errors.length > 0) {
-    errorCount += result.errors.length;
-
-    console.log('Errors');
-    console.log('------');
-
-    result.errors.forEach(function (err) {
-      console.log('#/' + err.path.join('/') + ': ' + err.message);
-    });
-
-    console.log('');
-  }
-
-  if (result.warnings.length > 0) {
-    console.log('Warnings');
-    console.log('--------');
-
-    result.warnings.forEach(function (warn) {
-      console.log('#/' + warn.path.join('/') + ': ' + warn.message);
-    });
-
-    console.log('');
-  }
-
-  if (result.apiDeclarations) {
-    result.apiDeclarations.forEach(function (adResult, index) {
-      var errorHeader = 'API Declaration (' + apiDeclarations[index].resourcePath + ') Errors';
-      var warningHeader = 'API (' + apiDeclarations[index].resourcePath + ') Warnings';
-
-      if (adResult.errors.length > 0) {
-        errorCount += adResult.errors.length;
-
-        console.log(errorHeader);
-        console.log(new Array(errorHeader.length + 1).join('-'));
-
-        adResult.errors.forEach(function (err) {
-          console.log('#/' + err.path.join('/') + ': ' + err.message);
-        });
-
-        console.log('');
-      }
-
-      if (adResult.warnings.length > 0) {
-        console.log(warningHeader);
-        console.log(new Array(warningHeader.length + 1).join('-'));
-
-        adResult.warnings.forEach(function (warn) {
-          console.log('#/' + warn.path.join('/') + ': ' + warn.message);
-        });
-
-        console.log('');
-      }
-    });
-  }
-
-  if (errorCount > 0) {
-    process.exit(1);
-  }
-}
-
 // Wire up the middleware required by Swagger Tools (body-parser and qs)
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -103,7 +34,7 @@ app.use(function (req, res, next) {
 });
 
 // Initialize the Swagger middleware
-swaggerTools.initializeMetadata(apiDocJson, apiDeclarations, function (middleware) {
+swaggerTools.initializeMiddleware(apiDocJson, apiDeclarations, function (middleware) {
   // Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
   app.use(middleware.swaggerMetadata());
 

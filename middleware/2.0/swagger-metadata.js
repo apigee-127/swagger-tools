@@ -85,7 +85,7 @@ exports = module.exports = function swaggerMetadataMiddleware (swaggerObject) {
   var apiCache = {};
 
   // To avoid running into issues with references throughout the Swagger object we will use the resolved version.
-  // Getting the resolved version is an asynchronous process but since initializeMetadata caches the resolved document
+  // Getting the resolved version is an asynchronous process but since initializeMiddleware caches the resolved document
   // this is a synchronous action at this point.
   spec.resolve(swaggerObject, function (err, resolved) {
     // Gather the paths, their path regex patterns and the corresponding operations

@@ -415,39 +415,6 @@ var options = {
 // The Swagger document (require it, build it programmatically, fetch it from a URL, ...)
 var swaggerDoc = require('./api/swagger.json');
 
-// Validate the Swagger document
-var result = swaggerTools.specs.v2.validate(swaggerDoc);
-
-if (typeof result !== 'undefined') {
-  if (result.errors.length > 0) {
-    console.log('The server could not start due to invalid Swagger document...');
-
-    console.log('');
-
-    console.log('Errors');
-    console.log('------');
-
-    result.errors.forEach(function (err) {
-      console.log('#/' + err.path.join('/') + ': ' + err.message);
-    });
-
-    console.log('');
-  }
-
-  if (result.warnings.length > 0) {
-    console.log('Warnings');
-    console.log('--------');
-
-    result.warnings.forEach(function (warn) {
-      console.log('#/' + warn.path.join('/') + ': ' + warn.message);
-    });
-  }
-
-  if (result.errors.length > 0) {
-    process.exit(1);
-  }
-}
-
 // Wire up the middleware required by Swagger Tools (body-parser and qs)
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
