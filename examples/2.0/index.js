@@ -6,10 +6,6 @@ var http = require('http');
 var parseurl = require('parseurl');
 var qs = require('qs');
 var swaggerTools = require('swagger-tools');
-var swaggerMetadata = swaggerTools.middleware.v2.swaggerMetadata;
-var swaggerRouter = swaggerTools.middleware.v2.swaggerRouter;
-var swaggerUi = swaggerTools.middleware.v2.swaggerUi;
-var swaggerValidator = swaggerTools.middleware.v2.swaggerValidator;
 
 var serverPort = 3000;
 
@@ -66,19 +62,22 @@ app.use(function (req, res, next) {
   return next();
 });
 
-// Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
-app.use(swaggerMetadata(swaggerDoc));
+// Initialize the Swagger middleware
+swaggerTools.initializeMetadata(swaggerDoc, function (middleware) {
+  // Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
+  app.use(middleware.swaggerMetadata());
 
-// Validate Swagger requests
-app.use(swaggerValidator());
+  // Validate Swagger requests
+  app.use(middleware.swaggerValidator());
 
-// Route validated requests to appropriate controller
-app.use(swaggerRouter(options));
+  // Route validated requests to appropriate controller
+  app.use(middleware.swaggerRouter(options));
 
-// Serve the Swagger documents and Swagger UI
-app.use(swaggerUi(swaggerDoc));
+  // Serve the Swagger documents and Swagger UI
+  app.use(middleware.swaggerUi());
 
-// Start the server
-http.createServer(app).listen(serverPort, function () {
-  console.log('Your server is listening on port %d (http://localhost:%d)', serverPort, serverPort);
+  // Start the server
+  http.createServer(app).listen(serverPort, function () {
+    console.log('Your server is listening on port %d (http://localhost:%d)', serverPort, serverPort);
+  });
 });

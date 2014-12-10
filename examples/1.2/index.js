@@ -6,10 +6,6 @@ var http = require('http');
 var parseurl = require('parseurl');
 var qs = require('qs');
 var swaggerTools = require('swagger-tools');
-var swaggerMetadata = swaggerTools.middleware.v1.swaggerMetadata;
-var swaggerRouter = swaggerTools.middleware.v1.swaggerRouter;
-var swaggerUi = swaggerTools.middleware.v1.swaggerUi;
-var swaggerValidator = swaggerTools.middleware.v1.swaggerValidator;
 
 var serverPort = 3000;
 
@@ -106,21 +102,24 @@ app.use(function (req, res, next) {
   return next();
 });
 
-// Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
-app.use(swaggerMetadata(apiDocJson, apiDeclarations));
+// Initialize the Swagger middleware
+swaggerTools.initializeMetadata(apiDocJson, apiDeclarations, function (middleware) {
+  // Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
+  app.use(middleware.swaggerMetadata());
 
-// Validate Swagger requests
-app.use(swaggerValidator());
+  // Validate Swagger requests
+  app.use(middleware.swaggerValidator());
 
-// Route validated requests to appropriate controller
-app.use(swaggerRouter(options));
+  // Route validated requests to appropriate controller
+  app.use(middleware.swaggerRouter(options));
 
-// Serve the Swagger documents and Swagger UI
-app.use(swaggerUi(apiDocJson, {
-  '/weather': apiDeclarations[0]
-}));
+  // Serve the Swagger documents and Swagger UI
+  app.use(middleware.swaggerUi({
+    '/weather': apiDeclarations[0]
+  }));
 
-// Start the server
-http.createServer(app).listen(serverPort, function () {
-  console.log('Your server is listening on port %d (http://localhost:%d)', serverPort, serverPort);
+  // Start the server
+  http.createServer(app).listen(serverPort, function () {
+    console.log('Your server is listening on port %d (http://localhost:%d)', serverPort, serverPort);
+  });
 });

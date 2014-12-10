@@ -18,20 +18,6 @@ that property you had another property named `name`, to reference it you would u
 * Anytime a JSON property has a path segment delimiter in it, its JSON pointer path replaces the `/` with `~1`.  So for
 Swagger paths, which always start with a `/`, like our `/weather` path, you'll see this replacement.
 
-## Upstream Bug
-
-There is currently a bug in the Swagger 2.0 JSON Schema that does not allow us to set the `default` and `enum`
-properties on `#/paths/~1weather/get/parameters/1`.  This means we cannot demonstrate how `swaggerMetadata`'s parameter
-processing handles default values and you will need to pass `unit` as query parameters alongside `location.`  When this
-bug is fixed, you would set the following:
-
-* `#/paths/~1weather/get/parameters/1/default` to `"F"``
-* `#/paths/~1weather/get/parameters/1/enum` to `["C", "F"]`
-* `#/paths/~1weather/get/parameters/1/required` to `false`
-
-Default value handling works just fine with Swagger 1.2 documents and this should be fixed upstream shortly.  When that
-happens, this disclaimer will be removed and the necessary parts below will be updated to reflect.
-
 ## Create Your Project
 
 This process is standard fare for Node.js development but to be thorough, let's do it anyways.  First we need to create
@@ -332,18 +318,11 @@ With Swagger Tools, your code would look more like this:
 var weather = require('weather-js');
 
 module.exports.getWeather = function getWeather (req, res, next) {
-  var location = req.swagger.params.location.value;
-  var unit = req.swagger.params.unit.value;
-
-  // This is only here due to the bug mentioned above and is not a bug/limitation of swagger-tools
-  // https://github.com/apigee-127/swagger-tools/blob/master/docs/QuickStart.md#upstream-bug
-  if (['C', 'F'].indexOf(unit) === -1) {
-    res.statusCode = 400;
-    res.end('unit must be either C or F');
-  }
-
   // Code necessary to consume the Weather API and respond
-  weather.find({search: location, degreeType: unit}, function(err, result) {
+  weather.find({
+    search: req.swagger.params.location.value,
+    degreeType: req.swagger.params.unit.value
+  }, function(err, result) {
     if (err) {
       return next(err.message);
     }
@@ -422,14 +401,10 @@ var http = require('http');
 var parseurl = require('parseurl');
 var qs = require('qs');
 var swaggerTools = require('swagger-tools');
-var swaggerMetadata = swaggerTools.middleware.v2.swaggerMetadata;
-var swaggerRouter = swaggerTools.middleware.v2.swaggerRouter;
-var swaggerUi = swaggerTools.middleware.v2.swaggerUi;
-var swaggerValidator = swaggerTools.middleware.v2.swaggerValidator;
 
 var serverPort = 3000;
 
-// swaggerMetadata configuration
+// swaggerRouter configuration
 var options = {
   controllers: './controllers',
   useStubs: process.env.NODE_ENV === 'development' ? true : false // Conditionally turn on stubs (mock mode)
@@ -482,21 +457,24 @@ app.use(function (req, res, next) {
   return next();
 });
 
-// Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
-app.use(swaggerMetadata(swaggerDoc));
+// Initialize the Swagger middleware
+swaggerTools.initializeMetadata(swaggerDoc, function (middleware) {
+  // Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
+  app.use(middleware.swaggerMetadata());
 
-// Validate Swagger requests
-app.use(swaggerValidator());
+  // Validate Swagger requests
+  app.use(middleware.swaggerValidator());
 
-// Route validated requests to appropriate controller
-app.use(swaggerRouter(options));
+  // Route validated requests to appropriate controller
+  app.use(middleware.swaggerRouter(options));
 
-// Serve the Swagger documents and Swagger UI
-app.use(swaggerUi(swaggerDoc));
+  // Serve the Swagger documents and Swagger UI
+  app.use(middleware.swaggerUi());
 
-// Start the server
-http.createServer(app).listen(serverPort, function () {
-  console.log('Your server is listening on port %d (http://localhost:%d)', serverPort, serverPort);
+  // Start the server
+  http.createServer(app).listen(serverPort, function () {
+    console.log('Your server is listening on port %d (http://localhost:%d)', serverPort, serverPort);
+  });
 });
 ```
 
@@ -510,10 +488,8 @@ Your server is listening on port 3000 (http://localhost:3000)
 
 To test this API, using whatever tool you want perform a `GET` on `http://localhost:3000/api/weather`.  Since our API
 requires the `location` query string, you should get a `400` with an error message dictating that the request requires
-the `location` parameter.  So update your `GET` request to include the `location` query parameter.  _(As mentioned
-above, there is an upstream bug that prohibits us from defining our Swagger document to use the default value handling
-of swaggerMetadata.  This means you will also have to include the `unit` query parameter for the time being.)_  Here is
-an example: `http://localhost:3000/api/weather?location=95113&unit=F`.
+the `location` parameter.  So update your `GET` request to include the `location` query parameter.  Here is an example:
+`http://localhost:3000/api/weather?location=95113`.
 
 At this point you should get a `404` because there are no route handlers configured.  If you view the
 [Swagger Router (How To Use)][swagger-router-how-to-use], you'll see we can just use the `x-swagger-router-controller`
@@ -523,7 +499,7 @@ controller wired up to handle `GET` requests for the `/api/weather` path.  To en
 and run Node.js in the `development` environment.  _(The reason for this is in our code above we have the `useStubs`
 option for `swaggerRouter` enabled conditionally based on the Node.js environment.)_  To do this, restart your server
 using something like: `NODE_ENV=development node .`.  With mock mode enabled, if you perform the same `GET` on
-`http://localhost:3000/api/weather?location=95113&unit=F`, you should see a mock response that conforms to the `Weather`
+`http://localhost:3000/api/weather?location=95113`, you should see a mock response that conforms to the `Weather`
 model defined in `#/definitions/Weather`.  Here is an example:
 
 ```json
