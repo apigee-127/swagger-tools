@@ -33,6 +33,7 @@ var path = require('path');
 var pkg = require('../package.json');
 var program = require('commander');
 var S = require('string');
+var yaml = require('yamljs');
 
 var exitWithError = function exitWithError (msg) {
   console.error();
@@ -109,20 +110,21 @@ program
         return;
       }
 
-      var json = require(path.resolve(arg));
+      var resolvedPath = path.resolve(arg);
+      var document = path.extname(arg) === '.yaml' ? yaml.load(resolvedPath) : require(resolvedPath);
 
       if (index === 0) {
-        if (json.swagger) {
-          swaggerObject = json;
-          version = json.swagger;
-        } else if (json.swaggerVersion) {
-          resourceListing = json;
-          version = json.swaggerVersion;
+        if (document.swagger) {
+          swaggerObject = document;
+          version = document.swagger;
+        } else if (document.swaggerVersion) {
+          resourceListing = document;
+          version = document.swaggerVersion;
         } else {
           return exitWithError('Unable to identify the Swagger version for document: ' + arg);
         }
       } else if (_.isUndefined(swaggerObject)) {
-        apiDeclarations.push(json);
+        apiDeclarations.push(document);
       }
     });
 
