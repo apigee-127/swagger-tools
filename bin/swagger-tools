@@ -27,11 +27,14 @@
 'use strict';
 
 var _ = require('lodash');
+var async = require('async');
+var fs = require('fs');
 var helpers = require('../lib/helpers');
 var paddingAmount = 18;
 var path = require('path');
 var pkg = require('../package.json');
 var program = require('commander');
+var request = require('superagent');
 var S = require('string');
 var yaml = require('yamljs');
 
@@ -41,6 +44,43 @@ var exitWithError = function exitWithError (msg) {
   console.error(); // Here only to match the output of commander.js
 
   process.exit(1);
+};
+var getDocument = function getDocument (pathOrUrl, callback) {
+  if (!_.isString(pathOrUrl)) {
+    callback();
+  } else if (/^https?:\/\//.test(pathOrUrl)) {
+    request.get(pathOrUrl)
+      .set('user-agent', 'apigee-127/swagger-tools')
+      .end(function (res) {
+        var content;
+        var err;
+
+        switch (path.extname(pathOrUrl)) {
+        case '.yaml':
+        case '.yml':
+          content = yaml.parse(res.text);
+
+          break;
+
+        default:
+          try {
+            content = JSON.parse(res.text);
+          } catch (e) {
+            err = e;
+          }
+        }
+
+        callback(err, content);
+      });
+  } else {
+    fs.readFile(path.resolve(pathOrUrl), function (err, data) {
+      if (err) {
+        callback(err);
+      } else {
+        callback(undefined, JSON.parse(data));
+      }
+    });
+  }
 };
 var getSpec = function getSpec (version) {
   var spec = helpers.getSpec(version);
@@ -105,57 +145,58 @@ program
     var swaggerObject;
     var version;
 
-    _.each(program.args, function (arg, index) {
-      if (!_.isString(arg)) {
-        return;
-      }
-
-      var resolvedPath = path.resolve(arg);
-      var document = path.extname(arg) === '.yaml' ? yaml.load(resolvedPath) : require(resolvedPath);
-
-      if (index === 0) {
-        if (document.swagger) {
-          swaggerObject = document;
-          version = document.swagger;
-        } else if (document.swaggerVersion) {
-          resourceListing = document;
-          version = document.swaggerVersion;
-        } else {
-          return exitWithError('Unable to identify the Swagger version for document: ' + arg);
-        }
-      } else if (_.isUndefined(swaggerObject)) {
-        apiDeclarations.push(document);
-      }
-    });
-
-    spec = getSpec(version);
-
-    if (_.isUndefined(resourceListing)) {
-      soArgs = [swaggerObject];
-    } else {
-      soArgs = [resourceListing].concat(apiDeclarations);
-    }
-
-    soArgs.push(function (err, results) {
-      if (results && results.errors.length + _.reduce(results.apiDeclarations || [], function (count, apiDeclaration) {
-        return count += (apiDeclaration ? apiDeclaration.errors.length : 0);
-      }, 0) > 0) {
-        err = new Error('Swagger document(s) failed validation so the server cannot start');
-
-        err.results = results;
-      }
-
+    async.map(program.args, getDocument, function (err, documents) {
       if (err) {
-        if (process.env.NODE_ENV === 'test') {
-          throw err;
-        } else {
-          return helpers.printValidationResults(version, resourceListing || swaggerObject, apiDeclarations, results,
-                                                true, true);
-        }
+        throw err;
       }
-    });
 
-    spec.validate.apply(spec, soArgs);
+      _.each(documents, function (document, index) {
+        if (!document) {
+          return;
+        }
+
+        if (index === 0) {
+          if (document.swagger) {
+            swaggerObject = document;
+            version = document.swagger;
+          } else if (document.swaggerVersion) {
+            resourceListing = document;
+            version = document.swaggerVersion;
+          } else {
+            return exitWithError('Unable to identify the Swagger version for document: ' + program.args[index]);
+          }
+        } else if (_.isUndefined(swaggerObject)) {
+          apiDeclarations.push(document);
+        }
+      });
+
+      spec = getSpec(version);
+
+      if (_.isUndefined(resourceListing)) {
+        soArgs = [swaggerObject];
+      } else {
+        soArgs = [resourceListing, apiDeclarations];
+      }
+
+      soArgs.push(function (err, results) {
+        if (helpers.formatResults(results)) {
+          err = new Error('Swagger document(s) failed validation so the server cannot start');
+
+          err.results = results;
+        }
+
+        if (err) {
+          if (process.env.NODE_ENV === 'test') {
+            throw err;
+          } else {
+            return helpers.printValidationResults(version, resourceListing || swaggerObject, apiDeclarations, results,
+                                                  true, true);
+          }
+        }
+      });
+
+      spec.validate.apply(spec, soArgs);
+    });
   });
 
 program.parse(process.argv);
