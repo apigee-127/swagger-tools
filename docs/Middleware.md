@@ -14,7 +14,7 @@ specific middleware functions to you.  Here is an example:
 **Swagger 2.0**
 
 ```javascript
-var initializeSwagger = require('swagger-tools').initializeMiddlware;
+var initializeSwagger = require('swagger-tools').initializeMiddleware;
 var app = require('connect')();
 
 // This assumes you're in the root of the swagger-tools
@@ -32,7 +32,7 @@ initializeSwagger(swaggerObject, function (swaggerMiddleware) {
 **Swagger 1.2**
 
 ```javascript
-var initializeSwagger = require('swagger-tools').initializeMiddlware;
+var initializeSwagger = require('swagger-tools').initializeMiddleware;
 var app = require('connect')();
 
 // This assumes you're in the root of the swagger-tools
