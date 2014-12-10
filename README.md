@@ -1,6 +1,7 @@
 The project provides various tools for integrating and interacting with Swagger.  This project is in its infancy but
 what is within the repository should be fully tested and reusable.  Please visit the [issue tracker][project-issues] to
-see what issues we are aware of and what features/enhancements we are working on.
+see what issues we are aware of and what features/enhancements we are working on.  Otherwise, feel free to review the
+[Release Notes][release-notes] to see what is new and improved.
 
 ## Project Badges
 
@@ -14,7 +15,7 @@ see what issues we are aware of and what features/enhancements we are working on
 ## Supported Swagger Versions
 
 * [1.2][swagger-docs-v1_2]
-* [2.0 (WIP)][swagger-docs-v2_0]
+* [2.0][swagger-docs-v2_0]
 
 ## Features
 
@@ -54,6 +55,7 @@ project root will lint check the source code and run the unit tests.
 [npm]: https://www.npmjs.org/
 [project-issues]: https://github.com/apigee/swagger-tools/issues
 [quick-start]: https://github.com/apigee-127/swagger-tools/blob/master/docs/QuickStart.md
+[release-notes]: https://github.com/apigee-127/swagger-tools/blob/master/RELEASE_NOTES.md
 [swagger]: https://helloreverb.com/developers/swagger
 [swagger-docs-v1_2]: https://github.com/wordnik/swagger-spec/blob/master/versions/1.2.md
 [swagger-docs-v2_0]: https://github.com/reverb/swagger-spec/blob/master/versions/2.0.md
