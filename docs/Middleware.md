@@ -351,7 +351,7 @@ be done to make it better.  This is currently being tracked in [Issue #30][issue
 The Swagger Security middleware is used to authenticate/authorize requests based on the authorization/security
 definitions and references in your Swagger document(s).
 
-#### #swaggerUi(options)
+#### #swaggerSecurity(options)
 
 **Arguments**
 
