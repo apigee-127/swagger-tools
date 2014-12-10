@@ -5,6 +5,66 @@ is documented below.
 Swagger versions, some function arguments are different and so is the `swagger` object attached to the `req` object.  In
 the cases where this applies, notation will be made below.
 
+## Swagger Middleware Initialization
+
+The Swagger middleware requires validated Swagger document(s).  To ensure that this is the case, Swagger Tools ships
+with an `initializeMiddleware` method that will validate your Swagger document(s) and then pass the Swagger version
+specific middleware functions to you.  Here is an example:
+
+**Swagger 2.0**
+
+```javascript
+var initializeSwagger = require('swagger-tools').initializeMiddlware;
+var app = require('connect')();
+
+// This assumes you're in the root of the swagger-tools
+var swaggerObject = require('./samples/2.0/petstore.json');
+
+// Configure non-Swagger related middleware and server components prior to Swagger middleware
+
+initializeSwagger(swaggerObject, function (swaggerMiddleware) {
+  // Initialize the Swagger middleware (Examples below)
+  // Initialize the remaining server components
+  // Start server
+});
+```
+
+**Swagger 1.2**
+
+```javascript
+var initializeSwagger = require('swagger-tools').initializeMiddlware;
+var app = require('connect')();
+
+// This assumes you're in the root of the swagger-tools
+var petJson = require('./samples/1.2/pet.json');
+var rlJson = require('./samples/1.2/resource-listing.json');
+var storeJson = require('./samples/1.2/store.json');
+var userJson = require('./samples/1.2/user.json');
+
+// Configure non-Swagger related middleware and server components prior to Swagger middleware
+
+initializeSwagger(rlJson, [petJson, storeJson, userJson], function (swaggerMiddleware) {
+  // Initialize the Swagger middleware (Examples below)
+  // Initialize the remaining server components
+  // Start server
+});
+```
+
+`initializeMiddlware` will halt server startup upon any unrecoverable Swagger document(s) validation error, printing out
+the errors/warnings in that case.  The argument passed to the callback has the following properties, each corresponding
+to a middleware function documented below.  The order in the following list is the suggested `app.use` order:
+
+**swaggerMetadata:** This is the base middleware that will analyze a request route, match it to an API in your
+Swagger document(s) and then annotate the request, using `req.swagger`, with the pertinent details.
+**swaggerSecurity:** This middleware allows you to wire up authentication/authorization handlers based on the
+definitions in your Swagger document(s).
+**swaggerValidator:** This middleware will validate your requests based on the operations in your Swagger
+document(s).
+**swaggerRouter:** This middleware allows you to wire up request handlers based on the operation definitions in your
+Swagger document(s).
+**swaggerUi:** This middleware will serve your Swagger document(s) for public consumption and will also serve a local
+[Swagger UI][swagger-ui] instance.
+
 ## Swagger Metadata
 
 The Swagger Metadata middleware is the base for all other Swagger Tools middleware and it attaches Swagger information
@@ -26,12 +86,7 @@ get the parameter values. _(No validation of the parameter values happens in the
 
 ### Swagger 1.2
 
-#### #swaggerMetadata(resourceListing, apiDeclarations)
-
-**Arguments**
-
-* **resourceListing:** `object` The Resource Listing object
-* **apiDeclarations:** `[object` The array of API Declaration objects
+#### #swaggerMetadata()
 
 **Returns**
 
@@ -47,19 +102,17 @@ The structure of `req.swagger` is as follows:
 
 * **api:** `object` The corresponding API in the API Declaration that the request maps to
 * **apiDeclaration:** `object` The corresponding API Declaration that the request maps to
-* **authorizations:** `object` The authorization definitions for the API
-* **models:** `object` The model definitions for the API
-* **params:** `object` For each of the request parameters defined in your Swagger document, its `schema` and its
-processed `value`.  The value is converted to the proper JSON type based on the Swagger document.  If the parameter
-defined in your Swagger document includes a default value and the request does not include the value, the default value
-is assigned to the parameter value in `req.swagger.params`.
+* **apiIndex:** `number` The index of the API Declaration as it was passed to `initializeMetadata`
+* **authorizations:** `object` The computed authorizations for this request
+* **operation:** `object` The corresponding operation in the API Declaration that the request maps to
+* **operationPath:** `string[]` The path to the operation
+* **params:** `object` For each of the request parameters defined in your Swagger document, its `path`, its `schema`
+and its processed `value`.  The value is converted to the proper JSON type based on the Swagger document.  If the
+parameter defined in your Swagger document includes a default value and the request does not include the value, the
+default value is assigned to the parameter value in `req.swagger.params`.
 * **resourceListing:** `object` The Resource Listing for the API
 
 ### Swagger 2.0
-
-**Arguments**
-
-* **swaggerObject:** `object` The Swagger object
 
 **Returns**
 
@@ -69,9 +122,13 @@ The Connect middleware function.
 
 The structure of `req.swagger` is as follows:
 
+* **apiPath:** `string[]` The API's path (The key used in the `paths` object for the corresponding API)
 * **path:** `object` The corresponding path in the Swagger object that the request maps to
-* **params:** `object` For each of the request parameters defined in your Swagger document, its `schema` and its
-processed `value`
+* **operation:** `object` The corresponding operation in the API Declaration that the request maps to
+* **operationParameters:** `object[]` The computed parameters for this operation
+* **params:** `object` For each of the request parameters defined in your Swagger document, its `path`, its `schema`
+and its processed `value`
+* **security:** `object[]` The computed security for this request
 * **swaggerObject:** `object` The Swagger object
 
 ## Swagger Router
@@ -89,12 +146,12 @@ between the two.
 **Arguments**
 
 * **options:** `[object]` The configuration options
-* **options.controllers:** `[string|string[]|object]` The controllers to look for or use.  If the value is a string, we
-assume the value is a path to a directory that contain controller modules.  If the value is an array, we
-assume the value is an array of paths to directories that contain controller modules.  If the value is an object, we
-assume the object keys are the handler name _({ControllerName}_{HandlerFunctionName}) and the value is a function.
-* **options.useStubs:** `[boolean]` Whether or not stub handlers should be used for routes with no defined controller or
-the controller could not be found.
+* **options.controllers:** `[string|string[]|object]` The controllers to look for or use.  If the value is a string,
+we assume the value is a path to a directory that contain controller modules.  If the value is an array, we assume the
+value is an array of paths to directories that contain controller modules.  If the value is an object, we assume the
+object keys are the handler name _({ControllerName}_{HandlerFunctionName}) and the value is a function.
+* **options.useStubs:** `[boolean]` Whether or not stub handlers should be used for routes with no defined controller
+or the controller could not be found.
 
 **Returns**
 
@@ -289,37 +346,35 @@ route handler in code.  This is obviously something that should be disabled in p
 Mock mode is a relatively new feature to Swagger Router and while it's cool as-is, there are a few things that need to
 be done to make it better.  This is currently being tracked in [Issue #30][issue-30].
 
-## Swagger UI
+## Swagger Security
 
-The Swagger UI middleware is used to serve your Swagger document(s) via an API and also to serve
-[Swagger UI][swagger-ui] on your behalf.  Must like `swaggerMetadata`, this middleware has a different function
-signature based on your Swagger version.
+The Swagger Security middleware is used to authenticate/authorize requests based on the authorization/security
+definitions and references in your Swagger document(s).
 
-**Note:** This middleware is completely standalone and does not require `swaggerMetadata`.
-
-### Swagger 1.2
-
-#### #swaggerUi(resourceListing, resources)
+#### #swaggerUi(options)
 
 **Arguments**
 
-* **resourceListing:** `object` The Resource Listing object
-* **resources:** `object` Object whose keys are the relative path from your configured `options.apiDocs` to serve the
-JSON for the apiDeclaration/resource and the value is the apiDeclaration being served.  _(Note: The path must match a
-path in the Resource Listing's `apis`.)_
 * **options:** `object` The middleware options
-* **options.apiDocs:** `string=/api-docs` The path to serve the Swagger documents from
-* **options.swaggerUi:** `string=/docs` The path to serve Swagger UI from
+* **options[name]:** `object` For the authorization/security name, the value is a function that will be used to
+perform the authentication/authorization.  The function signature for the callback is:
+`function (req, authOrSecDef, scopes, callback)`.
 
 **Returns**
 
 The Connect middleware function.
 
-### Swagger 2.0
+## Swagger UI
+
+The Swagger UI middleware is used to serve your Swagger document(s) via an API and also to serve
+[Swagger UI][swagger-ui] on your behalf.
+
+**Note:** This middleware is completely standalone and does not require `swaggerMetadata`.
+
+#### #swaggerUi(options)
 
 **Arguments**
 
-* **swaggerObject:** `object` The Swagger object
 * **options:** `object` The middleware options
 * **options.apiDocs:** `string=/api-docs` The path to serve the Swagger documents from
 * **options.swaggerUi:** `string=/docs` The path to serve Swagger UI from
@@ -356,10 +411,6 @@ var parseurl = require('parseurl');
 var qs = require('qs');
 var swagger = require('swagger-tools');
 var swaggerObject = require('./samples/2.0/petstore.json'); // This assumes you're in the root of the swagger-tools
-var swaggerMetadata = swagger.middleware.v2.swaggerMetadata;
-var swaggerRouter = swagger.middleware.v2.swaggerRouter;
-var swaggerUi = swagger.middleware.v2.swaggerUi;
-var swaggerValidator = swagger.middleware.v2.swaggerValidator;
 
 var connect = require('connect');
 var http = require('http');
@@ -376,22 +427,32 @@ app.use(function (req, res, next) {
   return next();
 });
 
-// Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
-app.use(swaggerMetadata(swaggerObject));
+// Initialize the Swagger Middleware
+swagger.initializeMiddleware(swaggerObject, function (middleware) {
+  // Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
+  app.use(middleware.swaggerMetadata());
 
-// Validate Swagger requests
-app.use(swaggerValidator());
+  // Provide the security handlers
+  app.use(middleware.swaggerSecurity({
+    oauth2: function (req, def, scopes, callback) {
+      // Do real stuff here
+    }
+  }));
 
-// Route validated requests to appropriate controller
-app.use(swaggerRouter({useStubs: true, controllers: './controllers'}));
+  // Validate Swagger requests
+  app.use(middleware.swaggerValidator());
 
-// Serve the Swagger documents and Swagger UI
-//   http://localhost:3000/docs => Swagger UI
-//   http://localhost:3000/api-docs => Swagger document
-app.use(swaggerUi(swaggerObject));
+  // Route validated requests to appropriate controller
+  app.use(middleware.swaggerRouter({useStubs: true, controllers: './controllers'}));
 
-// Start the server
-http.createServer(app).listen(3000);
+  // Serve the Swagger documents and Swagger UI
+  //   http://localhost:3000/docs => Swagger UI
+  //   http://localhost:3000/api-docs => Swagger document
+  app.use(middleware.swaggerUi());
+
+  // Start the server
+  http.createServer(app).listen(3000);
+});
 ```
 
 **Swagger 1.2**
@@ -407,10 +468,6 @@ var apiDeclarations = [
   require('./samples/1.2/store.json'), // This assumes you're in the root of the swagger-tools
   require('./samples/1.2/user.json') // This assumes you're in the root of the swagger-tools
 ];
-var swaggerMetadata = swagger.middleware.v1.swaggerMetadata;
-var swaggerRouter = swagger.middleware.v1.swaggerRouter;
-var swaggerUi = swagger.middleware.v1.swaggerUi;
-var swaggerValidator = swagger.middleware.v1.swaggerValidator;
 
 var connect = require('connect');
 var http = require('http');
@@ -427,29 +484,39 @@ app.use(function (req, res, next) {
   return next();
 });
 
-// Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
-app.use(swaggerMetadata(resourceListing, apiDeclarations));
+// Initialize the Swagger Middleware
+swagger.initializeMiddleware(swaggerObject, function (middleware) {
+  // Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
+  app.use(middleware.swaggerMetadata());
 
-// Validate Swagger requests
-app.use(swaggerValidator());
+  // Provide the security handlers
+  app.use(middleware.swaggerSecurity({
+    oauth2: function (req, def, scopes, callback) {
+      // Do real stuff here
+    }
+  }));
 
-// Route validated requests to appropriate controller
-app.use(swaggerRouter({useStubs: true, controllers: './controllers'}));
+  // Validate Swagger requests
+  app.use(swaggerValidator());
 
-// Serve the Swagger documents and Swagger UI
-//   http://localhost:3000/docs => Swagger UI
-//   http://localhost:3000/api-docs => Resource Listing JSON
-//   http://localhost:3000/api-docs/pet => Pet JSON
-//   http://localhost:3000/api-docs/store => Store JSON
-//   http://localhost:3000/api-docs/user => User JSON
-app.use(swaggerUi(rlJson, {
-  '/pet': apiDeclarations[0],
-  '/store': apiDeclarations[1],
-  '/user': apiDeclarations[2]
-}));
+  // Route validated requests to appropriate controller
+  app.use(swaggerRouter({useStubs: true, controllers: './controllers'}));
 
-// Start the server
-http.createServer(app).listen(3000);
+  // Serve the Swagger documents and Swagger UI
+  //   http://localhost:3000/docs => Swagger UI
+  //   http://localhost:3000/api-docs => Resource Listing JSON
+  //   http://localhost:3000/api-docs/pet => Pet JSON
+  //   http://localhost:3000/api-docs/store => Store JSON
+  //   http://localhost:3000/api-docs/user => User JSON
+  app.use(swaggerUi(rlJson, {
+    '/pet': apiDeclarations[0],
+    '/store': apiDeclarations[1],
+    '/user': apiDeclarations[2]
+  }));
+
+  // Start the server
+  http.createServer(app).listen(3000);
+});
 ```
 
 [connect]: https://github.com/senchalabs/connect

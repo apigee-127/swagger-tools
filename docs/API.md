@@ -18,31 +18,18 @@ this project will be updated as upstream Swagger schemas/specifications change.
 When you import Swagger Tools into your project (`require('swagger-tools')` for Node.js or `SwaggerTools` for the
 browser), an object is returned with the following property/properties:
 
-* **middleware:** An object whose keys are the Swagger version (dots are converted to underscores) and the value is the
-also an object whose keys are the middleware name and its values are the corresponding [Connect][connect] middleware
+* **initializeMiddleware:** Function used to initialize the Swagger [Connect][connect] middleware.  _(During this
+phase we validate your Swagger document(s))_  This function is documented in the [middleware][middleware] documentation.
 _(Node.js only)_
 * **specs:** An object whose keys are the Swagger version (dots are converted to underscores) and the value is a
 `Specification` object
 
-As of right now, since only Swagger versions 1.2 and 2.0 are supported, both `middleware` and `specs` properties have
-the following keys:
+As of right now, since only Swagger versions 1.2 and 2.0 are supported, the `specs` object has the following properties:
 
 * **v1:** `object` _(Pointer to the latest 1.x version which is 1.2 right now)_
 * **v1_2:** `object` Swagger 1.2 support
 * **v2:** `object` _(Pointer to the latest 2.x version which is 2.0 right now)_
 * **v2_0:** `object` Swagger 2.0 support
-
-### Middleware
-
-Each version property in the `middleware` object points to a Connect middleware.  Each individual middleware is
-documented in its own page (linked below) and below is the list of properties that point to the available middlwares:
-
-* **[swaggerMetadata][swaggerMetadata]:** This is the *core* middleware that all other middlewares build on top of
-* **[swaggerRouter][swaggerRouter]:** This middlware provides routing features
-* **[swaggerValidator][swaggerValidator]:** This middlware provides validation features
-
-For more details about each middleware and examples on how to use them, please view the corresponding documentation
-linked to above.
 
 ### Specifications
 
@@ -70,29 +57,53 @@ The real API is provided by the functions made available on the `Specification` 
 Swagger versions 1.2 and 2.0, the functions listed below have different inputs and different outputs.  These will be
 noted below.
 
-##### #composeModel(aDOrSO, modelIdOrPtr)
+##### #composeModel(aDOrSO, modelIdOrPtr, callback)
 
 **Arguments**
 
 * **aDOrSO:** `object` The API Declaration or the Swagger Object _(For Swagger 1.2, this should be the API Declaration
 object that defines the model.  For Swagger 2.0, this is the Swagger object itself.)_
-* **modelIdOrPtr:** `string` The model id or the model's JSON Pointer _(For Swagger 1.2, this is the model id.  For
-Swagger 2.0, this is the model id (if it's defined in `#/definitions`) or the model's JSON Pointer)_
+* **modelIdOrRef:** `string` The model id or the model's JSON Reference pointer string _(For Swagger 1.2, this is the
+model id.  For Swagger 2.0, this is the JSON Reference pointer string)_
+* **callback:** `function` The error-first callback to call with the response or any upstream errors not related to
+invalid arguments
 
 **Returns**
 
-This function returns an `object` that corresponds to the JSON Schema for the composed model.  Here is a full example of
-this API in action:
+This function returns an `object` that represents the JSON Schema for the model id (Swagger 1.2) or the JSON Reference
+(Swagger 2.0).  Here is a full example of this API in action:
+
+**Swagger 2.0**
 
 ```javascript
-var spec = require('swagger-tools').specs.v2; // Using the latest Swagger 2.0 specification
+var spec = require('swagger-tools').specs.v2; // Using the latest Swagger 2.x specification
 var swaggerObject = require('./samples/2.0/petstore.json'); // This assumes you're in the root of the swagger-tools
-var petSchema = spec.composeModel(swaggerObject, 'Pet');
 
-console.log(JSON.stringify(petSchema, null, '  '));
+spec.composeModel(swaggerObject, '#/definitions/Pet', function (err, schema) {
+  if (err) {
+    throw err;
+  }
+
+  console.log(JSON.stringify(schema, null, '  '));
+});
 ```
 
-This little script would output the following:
+**Swagger 1.2**
+
+```javascript
+var spec = require('swagger-tools').specs.v1; // Using the latest Swagger 1.x specification
+var petJson = require('./samples/1.2/pet.json'); // This assumes you're in the root of the swagger-tools
+
+spec.composeModel(petJson, 'Pet', function (err, schema) {
+  if (err) {
+    throw err;
+  }
+
+  console.log(JSON.stringify(schema, null, '  '));
+});
+```
+
+These examples would output something like the following:
 
 ```json
 {
@@ -161,13 +172,15 @@ This little script would output the following:
 
 As you can see, this JSON Schema is valid and it is fully resolved so that it is a standalone document.
 
-##### #validate(rLOrSO, apiDeclarations)
+##### #validate(rLOrSO, apiDeclarations, callback)
 
 **Arguments**
 
 * **rLOrSO:** `object` The Resource Listing or the Swagger Object _(For Swagger 1.2, this should be the Resource
 Listing.  For Swagger 2.0, this is the Swagger object itself.)_
 * **apiDeclarations:** `[object[]]` The array of API Declaration objects _(For Swagger 1.2 only)_
+* **callback:** `function` The error-first callback to call with the response or any upstream errors not related to
+invalid arguments
 
 **Returns**
 
@@ -184,7 +197,6 @@ warnings.
 Each error object itself has the following properties:
 
 * **code:** This is the error/warning code
-* **data:** This is the value that failed validation
 * **message:** This is the human readable message describing the error/warning
 * **path:** This is an array containing the _path_ to the Swagger document property that failed validation
 
@@ -194,7 +206,6 @@ Here is an example error:
 {
   code: 'CYCLICAL_MODEL_INHERITANCE',
   message: 'Model has a circular inheritance: Baz -> Bar -> Baz',
-  data: ['Bar'],
   path: ['models', 'Baz', 'subTypes']
 }
 ```
@@ -206,39 +217,43 @@ And here is an example of using the `validate` function:
 ```javascript
 var spec = require('swagger-tools').specs.v2; // Using the latest Swagger 2.x specification
 var swaggerObject = require('./samples/2.0/petstore.json'); // This assumes you're in the root of the swagger-tools
-var result = spec.validate(swaggerObject);
 
-if (typeof result !== 'undefined') {
-  if (result.errors.length > 0) {
-    console.log('The server could not start due to invalid Swagger document...');
-
-    console.log('');
-
-    console.log('Errors');
-    console.log('------');
-
-    result.errors.forEach(function (err) {
-      console.log('#/' + err.path.join('/') + ': ' + err.message);
-    });
-
-    console.log('');
+spec.validate(swaggerObject, function (err, result) {
+  if (err) {
+    throw err;
   }
 
-  if (result.warnings.length > 0) {
-    console.log('Warnings');
-    console.log('--------');
+  if (typeof result !== 'undefined') {
+    if (result.errors.length > 0) {
+      console.log('The Swagger document is invalid...');
 
-    result.warnings.forEach(function (warn) {
-      console.log('#/' + warn.path.join('/') + ': ' + warn.message);
-    });
-  }
+      console.log('');
 
-  if (result.errors.length > 0) {
-    process.exit(1);
+      console.log('Errors');
+      console.log('------');
+
+      result.errors.forEach(function (err) {
+        console.log('#/' + err.path.join('/') + ': ' + err.message);
+      });
+
+      console.log('');
+    }
+
+    if (result.warnings.length > 0) {
+      console.log('Warnings');
+      console.log('--------');
+
+      result.warnings.forEach(function (warn) {
+        console.log('#/' + warn.path.join('/') + ': ' + warn.message);
+      });
+    }
+
+    if (result.errors.length > 0) {
+      process.exit(1);
+    }
+  } else {
+    console.log('Swagger document is valid');
   }
-} else {
-  console.log('Swagger document is valid');
-}
 ```
 
 **Swagger 1.2**
@@ -253,92 +268,132 @@ var apiDeclarations = [
   require('./samples/1.2/store.json'), // This assumes you're in the root of the swagger-tools
   require('./samples/1.2/user.json') // This assumes you're in the root of the swagger-tools
 ];
-var result = spec.validate(resourceListing, apiDeclarations);
-var apiDeclarations = [
-  require('./api/weather.json')
-];
 
-// Validate the Swagger documents
-var result = swaggerTools.specs.v1.validate(apiDocJson, apiDeclarations);
-var errorCount = 0;
+spec.validate(resourceListing, apiDeclarations, function (err, result) {
+  var errorCount = 0;
 
-if (typeof result !== 'undefined') {
-  console.log('The server could not start due to invalid Swagger document...');
-
-  console.log('');
-
-  if (result.errors.length > 0) {
-    errorCount += result.errors.length;
-
-    console.log('Errors');
-    console.log('------');
-
-    result.errors.forEach(function (err) {
-      console.log('#/' + err.path.join('/') + ': ' + err.message);
-    });
+  if (typeof result !== 'undefined') {
+    console.log('The server could not start due to invalid Swagger document...');
 
     console.log('');
+
+    if (result.errors.length > 0) {
+      errorCount += result.errors.length;
+
+      console.log('Errors');
+      console.log('------');
+
+      result.errors.forEach(function (err) {
+        console.log('#/' + err.path.join('/') + ': ' + err.message);
+      });
+
+      console.log('');
+    }
+
+    if (result.warnings.length > 0) {
+      console.log('Warnings');
+      console.log('--------');
+
+      result.warnings.forEach(function (warn) {
+        console.log('#/' + warn.path.join('/') + ': ' + warn.message);
+      });
+
+      console.log('');
+    }
+
+    if (result.apiDeclarations) {
+      result.apiDeclarations.forEach(function (adResult, index) {
+        var errorHeader = 'API Declaration (' + apiDeclarations[index].resourcePath + ') Errors';
+        var warningHeader = 'API (' + apiDeclarations[index].resourcePath + ') Warnings';
+
+        if (adResult.errors.length > 0) {
+          errorCount += adResult.errors.length;
+
+          console.log(errorHeader);
+          console.log(new Array(errorHeader.length + 1).join('-'));
+
+          adResult.errors.forEach(function (err) {
+            console.log('#/' + err.path.join('/') + ': ' + err.message);
+          });
+
+          console.log('');
+        }
+
+        if (adResult.warnings.length > 0) {
+          console.log(warningHeader);
+          console.log(new Array(warningHeader.length + 1).join('-'));
+
+          adResult.warnings.forEach(function (warn) {
+            console.log('#/' + warn.path.join('/') + ': ' + warn.message);
+          });
+
+          console.log('');
+        }
+      });
+    }
+
+    if (errorCount > 0) {
+      process.exit(1);
+    }
+  } else {
+    console.log('Swagger document is valid');
   }
-
-  if (result.warnings.length > 0) {
-    console.log('Warnings');
-    console.log('--------');
-
-    result.warnings.forEach(function (warn) {
-      console.log('#/' + warn.path.join('/') + ': ' + warn.message);
-    });
-
-    console.log('');
-  }
-
-  if (result.apiDeclarations) {
-    result.apiDeclarations.forEach(function (adResult, index) {
-      var errorHeader = 'API Declaration (' + apiDeclarations[index].resourcePath + ') Errors';
-      var warningHeader = 'API (' + apiDeclarations[index].resourcePath + ') Warnings';
-
-      if (adResult.errors.length > 0) {
-        errorCount += adResult.errors.length;
-
-        console.log(errorHeader);
-        console.log(new Array(errorHeader.length + 1).join('-'));
-
-        adResult.errors.forEach(function (err) {
-          console.log('#/' + err.path.join('/') + ': ' + err.message);
-        });
-
-        console.log('');
-      }
-
-      if (adResult.warnings.length > 0) {
-        console.log(warningHeader);
-        console.log(new Array(warningHeader.length + 1).join('-'));
-
-        adResult.warnings.forEach(function (warn) {
-          console.log('#/' + warn.path.join('/') + ': ' + warn.message);
-        });
-
-        console.log('');
-      }
-    });
-  }
-
-  if (errorCount > 0) {
-    process.exit(1);
-  }
-} else {
-  console.log('Swagger document is valid');
-}
+});
 ```
 
-##### #validateModel(aDOrSO, modelIdOrPtr, data)
+##### #resolve(document, ptr, callback)
+
+**Arguments**
+
+* **document:** `object` The document to resolve or the document containing the reference to resolve
+* **ptr:** `string` The JSON Pointer or undefined to return the whole document
+* **callback:** `function` The error-first callback to call with the response or any upstream errors not related to
+invalid arguments
+
+**Returns**
+
+`undefined` a fully resolved JSON Schema representation of the document or path within the document, or `undefined` if
+the document does not contain a path corresponding to the pointer
+
+**Notes**
+
+_Does not work with Swagger 1.2 since those documents are not valid JSON Schema documents_
+
+Here is an example:
+
+**Swagger 2.0**
+
+```javascript
+var spec = require('swagger-tools').specs.v2; // Using the latest Swagger 2.x specification
+var swaggerObject = require('./samples/2.0/petstore.json'); // This assumes you're in the root of the swagger-tools
+
+spec.resolve(swaggerObject, function (err, result) {
+  if (err) {
+    throw err;
+  }
+
+  if (!result) {
+    console.log('%s does not correspond with a path in the provided document', ptr);
+  } else {
+    console.log(JSON.stringify(result));
+  }
+});
+```
+
+This API could be confused with `Specification#composeModel` but this API does not work with Swagger 1.x and it can
+resolve any path within the document, not just models.
+
+##### #validateModel(aDOrSO, modelIdOrRef, data, callback)
 
 **Arguments**
 
 * **aDOrSO:** `object` The API Declaration or the Swagger Object _(For Swagger 1.2, this should be the API Declaration
 object that defines the model.  For Swagger 2.0, this is the Swagger object itself.)_
-* **modelIdOrPtr:** `string` The model id or the model's JSON Pointer _(For Swagger 1.2, this is the model id.  For
-Swagger 2.0, this is the model id (if it's defined in `#/definitions`) or the model's JSON Pointer)_
+* **modelIdOrRef:** `string` The model id or the model's JSON Reference pointer string _(For Swagger 1.2, this is the
+  model id.  For Swagger 2.0, this is the JSON Reference pointer string)_
 * **data:** `object|array` The object representing the model to be validated
+* **callback:** `function` The error-first callback to call with the response or any upstream errors not related to
+invalid arguments
 
 **Returns**
 
@@ -347,36 +402,63 @@ structured identically to that of the `#validate` method.
 
 Here is a full example of this API in action:
 
+**Swagger 2.0**
+
 ```javascript
 var spec = require('swagger-tools').specs.v2; // Using the latest Swagger 2.x specification
 var swaggerObject = require('./samples/2.0/petstore.json'); // This assumes you're in the root of the swagger-tools
-var result = spec.validateModel(swaggerObject, 'Pet', {
+
+spec.validateModel(swaggerObject, '#/definitions/Pet', {
   id: 1,
   name: 'Some Pet Name'
+}, function (err, result) {
+  if (result) {
+    console.log('Swagger model failed validation:');
+
+    console.log('Errors');
+    console.log('------');
+
+    result.errors.forEach(function (err) {
+      console.log('#/' + err.path.join('/') + ': ' + err.message);
+    });
+
+    // Since this is schema validation, warnings shouldn't be populated
+  } else {
+    console.log('Swagger model is valid');
+  }
 });
+```
 
-if (result) {
-  console.log('Swagger model failed validation:');
+**Swagger 1.2**
 
-  console.log('Errors');
-  console.log('------');
+```javascript
+var spec = require('swagger-tools').specs.v1; // Using the latest Swagger 1.x specification
+var petJson = require('./samples/1.2/pet.json'); // This assumes you're in the root of the swagger-tools
 
-  result.errors.forEach(function (err) {
-    console.log('#/' + err.path.join('/') + ': ' + err.message);
-  });
+spec.validateModel(petJson, 'Pet', {
+  id: 1,
+  name: 'Some Pet Name'
+}, function (err, result) {
+  if (result) {
+    console.log('Swagger model failed validation:');
 
-  // Since this is schema validation, warnings shouldn't be populated
-} else {
-  console.log('Swagger model is valid');
-}
+    console.log('Errors');
+    console.log('------');
+
+    result.errors.forEach(function (err) {
+      console.log('#/' + err.path.join('/') + ': ' + err.message);
+    });
+
+    // Since this is schema validation, warnings shouldn't be populated
+  } else {
+    console.log('Swagger model is valid');
+  }
+});
 ```
 
 [connect]: https://github.com/senchalabs/connect
-[jjve]: https://github.com/acornejo/jjv
 [json-schema]: http://json-schema.org/
+[middleware]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Middleware.md
 [swagger]: http://swagger.io
-[swaggerMetadata]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Middleware.md#swagger-metadata
-[swaggerRouter]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Middleware.md#swagger-router
-[swaggerValidator]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Middleware.md#swagger-validator
 [swagger-1.2]: https://github.com/reverb/swagger-spec/blob/master/versions/1.2.md
 [swagger-2.0]: https://github.com/reverb/swagger-spec/blob/master/versions/2.0.md

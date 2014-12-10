@@ -1922,7 +1922,7 @@ describe('Specification v2.0', function () {
 
       _.each(errors, function (args, message) {
         try {
-          spec.composeSchema.apply(spec, args);
+          spec.composeModel.apply(spec, args);
         } catch (err) {
           assert.equal(message, err.message);
         }
@@ -1930,7 +1930,7 @@ describe('Specification v2.0', function () {
     });
 
     it('should return undefined for unresolvable model', function (done) {
-      spec.composeSchema(_.cloneDeep(petStoreJson), '#/definitions/Liger', function (err, result) {
+      spec.composeModel(_.cloneDeep(petStoreJson), '#/definitions/Liger', function (err, result) {
         if (err) {
           throw err;
         }
@@ -1962,7 +1962,7 @@ describe('Specification v2.0', function () {
 
       swaggerObject.paths['/pets'].get.responses.default.schema.$ref = '#/definitions/Person';
 
-      spec.composeSchema(swaggerObject, '#/definitions/Pet', function (err, result) {
+      spec.composeModel(swaggerObject, '#/definitions/Pet', function (err, result) {
         assert.ok(_.isUndefined(result));
 
         assert.equal('The Swagger document is invalid and model composition is not possible', err.message);
@@ -2092,7 +2092,7 @@ describe('Specification v2.0', function () {
       eResults.push(ePet);
 
       async.map(['Employee', 'Person', 'Company', 'Pet'], function (modelId, callback) {
-        spec.composeSchema(swaggerObject, '#/definitions/' + modelId, function (err, results) {
+        spec.composeModel(swaggerObject, '#/definitions/' + modelId, function (err, results) {
           callback(err, results);
         });
       }, function (err, results) {
@@ -2131,7 +2131,7 @@ describe('Specification v2.0', function () {
 
       swaggerObject.paths['/pets'].get.responses.default.schema.$ref = '#/definitions/Person';
 
-      spec.composeSchema(swaggerObject, '#/definitions/Pet', function (err, result) {
+      spec.composeModel(swaggerObject, '#/definitions/Pet', function (err, result) {
         assert.ok(_.isUndefined(result));
 
         assert.equal('The Swagger document is invalid and model composition is not possible', err.message);

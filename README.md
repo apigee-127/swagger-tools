@@ -23,6 +23,7 @@ see what issues we are aware of and what features/enhancements we are working on
 based on the [JSON Schema][json-schema] associated with that version of the specification _(Browser and Node)_
 * Semantic validation: Validates Swagger files above and beyond the structure of the file _(Browser and Node)_
 * Connect middleware for adding pertinent Swagger information to your requests _(Node only)_
+* Connect middleware for wiring up security handlers for requests based on Swagger documentation _(Node only)_
 * Connect middleware for wiring request handlers to requests based on Swagger documentation _(Node only)_
 * Connect middleware for serving your Swagger documents and [Swagger UI][swagger-ui] _(Node only)_
 * Connect middleware for using Swagger resource documents for pre-route validation _(Node only)_

@@ -1186,7 +1186,7 @@ describe('Specification v1.2', function () {
 
       _.each(errors, function (args, message) {
         try {
-          spec.composeSchema.apply(spec, args);
+          spec.composeModel.apply(spec, args);
         } catch (err) {
           assert.equal(message, err.message);
         }
@@ -1194,7 +1194,7 @@ describe('Specification v1.2', function () {
     });
 
     it('should return undefined for unresolvable model', function (done) {
-      spec.composeSchema(_.cloneDeep(allSampleFiles['pet.json']), 'Liger', function (err, result) {
+      spec.composeModel(_.cloneDeep(allSampleFiles['pet.json']), 'Liger', function (err, result) {
         if (err) {
           throw err;
         }
@@ -1223,7 +1223,7 @@ describe('Specification v1.2', function () {
       petJson.models.Tag.discriminator = 'name';
       petJson.models.Tag.subTypes = ['Person'];
 
-      spec.composeSchema(petJson, 'Person', function (err, result) {
+      spec.composeModel(petJson, 'Person', function (err, result) {
         assert.equal('The Swagger document is invalid and model composition is not possible', err.message);
         assert.equal(1, err.errors.length);
         assert.equal(0, err.warnings.length);
@@ -1365,7 +1365,7 @@ describe('Specification v1.2', function () {
       eResults.push(ePet);
 
       async.map(['Employee', 'Person', 'Company', 'Pet'], function (modelId, callback) {
-        spec.composeSchema(petJson, modelId, function (err, results) {
+        spec.composeModel(petJson, modelId, function (err, results) {
           callback(err, results);
         });
       }, function (err, results) {

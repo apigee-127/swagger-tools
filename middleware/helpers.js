@@ -245,7 +245,7 @@ var mockResponse = function mockResponse (version, req, res, next, handlerName) 
 
   if (_.isPlainObject(responseType) || isModelType(spec, responseType)) {
     if (version === '1.2') {
-      spec.composeSchema(apiDOrSO, responseType, function (err, result) {
+      spec.composeModel(apiDOrSO, responseType, function (err, result) {
         if (err) {
           return sendResponse(undefined, err);
         } else {
