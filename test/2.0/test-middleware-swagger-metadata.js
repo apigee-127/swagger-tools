@@ -175,6 +175,36 @@ describe('Swagger Metadata Middleware v2.0', function () {
        });
   });
 
+  it('should populate parameter values for formData elements',
+    function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      // Add an operation parameter
+      cPetStoreJson.paths['/pets'].post.parameters = [
+        {
+          'in': 'formData',
+          'name': 'mock',
+          'description': 'Mock mode',
+          'required': false,
+          'type': 'boolean'
+        }
+      ];
+
+      helpers.createServer([cPetStoreJson], {
+        handler: function (req, res, next) {
+          assert(req.swagger.params.mock.value, false);
+          res.end('OK');
+        }
+      }, function (app) {
+        request(app)
+          .post('/api/pets')
+          .type('form')
+          .send({mock: false})
+          .expect(200)
+          .end(helpers.expectContent('OK', done));
+      });
+    });
+
   it('should handle parameter references (Issue 79)', function (done) {
     var cPetStoreJson = _.cloneDeep(petStoreJson);
 

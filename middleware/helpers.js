@@ -350,6 +350,7 @@ module.exports.getParameterValue = function getParameterValue (version, paramete
   switch (paramType) {
   case 'body':
   case 'form':
+  case 'formData':
     if (!req.body) {
       throw new Error('Server configuration error: req.body is not defined but is required');
     }
