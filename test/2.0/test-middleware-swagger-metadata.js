@@ -191,7 +191,7 @@ describe('Swagger Metadata Middleware v2.0', function () {
       ];
 
       helpers.createServer([cPetStoreJson], {
-        handler: function (req, res, next) {
+        handler: function (req, res) {
           assert(req.swagger.params.mock.value, false);
           res.end('OK');
         }
