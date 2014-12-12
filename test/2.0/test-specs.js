@@ -1988,7 +1988,7 @@ describe('Specification v2.0', function () {
       spec.composeModel(swaggerObject, '#/definitions/Pet', function (err, result) {
         assert.ok(_.isUndefined(result));
 
-        assert.equal('The Swagger document is invalid and model composition is not possible', err.message);
+        assert.equal('The Swagger document(s) are invalid', err.message);
         assert.equal(1, err.errors.length);
         assert.equal(0, err.warnings.length);
         assert.deepEqual({
@@ -2157,7 +2157,7 @@ describe('Specification v2.0', function () {
       spec.composeModel(swaggerObject, '#/definitions/Pet', function (err, result) {
         assert.ok(_.isUndefined(result));
 
-        assert.equal('The Swagger document is invalid and model composition is not possible', err.message);
+        assert.equal('The Swagger document(s) are invalid', err.message);
         assert.equal(1, err.errors.length);
         assert.equal(0, err.warnings.length);
         assert.deepEqual({
@@ -2365,6 +2365,18 @@ describe('Specification v2.0', function () {
 
         done();
       });
+    });
+  });
+
+  describe('#convert', function () {
+    it('should throw an Error (unsupported)', function () {
+      try {
+        spec.convert();
+
+        assert.fail(null, null, 'Should had failed above');
+      } catch (err) {
+        assert.equal(err.message, 'Specification#convert only works for Swagger 1.2');
+      }
     });
   });
 });

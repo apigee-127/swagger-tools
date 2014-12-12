@@ -172,6 +172,89 @@ These examples would output something like the following:
 
 As you can see, this JSON Schema is valid and it is fully resolved so that it is a standalone document.
 
+##### #convert(resourceListing, apiDeclarations, skipValidation, callback)
+
+**Arguments**
+
+* **resourceListing:** `object` The Resource Listing
+* **apiDeclarations:** `[object[]]` The array of API Declaration objects
+* **skipValidation:** `[boolean=false]` Whether or not to skip validation prior to conversion
+* **callback:** `function` The error-first callback to call with the response or any upstream errors not related to
+  invalid arguments
+
+**Returns**
+
+This function returns an `object` that represents the converted Swagger 2.0 document.
+
+**Notes**
+
+_Does not work with Swagger 2.0_
+
+Here is an example:
+
+```javascript
+var resourceListing = require('./samples/1.2/resourceListing.json'); // This assumes you're in the root of the swagger-tools
+var apiDeclarations = [
+  require('./samples/1.2/pet.json'), // This assumes you're in the root of the swagger-tools
+  require('./samples/1.2/store.json'), // This assumes you're in the root of the swagger-tools
+  require('./samples/1.2/user.json') // This assumes you're in the root of the swagger-tools
+];
+var spec = require('swagger-tools').specs.v1; // Using the latest Swagger 1.x specification
+
+spec.convert(resourceListing, apiDeclarations, function (err, converted) {
+  if (err) {
+    throw err;
+  }
+
+  console.log(JSON.stringify(converted, null, 2));
+});
+```
+
+This API could be confused with `Specification#composeModel` but this API does not work with Swagger 1.x and it can
+resolve any path within the document, not just models.
+
+##### #resolve(document, ptr, callback)
+
+**Arguments**
+
+* **document:** `object` The document to resolve or the document containing the reference to resolve
+* **ptr:** `string` The JSON Pointer or undefined to return the whole document
+* **callback:** `function` The error-first callback to call with the response or any upstream errors not related to
+invalid arguments
+
+**Returns**
+
+A fully resolved JSON Schema representation of the document or path within the document, or `undefined` if the document
+does not contain a path corresponding to the pointer
+
+**Notes**
+
+_Does not work with Swagger 1.2 since those documents are not valid JSON Schema documents_
+
+Here is an example:
+
+**Swagger 2.0**
+
+```javascript
+var spec = require('swagger-tools').specs.v2; // Using the latest Swagger 2.x specification
+var swaggerObject = require('./samples/2.0/petstore.json'); // This assumes you're in the root of the swagger-tools
+
+spec.resolve(swaggerObject, function (err, result) {
+  if (err) {
+    throw err;
+  }
+
+  if (!result) {
+    console.log('%s does not correspond with a path in the provided document', ptr);
+  } else {
+    console.log(JSON.stringify(result));
+  }
+});
+```
+
+This API could be confused with `Specification#composeModel` but this API does not work with Swagger 1.x and it can
+resolve any path within the document, not just models.
+
 ##### #validate(rLOrSO, apiDeclarations, callback)
 
 **Arguments**
@@ -340,48 +423,6 @@ spec.validate(resourceListing, apiDeclarations, function (err, result) {
   }
 });
 ```
-
-##### #resolve(document, ptr, callback)
-
-**Arguments**
-
-* **document:** `object` The document to resolve or the document containing the reference to resolve
-* **ptr:** `string` The JSON Pointer or undefined to return the whole document
-* **callback:** `function` The error-first callback to call with the response or any upstream errors not related to
-invalid arguments
-
-**Returns**
-
-`undefined` a fully resolved JSON Schema representation of the document or path within the document, or `undefined` if
-the document does not contain a path corresponding to the pointer
-
-**Notes**
-
-_Does not work with Swagger 1.2 since those documents are not valid JSON Schema documents_
-
-Here is an example:
-
-**Swagger 2.0**
-
-```javascript
-var spec = require('swagger-tools').specs.v2; // Using the latest Swagger 2.x specification
-var swaggerObject = require('./samples/2.0/petstore.json'); // This assumes you're in the root of the swagger-tools
-
-spec.resolve(swaggerObject, function (err, result) {
-  if (err) {
-    throw err;
-  }
-
-  if (!result) {
-    console.log('%s does not correspond with a path in the provided document', ptr);
-  } else {
-    console.log(JSON.stringify(result));
-  }
-});
-```
-
-This API could be confused with `Specification#composeModel` but this API does not work with Swagger 1.x and it can
-resolve any path within the document, not just models.
 
 ##### #validateModel(aDOrSO, modelIdOrRef, data, callback)
 

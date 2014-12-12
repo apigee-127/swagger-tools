@@ -36,7 +36,6 @@ var pkg = require('../package.json');
 var program = require('commander');
 var request = require('superagent');
 var S = require('string');
-var swaggerConverter = require('swagger-converter');
 var YAML = require('yamljs');
 
 var exitWithError = function exitWithError (msg) {
@@ -124,40 +123,27 @@ program
   .option('-V, --no-validation', 'disable pre-conversion validation of the Swagger document(s)')
   .option('-y, --yaml', 'output as YAML instead of JSON')
   .action(function (resourceListing, apiDeclarations) {
-    var doConvert = function doConvert (resourceListing, apiDeclarations) {
-      var converted = swaggerConverter(resourceListing, apiDeclarations);
+    var doConvert = function doConvert (err, converted) {
+      if (err) {
+        if (err.failedValidation) {
+          console.error(err.message + ' (Run with --no-validation to skip validation)');
+
+          return helpers.printValidationResults('1.2', resourceListing, apiDeclarations,
+                                                {
+                                                  errors: err.errors,
+                                                  warnings: err.warnings,
+                                                  apiDeclarations: err.apiDeclarations
+                                                }, true, true);
+        } else {
+          return exitWithError(err.message);
+        }
+      }
 
       console.log(this.yaml ? YAML.stringify(converted, 2) : JSON.stringify(converted, null, 2));
     }.bind(this);
-    var spec = helpers.getSpec('1.2');
 
-    getDocuments([resourceListing].concat(apiDeclarations), function (err, documents) {
-      if (err) {
-        throw err;
-      }
-
-      var apiDeclarations = documents.apiDeclarations;
-      var resourceListing = documents.resourceListing;
-
-      if (!resourceListing) {
-        return exitWithError('Conversion only works for Swagger 1.2 documents');
-      }
-
-      if (this.validation) {
-        spec.validate(resourceListing, apiDeclarations, function (err, results) {
-          if (err) {
-            throw err;
-          } else if (helpers.formatResults(results)) {
-            console.error('Swagger document(s) are invalid (Run with --no-validation to skip validation)');
-
-            return helpers.printValidationResults('1.2', resourceListing, apiDeclarations, results, true, true);
-          }
-
-          doConvert(resourceListing, apiDeclarations);
-        });
-      } else {
-        doConvert(resourceListing, apiDeclarations);
-      }
+    getDocuments([resourceListing].concat(apiDeclarations || []), function (err, documents) {
+      helpers.getSpec('1.2').convert(documents.resourceListing, documents.apiDeclarations, !this.validation, doConvert);
     }.bind(this));
   });
 

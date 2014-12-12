@@ -1224,7 +1224,7 @@ describe('Specification v1.2', function () {
       petJson.models.Tag.subTypes = ['Person'];
 
       spec.composeModel(petJson, 'Person', function (err, result) {
-        assert.equal('The Swagger document is invalid and model composition is not possible', err.message);
+        assert.equal('The Swagger document(s) are invalid', err.message);
         assert.equal(1, err.errors.length);
         assert.equal(0, err.warnings.length);
         assert.deepEqual({
@@ -1422,7 +1422,7 @@ describe('Specification v1.2', function () {
       petJson.models.Tag.subTypes = ['Person'];
 
       spec.validateModel(petJson, 'Person', {}, function (err, result) {
-        assert.equal('The Swagger document is invalid and model composition is not possible', err.message);
+        assert.equal('The Swagger document(s) are invalid', err.message);
         assert.equal(1, err.errors.length);
         assert.equal(0, err.warnings.length);
         assert.deepEqual({
@@ -1624,6 +1624,119 @@ describe('Specification v1.2', function () {
         }
 
         assert.ok(_.isUndefined(result));
+
+        done();
+      });
+    });
+  });
+
+  describe('#convert', function () {
+    it('should fail when passed the wrong arguments', function () {
+      var errors = {
+        'resourceListing is required': [],
+        'resourceListing must be an object': ['wrongType'],
+        'apiDeclarations is required': [allSampleFiles['resource-listing.json']],
+        'apiDeclarations must be an array': [allSampleFiles['resource-listing.json'], 'wrongType'],
+        'callback is required': [allSampleFiles['resource-listing.json'], []],
+        'callback must be a function': [allSampleFiles['resource-listing.json'], [], 'wrongType']
+      };
+
+      _.each(errors, function (args, message) {
+        try {
+          spec.validate.apply(spec, args);
+        } catch (err) {
+          assert.equal(message, err.message);
+        }
+      });
+    });
+
+    it('should throw an Error for Swagger document(s) with errors', function (done) {
+      var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+      var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+      var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+      petJson.models.Person = {
+        id: 'Person',
+        properties: {
+          age: {
+            type: 'integer'
+          },
+          name: {
+            type: 'string'
+          }
+        }
+      };
+
+      petJson.models.Tag.discriminator = 'name';
+      petJson.models.Tag.subTypes = ['Person'];
+
+      spec.convert(rlJson, [petJson, storeJson, userJson], function (err, converted) {
+        assert.equal('The Swagger document(s) are invalid', err.message);
+        assert.equal(0, err.errors.length);
+        assert.equal(0, err.warnings.length);
+        assert.deepEqual({
+          code: 'CHILD_MODEL_REDECLARES_PROPERTY',
+          message: 'Child model declares property already declared by ancestor: name',
+          path: ['models', 'Person', 'properties', 'name']
+        }, err.apiDeclarations[0].errors[0]);
+
+        assert.ok(_.isUndefined(converted));
+
+        done();
+      });
+    });
+
+    it('should throw an Error for Swagger document(s) with only warnings', function (done) {
+      var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+      var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+      var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+      petJson.models.Person = {
+        id: 'Person',
+        properties: {
+          age: {
+            type: 'integer'
+          },
+          name: {
+            type: 'string'
+          }
+        }
+      };
+
+      spec.convert(rlJson, [petJson, storeJson, userJson], true, function (err, converted) {
+        assert.ok(_.isUndefined(err));
+        assert.ok(_.isPlainObject(converted));
+
+        done();
+      });
+    });
+
+    it('should throw an Error for Swagger document(s) with errors when skipping validation', function (done) {
+      var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
+      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+      var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+      var userJson = _.cloneDeep(allSampleFiles['user.json']);
+
+      petJson.models.Person = {
+        id: 'Person',
+        properties: {
+          age: {
+            type: 'integer'
+          },
+          name: {
+            type: 'string'
+          }
+        }
+      };
+
+      petJson.models.Tag.discriminator = 'name';
+      petJson.models.Tag.subTypes = ['Person'];
+
+      spec.convert(rlJson, [petJson, storeJson, userJson], true, function (err, converted) {
+        assert.ok(_.isUndefined(err));
+        assert.ok(_.isPlainObject(converted));
 
         done();
       });
