@@ -1635,7 +1635,6 @@ describe('Specification v1.2', function () {
       var errors = {
         'resourceListing is required': [],
         'resourceListing must be an object': ['wrongType'],
-        'apiDeclarations is required': [allSampleFiles['resource-listing.json']],
         'apiDeclarations must be an array': [allSampleFiles['resource-listing.json'], 'wrongType'],
         'callback is required': [allSampleFiles['resource-listing.json'], []],
         'callback must be a function': [allSampleFiles['resource-listing.json'], [], 'wrongType']
