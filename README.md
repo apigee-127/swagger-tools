@@ -19,7 +19,9 @@ see what issues we are aware of and what features/enhancements we are working on
 
 ## Features
 
-* Simple CLI for validating Swagger documents
+* Simple CLI
+    * Validate Swagger document(s)
+    * Convert Swagger 1.2 documents to Swagger 2.0
 * Schema validation: For the file(s) supported by the Swagger specification, ensure they pass structural validation
 based on the [JSON Schema][json-schema] associated with that version of the specification _(Browser and Node)_
 * Semantic validation: Validates Swagger files above and beyond the structure of the file _(Browser and Node)_

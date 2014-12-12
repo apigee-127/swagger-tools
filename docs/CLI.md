@@ -1,4 +1,6 @@
-Swagger Tools provides a very simple command line interface that gives you access to some of the API features.
+Swagger Tools provides a very simple command line interface that gives you access to some of the API features.  Any time
+a command takes a file, the argument can be a path to a local file or even a URL to a remote file.  _(Only HTTP and
+HTTPS schemes are supported for remote files at this time.)_
 
 ## help
 
@@ -17,6 +19,9 @@ Here is an example output by running `swagger-tools --help`:
   Usage: swagger-tools [options] [command]
 
   Commands:
+
+    convert [options] <resourceListing> <apiDeclarations...>
+      Converts Swagger 1.2 documents to a Swagger 2.0 document
 
     help [command]
        Display help information
@@ -50,6 +55,14 @@ Here is an example output by running `swagger-tools help validate`:
     -h, --help  output usage information
 
 ```
+
+## convert
+
+This command allows you to take your Swagger 1.2 documents (Resource Listing and API Declarations) and convert them to a
+Swagger 2.0 document.  Prior to conversion, your Swagger 1.2 documents are validated but you can turn this off with the
+`--no-validation` flag.  The converted output is printed to standard output as JSON but you can output YAML by using the
+`--yaml` flag.  Here is an example, output omitted:
+`swagger-tools convert ./samples/1.2/resource-listing.json ./samples/1.2/pet.json ./samples/1.2/store.json ./samples/user.json`
 
 ## info
 

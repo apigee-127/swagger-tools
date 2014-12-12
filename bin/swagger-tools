@@ -120,7 +120,7 @@ program
 
 program
   .command('convert <resourceListing> <apiDeclarations...>')
-  .description('Converts a Swagger 1.2 API to a Swagger 2.0 document')
+  .description('Converts Swagger 1.2 documents to a Swagger 2.0 document')
   .option('-V, --no-validation', 'disable pre-conversion validation of the Swagger document(s)')
   .option('-y, --yaml', 'output as YAML instead of JSON')
   .action(function (resourceListing, apiDeclarations) {
