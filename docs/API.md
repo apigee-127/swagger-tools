@@ -201,17 +201,19 @@ var apiDeclarations = [
 ];
 var spec = require('swagger-tools').specs.v1; // Using the latest Swagger 1.x specification
 
-spec.convert(resourceListing, apiDeclarations, function (err, converted) {
-  if (err) {
-    throw err;
-  }
+try {
+  spec.convert(resourceListing, apiDeclarations, function (err, converted) {
+    if (err) {
+      throw err;
+    }
 
-  console.log(JSON.stringify(converted, null, 2));
-});
+    console.log(JSON.stringify(converted, null, 2));
+  });
+} catch (err) {
+  // Can be thrown if validation fails (Pass skipValidation of true if need be)
+  throw err;
+}
 ```
-
-This API could be confused with `Specification#composeModel` but this API does not work with Swagger 1.x and it can
-resolve any path within the document, not just models.
 
 ##### #resolve(document, ptr, callback)
 
