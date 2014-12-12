@@ -36,7 +36,8 @@ var pkg = require('../package.json');
 var program = require('commander');
 var request = require('superagent');
 var S = require('string');
-var yaml = require('yamljs');
+var swaggerConverter = require('swagger-converter');
+var YAML = require('yamljs');
 
 var exitWithError = function exitWithError (msg) {
   console.error();
@@ -58,7 +59,7 @@ var getDocument = function getDocument (pathOrUrl, callback) {
         switch (path.extname(pathOrUrl)) {
         case '.yaml':
         case '.yml':
-          content = yaml.parse(res.text);
+          content = YAML.parse(res.text);
 
           break;
 
@@ -82,18 +83,83 @@ var getDocument = function getDocument (pathOrUrl, callback) {
     });
   }
 };
-var getSpec = function getSpec (version) {
-  var spec = helpers.getSpec(version);
+var getDocuments = function getDocuments (pathsAndOrUrls, callback) {
+  var resolvedDocuments = {};
 
-  if (_.isUndefined(spec)) {
-    return exitWithError(program._name + ' does not support Swagger version ' + version + '.');
-  }
+  async.map(pathsAndOrUrls, getDocument, function (err, documents) {
+    _.each(documents, function (document, index) {
+      if (!document) {
+        return;
+      }
 
-  return spec;
+      if (index === 0) {
+        if (document.swagger) {
+          resolvedDocuments.swaggerObject = document;
+        } else if (document.swaggerVersion) {
+          resolvedDocuments.resourceListing = document;
+        } else {
+          return exitWithError('Unable to identify the Swagger version for document: ' + program.args[index]);
+        }
+      } else if (_.isUndefined(resolvedDocuments.swaggerObject)) {
+        if (!resolvedDocuments.apiDeclarations) {
+          resolvedDocuments.apiDeclarations = [];
+        }
+
+        resolvedDocuments.apiDeclarations.push(document);
+      }
+    });
+
+    callback(err, resolvedDocuments);
+  }, function (err) {
+    callback(err, resolvedDocuments);
+  });
 };
 
 program
   .version(pkg.version);
+
+program
+  .command('convert <resourceListing> <apiDeclarations...>')
+  .description('Converts a Swagger 1.2 API to a Swagger 2.0 document')
+  .option('-V, --no-validation', 'disable pre-conversion validation of the Swagger document(s)')
+  .option('-y, --yaml', 'output as YAML instead of JSON')
+  .action(function (resourceListing, apiDeclarations) {
+    var doConvert = function doConvert (resourceListing, apiDeclarations) {
+      var converted = swaggerConverter(resourceListing, apiDeclarations);
+
+      console.log(this.yaml ? YAML.stringify(converted, 2) : JSON.stringify(converted, null, 2));
+    }.bind(this);
+    var spec = helpers.getSpec('1.2');
+
+    getDocuments([resourceListing].concat(apiDeclarations), function (err, documents) {
+      if (err) {
+        throw err;
+      }
+
+      var apiDeclarations = documents.apiDeclarations;
+      var resourceListing = documents.resourceListing;
+
+      if (!resourceListing) {
+        return exitWithError('Conversion only works for Swagger 1.2 documents');
+      }
+
+      if (this.validation) {
+        spec.validate(resourceListing, apiDeclarations, function (err, results) {
+          if (err) {
+            throw err;
+          } else if (helpers.formatResults(results)) {
+            console.error('Swagger document(s) are invalid (Run with --no-validation to skip validation)');
+
+            return helpers.printValidationResults('1.2', resourceListing, apiDeclarations, results, true, true);
+          }
+
+          doConvert(resourceListing, apiDeclarations);
+        });
+      } else {
+        doConvert(resourceListing, apiDeclarations);
+      }
+    }.bind(this));
+  });
 
 program
   .command('help [command]')
@@ -104,7 +170,7 @@ program
     if (_.isUndefined(command)) {
       theCommand = this;
     } else {
-      theCommand = _.find(this.commands, function (cmd) {
+      theCommand = _.find(this.parent.commands, function (cmd) {
         return cmd._name === command;
       });
     }
@@ -120,7 +186,7 @@ program
   .command('info <version>')
   .description('Display information about the Swagger version requested')
   .action(function (version) {
-    var spec = getSpec(version);
+    var spec = helpers.getSpec(version);
 
     console.log();
     console.log('Swagger ' + version + ' Information:');
@@ -134,43 +200,28 @@ program
 //   .command('validate <resourceListingOrSwaggerDoc> [apiDeclarations ...]')
 
 program
-  .command('validate')
-  .usage('<resourceListingOrSwaggerDoc> <apiDeclarations>')
+  .command('validate <resourceListingOrSwaggerDoc> [apiDeclarations...]')
   .description('Display validation results for the Swagger document(s)')
-  .action(function () {
-    var apiDeclarations = [];
-    var soArgs = [];
-    var resourceListing;
-    var spec;
-    var swaggerObject;
-    var version;
-
-    async.map(program.args, getDocument, function (err, documents) {
+  .action(function (rlOrSO, apiDeclarations) {
+    getDocuments([rlOrSO].concat(apiDeclarations || []), function (err, documents) {
       if (err) {
         throw err;
       }
 
-      _.each(documents, function (document, index) {
-        if (!document) {
-          return;
-        }
+      var apiDeclarations = documents.apiDeclarations;
+      var resourceListing = documents.resourceListing;
+      var soArgs = [];
+      var swaggerObject = documents.swaggerObject;
+      var spec;
+      var version;
 
-        if (index === 0) {
-          if (document.swagger) {
-            swaggerObject = document;
-            version = document.swagger;
-          } else if (document.swaggerVersion) {
-            resourceListing = document;
-            version = document.swaggerVersion;
-          } else {
-            return exitWithError('Unable to identify the Swagger version for document: ' + program.args[index]);
-          }
-        } else if (_.isUndefined(swaggerObject)) {
-          apiDeclarations.push(document);
-        }
-      });
+      if (swaggerObject && swaggerObject.swagger) {
+        version = swaggerObject.swagger;
+      } else {
+        version = resourceListing.swaggerVersion;
+      }
 
-      spec = getSpec(version);
+      spec = helpers.getSpec(version);
 
       if (_.isUndefined(resourceListing)) {
         soArgs = [swaggerObject];
@@ -180,7 +231,7 @@ program
 
       soArgs.push(function (err, results) {
         if (helpers.formatResults(results)) {
-          err = new Error('Swagger document(s) failed validation so the server cannot start');
+          err = new Error('Swagger document(s) failed validation');
 
           err.results = results;
         }
