@@ -81,7 +81,7 @@ exports = module.exports = function swaggerUIMiddleware (swaggerObject, options)
       return res.end(apiDocs);
     } else if (path === options.swaggerUi || path.indexOf(options.swaggerUi + '/') === 0) {
       res.setHeader('Swagger-API-Docs-URL', options.apiDocs);
-      res.setHeader('Swagger-Show-API-Key', options.showAPIKey ? "1" : "0");
+      res.setHeader('Swagger-Show-API-Key', options.showAPIKey ? '1' : '0');
 
       if (_.isObject(options.oauth)) {
         res.setHeader('Swagger-OAuth-Options', JSON.stringify(options.oauth));
