@@ -44,6 +44,7 @@ var staticOptions = {};
  * @param {string=/api-docs} [options.apiDocs] - The relative path to serve your Swagger documents from
  * @param {string=/docs} [options.swaggerUi] - The relative path to serve Swagger UI from
  * @param {boolean=/showAPIKey} [options.showAPIKey] - The flag to show (default) or hide the api-key field
+ * @param {object=/oauth} [options.oauth] - Optional object passed to the Swagger UI initOAuth function
  *
  * @returns the middleware function
  */
@@ -81,6 +82,10 @@ exports = module.exports = function swaggerUIMiddleware (swaggerObject, options)
     } else if (path === options.swaggerUi || path.indexOf(options.swaggerUi + '/') === 0) {
       res.setHeader('Swagger-API-Docs-URL', options.apiDocs);
       res.setHeader('Swagger-Show-API-Key', options.showAPIKey ? "1" : "0");
+
+      if (_.isObject(options.oauth)) {
+        res.setHeader('Swagger-OAuth-Options', JSON.stringify(options.oauth));
+      }
 
       if (path === options.swaggerUi || path === options.swaggerUi + '/') {
         req.url = '/';

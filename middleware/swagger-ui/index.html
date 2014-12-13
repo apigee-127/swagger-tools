@@ -24,21 +24,15 @@
   <script src='lib/swagger-oauth.js' type='text/javascript'></script>
   <script type="text/javascript">
     $(function () {
-      var initSwaggerUi = function initSwaggerUi (url) {
+      var initSwaggerUi = function initSwaggerUi (url,oauthOptions) {
         window.swaggerUi = new SwaggerUi({
           url: url,
           dom_id: "swagger-ui-container",
           supportedSubmitMethods: ['get', 'post', 'put', 'delete'],
           onComplete: function(swaggerApi, swaggerUi){
             log("Loaded SwaggerUI");
-            if(typeof initOAuth == "function") {
-              /*
-              initOAuth({
-              clientId: "your-client-id",
-              realm: "your-realms",
-              appName: "your-app-name"
-            });
-            */
+            if(oauthOptions && (typeof initOAuth == "function")) {
+              initOAuth(oauthOptions);
             }
             $('pre code').each(function(i, e) {
               hljs.highlightBlock(e)
@@ -99,7 +93,17 @@
             $('#input_apiKey').hide();
           }
 
-          initSwaggerUi(url);
+          var oauthOptions = response.getResponseHeader('Swagger-OAuth-Options');
+          if (oauthOptions) {
+            try {
+              oauthOptions = JSON.parse(oauthOptions);
+            } catch(err) {
+              log("Unable to parse oauth options " + err.stack);
+              oauthOptions = void 0;
+            }
+          }
+
+          initSwaggerUi(url,oauthOptions);
         }
       });
     });
