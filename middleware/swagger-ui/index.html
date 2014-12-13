@@ -94,6 +94,11 @@
             }
           }
 
+          var showAPIKey = "1" === response.getResponseHeader('Swagger-Show-API-Key');
+          if (!showAPIKey) {
+            $('#input_apiKey').hide();
+          }
+
           initSwaggerUi(url);
         }
       });
