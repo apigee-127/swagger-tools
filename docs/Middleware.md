@@ -58,12 +58,30 @@ to a middleware function documented below.  The order in the following list is t
 Swagger document(s) and then annotate the request, using `req.swagger`, with the pertinent details.
 **swaggerSecurity:** This middleware allows you to wire up authentication/authorization handlers based on the
 definitions in your Swagger document(s).
-**swaggerValidator:** This middleware will validate your requests based on the operations in your Swagger
+**swaggerValidator:** This middleware will validate your request/responses based on the operations in your Swagger
 document(s).
 **swaggerRouter:** This middleware allows you to wire up request handlers based on the operation definitions in your
 Swagger document(s).
 **swaggerUi:** This middleware will serve your Swagger document(s) for public consumption and will also serve a local
 [Swagger UI][swagger-ui] instance.
+
+## Swagger Middleware Errors
+
+All Swagger Middleware errors are sent downstream per Connect middleware standards.  This means that no Swagger
+Middleware will handle errors for you nor will they attempt to render your errors on your behalf.  That being said, the
+Swagger Middleware does annotate validation errors before sending them downstream so that the downstream consumer can
+identify these errors and get the pertinent information out of them.
+
+### Validation Errors
+
+Anytime a Swagger validation error occurs, the following `Error` properties will be available if available:
+
+* **apiDeclarations:** {object[]} - The API Declaration errors _(Swagger 1.2)_
+* **errors:** {object[]} - The validation errors
+* **failedValidation:** {boolean} - Indicating the error is a validation error
+* **warnings:** {object[]} - The validation warnings
+
+Use these pieces of information to properly render your errors.
 
 ## Swagger Metadata
 
@@ -395,7 +413,7 @@ middleware.
 
 ## Swagger Validator
 
-The Swagger Validator middleware is used to validate your requests and responses based on the constraints defined in the
+The Swagger Validator middleware is used to validate your requests/responses based on the constraints defined in the
 operation parameters of your Swagger document(s).  So if your operation has a required parameter and your request does
 not provide it, the Swagger Validator will send an error downstream in typical Connect fashion.  Or if your operation is
 suppose to return `application/x-yaml` but it returns `application/json`, it will do the same.
@@ -448,7 +466,9 @@ swagger.initializeMiddleware(swaggerObject, function (middleware) {
   }));
 
   // Validate Swagger requests
-  app.use(middleware.swaggerValidator());
+  app.use(middleware.swaggerValidator({
+    validateResponse: true
+  }));
 
   // Route validated requests to appropriate controller
   app.use(middleware.swaggerRouter({useStubs: true, controllers: './controllers'}));
@@ -505,7 +525,9 @@ swagger.initializeMiddleware(swaggerObject, function (middleware) {
   }));
 
   // Validate Swagger requests
-  app.use(swaggerValidator());
+  app.use(swaggerValidator({
+    validateResponse: true
+  }));
 
   // Route validated requests to appropriate controller
   app.use(swaggerRouter({useStubs: true, controllers: './controllers'}));

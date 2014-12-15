@@ -1,5 +1,11 @@
 ## Release Notes
 
+### v0.7.1
+
+* Added API/CLI for Swagger 1.2 to 2.0 conversion _(Issue #41)_
+* Fix browser build _(Issue #90)_
+* Properly support Swagger 2.0 form parameters _(Issue #88)_
+* Support validating responses _(Issue #25)_
 
 ### v0.7.0
 
