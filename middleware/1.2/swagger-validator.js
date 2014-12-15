@@ -28,18 +28,24 @@ var _ = require('lodash');
 var async = require('async');
 var helpers = require('../helpers');
 var send400 = helpers.send400;
-var spec = require('../../lib/helpers').getSpec('1.2');
 var validators = require('../../lib/validators');
 
 /**
- * Middleware for using Swagger information to validate API requests prior to sending the request to the route handler.
+ * Middleware for using Swagger information to validate API requests/responses.
  *
  * This middleware also requires that you use the swagger-metadata middleware before this middleware.  This middleware
  * also makes no attempt to work around invalid Swagger documents.
  *
+ * @param {object} [options] - The middleware options
+ * @param {boolean} [options.validateResponse=false] - Whether or not to validate responses
+ *
  * @returns the middleware function
  */
-exports = module.exports = function swaggerValidatorMiddleware () {
+exports = module.exports = function swaggerValidatorMiddleware (options) {
+  if (_.isUndefined(options)) {
+    options = {};
+  }
+
   return function swaggerValidator (req, res, next) {
     var operation = req.swagger ? req.swagger.operation : undefined;
 
@@ -48,13 +54,17 @@ exports = module.exports = function swaggerValidatorMiddleware () {
       var paramName; // Here since we use it in the catch block
       var paramPath; // Here since we use it in the catch block
 
+      // If necessary, override 'res.send'
+      if (options.validateResponse === true) {
+        helpers.wrapEnd('1.2', req, res, next);
+      }
+
       // Validate the request
       try {
         // Validate the content type
         validators.validateContentType(req.swagger.api.consumes, operation.consumes, req);
 
         async.map(operation.parameters, function (parameter, oCallback) {
-          var isModel = helpers.isModelParameter('1.2', parameter);
           var val;
 
           paramName = parameter.name;
@@ -69,35 +79,7 @@ exports = module.exports = function swaggerValidatorMiddleware () {
             return oCallback();
           }
 
-          validators.validateSchemaConstraints('1.2', parameter, paramPath, val);
-
-          if (isModel) {
-            async.map(parameter.type === 'array' ? val : [val], function (aVal, callback) {
-              spec.validateModel(req.swagger.apiDeclaration,
-                                 '#/models/' + (parameter.items ?
-                                                  parameter.items.type || parameter.items.$ref :
-                                                  parameter.type),
-                                 aVal, callback);
-            }, function (err, allResults) {
-              if (!err) {
-                _.each(allResults, function (results) {
-                  if (results) {
-                    err = new Error('Failed schema validation');
-
-                    err.code = 'SCHEMA_VALIDATION_FAILED';
-                    err.errors = results.errors;
-                    err.failedValidation = true;
-
-                    return false;
-                  }
-                });
-              }
-
-              oCallback(err);
-            });
-          } else {
-            oCallback();
-          }
+          helpers.validateValue(req, parameter, paramPath, val, oCallback);
 
           paramIndex++;
         }, function (err) {

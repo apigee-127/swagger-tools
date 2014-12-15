@@ -30,9 +30,10 @@ based on the [JSON Schema][json-schema] associated with that version of the spec
 * Connect middleware for wiring request handlers to requests based on Swagger documentation _(Node only)_
 * Connect middleware for serving your Swagger documents and [Swagger UI][swagger-ui] _(Node only)_
 * Connect middleware for using Swagger resource documents for pre-route validation _(Node only)_
-    * Validate the request Content-Type based on the operation's `consumes` value(s)
+    * Validate the request/response Content-Type based on the operation's `consumes/produces` value(s)
     * Validate the request parameter types
     * Validate the request parameter values
+    * Validate the response values
 
 ## Installation
 

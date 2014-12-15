@@ -80,7 +80,7 @@ module.exports.createServer = function createServer (initArgs, options, callback
       app.use(middleware.swaggerSecurity(options.swaggerSecurityOptions));
     }
 
-    app.use(middleware.swaggerValidator());
+    app.use(middleware.swaggerValidator(options.swaggerValidatorOptions));
     app.use(middleware.swaggerRouter(options.swaggerRouterOptions));
 
     app.use(middleware.swaggerUi(options.swaggerUiOptions));
@@ -108,7 +108,7 @@ module.exports.expectContent = function expectContent (content, done) {
       throw err;
     }
 
-    if (_.isPlainObject(content)) {
+    if (_.isArray(content) || _.isPlainObject(content)) {
       assert.deepEqual(JSON.parse(prepareText(res.text)), content);
     } else {
       assert.equal(prepareText(res.text), content);

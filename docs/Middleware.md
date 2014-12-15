@@ -126,6 +126,7 @@ The structure of `req.swagger` is as follows:
 * **path:** `object` The corresponding path in the Swagger object that the request maps to
 * **operation:** `object` The corresponding operation in the API Declaration that the request maps to
 * **operationParameters:** `object[]` The computed parameters for this operation
+* **operationPath:** `string[]` The path to the operation
 * **params:** `object` For each of the request parameters defined in your Swagger document, its `path`, its `schema`
 and its processed `value`
 * **security:** `object[]` The computed security for this request
@@ -394,10 +395,17 @@ middleware.
 
 ## Swagger Validator
 
-The Swagger Validator middleware is used to validate your requests based on the constraints defined in the operation
-parameters of your Swagger document(s).  So if your operation has a required parameter and your request does not provide
-it, the Swagger Validator will send an error downstream in typical Connect fashion.  There are no configuration options
-for this middleware.
+The Swagger Validator middleware is used to validate your requests and responses based on the constraints defined in the
+operation parameters of your Swagger document(s).  So if your operation has a required parameter and your request does
+not provide it, the Swagger Validator will send an error downstream in typical Connect fashion.  Or if your operation is
+suppose to return `application/x-yaml` but it returns `application/json`, it will do the same.
+
+**Arguments**
+
+* **options:** `object` The middleware options
+* **options.validateResponse:** `[boolean=false]` Whether or not to validate responses
+
+**Returns**
 
 ## Complete Example
 

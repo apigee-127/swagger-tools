@@ -139,6 +139,7 @@ describe('Swagger Metadata Middleware v2.0', function () {
                    schema: rPath.parameters[0]
                  }
                ]);
+               assert.deepEqual(swagger.operationPath, ['paths', '/pets/{id}', 'get']);
                assert.deepEqual(swagger.path, resolved.paths['/pets/{id}']);
                assert.deepEqual(swagger.security, [
                  {
@@ -168,10 +169,10 @@ describe('Swagger Metadata Middleware v2.0', function () {
          }
        }, function (app) {
          request(app)
-         .get('/api/pets/1')
-         .query({mock: false})
-         .expect(200)
-         .end(helpers.expectContent('OK', done));
+           .get('/api/pets/1')
+           .query({mock: false})
+           .expect(200)
+           .end(helpers.expectContent('OK', done));
        });
   });
 

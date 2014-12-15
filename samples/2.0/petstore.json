@@ -251,6 +251,12 @@
       }
     }
   },
+  "produces": [
+    "application/json",
+    "application/xml",
+    "text/plain",
+    "text/html"
+  ],
   "securityDefinitions": {
     "oauth2": {
       "type": "oauth2",

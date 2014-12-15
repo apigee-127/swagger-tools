@@ -25,11 +25,13 @@
 'use strict';
 
 var _ = require('lodash');
+var async = require('async');
 var fs = require('fs');
+var helpers = require('../lib/helpers');
 var parseurl = require('parseurl');
 var path = require('path');
+var validators = require('../lib/validators');
 
-var helpers = require('../lib/helpers');
 var operationVerbs = [
   'DELETE',
   'GET',
@@ -42,6 +44,37 @@ var operationVerbs = [
 
 var isModelType = function isModelType (spec, type) {
   return spec.primitives.indexOf(type) === -1;
+};
+
+var isModelParameter = module.exports.isModelParameter = function isModelParameter (version, param) {
+  var spec = helpers.getSpec(version);
+  var isModel = false;
+
+  switch (version) {
+  case '1.2':
+    if (!_.isUndefined(param.type) && isModelType(spec, param.type)) {
+      isModel = true;
+    } else if (param.type === 'array' && isModelType(spec, param.items ?
+                                                             param.items.type || param.items.$ref :
+                                                             undefined)) {
+      isModel = true;
+    }
+
+    break;
+
+  case '2.0':
+    if (param.type === 'object' || !param.type) {
+      isModel = true;
+    } else if (!_.isUndefined(param.schema) && (param.schema.type === 'object' || !_.isUndefined(param.schema.$ref))) {
+      isModel = true;
+    }
+
+    // 2.0 does not allow arrays of models in the same way Swagger 1.2 does
+
+    break;
+  }
+
+  return isModel;
 };
 
 /**
@@ -310,37 +343,6 @@ module.exports.createStubHandler = function createStubHandler (version, req, res
   };
 };
 
-var isModelParameter = module.exports.isModelParameter = function isModelParameter (version, param) {
-  var spec = helpers.getSpec(version);
-  var isModel = false;
-
-  switch (version) {
-  case '1.2':
-    if (!_.isUndefined(spec, param.type) && isModelType(spec, param.type)) {
-      isModel = true;
-    } else if (param.type === 'array' && isModelType(spec, param.items ?
-                                                             param.items.type || param.items.$ref :
-                                                             undefined)) {
-      isModel = true;
-    }
-
-    break;
-
-  case '2.0':
-    if (param.type === 'object' || !param.type) {
-      isModel = true;
-    } else if (!_.isUndefined(param.schema) && (param.schema.type === 'object' || !_.isUndefined(param.schema.$ref))) {
-      isModel = true;
-    }
-
-    // 2.0 does not allow arrays of models in the same way Swagger 1.2 does
-
-    break;
-  }
-
-  return isModel;
-};
-
 module.exports.getParameterValue = function getParameterValue (version, parameter, pathKeys, match, req) {
   var defaultVal = version === '1.2' ? parameter.defaultValue : parameter.default;
   var paramType = version === '1.2' ? parameter.paramType : parameter.in;
@@ -466,4 +468,146 @@ module.exports.send405 = function send405 (version, req, res, next) {
   res.statusCode = 405;
 
   return next(err);
+};
+
+var validateValue = module.exports.validateValue =
+  function validateValue (req, schema, path, val, callback) {
+    var document = req.swagger.apiDeclaration || req.swagger.swaggerObject;
+    var version = req.swagger.apiDeclaration ? '1.2' : '2.0';
+    var isModel = isModelParameter(version, schema);
+    var spec = helpers.getSpec(version);
+
+    try {
+      validators.validateSchemaConstraints(version, schema, path, val);
+    } catch (err) {
+      return callback(err);
+    }
+
+    if (isModel) {
+      if (_.isString(val)) {
+        try {
+          val = JSON.parse(val);
+        } catch (err) {
+          err.failedValidation = true;
+          err.message = 'Value expected to be an array/object but is not';
+
+          throw err;
+        }
+      }
+
+      async.map(schema.type === 'array' ? val : [val], function (aVal, oCallback) {
+
+        if (version === '1.2') {
+          spec.validateModel(document, '#/models/' + (schema.items ?
+                                                        schema.items.type || schema.items.$ref :
+                                                        schema.type), aVal, oCallback);
+        } else {
+          try {
+            validators.validateAgainstSchema(schema.schema ? schema.schema : schema, val);
+
+            oCallback();
+          } catch (err) {
+            oCallback(err);
+          }
+        }
+      }, function (err, allResults) {
+        if (!err) {
+          _.each(allResults, function (results) {
+            if (results && helpers.getErrorCount(results) > 0) {
+              err = new Error('Failed schema validation');
+
+              err.code = 'SCHEMA_VALIDATION_FAILED';
+              err.errors = results.errors;
+              err.warnings = results.warnings;
+              err.failedValidation = true;
+
+              return false;
+            }
+          });
+        }
+
+        callback(err);
+      });
+    } else {
+      callback();
+    }
+  };
+
+module.exports.wrapEnd = function wrapEnd (version, req, res, next) {
+  var operation = req.swagger.operation;
+  var originalEnd = res.end;
+  var vPath = _.cloneDeep(req.swagger.operationPath);
+
+  res.end = function end (data, encoding) {
+    var schema = operation;
+    var val = data;
+
+    // Replace 'res.end' with the original
+    res.end = originalEnd;
+
+    // If the data is a buffer, convert it to a string so we can parse it prior to validation
+    if (val instanceof Buffer) {
+      val = data.toString(encoding);
+    }
+
+    try {
+      // Validate the content type
+      try {
+        validators.validateContentType(req.swagger.apiDeclaration ?
+                                         req.swagger.apiDeclaration.produces :
+                                         req.swagger.swaggerObject.produces,
+                                       operation.produces, res);
+      } catch (err) {
+        err.failedValidation = true;
+
+        throw err;
+      }
+
+      if (_.isUndefined(schema.type)) {
+        if (schema.schema) {
+          schema = schema.schema;
+        } else if (version === '1.2') {
+          schema = _.find(operation.responseMessages, function (responseMessage, index) {
+            if (responseMessage.code === res.statusCode) {
+              vPath.push(['responseMessages', index.toString()]);
+
+              return true;
+            }
+          });
+
+          if (!_.isUndefined(schema)) {
+            schema = schema.responseModel;
+          }
+        } else {
+          schema = _.find(operation.responses, function (response, code) {
+            if (code === res.statusCode.toString()) {
+              vPath.push(['responses', code]);
+
+              return true;
+            }
+          });
+        }
+      }
+
+      validateValue(req, schema, vPath, val,
+                    function (err) {
+                      if (err) {
+                        throw err;
+                      }
+
+                      // 'res.end' requires a Buffer or String so if it's not one, create a String
+                      if (!(data instanceof Buffer) && !_.isString(data)) {
+                        data = JSON.stringify(data);
+                      }
+
+                      res.end(data, encoding);
+                    });
+    } catch (err) {
+      if (err.failedValidation) {
+        err.message = 'Response validation failed: ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
+      }
+
+      return next(err);
+    }
+  };
 };

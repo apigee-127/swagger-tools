@@ -126,6 +126,7 @@ exports = module.exports = function swaggerMetadataMiddleware (swaggerObject) {
   });
 
   return function swaggerMetadata (req, res, next) {
+    var method = req.method.toLowerCase();
     var path = parseurl(req).pathname;
     var match;
     var metadata;
@@ -145,9 +146,10 @@ exports = module.exports = function swaggerMetadataMiddleware (swaggerObject) {
           swaggerObject: pathMetadata.swaggerObject.resolved
         };
 
-        if (_.isPlainObject(pathMetadata.operations[req.method.toLowerCase()])) {
-          metadata.operation = pathMetadata.operations[req.method.toLowerCase()].operation;
-          metadata.operationParameters = pathMetadata.operations[req.method.toLowerCase()].parameters || [];
+        if (_.isPlainObject(pathMetadata.operations[method])) {
+          metadata.operation = pathMetadata.operations[method].operation;
+          metadata.operationParameters = pathMetadata.operations[method].parameters || [];
+          metadata.operationPath = ['paths', pathMetadata.apiPath, method];
           metadata.security = metadata.operation.security || metadata.swaggerObject.security || [];
         }
 
