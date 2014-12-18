@@ -29,20 +29,12 @@
 var _ = require('lodash');
 var assert = require('assert');
 var async = require('async');
-var fs = require('fs');
-var path = require('path');
 var spec = require('../../').specs.v1_2; // jshint ignore:line
 
-var allSampleFiles = {};
-
-// Load the sample files from disk
-fs.readdirSync(path.join(__dirname, '..', '..', 'samples', '1.2'))
-  .filter(function (name) {
-    return name.match(/^(.*)\.json$/);
-  })
-  .forEach(function (name) {
-    allSampleFiles[name] = require('../../samples/1.2/' + name);
-  });
+var petJson = require('../../samples/1.2/pet.json');
+var rlJson = require('../../samples/1.2/resource-listing.json');
+var storeJson = require('../../samples/1.2/store.json');
+var userJson = require('../../samples/1.2/user.json');
 
 describe('Specification v1.2', function () {
   describe('metadata', function () {
@@ -94,10 +86,10 @@ describe('Specification v1.2', function () {
       var errors = {
         'resourceListing is required': [],
         'resourceListing must be an object': ['wrongType'],
-        'apiDeclarations is required': [allSampleFiles['resource-listing.json']],
-        'apiDeclarations must be an array': [allSampleFiles['resource-listing.json'], 'wrongType'],
-        'callback is required': [allSampleFiles['resource-listing.json'], []],
-        'callback must be a function': [allSampleFiles['resource-listing.json'], [], 'wrongType']
+        'apiDeclarations is required': [rlJson],
+        'apiDeclarations must be an array': [rlJson, 'wrongType'],
+        'callback is required': [rlJson, []],
+        'callback must be a function': [rlJson, [], 'wrongType']
       };
 
       _.each(errors, function (args, message) {
@@ -110,12 +102,12 @@ describe('Specification v1.2', function () {
     });
 
     it('should return undefined for valid JSON files', function (done) {
-      var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-      var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-      var userJson = _.cloneDeep(allSampleFiles['user.json']);
+      var cRlJson = _.cloneDeep(rlJson);
+      var cPetJson = _.cloneDeep(petJson);
+      var cStoreJson = _.cloneDeep(storeJson);
+      var cUserJson = _.cloneDeep(userJson);
 
-      spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+      spec.validate(cRlJson, [cPetJson, cStoreJson, cUserJson], function (err, result) {
         assert.ok(_.isUndefined(err));
         assert.ok(_.isUndefined(result));
 
@@ -125,13 +117,13 @@ describe('Specification v1.2', function () {
 
     describe('should return errors for structurally invalid JSON files', function () {
       it('extra property', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cRlJson = _.cloneDeep(rlJson);
+        var cUserJson = _.cloneDeep(userJson);
 
         // Extra property
-        userJson.apis[0].operations[0].authorizations.oauth2[0].extra = 'value';
+        cUserJson.apis[0].operations[0].authorizations.oauth2[0].extra = 'value';
 
-        spec.validate(rlJson, [userJson], function (err, result) {
+        spec.validate(cRlJson, [cUserJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -150,12 +142,12 @@ describe('Specification v1.2', function () {
       });
 
       it('invalid type', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
+        var cRlJson = _.cloneDeep(rlJson);
+        var cStoreJson = _.cloneDeep(storeJson);
 
-        storeJson.models.Order.description = false;
+        cStoreJson.models.Order.description = false;
 
-        spec.validate(rlJson, [storeJson], function (err, result) {
+        spec.validate(cRlJson, [cStoreJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -174,12 +166,12 @@ describe('Specification v1.2', function () {
       });
 
       it('missing required value', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+        var cRlJson = _.cloneDeep(rlJson);
+        var cPetJson = _.cloneDeep(petJson);
 
-        delete rlJson.apis;
+        delete cRlJson.apis;
 
-        spec.validate(rlJson, [petJson], function (err, result) {
+        spec.validate(cRlJson, [cPetJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -198,12 +190,12 @@ describe('Specification v1.2', function () {
       });
 
       it('wrong enum value', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+        var cRlJson = _.cloneDeep(rlJson);
+        var cPetJson = _.cloneDeep(petJson);
 
-        petJson.apis[1].operations[0].parameters[1].paramType = 'fake';
+        cPetJson.apis[1].operations[0].parameters[1].paramType = 'fake';
 
-        spec.validate(rlJson, [petJson], function (err, result) {
+        spec.validate(cRlJson, [cPetJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -260,14 +252,11 @@ describe('Specification v1.2', function () {
 
     describe('should return errors for semantically invalid JSON files', function () {
       it('duplicate api paths in resource listing', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cRlJson = _.cloneDeep(rlJson);
 
-        rlJson.apis.push(rlJson.apis[0]);
+        cRlJson.apis.push(rlJson.apis[0]);
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(cRlJson, [petJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -286,17 +275,14 @@ describe('Specification v1.2', function () {
       });
 
       it('unused api path in resource listing', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cRlJson = _.cloneDeep(rlJson);
 
-        rlJson.apis.push({
+        cRlJson.apis.push({
           description: 'Operations on people',
           path: '/people'
         });
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(cRlJson, [petJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -315,14 +301,12 @@ describe('Specification v1.2', function () {
       });
 
       it('duplicate resource path in API declaration', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cPetJson = _.cloneDeep(petJson);
+        var cUserJson = _.cloneDeep(userJson);
 
-        userJson.resourcePath = petJson.resourcePath;
+        cUserJson.resourcePath = cPetJson.resourcePath;
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, cUserJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -341,15 +325,12 @@ describe('Specification v1.2', function () {
       });
 
       it('unresolvable resource path in API declaration', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var newResourcePath = userJson.resourcePath + '/fake';
+        var cUserJson = _.cloneDeep(userJson);
+        var newResourcePath = cUserJson.resourcePath + '/fake';
 
-        userJson.resourcePath = newResourcePath;
+        cUserJson.resourcePath = newResourcePath;
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [petJson, storeJson, cUserJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -368,15 +349,12 @@ describe('Specification v1.2', function () {
       });
 
       it('duplicate api paths (verbatim) in API declaration', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var newPath = _.cloneDeep(petJson.apis[0]);
+        var cPetJson = _.cloneDeep(petJson);
+        var newPath = _.cloneDeep(cPetJson.apis[0]);
 
-        petJson.apis.push(newPath);
+        cPetJson.apis.push(newPath);
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -385,7 +363,7 @@ describe('Specification v1.2', function () {
             {
               code: 'DUPLICATE_API_PATH',
               message: 'API path (or equivalent) already defined: /pet/{petId}',
-              path: ['apis', petJson.apis.length - 1, 'path']
+              path: ['apis', cPetJson.apis.length - 1, 'path']
             }
           ]);
           assert.equal(result.apiDeclarations[0].warnings.length, 0);
@@ -395,11 +373,8 @@ describe('Specification v1.2', function () {
       });
 
       it('duplicate api paths (equivalent) in API declaration', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var newPath = petJson.apis[0];
+        var cPetJson = _.cloneDeep(petJson);
+        var newPath = cPetJson.apis[0];
 
         newPath.path = newPath.path.replace(/petId/, 'id');
 
@@ -411,9 +386,9 @@ describe('Specification v1.2', function () {
           });
         });
 
-        petJson.apis.push(newPath);
+        cPetJson.apis.push(newPath);
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -422,7 +397,7 @@ describe('Specification v1.2', function () {
             {
               code: 'DUPLICATE_API_PATH',
               message: 'API path (or equivalent) already defined: /pet/{id}',
-              path: ['apis', petJson.apis.length - 1, 'path']
+              path: ['apis', cPetJson.apis.length - 1, 'path']
             }
           ]);
           assert.equal(result.apiDeclarations[0].warnings.length, 0);
@@ -432,14 +407,11 @@ describe('Specification v1.2', function () {
       });
 
       it('duplicate operation method in API declaration', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cPetJson = _.cloneDeep(petJson);
 
-        petJson.apis[0].operations[1].method = petJson.apis[0].operations[0].method;
+        cPetJson.apis[0].operations[1].method = cPetJson.apis[0].operations[0].method;
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -458,15 +430,12 @@ describe('Specification v1.2', function () {
       });
 
       it('duplicate authorization scope definition', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var scope = rlJson.authorizations.oauth2.scopes[0];
+        var cRlJson = _.cloneDeep(rlJson);
+        var scope = cRlJson.authorizations.oauth2.scopes[0];
 
-        rlJson.authorizations.oauth2.scopes.push(scope);
+        cRlJson.authorizations.oauth2.scopes.push(scope);
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(cRlJson, [petJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -475,7 +444,8 @@ describe('Specification v1.2', function () {
             {
               code: 'DUPLICATE_AUTHORIZATION_SCOPE_DEFINITION',
               message: 'Authorization scope definition already defined: ' + scope.scope,
-              path: ['authorizations', 'oauth2', 'scopes', (rlJson.authorizations.oauth2.scopes.length - 1).toString(), 'scope']
+              path: ['authorizations', 'oauth2', 'scopes', (cRlJson.authorizations.oauth2.scopes.length - 1).toString(),
+                     'scope']
             }
             ]);
           assert.equal(result.errors.length, 0);
@@ -488,15 +458,12 @@ describe('Specification v1.2', function () {
       //  Not possible due to https://github.com/swagger-api/swagger-spec/issues/159
 
       it('duplicate authorization scope reference (operation)', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
-        var scope = petJson.apis[0].operations[1].authorizations.oauth2[0];
+        var cPetJson = _.cloneDeep(petJson);
+        var scope = cPetJson.apis[0].operations[1].authorizations.oauth2[0];
 
-        petJson.apis[0].operations[1].authorizations.oauth2.push(scope);
+        cPetJson.apis[0].operations[1].authorizations.oauth2.push(scope);
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -506,7 +473,7 @@ describe('Specification v1.2', function () {
               code: 'DUPLICATE_AUTHORIZATION_SCOPE_REFERENCE',
               message: 'Authorization scope reference already defined: ' + scope.scope,
               path: ['apis', '0', 'operations', '1', 'authorizations', 'oauth2',
-                     petJson.apis[0].operations[1].authorizations.oauth2.length - 1, 'scope']
+                     cPetJson.apis[0].operations[1].authorizations.oauth2.length - 1, 'scope']
             }
           ]);
           assert.equal(result.apiDeclarations[0].errors.length, 0);
@@ -516,17 +483,14 @@ describe('Specification v1.2', function () {
       });
 
       it('unresolvable authorization', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cPetJson = _.cloneDeep(petJson);
 
-        petJson.apis[0].operations[1].authorizations.oauth3 =
-          _.cloneDeep(petJson.apis[0].operations[1].authorizations.oauth2);
+        cPetJson.apis[0].operations[1].authorizations.oauth3 =
+          _.cloneDeep(cPetJson.apis[0].operations[1].authorizations.oauth2);
 
-        delete petJson.apis[0].operations[1].authorizations.oauth2;
+        delete cPetJson.apis[0].operations[1].authorizations.oauth2;
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -545,14 +509,11 @@ describe('Specification v1.2', function () {
       });
 
       it('unresolvable authorization scope', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cPetJson = _.cloneDeep(petJson);
 
-        petJson.apis[0].operations[1].authorizations.oauth2[0].scope = 'fake';
+        cPetJson.apis[0].operations[1].authorizations.oauth2[0].scope = 'fake';
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -571,12 +532,9 @@ describe('Specification v1.2', function () {
       });
 
       it('unused authorization', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cRlJson = _.cloneDeep(rlJson);
 
-        rlJson.authorizations = {
+        cRlJson.authorizations = {
           apiKey: {
             type: 'apiKey',
             passAs: 'header',
@@ -584,7 +542,7 @@ describe('Specification v1.2', function () {
           }
         };
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(cRlJson, [petJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -603,17 +561,14 @@ describe('Specification v1.2', function () {
       });
 
       it('unused authorization scope', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cRlJson = _.cloneDeep(rlJson);
 
-        rlJson.authorizations.oauth2.scopes.push({
+        cRlJson.authorizations.oauth2.scopes.push({
           description: 'Fake authorization scope',
           scope: 'fake'
         });
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(cRlJson, [petJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -633,15 +588,12 @@ describe('Specification v1.2', function () {
 
       describe('operation constraint validation', function () {
         it('wrong type', function (done) {
-          var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-          var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-          var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-          var userJson = _.cloneDeep(allSampleFiles['user.json']);
+          var cPetJson = _.cloneDeep(petJson);
 
-          petJson.apis[0].operations[0].type = 'integer';
-          petJson.apis[0].operations[0].defaultValue = 'fake';
+          cPetJson.apis[0].operations[0].type = 'integer';
+          cPetJson.apis[0].operations[0].defaultValue = 'fake';
 
-          spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
             if (err) {
               throw err;
             }
@@ -660,16 +612,13 @@ describe('Specification v1.2', function () {
         });
 
         it('enum mismatch', function (done) {
-          var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-          var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-          var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-          var userJson = _.cloneDeep(allSampleFiles['user.json']);
+          var cPetJson = _.cloneDeep(petJson);
 
-          petJson.apis[0].operations[0].type = 'string';
-          petJson.apis[0].operations[0].enum = ['A', 'B'];
-          petJson.apis[0].operations[0].defaultValue = 'fake';
+          cPetJson.apis[0].operations[0].type = 'string';
+          cPetJson.apis[0].operations[0].enum = ['A', 'B'];
+          cPetJson.apis[0].operations[0].defaultValue = 'fake';
 
-          spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
             if (err) {
               throw err;
             }
@@ -690,16 +639,13 @@ describe('Specification v1.2', function () {
         // Cannot validate default values for models because the schema does not allow it
 
         it('maximum', function (done) {
-          var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-          var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-          var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-          var userJson = _.cloneDeep(allSampleFiles['user.json']);
+          var cPetJson = _.cloneDeep(petJson);
 
-          petJson.apis[0].operations[0].defaultValue = '1';
-          petJson.apis[0].operations[0].maximum = '0';
-          petJson.apis[0].operations[0].type = 'integer';
+          cPetJson.apis[0].operations[0].defaultValue = '1';
+          cPetJson.apis[0].operations[0].maximum = '0';
+          cPetJson.apis[0].operations[0].type = 'integer';
 
-          spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
             if (err) {
               throw err;
             }
@@ -717,16 +663,13 @@ describe('Specification v1.2', function () {
           });
 
           it('minimum', function (done) {
-            var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-            var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-            var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-            var userJson = _.cloneDeep(allSampleFiles['user.json']);
+            var cPetJson = _.cloneDeep(petJson);
 
-            petJson.apis[0].operations[0].defaultValue = '0';
-            petJson.apis[0].operations[0].minimum = '1';
-            petJson.apis[0].operations[0].type = 'integer';
+            cPetJson.apis[0].operations[0].defaultValue = '0';
+            cPetJson.apis[0].operations[0].minimum = '1';
+            cPetJson.apis[0].operations[0].type = 'integer';
 
-            spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+            spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
               if (err) {
                 throw err;
               }
@@ -748,14 +691,11 @@ describe('Specification v1.2', function () {
 
       describe('parameter constraint validation', function () {
         it('wrong type', function (done) {
-          var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-          var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-          var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-          var userJson = _.cloneDeep(allSampleFiles['user.json']);
+          var cPetJson = _.cloneDeep(petJson);
 
-          petJson.apis[0].operations[0].parameters[0].defaultValue = 'fake';
+          cPetJson.apis[0].operations[0].parameters[0].defaultValue = 'fake';
 
-          spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
             if (err) {
               throw err;
             }
@@ -777,14 +717,11 @@ describe('Specification v1.2', function () {
       });
 
       it('duplicate operation responseMessage code in API declaration', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cPetJson = _.cloneDeep(petJson);
 
-        petJson.apis[0].operations[0].responseMessages.push(petJson.apis[0].operations[0].responseMessages[0]);
+        cPetJson.apis[0].operations[0].responseMessages.push(petJson.apis[0].operations[0].responseMessages[0]);
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -792,7 +729,8 @@ describe('Specification v1.2', function () {
           assert.deepEqual(result.apiDeclarations[0].errors, [
             {
               code: 'DUPLICATE_RESPONSE_MESSAGE_CODE',
-              message: 'Response message code already defined: ' + petJson.apis[0].operations[0].responseMessages[0].code,
+              message: 'Response message code already defined: ' +
+                         cPetJson.apis[0].operations[0].responseMessages[0].code,
               path: ['apis', '0', 'operations', '0', 'responseMessages', '2', 'code']
             }
           ]);
@@ -803,14 +741,11 @@ describe('Specification v1.2', function () {
       });
 
       it('duplicate operation parameter in API declaration', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cPetJson = _.cloneDeep(petJson);
 
-        petJson.apis[0].operations[0].parameters.push(petJson.apis[0].operations[0].parameters[0]);
+        cPetJson.apis[0].operations[0].parameters.push(petJson.apis[0].operations[0].parameters[0]);
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -829,17 +764,14 @@ describe('Specification v1.2', function () {
       });
 
       it('unresolvable operation path parameter in API declaration', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cPetJson = _.cloneDeep(petJson);
         var newParam = _.cloneDeep(petJson.apis[0].operations[0].parameters[0]);
 
         newParam.name = 'fake';
 
-        petJson.apis[0].operations[0].parameters.push(newParam);
+        cPetJson.apis[0].operations[0].parameters.push(newParam);
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -858,14 +790,11 @@ describe('Specification v1.2', function () {
       });
 
       it('missing operation path parameter in API declaration', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cPetJson = _.cloneDeep(petJson);
 
-        petJson.apis[0].operations[0].parameters = [];
+        cPetJson.apis[0].operations[0].parameters = [];
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -884,14 +813,11 @@ describe('Specification v1.2', function () {
       });
 
       it('unresolvable operation responseMessage responseModel in API declaration', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cPetJson = _.cloneDeep(petJson);
 
-        petJson.apis[0].operations[0].responseMessages[0].responseModel = 'FakeError';
+        cPetJson.apis[0].operations[0].responseMessages[0].responseModel = 'FakeError';
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -910,14 +836,11 @@ describe('Specification v1.2', function () {
       });
 
       it('missing required model property in API declaration', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cPetJson = _.cloneDeep(petJson);
 
-        petJson.models.Category.required = ['name', 'tags'];
+        cPetJson.models.Category.required = ['name', 'tags'];
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -936,14 +859,11 @@ describe('Specification v1.2', function () {
       });
 
       it('unresolvable model in API declaration', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cPetJson = _.cloneDeep(petJson);
 
-        petJson.apis[0].operations[0].type = 'Fake';
+        cPetJson.apis[0].operations[0].type = 'Fake';
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -962,12 +882,9 @@ describe('Specification v1.2', function () {
       });
 
       it('unused model in API declaration', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cPetJson = _.cloneDeep(petJson);
 
-        petJson.models.Person = {
+        cPetJson.models.Person = {
           id: 'Person',
           properties: {
             age: {
@@ -979,7 +896,7 @@ describe('Specification v1.2', function () {
           }
         };
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -998,12 +915,9 @@ describe('Specification v1.2', function () {
       });
 
       it('child model redeclares property in API declaration', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cPetJson = _.cloneDeep(petJson);
 
-        petJson.models.Person = {
+        cPetJson.models.Person = {
           id: 'Person',
           properties: {
             age: {
@@ -1015,10 +929,10 @@ describe('Specification v1.2', function () {
           }
         };
 
-        petJson.models.Tag.discriminator = 'name';
-        petJson.models.Tag.subTypes = ['Person'];
+        cPetJson.models.Tag.discriminator = 'name';
+        cPetJson.models.Tag.subTypes = ['Person'];
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -1037,12 +951,9 @@ describe('Specification v1.2', function () {
       });
 
       it('model multiple inheritance in API declaration', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cPetJson = _.cloneDeep(petJson);
 
-        petJson.models.Person = {
+        cPetJson.models.Person = {
           id: 'Person',
           properties: {
             age: {
@@ -1051,7 +962,7 @@ describe('Specification v1.2', function () {
           }
         };
 
-        petJson.models.Human = {
+        cPetJson.models.Human = {
           id: 'Human',
           properties: {
             gender: {
@@ -1062,13 +973,13 @@ describe('Specification v1.2', function () {
           subTypes: ['Person']
         };
 
-        petJson.models.Tag.discriminator = 'name';
-        petJson.models.Tag.subTypes = ['Person'];
+        cPetJson.models.Tag.discriminator = 'name';
+        cPetJson.models.Tag.subTypes = ['Person'];
 
         // Add a reference so an error isn't thrown for a missing reference
-        petJson.apis[0].operations[0].type = 'Human';
+        cPetJson.apis[0].operations[0].type = 'Human';
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -1087,12 +998,9 @@ describe('Specification v1.2', function () {
       });
 
       it('cyclical model inheritance in API declaration', function (done) {
-        var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-        var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-        var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-        var userJson = _.cloneDeep(allSampleFiles['user.json']);
+        var cPetJson = _.cloneDeep(petJson);
 
-        _.merge(petJson.models, {
+        _.merge(cPetJson.models, {
           Bar: {
             id: 'Bar',
             properties: {
@@ -1115,7 +1023,7 @@ describe('Specification v1.2', function () {
           }
         });
 
-        spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -1140,17 +1048,14 @@ describe('Specification v1.2', function () {
 
       describe('model property constraint validation', function () {
         it('wrong type', function (done) {
-          var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-          var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-          var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-          var userJson = _.cloneDeep(allSampleFiles['user.json']);
+          var cPetJson = _.cloneDeep(petJson);
 
-          petJson.models.Pet.properties.fake = {
+          cPetJson.models.Pet.properties.fake = {
             type: 'integer',
             defaultValue: 'fake'
           };
 
-          spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+          spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
             if (err) {
               throw err;
             }
@@ -1175,13 +1080,13 @@ describe('Specification v1.2', function () {
 
   describe('#composeSchema', function () {
     it('should fail when passed the wrong arguments', function () {
-      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+      var cPetJson = _.cloneDeep(petJson);
       var errors = {
         'apiDeclaration is required': [],
         'apiDeclaration must be an object': ['wrongType'],
-        'modelId is required': [petJson],
-        'callback is required': [petJson, 'Pet'],
-        'callback must be a function': [petJson, 'Pet', 'wrongType']
+        'modelId is required': [cPetJson],
+        'callback is required': [cPetJson, 'Pet'],
+        'callback must be a function': [cPetJson, 'Pet', 'wrongType']
       };
 
       _.each(errors, function (args, message) {
@@ -1194,7 +1099,7 @@ describe('Specification v1.2', function () {
     });
 
     it('should return undefined for unresolvable model', function (done) {
-      spec.composeModel(_.cloneDeep(allSampleFiles['pet.json']), 'Liger', function (err, result) {
+      spec.composeModel(_.cloneDeep(petJson), 'Liger', function (err, result) {
         if (err) {
           throw err;
         }
@@ -1206,9 +1111,9 @@ describe('Specification v1.2', function () {
     });
 
     it('should throw an Error for an API Declaration that has invalid models', function (done) {
-      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+      var cPetJson = _.cloneDeep(petJson);
 
-      petJson.models.Person = {
+      cPetJson.models.Person = {
         id: 'Person',
         properties: {
           age: {
@@ -1220,10 +1125,10 @@ describe('Specification v1.2', function () {
         }
       };
 
-      petJson.models.Tag.discriminator = 'name';
-      petJson.models.Tag.subTypes = ['Person'];
+      cPetJson.models.Tag.discriminator = 'name';
+      cPetJson.models.Tag.subTypes = ['Person'];
 
-      spec.composeModel(petJson, 'Person', function (err, result) {
+      spec.composeModel(cPetJson, 'Person', function (err, result) {
         assert.equal('The Swagger document(s) are invalid', err.message);
         assert.equal(1, err.errors.length);
         assert.equal(0, err.warnings.length);
@@ -1240,14 +1145,14 @@ describe('Specification v1.2', function () {
     });
 
     it('should return a valid composed model', function (done) {
-      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-      var ePet = _.cloneDeep(petJson.models.Pet);
+      var cPetJson = _.cloneDeep(petJson);
+      var ePet = _.cloneDeep(cPetJson.models.Pet);
       var eResults = [];
       var eCompany;
       var eEmployee;
       var ePerson;
 
-      petJson.models.Person = {
+      cPetJson.models.Person = {
         id: 'Person',
         properties: {
           age: {
@@ -1262,7 +1167,7 @@ describe('Specification v1.2', function () {
         subTypes: ['Employee']
       };
 
-      petJson.models.Employee = {
+      cPetJson.models.Employee = {
         id: 'Employee',
         properties: {
           company: {
@@ -1275,7 +1180,7 @@ describe('Specification v1.2', function () {
         required: ['company', 'email']
       };
 
-      petJson.models.Company = {
+      cPetJson.models.Company = {
         id: 'Company',
         properties: {
           name: {
@@ -1291,12 +1196,12 @@ describe('Specification v1.2', function () {
       };
 
       // Create expected Employee
-      eEmployee = _.cloneDeep(petJson.models.Employee);
+      eEmployee = _.cloneDeep(cPetJson.models.Employee);
 
       eEmployee.title = 'Composed Employee';
       eEmployee.type = 'object';
       eEmployee.allOf = [
-        _.cloneDeep(petJson.models.Person)
+        _.cloneDeep(cPetJson.models.Person)
       ];
 
       eEmployee.allOf[0].title = 'Composed Person';
@@ -1307,7 +1212,7 @@ describe('Specification v1.2', function () {
       delete eEmployee.allOf[0].subTypes;
 
       // Create expected Person
-      ePerson = _.cloneDeep(petJson.models.Person);
+      ePerson = _.cloneDeep(cPetJson.models.Person);
 
       ePerson.title = 'Composed Person';
       ePerson.type = 'object';
@@ -1316,7 +1221,7 @@ describe('Specification v1.2', function () {
       delete ePerson.subTypes;
 
       // Create expected Company
-      eCompany = _.cloneDeep(petJson.models.Company);
+      eCompany = _.cloneDeep(cPetJson.models.Company);
 
       eCompany.title = 'Composed Company';
       eCompany.type = 'object';
@@ -1324,10 +1229,10 @@ describe('Specification v1.2', function () {
         title: 'Composed Employee',
         type: 'object',
         allOf: [
-          _.cloneDeep(petJson.models.Person)
+          _.cloneDeep(cPetJson.models.Person)
         ],
-        properties: _.cloneDeep(petJson.models.Employee.properties),
-        required: _.cloneDeep(petJson.models.Employee.required)
+        properties: _.cloneDeep(cPetJson.models.Employee.properties),
+        required: _.cloneDeep(cPetJson.models.Employee.required)
       };
 
       delete eCompany.id;
@@ -1340,14 +1245,14 @@ describe('Specification v1.2', function () {
       // Create expected Pet
       ePet.title = 'Composed Pet';
       ePet.type = 'object';
-      ePet.properties.category = _.cloneDeep(petJson.models.Category);
+      ePet.properties.category = _.cloneDeep(cPetJson.models.Category);
       ePet.properties.id.maximum = 100;
       ePet.properties.id.minimum = 0;
       ePet.properties.tags = {
         items: {
           title: 'Composed Tag',
           type: 'object',
-          properties: _.cloneDeep(petJson.models.Tag.properties)
+          properties: _.cloneDeep(cPetJson.models.Tag.properties)
         },
         type: 'array'
       };
@@ -1365,7 +1270,7 @@ describe('Specification v1.2', function () {
       eResults.push(ePet);
 
       async.map(['Employee', 'Person', 'Company', 'Pet'], function (modelId, callback) {
-        spec.composeModel(petJson, modelId, function (err, results) {
+        spec.composeModel(cPetJson, modelId, function (err, results) {
           callback(err, results);
         });
       }, function (err, results) {
@@ -1384,14 +1289,14 @@ describe('Specification v1.2', function () {
 
   describe('#validateModel', function () {
     it('should fail when passed the wrong arguments', function () {
-      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+      var cPetJson = _.cloneDeep(petJson);
       var errors = {
         'apiDeclaration is required': [],
         'apiDeclaration must be an object': ['wrongType'],
-        'modelId is required': [petJson],
-        'data is required': [petJson, 'Pet'],
-        'callback is required': [petJson, 'Pet', {}],
-        'callback must be a function': [petJson, 'Pet', {}, 'wrongType']
+        'modelId is required': [cPetJson],
+        'data is required': [cPetJson, 'Pet'],
+        'callback is required': [cPetJson, 'Pet', {}],
+        'callback must be a function': [cPetJson, 'Pet', {}, 'wrongType']
       };
 
       _.each(errors, function (args, message) {
@@ -1404,9 +1309,9 @@ describe('Specification v1.2', function () {
     });
 
     it('should throw an Error for an API Declaration that has invalid models', function (done) {
-      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+      var cPetJson = _.cloneDeep(petJson);
 
-      petJson.models.Person = {
+      cPetJson.models.Person = {
         id: 'Person',
         properties: {
           age: {
@@ -1418,10 +1323,10 @@ describe('Specification v1.2', function () {
         }
       };
 
-      petJson.models.Tag.discriminator = 'name';
-      petJson.models.Tag.subTypes = ['Person'];
+      cPetJson.models.Tag.discriminator = 'name';
+      cPetJson.models.Tag.subTypes = ['Person'];
 
-      spec.validateModel(petJson, 'Person', {}, function (err, result) {
+      spec.validateModel(cPetJson, 'Person', {}, function (err, result) {
         assert.equal('The Swagger document(s) are invalid', err.message);
         assert.equal(1, err.errors.length);
         assert.equal(0, err.warnings.length);
@@ -1438,9 +1343,9 @@ describe('Specification v1.2', function () {
     });
 
     it('should return errors/warnings for invalid model', function (done) {
-      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
+      var cPetJson = _.cloneDeep(petJson);
 
-      spec.validateModel(petJson, 'Pet', {
+      spec.validateModel(cPetJson, 'Pet', {
         id: 1
       }, function (err, result) {
         if (err) {
@@ -1460,8 +1365,9 @@ describe('Specification v1.2', function () {
     });
 
     it('should return undefined for valid model', function (done) {
-      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-      spec.validateModel(petJson, 'Pet', {
+      var cPetJson = _.cloneDeep(petJson);
+
+      spec.validateModel(cPetJson, 'Pet', {
         id: 1,
         name: 'Jeremy'
       }, function (err, result) {
@@ -1484,7 +1390,7 @@ describe('Specification v1.2', function () {
         'callback is required': [{}],
         'callback must be a function': [{}, 'wrong-type'],
         'ptr must be a JSON Pointer string': [{}, [], function () {}],
-        'Swagger 1.2 is not supported': [_.cloneDeep(allSampleFiles['pet.json']), function () {}]
+        'Swagger 1.2 is not supported': [_.cloneDeep(petJson), function () {}]
       };
 
       _.each(errors, function (args, message) {
@@ -1503,14 +1409,11 @@ describe('Specification v1.2', function () {
     // This should be removed when the upstream bug in the Swagger schema is fixed
     //   https://github.com/swagger-api/swagger-spec/issues/174
     it('missing items property for operation array type (Issue 61)', function (done) {
-      var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-      var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-      var userJson = _.cloneDeep(allSampleFiles['user.json']);
+      var cPetJson = _.cloneDeep(petJson);
 
-      delete petJson.apis[0].operations[2].items;
+      delete cPetJson.apis[0].operations[2].items;
 
-      spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+      spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
         if (err) {
           throw err;
         }
@@ -1529,18 +1432,15 @@ describe('Specification v1.2', function () {
     });
 
     it('missing items property for parameter array type (Issue 61)', function (done) {
-      var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-      var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-      var userJson = _.cloneDeep(allSampleFiles['user.json']);
+      var cPetJson = _.cloneDeep(petJson);
 
-      petJson.apis[0].operations[0].parameters.push({
+      cPetJson.apis[0].operations[0].parameters.push({
         paramType: 'query',
         type: 'array',
         name: 'fake'
       });
 
-      spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+      spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
         if (err) {
           throw err;
         }
@@ -1559,14 +1459,11 @@ describe('Specification v1.2', function () {
     });
 
     it('model id mismatch API declaration (Issue 71)', function (done) {
-      var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-      var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-      var userJson = _.cloneDeep(allSampleFiles['user.json']);
+      var cPetJson = _.cloneDeep(petJson);
 
-      petJson.models.Category.id = 'NotCategory';
+      cPetJson.models.Category.id = 'NotCategory';
 
-      spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+      spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
         if (err) {
           throw err;
         }
@@ -1574,7 +1471,7 @@ describe('Specification v1.2', function () {
         assert.deepEqual(result.apiDeclarations[0].errors, [
           {
             code: 'MODEL_ID_MISMATCH',
-            message: 'Model id does not match id in models object: ' + petJson.models.Category.id,
+            message: 'Model id does not match id in models object: ' + cPetJson.models.Category.id,
             path: ['models', 'Category', 'id']
           }
         ]);
@@ -1585,12 +1482,9 @@ describe('Specification v1.2', function () {
     });
 
     it('should handle path parameters that are not path segments (Issue 72)', function (done) {
-      var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-      var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-      var userJson = _.cloneDeep(allSampleFiles['user.json']);
+      var cPetJson = _.cloneDeep(petJson);
 
-      petJson.apis.push({
+      cPetJson.apis.push({
         operations: [
           {
             authorizations: {},
@@ -1618,7 +1512,7 @@ describe('Specification v1.2', function () {
         path: '/export/{collection}.{format}'
       });
 
-      spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
+      spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
         if (err) {
           throw err;
         }
@@ -1635,9 +1529,9 @@ describe('Specification v1.2', function () {
       var errors = {
         'resourceListing is required': [],
         'resourceListing must be an object': ['wrongType'],
-        'apiDeclarations must be an array': [allSampleFiles['resource-listing.json'], 'wrongType'],
-        'callback is required': [allSampleFiles['resource-listing.json'], []],
-        'callback must be a function': [allSampleFiles['resource-listing.json'], [], 'wrongType']
+        'apiDeclarations must be an array': [rlJson, 'wrongType'],
+        'callback is required': [rlJson, []],
+        'callback must be a function': [rlJson, [], 'wrongType']
       };
 
       _.each(errors, function (args, message) {
@@ -1650,12 +1544,9 @@ describe('Specification v1.2', function () {
     });
 
     it('should throw an Error for Swagger document(s) with errors', function (done) {
-      var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-      var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-      var userJson = _.cloneDeep(allSampleFiles['user.json']);
+      var cPetJson = _.cloneDeep(petJson);
 
-      petJson.models.Person = {
+      cPetJson.models.Person = {
         id: 'Person',
         properties: {
           age: {
@@ -1667,10 +1558,10 @@ describe('Specification v1.2', function () {
         }
       };
 
-      petJson.models.Tag.discriminator = 'name';
-      petJson.models.Tag.subTypes = ['Person'];
+      cPetJson.models.Tag.discriminator = 'name';
+      cPetJson.models.Tag.subTypes = ['Person'];
 
-      spec.convert(rlJson, [petJson, storeJson, userJson], function (err, converted) {
+      spec.convert(rlJson, [cPetJson, storeJson, userJson], function (err, converted) {
         assert.equal('The Swagger document(s) are invalid', err.message);
         assert.equal(0, err.errors.length);
         assert.equal(0, err.warnings.length);
@@ -1687,12 +1578,9 @@ describe('Specification v1.2', function () {
     });
 
     it('should throw an Error for Swagger document(s) with only warnings', function (done) {
-      var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-      var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-      var userJson = _.cloneDeep(allSampleFiles['user.json']);
+      var cPetJson = _.cloneDeep(petJson);
 
-      petJson.models.Person = {
+      cPetJson.models.Person = {
         id: 'Person',
         properties: {
           age: {
@@ -1704,7 +1592,7 @@ describe('Specification v1.2', function () {
         }
       };
 
-      spec.convert(rlJson, [petJson, storeJson, userJson], true, function (err, converted) {
+      spec.convert(rlJson, [cPetJson, storeJson, userJson], true, function (err, converted) {
         assert.ok(_.isUndefined(err));
         assert.ok(_.isPlainObject(converted));
 
@@ -1713,12 +1601,9 @@ describe('Specification v1.2', function () {
     });
 
     it('should throw an Error for Swagger document(s) with errors when skipping validation', function (done) {
-      var rlJson = _.cloneDeep(allSampleFiles['resource-listing.json']);
-      var petJson = _.cloneDeep(allSampleFiles['pet.json']);
-      var storeJson = _.cloneDeep(allSampleFiles['store.json']);
-      var userJson = _.cloneDeep(allSampleFiles['user.json']);
+      var cPetJson = _.cloneDeep(petJson);
 
-      petJson.models.Person = {
+      cPetJson.models.Person = {
         id: 'Person',
         properties: {
           age: {
@@ -1730,10 +1615,10 @@ describe('Specification v1.2', function () {
         }
       };
 
-      petJson.models.Tag.discriminator = 'name';
-      petJson.models.Tag.subTypes = ['Person'];
+      cPetJson.models.Tag.discriminator = 'name';
+      cPetJson.models.Tag.subTypes = ['Person'];
 
-      spec.convert(rlJson, [petJson, storeJson, userJson], true, function (err, converted) {
+      spec.convert(rlJson, [cPetJson, storeJson, userJson], true, function (err, converted) {
         assert.ok(_.isUndefined(err));
         assert.ok(_.isPlainObject(converted));
 
