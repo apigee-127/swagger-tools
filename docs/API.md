@@ -36,7 +36,6 @@ As of right now, since only Swagger versions 1.2 and 2.0 are supported, the `spe
 Each version property in the `specs` object points to a `Specification` object.  The `Specification` object provides the
 _API_ that you will use with your Swagger documents to do things like validation.
 
-
 #### Metadata Properties
 
 Each `Specification` object has a few metadata properties that could are useful for both users and developers:
@@ -72,6 +71,8 @@ invalid arguments
 
 This function returns an `object` that represents the JSON Schema for the model id (Swagger 1.2) or the JSON Reference
 (Swagger 2.0).  Here is a full example of this API in action:
+
+**Note:** For Swagger 1.2, we only perform structural validation prior to composing the model.
 
 **Swagger 2.0**
 
@@ -442,6 +443,8 @@ invalid arguments
 
 `undefined` if the Swagger document(s) are valid or an `object` containing the validation errors.  The error object is
 structured identically to that of the `#validate` method.
+
+**Note:** For Swagger 1.2, we only perform structural validation prior to composing the model.
 
 Here is a full example of this API in action:
 
