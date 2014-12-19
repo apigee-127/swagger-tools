@@ -128,13 +128,14 @@ module.exports.getHandlerName = function getHandlerName (version, req) {
 };
 
 var getMockValue = function getMockValue (version, schema) {
+  var type = schema.type;
   var value;
 
-  if (!schema.type) {
-    schema.type = 'object';
+  if (!type) {
+    type = 'object';
   }
 
-  switch (schema.type) {
+  switch (type) {
   case 'array':
     value = [getMockValue(version, _.isArray(schema.items) ? schema.items[0] : schema.items)];
 

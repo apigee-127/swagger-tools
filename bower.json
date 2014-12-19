@@ -34,7 +34,12 @@
     "json-refs": "~0.1.4",
     "lodash": "~2.4.1",
     "spark-md5": "~0.0.5",
+    "swagger-converter": "~0.1.0",
     "traverse": "~0.6.6",
     "z-schema": "~3.2.0"
+  },
+  "devDependencies": {
+    "mocha": "~2.0.1",
+    "should": "~4.4.1"
   }
 }

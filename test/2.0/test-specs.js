@@ -29,28 +29,15 @@
 var _ = require('lodash');
 var assert = require('assert');
 var async = require('async');
-var http = require('http');
 var JsonRefs = require('json-refs');
-var url = require('url');
-var spec = require('../../').specs.v2_0; // jshint ignore:line
+var spec = (typeof window === 'undefined' ? require('../../') : SwaggerTools).specs.v2_0; // jshint ignore:line
+var header = typeof window === 'undefined' ?
+               '' :
+               ' (Browser ' + (window.bowerTests ? 'Bower' : 'Standalone') + ' Build)';
 
 var petStoreJson = require('../../samples/2.0/petstore.json');
-var createServer = function createServer (responseMap) {
-  var server = http.createServer(function (req, res) {
-    var data = responseMap[url.parse(req.url).pathname];
 
-    if (data) {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(data));
-    } else {
-      res.send(404);
-    }
-  });
-
-  return server;
-};
-
-describe('Specification v2.0', function () {
+describe('Specification v2.0' + header, function () {
   var server;
 
   afterEach(function () {
@@ -311,40 +298,30 @@ describe('Specification v2.0', function () {
         cPath.parameters.push(cParam);
 
         swaggerObject.paths['/people/{id}'] = {
-          $ref: 'http://localhost:3000/people.json#/paths/~1people~1{id}'
+          $ref: 'https://rawgit.com/apigee-127/swagger-tools/master/test/browser/people.json#/paths/~1people~1{id}'
         };
 
-        server = createServer({
-          '/people.json': {
-            paths: {
-              '/people/{id}': cPath
-            }
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            throw err;
           }
-        });
 
-        server.listen(3000, function () {
-          spec.validate(swaggerObject, function (err, result) {
-            if (err) {
-              throw err;
+          // Since this is a path level parameter, all operations that do not override the property will get the error
+          assert.deepEqual(result.errors, [
+            {
+              code: 'DUPLICATE_PARAMETER',
+              message: 'Parameter already defined: id',
+              path: ['paths', '/people/{id}', 'parameters', '1', 'name']
+            },
+            {
+              code: 'DUPLICATE_PARAMETER',
+              message: 'Parameter already defined: id',
+              path: ['paths', '/people/{id}', 'get', 'parameters', '1', 'name']
             }
+          ]);
+          assert.equal(result.warnings.length, 0);
 
-            // Since this is a path level parameter, all operations that do not override the property will get the error
-            assert.deepEqual(result.errors, [
-              {
-                code: 'DUPLICATE_PARAMETER',
-                message: 'Parameter already defined: id',
-                path: ['paths', '/people/{id}', 'parameters', '1', 'name']
-              },
-              {
-                code: 'DUPLICATE_PARAMETER',
-                message: 'Parameter already defined: id',
-                path: ['paths', '/people/{id}', 'get', 'parameters', '1', 'name']
-              }
-            ]);
-            assert.equal(result.warnings.length, 0);
-
-            done();
-          });
+          done();
         });
       });
 
@@ -2057,7 +2034,6 @@ describe('Specification v2.0', function () {
       eEmployee = _.cloneDeep(swaggerObject.definitions.Employee);
 
       eEmployee.title = 'Composed #/definitions/Employee';
-      eEmployee.type = 'object';
       eEmployee.allOf = [
       _.cloneDeep(swaggerObject.definitions.Person)
       ];
@@ -2070,7 +2046,6 @@ describe('Specification v2.0', function () {
       ePerson = _.cloneDeep(swaggerObject.definitions.Person);
 
       ePerson.title = 'Composed #/definitions/Person';
-      ePerson.type = 'object';
 
       delete ePerson.id;
       delete ePerson.subTypes;
@@ -2079,7 +2054,6 @@ describe('Specification v2.0', function () {
       eCompany = _.cloneDeep(swaggerObject.definitions.Company);
 
       eCompany.title = 'Composed #/definitions/Company';
-      eCompany.type = 'object';
       eCompany.properties.employees.items = {
         allOf: [
         _.cloneDeep(swaggerObject.definitions.Person)
@@ -2094,7 +2068,6 @@ describe('Specification v2.0', function () {
 
       // Create expected Pet
       ePet.title = 'Composed #/definitions/Pet';
-      ePet.type = 'object';
       ePet.properties.category = _.cloneDeep(swaggerObject.definitions.Category);
       ePet.properties.id.maximum = 100;
       ePet.properties.id.minimum = 0;
@@ -2237,20 +2210,15 @@ describe('Specification v2.0', function () {
           throw err;
         }
 
-        assert.deepEqual(JsonRefs.resolveRefs(petStoreJson, function (err, json) {
+        JsonRefs.resolveRefs(petStoreJson, function (err, json) {
           if (err) {
             throw err;
           }
 
-          // swagger-tools adds a default type of 'object' to composed definitions so we need to reflect this
-          json.paths['/pets/{id}'].get.responses['200'].schema.properties.category.type = 'object';
-          json.paths['/pets/{id}'].get.responses['200'].schema.properties.tags.items.type = 'object';
-          json.paths['/pets/{id}'].get.responses['200'].schema.type = 'object';
-
           assert.deepEqual(json, resolved);
 
           done();
-        }));
+        });
       });
     });
 

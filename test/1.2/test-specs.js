@@ -29,14 +29,17 @@
 var _ = require('lodash');
 var assert = require('assert');
 var async = require('async');
-var spec = require('../../').specs.v1_2; // jshint ignore:line
+var spec = (typeof window === 'undefined' ? require('../../') : SwaggerTools).specs.v1_2; // jshint ignore:line
 
 var petJson = require('../../samples/1.2/pet.json');
 var rlJson = require('../../samples/1.2/resource-listing.json');
 var storeJson = require('../../samples/1.2/store.json');
 var userJson = require('../../samples/1.2/user.json');
+var header = typeof window === 'undefined' ?
+               '' :
+               ' (Browser ' + (window.bowerTests ? 'Bower' : 'Standalone') + ' Build)';
 
-describe('Specification v1.2', function () {
+describe('Specification v1.2' + header, function () {
   describe('metadata', function () {
     it('should have proper docsUrl, primitives, options, schemasUrl and verison properties', function () {
       assert.strictEqual(spec.docsUrl, 'https://github.com/swagger-api/swagger-spec/blob/master/versions/1.2.md');
@@ -1199,13 +1202,11 @@ describe('Specification v1.2', function () {
       eEmployee = _.cloneDeep(cPetJson.models.Employee);
 
       eEmployee.title = 'Composed Employee';
-      eEmployee.type = 'object';
       eEmployee.allOf = [
         _.cloneDeep(cPetJson.models.Person)
       ];
 
       eEmployee.allOf[0].title = 'Composed Person';
-      eEmployee.allOf[0].type = 'object';
 
       delete eEmployee.id;
       delete eEmployee.allOf[0].id;
@@ -1215,7 +1216,6 @@ describe('Specification v1.2', function () {
       ePerson = _.cloneDeep(cPetJson.models.Person);
 
       ePerson.title = 'Composed Person';
-      ePerson.type = 'object';
 
       delete ePerson.id;
       delete ePerson.subTypes;
@@ -1224,10 +1224,8 @@ describe('Specification v1.2', function () {
       eCompany = _.cloneDeep(cPetJson.models.Company);
 
       eCompany.title = 'Composed Company';
-      eCompany.type = 'object';
       eCompany.properties.employees.items = {
         title: 'Composed Employee',
-        type: 'object',
         allOf: [
           _.cloneDeep(cPetJson.models.Person)
         ],
@@ -1240,18 +1238,15 @@ describe('Specification v1.2', function () {
       delete eCompany.properties.employees.items.allOf[0].subTypes;
 
       eCompany.properties.employees.items.allOf[0].title = 'Composed Person';
-      eCompany.properties.employees.items.allOf[0].type = 'object';
 
       // Create expected Pet
       ePet.title = 'Composed Pet';
-      ePet.type = 'object';
       ePet.properties.category = _.cloneDeep(cPetJson.models.Category);
       ePet.properties.id.maximum = 100;
       ePet.properties.id.minimum = 0;
       ePet.properties.tags = {
         items: {
           title: 'Composed Tag',
-          type: 'object',
           properties: _.cloneDeep(cPetJson.models.Tag.properties)
         },
         type: 'array'
@@ -1261,7 +1256,6 @@ describe('Specification v1.2', function () {
       delete ePet.properties.category.id;
 
       ePet.properties.category.title = 'Composed Category';
-      ePet.properties.category.type = 'object';
 
       // Collect our expected results
       eResults.push(eEmployee);

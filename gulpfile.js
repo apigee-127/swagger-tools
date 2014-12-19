@@ -25,15 +25,24 @@
 'use strict';
 
 var _ = require('lodash');
+var async = require('async');
+var bower = require('bower');
 var browserify = require('browserify');
+var del = require('del');
+var exposify = require('exposify');
+var fs = require('fs');
 var gulp = require('gulp');
 var istanbul = require('gulp-istanbul');
 var jshint = require('gulp-jshint');
 var mocha = require('gulp-mocha');
+var mochaPhantomJS = require('gulp-mocha-phantomjs');
 var source = require('vinyl-source-stream');
-var exposify = require('exposify');
+var versions = ['1.2', '2.0'];
+var browserTestsPaths = _.reduce(versions, function (paths, version) {
+  return paths.concat('./test/' + version + '/browser/');
+}, []);
 
-gulp.task('browserify', function () {
+gulp.task('browserify', function (cb) {
   // Builds 4 browser binaries:
   //
   // 1 (swagger-tools.js): Bower build without uglification and including source maps
@@ -41,7 +50,7 @@ gulp.task('browserify', function () {
   // 3 (swagger-tools-standalone.js): Standalone build without uglification and including source maps
   // 4 (swagger-tools-standalone-min.js): Standalone build uglified and without source maps
 
-  _.times(4, function (n) {
+  async.map([0,1,2,3], function (n, callback) {
     var useDebug = n === 0 || n === 2;
     var isStandalone = n >= 2;
     var b = browserify('./lib/specs.js', {
@@ -60,6 +69,7 @@ gulp.task('browserify', function () {
         'json-refs': 'JsonRefs',
         'lodash': '_',
         'spark-md5': 'SparkMD5',
+        'swagger-converter': 'SwaggerConverter.convert',
         'traverse': 'traverse',
         'z-schema': 'ZSchema'
       };
@@ -70,7 +80,37 @@ gulp.task('browserify', function () {
     b.transform('brfs')
       .bundle()
       .pipe(source('swagger-tools' + (isStandalone ? '-standalone' : '') + (!useDebug ? '-min' : '') + '.js'))
-      .pipe(gulp.dest('./browser/'));
+      .pipe(gulp.dest('./browser/'))
+      .on('error', function (err) {
+        callback(err);
+      })
+      .on('end', function () {
+        callback();
+      });
+  }, function (err) {
+    cb(err);
+  });
+});
+
+gulp.task('browserify-test', function (cb) {
+  async.map(versions, function (version, callback) {
+    var basePath = './test/' + version + '/';
+    var b = browserify(basePath + 'test-specs.js', {
+      debug: true
+    });
+
+    b.transform('brfs')
+      .bundle()
+      .pipe(source('test-specs-browser.js'))
+      .pipe(gulp.dest(basePath + 'browser/'))
+      .on('error', function (err) {
+        callback(err);
+      })
+      .on('end', function () {
+        callback();
+      });
+  }, function (err) {
+    cb(err);
   });
 });
 
@@ -83,26 +123,105 @@ gulp.task('lint', function () {
       './test/1.2/*.js',
       './test/2.0/*.js',
       './gulpfile.js',
-      '!./middleware/swagger-ui/**/*.js'
+      '!./middleware/swagger-ui/**/*.js',
+      '!./test/**/test-specs-browser.js'
     ])
     .pipe(jshint())
     .pipe(jshint.reporter('jshint-stylish'))
     .pipe(jshint.reporter('fail'));
 });
 
-gulp.task('test', function () {
-  gulp.src([
+gulp.task('test-node', function () {
+  return gulp.src([
       'lib/**/*.js',
       'middleware/1.2/**/*.js',
-      'middleware/2.0/**/*.js'
+      'middleware/2.0/**/*.js',
+      '!./test/**/test-specs-browser.js'
     ])
     .pipe(istanbul())
     .on('finish', function () {
-      gulp.src('test/**/test-*.js')
-        .pipe(mocha({reporter: 'spec'}))
-        .pipe(istanbul.writeReports());
+      gulp.src([
+          'test/**/test-*.js',
+          '!./test/**/test-specs-browser.js'
+        ])
+        .pipe(mocha({reporter: 'spec'}));
     });
 });
 
-gulp.task('default', ['lint', 'test']);
-gulp.task('dist', ['default', 'browserify']);
+gulp.task('clean-tests', function (cb) {
+  del(browserTestsPaths, cb);
+});
+
+gulp.task('test-prepare', ['browserify', 'clean-tests'], function (cb) {
+  async.map(versions, function (version, callback) {
+    var basePath = './test/' + version + '/browser/';
+
+    // Create browser test directory
+    fs.mkdirSync(basePath);
+
+    // Copy test HTML files
+    _.each(['test-bower.html', 'test-standalone.html'], function (fileName) {
+      fs.createReadStream('./test/browser/' + fileName).pipe(fs.createWriteStream(basePath + fileName));
+    });
+
+    // Copy bower.json to the test directory
+    fs.createReadStream('./bower.json').pipe(fs.createWriteStream(basePath + 'bower.json'));
+
+    bower.commands.install([], {}, {cwd: basePath})
+      .on('end', function () {
+        var b = browserify(basePath + '../test-specs.js', {
+          debug: true
+        });
+
+        b.transform('brfs')
+          .bundle()
+          .pipe(source('test-specs-browser.js'))
+          .pipe(gulp.dest(basePath))
+          .on('error', function (err) {
+            callback(err);
+          })
+          .on('end', function () {
+            // Copy the Swagger Tools browser builds to the test directory
+            fs.createReadStream('./browser/swagger-tools.js').pipe(fs.createWriteStream(basePath + 'swagger-tools.js'));
+            fs.createReadStream('./browser/swagger-tools-standalone.js')
+              .pipe(fs.createWriteStream(basePath + 'swagger-tools-standalone.js'));
+
+            callback();
+        });
+      })
+      .on('error', function (err) {
+        callback(err);
+      });
+  }, cb);
+});
+
+gulp.task('test-browser', ['browserify', 'test-prepare'], function (cb) {
+  gulp
+    .src(_.reduce(browserTestsPaths, function (paths, basePath) {
+      return paths.concat([
+        basePath + 'test-bower.html',
+        basePath + 'test-standalone.html'
+      ]);
+    }, []))
+    .pipe(mochaPhantomJS({
+      phantomjs: {
+        settings: {
+          localToRemoteUrlAccessEnabled: true,
+          webSecurityEnabled: false
+        }
+      }
+    }))
+    .on('error', function (err) {
+      cb(err);
+    })
+    .on('finish', function () {
+      // Clean up
+      del(browserTestsPaths, cb);
+    });
+});
+
+gulp.task('test', ['test-node', 'test-browser'], function () {
+  gulp.src([])
+    .pipe(istanbul.writeReports());
+});
+gulp.task('default', ['lint', 'test', 'test-browser']);
