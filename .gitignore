@@ -1,5 +1,8 @@
 *.iml
 **/node_modules/
 **/npm-debug.log
+bower_components/
 coverage/
 .idea/
+test/1.2/test-specs-browser.js
+test/2.0/test-specs-browser.js

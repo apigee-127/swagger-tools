@@ -1,0 +1,83 @@
+{
+  "paths": {
+    "/people/{id}": {
+      "delete": {
+        "security": [
+          {
+            "oauth2": [
+              "write"
+            ]
+          }
+        ],
+        "description": "Deletes the Pet by id",
+        "operationId": "deletePet",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID of pet to delete",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "pet deleted"
+          },
+          "default": {
+            "description": "unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "get": {
+        "security": [
+          {
+            "oauth2": [
+              "read"
+            ]
+          }
+        ],
+        "tags": [
+          "Pet Operations"
+        ],
+        "operationId": "getPetById",
+        "summary": "Finds the pet by id",
+        "responses": {
+          "200": {
+            "description": "Pet response",
+            "schema": {
+              "$ref": "#/definitions/Pet"
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "ID of pet",
+          "required": true,
+          "type": "integer",
+          "format": "int64"
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "description": "ID of pet",
+          "required": true,
+          "type": "string"
+        }
+      ]
+    }
+  }
+}
