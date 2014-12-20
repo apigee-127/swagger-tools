@@ -31,6 +31,17 @@ As of right now, since only Swagger versions 1.2 and 2.0 are supported, the `spe
 * **v2:** `object` _(Pointer to the latest 2.x version which is 2.0 right now)_
 * **v2_0:** `object` Swagger 2.0 support
 
+All functions take an _error-first_ callback where if any upstream error occurs not directly related to the API being
+called, this error will be passed as the first argument.  An example of this is if you call `Specification#validate` and
+you have a JSON Reference to some path that cannot be resolved or if you call `Specification#composeModel` and the model
+or the document it is contained within fails validation.
+
+The second argument, not always required so check the documentation below, will typically be the result of the API being
+called.  So for `Specification#validate`, the response object would be the validation results.  _(The reason this is not
+sent back as the `err` argument is because validation results are not themselves an error and are the result of a
+successful API call.)_  Another example would be `Specification#composeModel` would return the composed JSON Schema for
+the model requested.
+
 ### Specifications
 
 Each version property in the `specs` object points to a `Specification` object.  The `Specification` object provides the
@@ -285,6 +296,8 @@ Each error object itself has the following properties:
 * **code:** This is the error/warning code
 * **message:** This is the human readable message describing the error/warning
 * **path:** This is an array containing the _path_ to the Swagger document property that failed validation
+
+The Error object can also have an `inner` property with a list of nested errors where applicable.
 
 Here is an example error:
 
