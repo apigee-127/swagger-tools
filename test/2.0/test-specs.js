@@ -2334,6 +2334,22 @@ describe('Specification v2.0' + header, function () {
         done();
       });
     });
+
+    it('should not report erros for non-operation path-properties (Issue 103)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.paths['/pets/{id}']['x-swagger-router-controller'] = 'Pets';
+
+      spec.validate(swaggerObject, function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.ok(_.isUndefined(result));
+
+        done();
+      });
+    });
   });
 
   describe('#convert', function () {
