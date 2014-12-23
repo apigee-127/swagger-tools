@@ -1,5 +1,18 @@
 ## Release Notes
 
+### v0.7.3
+
+* Updated the version of Z-Schema being used to fix some browser issues _(Issue #94)_
+* Updated to build/test the browser using `gulp` `gulp test` _(Issue #96)_
+* Specification APIs for Swagger 2.0 now do a full validation prior to performing the business logic behidn the API _(Issue #97)_
+* Fixed Quick Start documentation example _(Issue 101)_
+* Fixed a bug in the CLI where local YAML files were not processed properly _(Issue #104)_
+* Fixed a bug where erroneous validation errors were thrown for valid files due to paths with path paramters and vendor extensions _(Issue #103)_
+
+### v0.7.2
+
+_(Contained only upstream release changes)_
+
 ### v0.7.1
 
 * Added API/CLI for Swagger 1.2 to 2.0 conversion _(Issue #41)_
