@@ -56,16 +56,14 @@ To describe this API as a Swagger document, we would end up with something like 
     "version": "1.0"
   },
   "produces": ["application/json"],
+  "host": "localhost:3000",
   "basePath": "/api",
   "paths": {
     "/weather": {
       "get": {
-        "tags": [
-          {
-            "description": "Operations on Weather",
-            "name": "/weather"
-          }
-        ],
+        "x-swagger-router-controller": "Weather",
+        "operationId": "getWeather",
+        "tags": ["/weather"],
         "description": "Returns the current weather for the requested location using the requested unit.",
         "parameters": [
           {
@@ -427,7 +425,7 @@ app.use(function (req, res, next) {
 });
 
 // Initialize the Swagger middleware
-swaggerTools.initializeMetadata(swaggerDoc, function (middleware) {
+swaggerTools.initializeMiddleware(swaggerDoc, function (middleware) {
   // Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
   app.use(middleware.swaggerMetadata());
 

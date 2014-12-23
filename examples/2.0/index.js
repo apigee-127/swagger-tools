@@ -9,7 +9,7 @@ var swaggerTools = require('swagger-tools');
 
 var serverPort = 3000;
 
-// swaggerMetadata configuration
+// swaggerRouter configuration
 var options = {
   controllers: './controllers',
   useStubs: process.env.NODE_ENV === 'development' ? true : false // Conditionally turn on stubs (mock mode)
