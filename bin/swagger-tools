@@ -46,40 +46,42 @@ var exitWithError = function exitWithError (msg) {
   process.exit(1);
 };
 var getDocument = function getDocument (pathOrUrl, callback) {
+  var parseContent = function parseContent (content) {
+    var err;
+    var response;
+
+    switch (path.extname(pathOrUrl)) {
+    case '.yaml':
+    case '.yml':
+      response = YAML.parse(content);
+
+      break;
+
+    default:
+      try {
+        response = JSON.parse(content);
+      } catch (e) {
+        err = e;
+      }
+    }
+
+    callback(err, response);
+  };
+
   if (!_.isString(pathOrUrl)) {
     callback();
   } else if (/^https?:\/\//.test(pathOrUrl)) {
     request.get(pathOrUrl)
       .set('user-agent', 'apigee-127/swagger-tools')
       .end(function (res) {
-        var content;
-        var err;
-
-        switch (path.extname(pathOrUrl)) {
-        case '.yaml':
-        case '.yml':
-          content = YAML.parse(res.text);
-
-          break;
-
-        default:
-          try {
-            content = JSON.parse(res.text);
-          } catch (e) {
-            err = e;
-          }
-        }
-
-        callback(err, content);
+        parseContent(res.text);
       });
   } else {
-    fs.readFile(path.resolve(pathOrUrl), function (err, data) {
-      if (err) {
-        callback(err);
-      } else {
-        callback(undefined, JSON.parse(data));
-      }
-    });
+    try {
+      parseContent(fs.readFileSync(path.resolve(pathOrUrl), 'utf-8'));
+    } catch (err) {
+      callback(err);
+    }
   }
 };
 var getDocuments = function getDocuments (pathsAndOrUrls, callback) {
