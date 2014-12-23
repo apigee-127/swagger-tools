@@ -32,16 +32,6 @@ var parseurl = require('parseurl');
 var path = require('path');
 var validators = require('../lib/validators');
 
-var operationVerbs = [
-  'DELETE',
-  'GET',
-  'HEAD',
-  'OPTIONS',
-  'PATCH',
-  'POST',
-  'PUT'
-];
-
 var isModelType = function isModelType (spec, type) {
   return spec.primitives.indexOf(type) === -1;
 };
@@ -457,7 +447,7 @@ module.exports.send405 = function send405 (version, req, res, next) {
     });
   } else {
     _.each(req.swagger.path, function (operation, method) {
-      if (operationVerbs.indexOf(method.toUpperCase()) !== -1) {
+      if (helpers.swaggerOperationMethods.indexOf(method.toUpperCase()) !== -1) {
         allowedMethods.push(method.toUpperCase());
       }
     });
