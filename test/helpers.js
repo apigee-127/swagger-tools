@@ -48,30 +48,10 @@ var errorHandler = module.exports.errorHandler = function errorHandler() {
 
 module.exports.createServer = function createServer (initArgs, options, callback) {
   var app = require('connect')();
-  var bodyParser = require('body-parser');
-  var parseurl = require('parseurl');
-  var qs = require('qs');
   var serverInit = function (middleware) {
     var handler = options.handler || function(req, res) {
       res.end('OK');
     };
-    var useBodyParser = options.useBodyParser !== false;
-    var useQuery = options.useQuery !== false;
-
-    if (useBodyParser) {
-      app.use(bodyParser.json());
-      app.use(bodyParser.urlencoded({ extended: false }));
-    }
-
-    if (useQuery) {
-      app.use(function (req, res, next) {
-        if (!req.query) {
-          req.query = req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
-        }
-
-        return next();
-      });
-    }
 
     app.use(middleware.swaggerMetadata());
 

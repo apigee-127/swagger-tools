@@ -26,11 +26,24 @@
 
 var _ = require('lodash');
 var async = require('async');
+var bodyParser = require('body-parser');
 var fs = require('fs');
 var helpers = require('../lib/helpers');
 var parseurl = require('parseurl');
 var path = require('path');
+var qs = require('qs');
 var validators = require('../lib/validators');
+
+// Upstream middlewares
+var jsonBodyParser = bodyParser.json();
+var queryParser = function (req, res, next) {
+  if (!req.query) {
+    req.query = req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
+  }
+
+  return next();
+};
+var urlEncodedBodyParser = bodyParser.urlencoded({extended: false});
 
 var isModelType = function isModelType (spec, type) {
   return spec.primitives.indexOf(type) === -1;
@@ -334,7 +347,8 @@ module.exports.createStubHandler = function createStubHandler (version, req, res
   };
 };
 
-module.exports.getParameterValue = function getParameterValue (version, parameter, pathKeys, match, req) {
+var getParameterValue = module.exports.getParameterValue = function getParameterValue (version, parameter, pathKeys,
+                                                                                       match, req) {
   var defaultVal = version === '1.2' ? parameter.defaultValue : parameter.default;
   var paramType = version === '1.2' ? parameter.paramType : parameter.in;
   var val;
@@ -344,10 +358,6 @@ module.exports.getParameterValue = function getParameterValue (version, paramete
   case 'body':
   case 'form':
   case 'formData':
-    if (!req.body) {
-      throw new Error('Server configuration error: req.body is not defined but is required');
-    }
-
     if (isModelParameter(version, parameter)) {
       val = req.body;
     } else {
@@ -368,10 +378,6 @@ module.exports.getParameterValue = function getParameterValue (version, paramete
 
     break;
   case 'query':
-    if (!req.query) {
-      throw new Error('Server configuration error: req.query is not defined but is required');
-    }
-
     val = req.query[parameter.name];
 
     break;
@@ -383,6 +389,68 @@ module.exports.getParameterValue = function getParameterValue (version, paramete
   }
 
   return val;
+};
+
+module.exports.processOperationParameters = function processOperationParameters (version, pathKeys, pathMatch, req, res,
+                                                                                 next) {
+  var swaggerMetadata = req.swagger;
+  var parameters = !_.isUndefined(swaggerMetadata) ?
+                     (version === '1.2' ? swaggerMetadata.operation.parameters : swaggerMetadata.operationParameters) :
+                     undefined;
+  var index = 0;
+
+  if (!parameters) {
+    return next();
+  }
+
+  // Since each of the middlewares for processing the request are no-ops whenever the middleware is already provided,
+  // this should not impact performance and can be safely executed for each request.
+  async.map(parameters, function (parameterOrMetadata, callback) {
+    var parameter = version === '1.2' ? parameterOrMetadata : parameterOrMetadata.schema;
+    var paramType = version === '1.2' ? parameter.paramType : parameter.in;
+    var processParameter = function (err) {
+      if (err) {
+        callback(err);
+      } else {
+        swaggerMetadata.params[parameter.name] = {
+          path: version === '1.2' ?
+          swaggerMetadata.operationPath.concat(['parameters', index.toString()]) :
+          parameterOrMetadata.path,
+          schema: parameter,
+          value: getParameterValue(version, parameter, pathKeys, pathMatch, req)
+        };
+
+        callback();
+      }
+    };
+
+    switch (paramType) {
+    case 'body':
+    case 'form':
+    case 'formData':
+      urlEncodedBodyParser(req, res, function (err) {
+        if (err) {
+          callback(err);
+        } else {
+          jsonBodyParser(req, res, processParameter);
+        }
+      });
+
+      break;
+
+    case 'query':
+      queryParser(req, res, processParameter);
+
+      break;
+
+    default:
+      processParameter();
+    }
+
+    index += 1;
+  }, function (err) {
+    return next(err);
+  });
 };
 
 module.exports.send400 = function send400 (req, res, next, err) {

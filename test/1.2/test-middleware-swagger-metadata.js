@@ -31,7 +31,6 @@ process.env.NODE_ENV = 'test';
 
 var _ = require('lodash');
 var assert = require('assert');
-var async = require('async');
 var helpers = require('../helpers');
 var petJson = require('../../samples/1.2/pet.json');
 var rlJson = require('../../samples/1.2/resource-listing.json');
@@ -40,43 +39,6 @@ var userJson = require('../../samples/1.2/user.json');
 var request = require('supertest');
 
 describe('Swagger Metadata Middleware v1.2', function () {
-  it('should return an error for an improperly configured server for body/form parameter validation', function (done) {
-    async.map(['body', 'form'], function (paramType, callback) {
-      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
-        useBodyParser: false,
-        useQuery: false
-      }, function (app) {
-        request(app)
-        .post('/api/pet')
-        .expect(500)
-        .end(function (err, res) {
-          callback(err, res);
-        });
-      });
-    }, function (err, responses) {
-      if (err) {
-        throw err;
-      }
-
-      _.each(responses, function (res) {
-        helpers.expectContent('Server configuration error: req.body is not defined but is required')(undefined, res);
-      });
-
-      done();
-    });
-  });
-
-  it('should return an error for an improperly configured server for query parameter validation', function (done) {
-    helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
-      useQuery: false
-    }, function (app) {
-      request(app)
-      .get('/api/pet/findByStatus')
-      .expect(500)
-      .end(helpers.expectContent('Server configuration error: req.query is not defined but is required', done));
-    });
-  });
-
   it('should not add Swagger middleware to the request when there is no route match', function (done) {
     helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
       handler: function (req, res, next) {

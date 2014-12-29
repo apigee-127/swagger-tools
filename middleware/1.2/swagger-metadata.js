@@ -114,41 +114,36 @@ exports = module.exports = function swaggerMetadataMiddleware (resourceList, res
         return _.isArray(match);
       });
 
-      if (apiMetadata) {
-        metadata = {
-          api: apiMetadata.api,
-          apiDeclaration: apiMetadata.apiDeclaration,
-          apiIndex: apiMetadata.apiIndex,
-          params: {},
-          resourceIndex: apiMetadata.resourceIndex,
-          resourceListing: apiMetadata.resourceListing
-        };
-
-        if (_.isPlainObject(apiMetadata.operations[req.method])) {
-          metadata.operation = apiMetadata.operations[req.method].operation;
-          metadata.operationPath = apiMetadata.operations[req.method].operationPath;
-          metadata.authorizations = metadata.operation.authorizations || apiMetadata.apiDeclaration.authorizations;
-        }
-
-        req.swagger = metadata;
+      // Request does not match an API defined in the Swagger document(s)
+      if (!apiMetadata) {
+        return next();
       }
 
-      // Collect the parameter values
-      if (metadata && metadata.operation) {
-        _.each(metadata.operation.parameters, function (parameter, index) {
-          var val = helpers.getParameterValue('1.2', parameter, apiMetadata.keys, match, req);
+      metadata = {
+        api: apiMetadata.api,
+        apiDeclaration: apiMetadata.apiDeclaration,
+        apiIndex: apiMetadata.apiIndex,
+        params: {},
+        resourceIndex: apiMetadata.resourceIndex,
+        resourceListing: apiMetadata.resourceListing
+      };
 
-          metadata.params[parameter.name] = {
-            path: metadata.operationPath.concat(['parameters', index.toString()]),
-            schema: parameter,
-            value: val
-          };
-        });
+      if (_.isPlainObject(apiMetadata.operations[req.method])) {
+        metadata.operation = apiMetadata.operations[req.method].operation;
+        metadata.operationPath = apiMetadata.operations[req.method].operationPath;
+        metadata.authorizations = metadata.operation.authorizations || apiMetadata.apiDeclaration.authorizations;
+      }
+
+      req.swagger = metadata;
+
+      if (metadata.operation) {
+        // Process the operation parameters
+        helpers.processOperationParameters('1.2', apiMetadata.keys, match, req, res, next);
+      } else {
+        return next();
       }
     } catch (err) {
       return next(err);
     }
-
-    return next();
   };
 };

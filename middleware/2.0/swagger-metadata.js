@@ -138,41 +138,35 @@ exports = module.exports = function swaggerMetadataMiddleware (swaggerObject) {
         return _.isArray(match);
       });
 
-      if (pathMetadata) {
-        metadata = {
-          apiPath : pathMetadata.apiPath,
-          path: pathMetadata.path,
-          params: {},
-          swaggerObject: pathMetadata.swaggerObject.resolved
-        };
-
-        if (_.isPlainObject(pathMetadata.operations[method])) {
-          metadata.operation = pathMetadata.operations[method].operation;
-          metadata.operationParameters = pathMetadata.operations[method].parameters || [];
-          metadata.operationPath = ['paths', pathMetadata.apiPath, method];
-          metadata.security = metadata.operation.security || metadata.swaggerObject.security || [];
-        }
-
-        req.swagger = metadata;
+      // Request does not match an API defined in the Swagger document
+      if (!pathMetadata) {
+        return next();
       }
 
-      // Collect the parameter values
-      if (metadata && metadata.operation) {
-        _.each(metadata.operationParameters, function (paramMetadata) {
-          var parameter = paramMetadata.schema;
-          var val = helpers.getParameterValue('2.0', parameter, pathMetadata.keys, match, req);
+      metadata = {
+        apiPath : pathMetadata.apiPath,
+        path: pathMetadata.path,
+        params: {},
+        swaggerObject: pathMetadata.swaggerObject.resolved
+      };
 
-          metadata.params[parameter.name] = {
-            path: paramMetadata.path,
-            schema: parameter,
-            value: val
-          };
-        });
+      if (_.isPlainObject(pathMetadata.operations[method])) {
+        metadata.operation = pathMetadata.operations[method].operation;
+        metadata.operationParameters = pathMetadata.operations[method].parameters || [];
+        metadata.operationPath = ['paths', pathMetadata.apiPath, method];
+        metadata.security = metadata.operation.security || metadata.swaggerObject.security || [];
+      }
+
+      req.swagger = metadata;
+
+      if (metadata.operation) {
+        // Process the operation parameters
+        helpers.processOperationParameters('2.0', pathMetadata.keys, match, req, res, next);
+      } else {
+        return next();
       }
     } catch (err) {
       return next(err);
     }
-
-    return next();
   };
 };
