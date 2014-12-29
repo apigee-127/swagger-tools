@@ -26,7 +26,7 @@
 
 var _ = require('lodash');
 var async = require('async');
-var bodyParser = require('body-parser');
+var bp = require('body-parser');
 var fs = require('fs');
 var helpers = require('../lib/helpers');
 var parseurl = require('parseurl');
@@ -35,7 +35,7 @@ var qs = require('qs');
 var validators = require('../lib/validators');
 
 // Upstream middlewares
-var jsonBodyParser = bodyParser.json();
+var jsonBodyParser = bp.json();
 var queryParser = function (req, res, next) {
   if (!req.query) {
     req.query = req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
@@ -43,7 +43,16 @@ var queryParser = function (req, res, next) {
 
   return next();
 };
-var urlEncodedBodyParser = bodyParser.urlencoded({extended: false});
+var urlEncodedBodyParser = bp.urlencoded({extended: false});
+var bodyParser = function (req, res, callback) {
+  urlEncodedBodyParser(req, res, function (err) {
+    if (err) {
+      callback(err);
+    } else {
+      jsonBodyParser(req, res, callback);
+    }
+  });
+};
 
 var isModelType = function isModelType (spec, type) {
   return spec.primitives.indexOf(type) === -1;
@@ -397,59 +406,54 @@ module.exports.processOperationParameters = function processOperationParameters 
   var parameters = !_.isUndefined(swaggerMetadata) ?
                      (version === '1.2' ? swaggerMetadata.operation.parameters : swaggerMetadata.operationParameters) :
                      undefined;
-  var index = 0;
 
   if (!parameters) {
     return next();
   }
 
-  // Since each of the middlewares for processing the request are no-ops whenever the middleware is already provided,
-  // this should not impact performance and can be safely executed for each request.
-  async.map(parameters, function (parameterOrMetadata, callback) {
-    var parameter = version === '1.2' ? parameterOrMetadata : parameterOrMetadata.schema;
-    var paramType = version === '1.2' ? parameter.paramType : parameter.in;
-    var processParameter = function (err) {
-      if (err) {
-        callback(err);
-      } else {
-        swaggerMetadata.params[parameter.name] = {
-          path: version === '1.2' ?
-          swaggerMetadata.operationPath.concat(['parameters', index.toString()]) :
-          parameterOrMetadata.path,
-          schema: parameter,
-          value: getParameterValue(version, parameter, pathKeys, pathMatch, req)
-        };
-
-        callback();
-      }
-    };
+  async.map(_.reduce(parameters, function (requestParsers, parameter) {
+    var paramType = version === '1.2' ? parameter.paramType : parameter.schema.in;
+    var parser;
 
     switch (paramType) {
     case 'body':
     case 'form':
     case 'formData':
-      urlEncodedBodyParser(req, res, function (err) {
-        if (err) {
-          callback(err);
-        } else {
-          jsonBodyParser(req, res, processParameter);
-        }
-      });
+      parser = bodyParser;
 
       break;
 
     case 'query':
-      queryParser(req, res, processParameter);
+      parser = queryParser;
 
       break;
-
-    default:
-      processParameter();
     }
 
-    index += 1;
+    if (parser && requestParsers.indexOf(parser) === -1) {
+      requestParsers.push(parser);
+    }
+
+    return requestParsers;
+  }, []), function (parser, callback) {
+    parser(req, res, callback);
   }, function (err) {
-    return next(err);
+    if (err) {
+      return next(err);
+    }
+
+    _.each(parameters, function (parameterOrMetadata, index) {
+      var parameter = version === '1.2' ? parameterOrMetadata : parameterOrMetadata.schema;
+
+      swaggerMetadata.params[parameter.name] = {
+        path: version === '1.2' ?
+                swaggerMetadata.operationPath.concat(['parameters', index.toString()]) :
+                parameterOrMetadata.path,
+        schema: parameter,
+        value: getParameterValue(version, parameter, pathKeys, pathMatch, req)
+      };
+    });
+
+    return next();
   });
 };
 
