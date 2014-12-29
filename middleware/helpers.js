@@ -663,6 +663,7 @@ module.exports.wrapEnd = function wrapEnd (version, req, res, next) {
                     });
     } catch (err) {
       if (err.failedValidation) {
+        err.originalResponse = data;
         err.message = 'Response validation failed: ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
       }
 

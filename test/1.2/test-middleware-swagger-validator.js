@@ -30,6 +30,7 @@
 process.env.NODE_ENV = 'test';
 
 var _ = require('lodash');
+var assert = require('assert');
 var async = require('async');
 var helpers = require('../helpers');
 var request = require('supertest');
@@ -1028,6 +1029,40 @@ describe('Swagger Validator Middleware v1.2', function () {
             cSamplePet,
             cSamplePet
           ], done));
+      });
+    });
+  });
+
+  describe('issues', function () {
+    it('should include original response in response validation errors (Issue 82)', function (done) {
+      var cPetJson = _.cloneDeep(petJson);
+
+      cPetJson.apis[0].operations[0].nickname = 'Pets_getPetById';
+
+      helpers.createServer([rlJson, [cPetJson, storeJson, userJson]], {
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_getPetById': function (req, res) {
+              res.setHeader('Content-Type', 'application/x-yaml');
+              res.end(samplePet);
+            }
+          }
+        },
+        swaggerValidatorOptions: {
+          validateResponse: true
+        }
+      }, function (app) {
+        app.use(function (err, req, res, next) {
+          assert.deepEqual(err.originalResponse, samplePet);
+
+          next();
+        });
+
+        request(app)
+          .get('/api/pet/1')
+          .expect(500)
+          .end(helpers.expectContent('Response validation failed: invalid content type (application/x-yaml).  These ' +
+                                       'are valid: application/json, application/xml, text/plain, text/html', done));
       });
     });
   });

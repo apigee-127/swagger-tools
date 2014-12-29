@@ -79,6 +79,9 @@ Anytime a Swagger validation error occurs, the following `Error` properties will
 * **apiDeclarations:** {object[]} - The API Declaration errors _(Swagger 1.2)_
 * **errors:** {object[]} - The validation errors
 * **failedValidation:** {boolean} - Indicating the error is a validation error
+* **originalResponse:** {\*} - The original response payload sent via `res.end` that triggered the response
+validation failure _(All other response related fields like headers, status code, etc. are already avaliable on the
+`res` available to all downstream middlewares like the error handlers.)_
 * **warnings:** {object[]} - The validation warnings
 
 Use these pieces of information to properly render your errors.
