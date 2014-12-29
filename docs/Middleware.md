@@ -100,7 +100,9 @@ annotations to make life easier.
 
 Swagger Metadata also processes your request parameters for you.  So no matter how the parameters are provided (body,
 header, form data, query string, ...), as described in your Swagger document(s), the processing is handled for you to
-get the parameter values. _(No validation of the parameter values happens in the Swagger Metadata middleware.)_
+get the parameter values. _(No validation of the parameter values happens in the Swagger Metadata middleware.)_  During
+this process, Swagger Metadata will use [body-parser][body-parser] and [qs][qs] for body and query
+string parsing respectively if you do not provide your own parsers.
 
 ### Swagger 1.2
 
@@ -111,8 +113,7 @@ get the parameter values. _(No validation of the parameter values happens in the
 The Connect middleware function.
 
 **Note:** Since Swagger Metadata is used by the other Swagger Tools middleware, it must be used before the other
-Swagger Tools middleware.  Also, Swagger Metadata requires that `req.body` and `req.params` be populated so make sure to
-use whatever middleware you need prior to using Swagger Metadata.
+Swagger Tools middleware.
 
 #### req.swagger
 
@@ -432,26 +433,12 @@ Here is a complete example for using all middlewares documented above:
 **Swagger 2.0**
 
 ```javascript
-var bodyParser = require('body-parser');
-var parseurl = require('parseurl');
-var qs = require('qs');
 var swagger = require('swagger-tools');
 var swaggerObject = require('./samples/2.0/petstore.json'); // This assumes you're in the root of the swagger-tools
 
 var connect = require('connect');
 var http = require('http');
 var app = connect();
-
-// Wire up the middleware required by Swagger Tools (body-parser and qs)
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(function (req, res, next) {
-  if (!req.query) {
-    req.query = req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
-  }
-
-  return next();
-});
 
 // Initialize the Swagger Middleware
 swagger.initializeMiddleware(swaggerObject, function (middleware) {
@@ -486,9 +473,6 @@ swagger.initializeMiddleware(swaggerObject, function (middleware) {
 **Swagger 1.2**
 
 ```javascript
-var bodyParser = require('body-parser');
-var parseurl = require('parseurl');
-var qs = require('qs');
 var swagger = require('swagger-tools');
 var resourceListing = require('./samples/1.2/resourceListing.json'); // This assumes you're in the root of the swagger-tools
 var apiDeclarations = [
@@ -500,17 +484,6 @@ var apiDeclarations = [
 var connect = require('connect');
 var http = require('http');
 var app = connect();
-
-// Wire up the middleware required by Swagger Tools (body-parser and qs)
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(function (req, res, next) {
-  if (!req.query) {
-    req.query = req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
-  }
-
-  return next();
-});
 
 // Initialize the Swagger Middleware
 swagger.initializeMiddleware(swaggerObject, function (middleware) {
@@ -549,6 +522,8 @@ swagger.initializeMiddleware(swaggerObject, function (middleware) {
 });
 ```
 
+[body-parser]: https://github.com/expressjs/body-parser
 [connect]: https://github.com/senchalabs/connect
 [issue-30]: https://github.com/apigee-127/swagger-tools/issues/30
+[qs]: https://github.com/hapijs/qs
 [swagger-ui]: https://github.com/wordnik/swagger-ui

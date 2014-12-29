@@ -1,10 +1,7 @@
 'use strict';
 
 var app = require('connect')();
-var bodyParser = require('body-parser');
 var http = require('http');
-var parseurl = require('parseurl');
-var qs = require('qs');
 var swaggerTools = require('swagger-tools');
 
 var serverPort = 3000;
@@ -17,17 +14,6 @@ var options = {
 
 // The Swagger document (require it, build it programmatically, fetch it from a URL, ...)
 var swaggerDoc = require('./api/swagger.json');
-
-// Wire up the middleware required by Swagger Tools (body-parser and qs)
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(function (req, res, next) {
-  if (!req.query) {
-    req.query = req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
-  }
-
-  return next();
-});
 
 // Initialize the Swagger middleware
 swaggerTools.initializeMiddleware(swaggerDoc, function (middleware) {

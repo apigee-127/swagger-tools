@@ -42,9 +42,6 @@ var pathToRegexp = require('path-to-regexp');
  *     * schema: The resource API operation parameter definition
  *     * value: The value of the paramter from the request (Not converted to any particular type)
  *
- * This middleware requires that you use the appropriate middleware to populate req.body and req.query before this
- * middleware.  This middleware also makes no attempt to work around invalid Swagger documents.
- *
  * @param {object} resourceListing - The resource listing object
  * @param {object[]} resources - The array of resources
  *

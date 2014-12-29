@@ -68,9 +68,6 @@ var composeParameters = function composeParameters (apiPath, method, path, opera
  *     * value: The value of the paramter from the request (Not converted to any particular type)
  *   * swaggerObject: The Swagger object itself
  *
- * This middleware requires that you use the appropriate middleware to populate req.body and req.query before this
- * middleware.  This middleware also makes no attempt to work around invalid Swagger documents.
- *
  * @param {object} swaggerObject - The Swagger object
  *
  * @returns the middleware function

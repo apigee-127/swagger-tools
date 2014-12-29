@@ -352,29 +352,11 @@ using Swagger and Swagger Tools.
 
 ### Installing Dependencies
 
-**body-parser** [[npm][body-parser]]
-
-> Node.js body parsing middleware.
-
-`npm install body-parser --save`
-
 **connect** [[npm][connect]]
 
 > High performance middleware framework.
 
 `npm install connect --save`
-
-**parseurl** [[npm][parseurl]]
-
-> Parse a url with memoization
-
-`npm install parseurl --save`
-
-**qs** [[npm][qs]]
-
-> A querystring parser that supports nesting and arrays, with a depth limit.
-
-`npm install qs --save`
 
 **swagger-tools** [[npm][swagger-tools]]
 
@@ -396,10 +378,7 @@ Swagger Tools, and then begin listening on a port to begin hosting the API.  Bel
 'use strict';
 
 var app = require('connect')();
-var bodyParser = require('body-parser');
 var http = require('http');
-var parseurl = require('parseurl');
-var qs = require('qs');
 var swaggerTools = require('swagger-tools');
 
 var serverPort = 3000;
@@ -412,17 +391,6 @@ var options = {
 
 // The Swagger document (require it, build it programmatically, fetch it from a URL, ...)
 var swaggerDoc = require('./api/swagger.json');
-
-// Wire up the middleware required by Swagger Tools (body-parser and qs)
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(function (req, res, next) {
-  if (!req.query) {
-    req.query = req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
-  }
-
-  return next();
-});
 
 // Initialize the Swagger middleware
 swaggerTools.initializeMiddleware(swaggerDoc, function (middleware) {
@@ -628,12 +596,9 @@ running, you can access the following URLs:
 Swagger Tools provides tooling for ensuring your Swagger documents are valid and with your Swagger documents, scaffold
 out and implement a REST API with minimal repetition and boilerplate.  If you have any feedback, please let us know.
 
-[body-parser]: https://www.npmjs.org/package/body-parser
 [connect]: https://www.npmjs.org/package/connect
 [json-pointer]: http://tools.ietf.org/html/rfc6901
 [msn-weather]: http://local.msn.com/weather.aspx
-[parseurl]: https://www.npmjs.org/package/parseurl
-[qs]: https://www.npmjs.org/package/qs
 [swagger]: http://swagger.io
 [swagger-2.0-spec]: https://github.com/reverb/swagger-spec/blob/master/versions/2.0.md
 [swagger-router]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Middleware.md#swagger-router
