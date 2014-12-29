@@ -1,13 +1,22 @@
 ## Release Notes
 
+### v0.7.4
+
+* Attached the original data sent to `res.end` to response validation errors _(Issue #110)_
+* Response validation for Swagger 2.0 now takes the default response into account when validating _(Issue #99)_
+* Removed requirement for servers to wire up body/query string parsers _(We default to [body-parser][body-parser] and
+[qs][qs] respectively.)_ _(Issue #70)_
+
 ### v0.7.3
 
 * Updated the version of Z-Schema being used to fix some browser issues _(Issue #94)_
 * Updated to build/test the browser using `gulp` `gulp test` _(Issue #96)_
-* Specification APIs for Swagger 2.0 now do a full validation prior to performing the business logic behidn the API _(Issue #97)_
+* Specification APIs for Swagger 2.0 now do a full validation prior to performing the business logic behidn the API
+_(Issue #97)_
 * Fixed Quick Start documentation example _(Issue 101)_
 * Fixed a bug in the CLI where local YAML files were not processed properly _(Issue #104)_
-* Fixed a bug where erroneous validation errors were thrown for valid files due to paths with path paramters and vendor extensions _(Issue #103)_
+* Fixed a bug where erroneous validation errors were thrown for valid files due to paths with path paramters and vendor
+extensions _(Issue #103)_
 
 ### v0.7.2
 
@@ -43,6 +52,8 @@ Swagger document(s) and return the appropriate middlewares _(Issue #77)_
 * Various minor bug fixes that did not result in issues
 * Various documentation/example fixes to support the changes above
 
+[body-parser]: https://github.com/expressjs/body-parser
 [jjv]: https://github.com/acornejo/jjv
 [jjve]: https://github.com/silas/jjve
+[qs]: https://github.com/hapijs/qs
 [z-schema]: https://github.com/zaggino/z-schema
