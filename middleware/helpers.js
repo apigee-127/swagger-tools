@@ -649,6 +649,12 @@ module.exports.wrapEnd = function wrapEnd (version, req, res, next) {
               return true;
             }
           });
+
+          if (_.isUndefined(schema) && operation.responses.default) {
+            schema = operation.responses.default;
+
+            vPath.push(['responses', 'default']);
+          }
         }
       }
 

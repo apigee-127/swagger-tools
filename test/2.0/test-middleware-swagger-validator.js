@@ -1024,5 +1024,39 @@ describe('Swagger Validator Middleware v2.0', function () {
                                        'are valid: application/json, application/xml, text/plain, text/html', done));
       });
     });
+
+    it('should not throw an error for responses that use the default response (Issue 99)', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      cPetStoreJson.paths['/pets/{id}'].get['x-swagger-router-controller'] = 'Pets';
+      cPetStoreJson.paths['/pets/{id}'].get.operationId = 'getPetById';
+      cPetStoreJson.paths['/pets/{id}'].get.responses.default = cPetStoreJson.paths['/pets/{id}'].get.responses['200'];
+
+      delete cPetStoreJson.paths['/pets/{id}'].get.responses['200'];
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_getPetById': function (req, res) {
+              res.end(samplePet);
+            }
+          }
+        },
+        swaggerValidatorOptions: {
+          validateResponse: true
+        }
+      }, function (app) {
+        app.use(function (err, req, res, next) {
+          assert.deepEqual(err.originalResponse, samplePet);
+
+          next();
+        });
+
+        request(app)
+          .get('/api/pets/1')
+          .expect(200)
+          .end(helpers.expectContent(samplePet, done));
+      });
+    });
   });
 });
