@@ -25,23 +25,7 @@
 
 var _ = require('lodash');
 var async = require('async');
-
-function handleSecurityError (err, res) {
-  var body = {
-    'error_description': err.message,
-    state: err.state,
-    error: err.code || 'server_error'
-  };
-
-  if (err.headers) {
-    _.each(_.keys(err.headers), function(name) {
-      res.setHeader(name, err.headers[name]);
-    });
-  }
-
-  res.statusCode = err.statusCode || 403;
-  res.end(JSON.stringify(body));
-}
+var helpers = require('../helpers');
 
 /**
  * Middleware for using Swagger security information to authenticate requests.
@@ -96,7 +80,7 @@ exports = module.exports = function swaggerSecurityMiddleware (options) {
     }, function (ok, errors) { // note swapped results
       if (ok && ok.message === 'OK') { return next(); }
 
-      handleSecurityError(errors[0], res);
+      helpers.sendSecurityError(errors[0], res, next);
     });
   };
 };

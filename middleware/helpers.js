@@ -533,6 +533,27 @@ module.exports.send405 = function send405 (version, req, res, next) {
   return next(err);
 };
 
+module.exports.sendSecurityError = function sendSecurityError (err, res, next) {
+  // Populate default values if not present
+  if (!err.code) {
+    err.code = 'server_error';
+  }
+
+  if (!err.statusCode) {
+    err.statusCode = 403;
+  }
+
+  if (err.headers) {
+    _.each(err.headers, function (header, name) {
+      res.setHeader(name, header);
+    });
+  }
+
+  res.statusCode = err.statusCode;
+
+  next(err);
+};
+
 var validateValue = module.exports.validateValue =
   function validateValue (req, schema, path, val, callback) {
     var document = req.swagger.apiDeclaration || req.swagger.swaggerObject;
