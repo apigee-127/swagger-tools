@@ -1,6 +1,6 @@
 ## Release Notes
 
-### v0.7.5 (Unreleased)
+### v0.8.0 (Unreleased)
 
 * swagger-security now sends authentication/authorization errors downstream via `next` _(Issue #117)_
 
