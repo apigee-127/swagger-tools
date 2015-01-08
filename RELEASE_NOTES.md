@@ -1,5 +1,9 @@
 ## Release Notes
 
+### v0.7.5 (Unreleased)
+
+* swagger-security now sends authentication/authorization errors downstream via `next` _(Issue #117)_
+
 ### v0.7.4
 
 * Attached the original data sent to `res.end` to response validation errors _(Issue #110)_

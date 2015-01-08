@@ -23,7 +23,6 @@
  */
 'use strict';
 
-var _ = require('lodash');
 var async = require('async');
 var helpers = require('../helpers');
 
