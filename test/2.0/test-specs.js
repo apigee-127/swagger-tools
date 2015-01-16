@@ -2335,7 +2335,7 @@ describe('Specification v2.0' + header, function () {
       });
     });
 
-    it('should not report erros for non-operation path-properties (Issue 103)', function (done) {
+    it('should not report errofs for non-operation path-properties (Issue 103)', function (done) {
       var swaggerObject = _.cloneDeep(petStoreJson);
 
       swaggerObject.paths['/pets/{id}']['x-swagger-router-controller'] = 'Pets';
@@ -2346,6 +2346,31 @@ describe('Specification v2.0' + header, function () {
         }
 
         assert.ok(_.isUndefined(result));
+
+        done();
+      });
+    });
+
+    it('should not throw a runtime Error for invalid response reference (Issue 120)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.paths['/pets'].get.responses['200'] = {
+	$ref: '#/responses/missing'
+      };
+
+      spec.validate(swaggerObject, function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'UNRESOLVABLE_RESPONSE',
+            message: 'Response could not be resolved: #/responses/missing',
+            path: ['paths', '/pets', 'get', 'responses', '200', '$ref']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);	
 
         done();
       });
