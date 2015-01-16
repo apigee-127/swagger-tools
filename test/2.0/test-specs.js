@@ -2351,7 +2351,7 @@ describe('Specification v2.0' + header, function () {
       });
     });
 
-    it('should not throw a runtime Error for invalid response reference (Issue 120)', function (done) {
+    it('should not throw a runtime Error for missing response reference (Issue 120)', function (done) {
       var swaggerObject = _.cloneDeep(petStoreJson);
 
       swaggerObject.paths['/pets'].get.responses['200'] = {
@@ -2368,6 +2368,34 @@ describe('Specification v2.0' + header, function () {
             code: 'UNRESOLVABLE_RESPONSE',
             message: 'Response could not be resolved: #/responses/missing',
             path: ['paths', '/pets', 'get', 'responses', '200', '$ref']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);	
+
+        done();
+      });
+    });
+
+    it('should not throw a runtime Error for missing schema allOf reference (Issue 121)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.definitions.newPet.allOf[0].$ref = '#/definitions/missing';
+
+      spec.validate(swaggerObject, function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.deepEqual(result.errors, [
+	  {
+            code: 'MISSING_REQUIRED_MODEL_PROPERTY',
+            message: 'Model requires property but it is not defined: name',
+            path: ['definitions', 'newPet', 'required', '0']
+          },
+          {
+            code: 'UNRESOLVABLE_DEFINITION',
+            message: 'Definition could not be resolved: #/definitions/missing',
+            path: ['definitions', 'newPet', 'allOf', '0', '$ref']
           }
         ]);
         assert.equal(result.warnings.length, 0);	
