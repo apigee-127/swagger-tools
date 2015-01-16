@@ -477,13 +477,13 @@ describe('Specification v2.0' + header, function () {
 
           assert.deepEqual(result.errors, [
             {
-              code: 'MISSING_REQUIRED_MODEL_PROPERTY',
-              message: 'Model requires property but it is not defined: name',
+              code: 'MISSING_REQUIRED_DEFINITION_PROPERTY',
+              message: 'Definition requires property but it is not defined: name',
               path: ['definitions', 'Pet', 'required', '1']
             },
             {
-              code: 'MISSING_REQUIRED_MODEL_PROPERTY',
-              message: 'Model requires property but it is not defined: name',
+              code: 'MISSING_REQUIRED_DEFINITION_PROPERTY',
+              message: 'Definition requires property but it is not defined: name',
               path: ['definitions', 'newPet', 'required', '0']
             }
           ]);
@@ -2388,8 +2388,8 @@ describe('Specification v2.0' + header, function () {
 
         assert.deepEqual(result.errors, [
 	  {
-            code: 'MISSING_REQUIRED_MODEL_PROPERTY',
-            message: 'Model requires property but it is not defined: name',
+            code: 'MISSING_REQUIRED_DEFINITION_PROPERTY',
+            message: 'Definition requires property but it is not defined: name',
             path: ['definitions', 'newPet', 'required', '0']
           },
           {
