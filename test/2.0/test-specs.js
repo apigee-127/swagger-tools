@@ -2439,6 +2439,38 @@ describe('Specification v2.0' + header, function () {
         done();
       });
     });
+
+    it('do not assume definitions have properties attributes (Issue 122)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.definitions.UberPet = {
+	allOf: [
+	  {
+	    $ref: '#/definitions/Pet'
+	  }
+	]
+      };
+
+      spec.validate(swaggerObject, function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.deepEqual(result.warnings, [
+	  {
+            code: 'UNUSED_DEFINITION',
+            message: 'Definition is defined but is not used: #/definitions/UberPet',
+            path: [
+              'definitions',
+              'UberPet'
+            ]
+          }
+        ]);
+        assert.equal(result.errors.length, 0);	
+
+        done();
+      });
+    });
   });
 
   describe('#convert', function () {
