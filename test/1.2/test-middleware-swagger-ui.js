@@ -34,10 +34,10 @@ var async = require('async');
 var helpers = require('../helpers');
 var request = require('supertest');
 
-var rlJson = require('../../samples/1.2/resource-listing.json');
-var petJson = require('../../samples/1.2/pet.json');
-var storeJson = require('../../samples/1.2/store.json');
-var userJson = require('../../samples/1.2/user.json');
+var rlJson = _.cloneDeep(require('../../samples/1.2/resource-listing.json'));
+var petJson = _.cloneDeep(require('../../samples/1.2/pet.json'));
+var storeJson = _.cloneDeep(require('../../samples/1.2/store.json'));
+var userJson = _.cloneDeep(require('../../samples/1.2/user.json'));
 
 describe('Swagger UI Middleware v1.2', function () {
   it('should serve Swagger documents at /api-docs by default', function (done) {

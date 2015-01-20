@@ -34,11 +34,11 @@ var assert = require('assert');
 var swagger = require('../');
 
 var middlewares = ['swaggerMetadata', 'swaggerRouter', 'swaggerSecurity', 'swaggerUi', 'swaggerValidator'];
-var petJson = require('../samples/1.2/pet.json');
-var petStoreJson = require('../samples/2.0/petstore.json');
-var rlJson = require('../samples/1.2/resource-listing.json');
-var storeJson = require('../samples/1.2/store.json');
-var userJson = require('../samples/1.2/user.json');
+var petJson = _.cloneDeep(require('../samples/1.2/pet.json'));
+var petStoreJson = _.cloneDeep(require('../samples/2.0/petstore.json'));
+var rlJson = _.cloneDeep(require('../samples/1.2/resource-listing.json'));
+var storeJson = _.cloneDeep(require('../samples/1.2/store.json'));
+var userJson = _.cloneDeep(require('../samples/1.2/user.json'));
 
 describe('swagger-tools', function () {
   describe('initializeMiddlware', function () {
@@ -60,7 +60,7 @@ describe('swagger-tools', function () {
           'resources is required': [rlJson],
           'resources must be an array': [rlJson, petJson],
           'callback is required': [rlJson, [petJson, storeJson, userJson]],
-          'callback must be a function': [rlJson, [petJson, storeJson, userJson], 'wrong-type'],
+          'callback must be a function': [rlJson, [petJson, storeJson, userJson], 'wrong-type']
         };
 
         _.each(errors, function (args, message) {

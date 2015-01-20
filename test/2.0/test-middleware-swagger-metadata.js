@@ -32,7 +32,7 @@ process.env.NODE_ENV = 'test';
 var _ = require('lodash');
 var assert = require('assert');
 var helpers = require('../helpers');
-var petStoreJson = require('../../samples/2.0/petstore.json');
+var petStoreJson = _.cloneDeep(require('../../samples/2.0/petstore.json'));
 var request = require('supertest');
 var spec = require('../../lib/helpers').getSpec('2.0');
 

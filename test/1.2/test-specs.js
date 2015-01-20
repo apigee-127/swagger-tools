@@ -31,10 +31,10 @@ var assert = require('assert');
 var async = require('async');
 var spec = (typeof window === 'undefined' ? require('../../') : SwaggerTools).specs.v1_2; // jshint ignore:line
 
-var petJson = require('../../samples/1.2/pet.json');
-var rlJson = require('../../samples/1.2/resource-listing.json');
-var storeJson = require('../../samples/1.2/store.json');
-var userJson = require('../../samples/1.2/user.json');
+var petJson = _.cloneDeep(require('../../samples/1.2/pet.json'));
+var rlJson = _.cloneDeep(require('../../samples/1.2/resource-listing.json'));
+var storeJson = _.cloneDeep(require('../../samples/1.2/store.json'));
+var userJson = _.cloneDeep(require('../../samples/1.2/user.json'));
 var header = typeof window === 'undefined' ?
                '' :
                ' (Browser ' + (window.bowerTests ? 'Bower' : 'Standalone') + ' Build)';
@@ -105,12 +105,7 @@ describe('Specification v1.2' + header, function () {
     });
 
     it('should return undefined for valid JSON files', function (done) {
-      var cRlJson = _.cloneDeep(rlJson);
-      var cPetJson = _.cloneDeep(petJson);
-      var cStoreJson = _.cloneDeep(storeJson);
-      var cUserJson = _.cloneDeep(userJson);
-
-      spec.validate(cRlJson, [cPetJson, cStoreJson, cUserJson], function (err, result) {
+      spec.validate(rlJson, [petJson, storeJson, userJson], function (err, result) {
         assert.ok(_.isUndefined(err));
         assert.ok(_.isUndefined(result));
 

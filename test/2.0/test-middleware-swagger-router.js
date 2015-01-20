@@ -35,7 +35,6 @@ var path = require('path');
 var request = require('supertest');
 var helpers = require('../helpers');
 
-// Cloned to avoid mucking with the module result directly (Node.js race conditions can occur)
 var petStoreJson = _.cloneDeep(require('../../samples/2.0/petstore.json'));
 var optionsWithControllersDir = {
   controllers: path.join(__dirname, '..', 'controllers')
@@ -223,7 +222,7 @@ describe('Swagger Router Middleware v2.0', function () {
       var expectedMessage = n === 1 ? samplePet : 'OK';
 
       helpers.createServer([petStoreJson], {
-        swaggerRouterOptions: options,
+        swaggerRouterOptions: options
       }, function (app) {
         request(app)
           .get('/api/pets/1')

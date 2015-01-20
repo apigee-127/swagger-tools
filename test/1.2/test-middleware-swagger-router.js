@@ -35,11 +35,9 @@ var path = require('path');
 var request = require('supertest');
 var helpers = require('../helpers');
 
-var rlJson = require('../../samples/1.2/resource-listing.json');
-// Cloned to avoid mucking with the module result directly (Node.js race conditions can occur)
+var rlJson = _.cloneDeep(require('../../samples/1.2/resource-listing.json'));
 var petJson = _.cloneDeep(require('../../samples/1.2/pet.json'));
-var storeJson = require('../../samples/1.2/store.json');
-// Cloned to avoid mucking with the module result directly (Node.js race conditions can occur)
+var storeJson = _.cloneDeep(require('../../samples/1.2/store.json'));
 var userJson = _.cloneDeep(require('../../samples/1.2/user.json'));
 var optionsWithControllersDir = {
   controllers: path.join(__dirname, '..', 'controllers')
@@ -173,7 +171,7 @@ describe('Swagger Router Middleware v1.2', function () {
 
     clonedU.apis[0].operations[2].nickname = 'Users__getById';
 
-    helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+    helpers.createServer([rlJson, [petJson, storeJson, clonedU]], {
       swaggerRouterOptions: optionsWithControllersDir
     }, function (app) {
       request(app)
@@ -201,7 +199,7 @@ describe('Swagger Router Middleware v1.2', function () {
       var expectedMessage = n === 1 ? samplePet : 'OK';
 
       helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
-        swaggerRouterOptions: options,
+        swaggerRouterOptions: options
       }, function (app) {
         request(app)
           .get('/api/pet/1')

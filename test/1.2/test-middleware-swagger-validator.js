@@ -35,10 +35,10 @@ var async = require('async');
 var helpers = require('../helpers');
 var request = require('supertest');
 
-var petJson = require('../../samples/1.2/pet.json');
-var rlJson = require('../../samples/1.2/resource-listing.json');
-var storeJson = require('../../samples/1.2/store.json');
-var userJson = require('../../samples/1.2/user.json');
+var petJson = _.cloneDeep(require('../../samples/1.2/pet.json'));
+var rlJson = _.cloneDeep(require('../../samples/1.2/resource-listing.json'));
+var storeJson = _.cloneDeep(require('../../samples/1.2/store.json'));
+var userJson = _.cloneDeep(require('../../samples/1.2/user.json'));
 
 var samplePet = {
   id: 1,

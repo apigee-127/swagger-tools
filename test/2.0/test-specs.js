@@ -35,7 +35,7 @@ var header = typeof window === 'undefined' ?
                '' :
                ' (Browser ' + (window.bowerTests ? 'Bower' : 'Standalone') + ' Build)';
 
-var petStoreJson = require('../../samples/2.0/petstore.json');
+var petStoreJson = _.cloneDeep(require('../../samples/2.0/petstore.json'));
 
 describe('Specification v2.0' + header, function () {
   var server;
@@ -2399,6 +2399,42 @@ describe('Specification v2.0' + header, function () {
           }
         ]);
         assert.equal(result.warnings.length, 0);	
+
+        done();
+      });
+    });
+
+    it('void support should be limited to responses (Issue 124)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.definitions.Person = {
+	default: {
+	  name: 'Anonymous Person'
+	},
+	properties: {
+	  name: {
+	    type: 'string'
+	  }
+	},
+	required: ['name']
+      };
+
+      spec.validate(swaggerObject, function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.deepEqual(result.warnings, [
+	  {
+            code: 'UNUSED_DEFINITION',
+            message: 'Definition is defined but is not used: #/definitions/Person',
+            path: [
+              'definitions',
+              'Person'
+            ]
+          }
+        ]);
+        assert.equal(result.errors.length, 0);	
 
         done();
       });

@@ -29,10 +29,11 @@
 // Here to quiet down Connect logging errors
 process.env.NODE_ENV = 'test';
 
+var _ = require('lodash');
 var helpers = require('../helpers');
 var request = require('supertest');
 
-var swaggerObject = require('../../samples/2.0/petstore.json');
+var swaggerObject = _.cloneDeep(require('../../samples/2.0/petstore.json'));
 
 describe('Swagger UI Middleware v2.0', function () {
   it('should serve Swagger documents at /api-docs by default', function (done) {

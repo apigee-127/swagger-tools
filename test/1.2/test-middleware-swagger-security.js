@@ -35,8 +35,8 @@ var request = require('supertest');
 
 var petJson = _.cloneDeep(require('../../samples/1.2/pet.json'));
 var rlJson = _.cloneDeep(require('../../samples/1.2/resource-listing.json'));
-var storeJson = require('../../samples/1.2/store.json');
-var userJson = require('../../samples/1.2/user.json');
+var storeJson = _.cloneDeep(require('../../samples/1.2/store.json'));
+var userJson = _.cloneDeep(require('../../samples/1.2/user.json'));
 
 var SecurityDef = function (allow) {
   var self = this;

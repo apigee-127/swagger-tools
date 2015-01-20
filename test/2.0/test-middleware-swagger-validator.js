@@ -35,7 +35,7 @@ var async = require('async');
 var helpers = require('../helpers');
 var request = require('supertest');
 
-var petStoreJson = require('../../samples/2.0/petstore.json');
+var petStoreJson = _.cloneDeep(require('../../samples/2.0/petstore.json'));
 
 var samplePet = {
   id: 1,

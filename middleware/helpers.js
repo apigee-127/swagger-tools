@@ -653,7 +653,7 @@ module.exports.wrapEnd = function wrapEnd (version, req, res, next) {
         } else if (version === '1.2') {
           schema = _.find(operation.responseMessages, function (responseMessage, index) {
             if (responseMessage.code === res.statusCode) {
-              vPath.push(['responseMessages', index.toString()]);
+              vPath.push('responseMessages', index.toString());
 
               return true;
             }
@@ -665,7 +665,7 @@ module.exports.wrapEnd = function wrapEnd (version, req, res, next) {
         } else {
           schema = _.find(operation.responses, function (response, code) {
             if (code === res.statusCode.toString()) {
-              vPath.push(['responses', code]);
+              vPath.push('responses', code);
 
               return true;
             }
@@ -674,7 +674,7 @@ module.exports.wrapEnd = function wrapEnd (version, req, res, next) {
           if (_.isUndefined(schema) && operation.responses.default) {
             schema = operation.responses.default;
 
-            vPath.push(['responses', 'default']);
+            vPath.push('responses', 'default');
           }
         }
       }
