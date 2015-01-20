@@ -224,4 +224,32 @@ describe('Swagger Router Middleware v1.2', function () {
       done();
     });
   });
+
+  describe('issues', function () {
+    it('should handle uncaught exceptions (Issue 123)', function (done) {
+      var cPetJson = _.cloneDeep(petJson);
+
+      cPetJson.apis[0].operations[0].nickname = 'Pets_getPetById';
+
+      helpers.createServer([rlJson, [cPetJson, storeJson, userJson]], {
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_getPetById': function (req, res, next) {
+	      // This should throw an exception
+	      if (req['swagger-tools'].fake) {
+		next(new Error('This should have been reached'));
+	      }
+	      
+	      next();
+            }
+          }
+        }
+      }, function (app) {
+        request(app)
+          .get('/api/pet/1')
+          .expect(500)
+	  .end(helpers.expectContent('Cannot read property \'fake\' of undefined', done));
+      });
+    });
+  });
 });

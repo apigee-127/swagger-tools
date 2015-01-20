@@ -77,6 +77,7 @@ exports = module.exports = function swaggerRouterMiddleware (options) {
     var handler;
     var handlerName;
     var operation;
+    var rErr;
 
     if (req.swagger) {
       operation = req.swagger.operation;
@@ -93,11 +94,15 @@ exports = module.exports = function swaggerRouterMiddleware (options) {
         }
 
         if (!_.isUndefined(handler)) {
-          return handler(req, res, next);
+	  try {
+            return handler(req, res, next);
+	  } catch (err) {
+	    rErr = err;
+	  }
         }
       }
     }
 
-    return next();
+    return next(rErr);
   };
 };
