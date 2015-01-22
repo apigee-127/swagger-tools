@@ -128,10 +128,10 @@ The structure of `req.swagger` is as follows:
 * **authorizations:** `object` The computed authorizations for this request
 * **operation:** `object` The corresponding operation in the API Declaration that the request maps to
 * **operationPath:** `string[]` The path to the operation
-* **params:** `object` For each of the request parameters defined in your Swagger document, its `path`, its `schema`
-and its processed `value`.  The value is converted to the proper JSON type based on the Swagger document.  If the
-parameter defined in your Swagger document includes a default value and the request does not include the value, the
-default value is assigned to the parameter value in `req.swagger.params`.
+* **params:** `object` For each of the request parameters defined in your Swagger document, its `path`, its `schema`,
+its `originalValue` and its processed `value`.  The value is converted to the proper JSON type based on the Swagger
+document.  If the parameter defined in your Swagger document includes a default value and the request does not include
+the value, the default value is assigned to the parameter value in `req.swagger.params`.
 * **resourceListing:** `object` The Resource Listing for the API
 
 ### Swagger 2.0

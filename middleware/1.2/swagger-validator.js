@@ -69,7 +69,7 @@ exports = module.exports = function swaggerValidatorMiddleware (options) {
 
           paramName = parameter.name;
           paramPath = req.swagger.operationPath.concat(['params', paramIndex.toString()]);
-          val = req.swagger.params[paramName].value;
+          val = req.swagger.params[paramName].originalValue;
 
           // Validate requiredness
           validators.validateRequiredness(val, parameter.required);

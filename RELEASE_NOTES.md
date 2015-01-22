@@ -5,6 +5,7 @@
 * Better handling of references to invalid objects _(Issue #120, #121)_
 * Fix bug validating models with a `defautl` attribute _(Issue #124)_
 * Fix bug validating models without properties _(Issue #122)_
+* swagger-metadata now converts paramters to their appropriate type _(Issue #119)_
 * swagger-router now wraps controller calls in try/catch block and sends errors downstream via `next` _(Issue #123)_
 * swagger-security now sends authentication/authorization errors downstream via `next` _(Issue #117)_
 

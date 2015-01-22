@@ -31,6 +31,7 @@ process.env.NODE_ENV = 'test';
 
 var _ = require('lodash');
 var assert = require('assert');
+var async = require('async');
 var helpers = require('../helpers');
 var petJson = _.cloneDeep(require('../../samples/1.2/pet.json'));
 var rlJson = _.cloneDeep(require('../../samples/1.2/resource-listing.json'));
@@ -73,7 +74,8 @@ describe('Swagger Metadata Middleware v1.2', function () {
                petId: {
                  path: ['apis', '0', 'operations', '0', 'parameters', '0'],
                  schema: petJson.apis[0].operations[0].parameters[0],
-                 value: '1'
+		 originalValue: '1',
+                 value: 1
                }
              });
              assert.equal(swagger.resourceIndex, 0);
@@ -112,10 +114,10 @@ describe('Swagger Metadata Middleware v1.2', function () {
             assert.deepEqual(req.swagger.params['Auth-Token'], {
               path: ['apis', '0', 'operations', '0', 'parameters', '1'],
               schema: cPetJson.apis[0].operations[0].parameters[1],
+	      originalValue: 'fake',
               value: 'fake'
             });
           } catch (err) {
-            console.log(err);
             return next(err.message);
           }
 
@@ -127,6 +129,78 @@ describe('Swagger Metadata Middleware v1.2', function () {
         .set('Auth-Token', 'fake')
         .expect(200)
         .end(helpers.expectContent('OK', done));
+      });
+    });
+
+    it('should convert parameteter values to the proper type (Issue 119)', function (done) {
+      var argName = 'arg0';
+      var queryValues = {
+	boolean: 'true',
+	integer: '1',
+	number: '1.1',
+	string: 'swagger-tools',
+	'string-date': '2014-06-16',
+	'string-date-time': '2014-06-16T18:20:35-06:00'
+      };
+      var paramValues = {
+	boolean: true,
+	integer: 1,
+	number: 1.1,
+	string: 'swagger-tools',
+	'string-date': new Date('2014-06-16'),
+	'string-date-time': new Date('2014-06-16T18:20:35-06:00')
+      };
+
+      async.map(Object.keys(queryValues), function (type, callback) {
+	var queryValue = queryValues[type];
+	var paramValue = paramValues[type];
+        var clonedP = _.cloneDeep(petJson);
+	var paramDef = {
+	  paramType: 'query',
+	  name: argName
+	};
+	var query = {};
+	var typeParts = type.split('-');
+
+	if (typeParts.length === 1) {
+	  paramDef.type = type;
+	} else {
+	  paramDef.type = typeParts[0];
+	  paramDef.format = typeParts.slice(1).join('-');
+	}
+
+	query[argName] = queryValue;
+	
+	clonedP.apis[0].operations[0].nickname = 'Pets_getPetById';
+        clonedP.apis[0].operations[0].parameters.push(paramDef);
+
+	helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {
+	  swaggerRouterOptions: {
+            controllers: {
+	      'Pets_getPetById': function (req, res) {
+		assert.deepEqual(paramValue, req.swagger.params[argName].value);
+
+		res.end('OK');
+	      }
+            }
+          }
+	}, function (app) {
+          request(app)
+            .get('/api/pet/1')
+            .query(query)
+            .expect(200)
+            .end(callback);
+        });
+      }, function (err, responses) {
+	if (err) {
+	  throw err;
+	}
+
+	_.each(responses, function (res) {
+	  assert.equal(res.text, 'OK');
+	});
+
+	done();
       });
     });
   });

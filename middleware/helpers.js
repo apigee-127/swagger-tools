@@ -54,6 +54,65 @@ var bodyParser = function (req, res, callback) {
   });
 };
 
+var convertValue = function convertValue (value, schema) {
+  var type = schema.type;
+
+  // If there is no value, do not convert it
+  if (_.isUndefined(value)) {
+    return value;
+  }
+
+  // TODO: Type resolution should become a helper function
+
+  if (!type && schema.schema) {
+    type = schema.type;
+  }
+
+  if (!type) {
+    type = 'object';
+  }
+
+  switch (type) {
+  case 'array':
+    value = _.map(value, function (item) {
+      return convertValue(item, _.isArray(schema.items) ? schema.items[0] : schema.items);
+    });
+
+    break;
+
+  case 'boolean':
+    if (!_.isBoolean(value)) {
+      value = value === 'true' || value === true ? true : false;
+    }
+
+    break;
+
+  case 'integer':
+    if (!_.isNumber(value)) {
+      value = parseInt(value, 10);
+    }
+
+    break;
+
+  case 'number':
+    if (!_.isNumber(value)) {
+      value = parseFloat(value);
+    }
+
+    break;
+
+  case 'string':
+    if (['date', 'date-time'].indexOf(schema.format) > -1 && !_.isDate(value)) {
+      value = new Date(value);
+    }
+
+    break;
+
+  }
+
+  return value;
+};
+
 var isModelType = function isModelType (spec, type) {
   return spec.primitives.indexOf(type) === -1;
 };
@@ -67,8 +126,8 @@ var isModelParameter = module.exports.isModelParameter = function isModelParamet
     if (!_.isUndefined(param.type) && isModelType(spec, param.type)) {
       isModel = true;
     } else if (param.type === 'array' && isModelType(spec, param.items ?
-                                                             param.items.type || param.items.$ref :
-                                                             undefined)) {
+							     param.items.type || param.items.$ref :
+							     undefined)) {
       isModel = true;
     }
 
@@ -200,7 +259,7 @@ var getMockValue = function getMockValue (version, schema) {
 
     _.each(schema.allOf, function (parentSchema) {
       _.each(parentSchema.properties, function (property, propName) {
-        value[propName] = getMockValue(version, property);
+	value[propName] = getMockValue(version, property);
       });
     });
 
@@ -292,14 +351,14 @@ var mockResponse = function mockResponse (version, req, res, next, handlerName) 
   if (_.isPlainObject(responseType) || isModelType(spec, responseType)) {
     if (version === '1.2') {
       spec.composeModel(apiDOrSO, responseType, function (err, result) {
-        if (err) {
-          return sendResponse(undefined, err);
-        } else {
-          // Should we handle this differently as undefined typically means the model doesn't exist
-          return sendResponse(undefined, _.isUndefined(result) ?
-                                           stubResponse :
-                                           JSON.stringify(getMockValue(version, result)));
-        }
+	if (err) {
+	  return sendResponse(undefined, err);
+	} else {
+	  // Should we handle this differently as undefined typically means the model doesn't exist
+	  return sendResponse(undefined, _.isUndefined(result) ?
+					   stubResponse :
+					   JSON.stringify(getMockValue(version, result)));
+	}
       });
     } else {
       return sendResponse(undefined, JSON.stringify(getMockValue(version, responseType.schema)));
@@ -326,19 +385,19 @@ module.exports.handlerCacheFromDir = function handlerCacheFromDir (dirOrDirs) {
       var controller;
 
       if (file.match(jsFileRegex)) {
-        controller = require(path.resolve(path.join(dir, controllerName)));
+	controller = require(path.resolve(path.join(dir, controllerName)));
 
-        if (_.isPlainObject(controller)) {
-          _.each(controller, function (value, name) {
-            var handlerId = controllerName + '_' + name;
+	if (_.isPlainObject(controller)) {
+	  _.each(controller, function (value, name) {
+	    var handlerId = controllerName + '_' + name;
 
-            // TODO: Log this situation
+	    // TODO: Log this situation
 
-            if (_.isFunction(value) && !handlerCache[handlerId]) {
-              handlerCache[handlerId] = value;
-            }
-          });
-        }
+	    if (_.isFunction(value) && !handlerCache[handlerId]) {
+	      handlerCache[handlerId] = value;
+	    }
+	  });
+	}
       }
     });
   });
@@ -357,7 +416,7 @@ module.exports.createStubHandler = function createStubHandler (version, req, res
 };
 
 var getParameterValue = module.exports.getParameterValue = function getParameterValue (version, parameter, pathKeys,
-                                                                                       match, req) {
+										       match, req) {
   var defaultVal = version === '1.2' ? parameter.defaultValue : parameter.default;
   var paramType = version === '1.2' ? parameter.paramType : parameter.in;
   var val;
@@ -381,7 +440,7 @@ var getParameterValue = module.exports.getParameterValue = function getParameter
   case 'path':
     _.each(pathKeys, function (key, index) {
       if (key.name === parameter.name) {
-        val = match[index + 1];
+	val = match[index + 1];
       }
     });
 
@@ -401,11 +460,11 @@ var getParameterValue = module.exports.getParameterValue = function getParameter
 };
 
 module.exports.processOperationParameters = function processOperationParameters (version, pathKeys, pathMatch, req, res,
-                                                                                 next) {
+										 next) {
   var swaggerMetadata = req.swagger;
   var parameters = !_.isUndefined(swaggerMetadata) ?
-                     (version === '1.2' ? swaggerMetadata.operation.parameters : swaggerMetadata.operationParameters) :
-                     undefined;
+		     (version === '1.2' ? swaggerMetadata.operation.parameters : swaggerMetadata.operationParameters) :
+		     undefined;
 
   if (!parameters) {
     return next();
@@ -443,13 +502,15 @@ module.exports.processOperationParameters = function processOperationParameters 
 
     _.each(parameters, function (parameterOrMetadata, index) {
       var parameter = version === '1.2' ? parameterOrMetadata : parameterOrMetadata.schema;
+      var oVal = getParameterValue(version, parameter, pathKeys, pathMatch, req);
 
       swaggerMetadata.params[parameter.name] = {
-        path: version === '1.2' ?
-                swaggerMetadata.operationPath.concat(['parameters', index.toString()]) :
-                parameterOrMetadata.path,
-        schema: parameter,
-        value: getParameterValue(version, parameter, pathKeys, pathMatch, req)
+	path: version === '1.2' ?
+		swaggerMetadata.operationPath.concat(['parameters', index.toString()]) :
+		parameterOrMetadata.path,
+	schema: parameter,
+	originalValue: oVal,
+	value: convertValue(oVal, parameter)
       };
     });
 
@@ -475,9 +536,9 @@ module.exports.send400 = function send400 (req, res, next, err) {
     case 'MULTIPLE_OF':
     case 'INVALID_TYPE':
       if (err.code === 'INVALID_TYPE' && err.message.split(' ')[0] === 'Value') {
-        validationMessage += err.message.split(' ').slice(1).join(' ');
+	validationMessage += err.message.split(' ').slice(1).join(' ');
       } else {
-        validationMessage += 'is ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
+	validationMessage += 'is ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
       }
 
       break;
@@ -509,9 +570,9 @@ module.exports.send400 = function send400 (req, res, next, err) {
 module.exports.send405 = function send405 (version, req, res, next) {
   var allowedMethods = [];
   var err = new Error('Route defined in Swagger specification (' +
-                        (_.isUndefined(req.swagger.api) ? req.swagger.apiPath : req.swagger.api.path) +
-                        ') but there is no defined ' +
-                        (version === '1.2' ? req.method.toUpperCase() : req.method.toLowerCase()) + ' operation.');
+			(_.isUndefined(req.swagger.api) ? req.swagger.apiPath : req.swagger.api.path) +
+			') but there is no defined ' +
+			(version === '1.2' ? req.method.toUpperCase() : req.method.toLowerCase()) + ' operation.');
 
   if (!_.isUndefined(req.swagger.api)) {
     _.each(req.swagger.api.operations, function (operation) {
@@ -520,7 +581,7 @@ module.exports.send405 = function send405 (version, req, res, next) {
   } else {
     _.each(req.swagger.path, function (operation, method) {
       if (helpers.swaggerOperationMethods.indexOf(method.toUpperCase()) !== -1) {
-        allowedMethods.push(method.toUpperCase());
+	allowedMethods.push(method.toUpperCase());
       }
     });
   }
@@ -569,48 +630,47 @@ var validateValue = module.exports.validateValue =
 
     if (isModel) {
       if (_.isString(val)) {
-        try {
-          val = JSON.parse(val);
-        } catch (err) {
-          err.failedValidation = true;
-          err.message = 'Value expected to be an array/object but is not';
+	try {
+	  val = JSON.parse(val);
+	} catch (err) {
+	  err.failedValidation = true;
+	  err.message = 'Value expected to be an array/object but is not';
 
-          throw err;
-        }
+	  throw err;
+	}
       }
 
       async.map(schema.type === 'array' ? val : [val], function (aVal, oCallback) {
+	if (version === '1.2') {
+	  spec.validateModel(document, '#/models/' + (schema.items ?
+							schema.items.type || schema.items.$ref :
+							schema.type), aVal, oCallback);
+	} else {
+	  try {
+	    validators.validateAgainstSchema(schema.schema ? schema.schema : schema, val);
 
-        if (version === '1.2') {
-          spec.validateModel(document, '#/models/' + (schema.items ?
-                                                        schema.items.type || schema.items.$ref :
-                                                        schema.type), aVal, oCallback);
-        } else {
-          try {
-            validators.validateAgainstSchema(schema.schema ? schema.schema : schema, val);
-
-            oCallback();
-          } catch (err) {
-            oCallback(err);
-          }
-        }
+	    oCallback();
+	  } catch (err) {
+	    oCallback(err);
+	  }
+	}
       }, function (err, allResults) {
-        if (!err) {
-          _.each(allResults, function (results) {
-            if (results && helpers.getErrorCount(results) > 0) {
-              err = new Error('Failed schema validation');
+	if (!err) {
+	  _.each(allResults, function (results) {
+	    if (results && helpers.getErrorCount(results) > 0) {
+	      err = new Error('Failed schema validation');
 
-              err.code = 'SCHEMA_VALIDATION_FAILED';
-              err.errors = results.errors;
-              err.warnings = results.warnings;
-              err.failedValidation = true;
+	      err.code = 'SCHEMA_VALIDATION_FAILED';
+	      err.errors = results.errors;
+	      err.warnings = results.warnings;
+	      err.failedValidation = true;
 
-              return false;
-            }
-          });
-        }
+	      return false;
+	    }
+	  });
+	}
 
-        callback(err);
+	callback(err);
       });
     } else {
       callback();
@@ -637,65 +697,65 @@ module.exports.wrapEnd = function wrapEnd (version, req, res, next) {
     try {
       // Validate the content type
       try {
-        validators.validateContentType(req.swagger.apiDeclaration ?
-                                         req.swagger.apiDeclaration.produces :
-                                         req.swagger.swaggerObject.produces,
-                                       operation.produces, res);
+	validators.validateContentType(req.swagger.apiDeclaration ?
+					 req.swagger.apiDeclaration.produces :
+					 req.swagger.swaggerObject.produces,
+				       operation.produces, res);
       } catch (err) {
-        err.failedValidation = true;
+	err.failedValidation = true;
 
-        throw err;
+	throw err;
       }
 
       if (_.isUndefined(schema.type)) {
-        if (schema.schema) {
-          schema = schema.schema;
-        } else if (version === '1.2') {
-          schema = _.find(operation.responseMessages, function (responseMessage, index) {
-            if (responseMessage.code === res.statusCode) {
-              vPath.push('responseMessages', index.toString());
+	if (schema.schema) {
+	  schema = schema.schema;
+	} else if (version === '1.2') {
+	  schema = _.find(operation.responseMessages, function (responseMessage, index) {
+	    if (responseMessage.code === res.statusCode) {
+	      vPath.push('responseMessages', index.toString());
 
-              return true;
-            }
-          });
+	      return true;
+	    }
+	  });
 
-          if (!_.isUndefined(schema)) {
-            schema = schema.responseModel;
-          }
-        } else {
-          schema = _.find(operation.responses, function (response, code) {
-            if (code === res.statusCode.toString()) {
-              vPath.push('responses', code);
+	  if (!_.isUndefined(schema)) {
+	    schema = schema.responseModel;
+	  }
+	} else {
+	  schema = _.find(operation.responses, function (response, code) {
+	    if (code === res.statusCode.toString()) {
+	      vPath.push('responses', code);
 
-              return true;
-            }
-          });
+	      return true;
+	    }
+	  });
 
-          if (_.isUndefined(schema) && operation.responses.default) {
-            schema = operation.responses.default;
+	  if (_.isUndefined(schema) && operation.responses.default) {
+	    schema = operation.responses.default;
 
-            vPath.push('responses', 'default');
-          }
-        }
+	    vPath.push('responses', 'default');
+	  }
+	}
       }
 
       validateValue(req, schema, vPath, val,
-                    function (err) {
-                      if (err) {
-                        throw err;
-                      }
+		    function (err) {
+		      if (err) {
+			throw err;
+		      }
 
-                      // 'res.end' requires a Buffer or String so if it's not one, create a String
-                      if (!(data instanceof Buffer) && !_.isString(data)) {
-                        data = JSON.stringify(data);
-                      }
+		      // 'res.end' requires a Buffer or String so if it's not one, create a String
+		      if (!(data instanceof Buffer) && !_.isString(data)) {
+			data = JSON.stringify(data);
+		      }
 
-                      res.end(data, encoding);
-                    });
+		      res.end(data, encoding);
+		    });
     } catch (err) {
       if (err.failedValidation) {
-        err.originalResponse = data;
-        err.message = 'Response validation failed: ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
+	err.originalResponse = data;
+	err.message = 'Response validation failed: ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
       }
 
       return next(err);
