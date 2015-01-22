@@ -251,5 +251,18 @@ describe('Swagger Router Middleware v1.2', function () {
 	  .end(helpers.expectContent('Cannot read property \'fake\' of undefined', done));
       });
     });
+
+    it('mock mode should support void responses (Issue 112)', function (done) {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        swaggerRouterOptions: {
+	  useStubs: true
+        }
+      }, function (app) {
+        request(app)
+          .delete('/api/pet/1')
+          .expect(200)
+	  .end(helpers.expectContent('', done));
+      });
+    });
   });
 });

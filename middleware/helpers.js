@@ -199,7 +199,7 @@ module.exports.getHandlerName = function getHandlerName (version, req) {
 };
 
 var getMockValue = function getMockValue (version, schema) {
-  var type = schema.type;
+  var type = _.isPlainObject(schema) ? schema.type : schema;
   var value;
 
   if (!type) {
@@ -334,15 +334,19 @@ var mockResponse = function mockResponse (version, req, res, next, handlerName) 
     apiDOrSO = req.swagger.swaggerObject;
 
     if (method === 'post' && operation.responses['201']) {
-      responseType = operation.responses['201'].schema;
+      responseType = operation.responses['201'];
+
+      res.statusCode = 201;
+    } else if (method === 'delete' && operation.responses['204']) {
+      responseType = operation.responses['204'];
+
+      res.statusCode = 204;
     } else if (operation.responses['200']) {
       responseType = operation.responses['200'];
     } else if (operation.responses['default']) {
       responseType = operation.responses['default'];
-    } else if (operation.schema) {
-      responseType = operation.schema.type || 'object';
     } else {
-      responseType = operation.type;
+      responseType = 'void';
     }
 
     break;
@@ -361,7 +365,9 @@ var mockResponse = function mockResponse (version, req, res, next, handlerName) 
 	}
       });
     } else {
-      return sendResponse(undefined, JSON.stringify(getMockValue(version, responseType.schema)));
+      return sendResponse(undefined, JSON.stringify(getMockValue(version, responseType.schema ?
+								            responseType.schema :
+								            responseType)));
     }
   } else {
     return sendResponse(undefined, getMockValue(version, responseType));

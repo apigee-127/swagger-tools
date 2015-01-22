@@ -250,7 +250,6 @@ describe('Swagger Router Middleware v2.0', function () {
 
   describe('issues', function () {
     it('should handle uncaught exceptions (Issue 123)', function (done) {
-
       helpers.createServer([petStoreJson], {
         swaggerRouterOptions: {
           controllers: {
@@ -269,6 +268,19 @@ describe('Swagger Router Middleware v2.0', function () {
           .get('/api/pets/1')
           .expect(500)
 	  .end(helpers.expectContent('Cannot read property \'fake\' of undefined', done));
+      });
+    });
+
+    it('mock mode should support void responses (Issue 112)', function (done) {
+      helpers.createServer([petStoreJson], {
+        swaggerRouterOptions: {
+	  useStubs: true
+        }
+      }, function (app) {
+        request(app)
+          .delete('/api/pets/1')
+          .expect(204)
+	  .end(helpers.expectContent('', done));
       });
     });
   });
