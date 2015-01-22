@@ -54,15 +54,15 @@ initializeSwagger(rlJson, [petJson, storeJson, userJson], function (swaggerMiddl
 the errors/warnings in that case.  The argument passed to the callback has the following properties, each corresponding
 to a middleware function documented below.  The order in the following list is the suggested `app.use` order:
 
-**swaggerMetadata:** This is the base middleware that will analyze a request route, match it to an API in your
+* **swaggerMetadata:** This is the base middleware that will analyze a request route, match it to an API in your
 Swagger document(s) and then annotate the request, using `req.swagger`, with the pertinent details.
-**swaggerSecurity:** This middleware allows you to wire up authentication/authorization handlers based on the
+* **swaggerSecurity:** This middleware allows you to wire up authentication/authorization handlers based on the
 definitions in your Swagger document(s).
-**swaggerValidator:** This middleware will validate your request/responses based on the operations in your Swagger
+* **swaggerValidator:** This middleware will validate your request/responses based on the operations in your Swagger
 document(s).
-**swaggerRouter:** This middleware allows you to wire up request handlers based on the operation definitions in your
+* **swaggerRouter:** This middleware allows you to wire up request handlers based on the operation definitions in your
 Swagger document(s).
-**swaggerUi:** This middleware will serve your Swagger document(s) for public consumption and will also serve a local
+* **swaggerUi:** This middleware will serve your Swagger document(s) for public consumption and will also serve a local
 [Swagger UI][swagger-ui] instance.
 
 ## Swagger Middleware Errors
