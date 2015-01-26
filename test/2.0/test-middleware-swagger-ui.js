@@ -30,7 +30,9 @@
 process.env.NODE_ENV = 'test';
 
 var _ = require('lodash');
+var assert = require('assert');
 var helpers = require('../helpers');
+var path = require('path');
 var request = require('supertest');
 
 var swaggerObject = _.cloneDeep(require('../../samples/2.0/petstore.json'));
@@ -79,6 +81,66 @@ describe('Swagger UI Middleware v2.0', function () {
         .expect(200)
         .expect('content-type', 'text/html; charset=UTF-8')
         .end(done);
+    });
+  });
+
+    describe('issues', function () {
+    describe('serve custom swagger-ui (Issue 111)', function () {
+      it('should throw error when path points to missing directory', function (done) {
+	try {
+	  helpers.createServer([swaggerObject], {
+	    swaggerUiOptions: {
+	      swaggerUiDir: '../browser'
+	    }
+	  }, function () {
+	    throw Error('Should not initialize with options.swaggerUiDir pointing to a missing path');
+	  });
+	} catch (err) {
+	  assert.ok(err.message.indexOf('options.swaggerUiDir path does not exist: ') === 0);
+
+	  done();
+	}
+      });
+
+      it('should throw error when path points to a file', function (done) {
+	try {
+	  helpers.createServer([swaggerObject], {
+	    swaggerUiOptions: {
+	      swaggerUiDir: path.join(__dirname, '..', 'browser', 'test-bower.html')
+	    }
+	  }, function () {
+	    throw Error('Should not initialize with options.swaggerUiDir pointing to a file');
+	  });
+	} catch (err) {
+	  assert.ok(err.message.indexOf('options.swaggerUiDir path is not a directory: ') === 0);
+
+	  done();
+	}
+      });
+
+      it('should serve the content at the specified path', function (done) {
+	// This is a convoluted example but since all we have to do is show that the path sent to serve-static is served
+	// as requested, that's all this test needs to do.
+	helpers.createServer([swaggerObject], {
+	  swaggerUiOptions: {
+	    swaggerUiDir: path.join(__dirname, '..', 'browser')
+	  }
+	}, function (app) {
+	  request(app)
+            .get('/docs/test-bower.html')
+            .expect(200)
+            .expect('content-type', 'text/html; charset=UTF-8')
+            .end(function (err, res) {
+	      if (err) {
+		throw err;
+	      }
+
+	      assert.ok(res.text.indexOf('<title>Mocha Test Runner (Swagger Tools Bower Build)</title>') > -1);
+
+	      done();
+	    });
+	});
+      });
     });
   });
 });

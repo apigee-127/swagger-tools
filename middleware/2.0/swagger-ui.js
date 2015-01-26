@@ -25,6 +25,7 @@
 'use strict';
 
 var _ = require('lodash');
+var fs = require('fs');
 var parseurl = require('parseurl');
 var path = require('path');
 var serveStatic = require('serve-static');
@@ -42,12 +43,16 @@ var staticOptions = {};
  * @param {object} [options] - The configuration options
  * @param {string=/api-docs} [options.apiDocs] - The relative path to serve your Swagger documents from
  * @param {string=/docs} [options.swaggerUi] - The relative path to serve Swagger UI from
+ * @param {string} [options.swaggerUiDir] - The filesystem path to your custom swagger-ui deployment to serve
  *
  * @returns the middleware function
  */
 exports = module.exports = function swaggerUIMiddleware (swaggerObject, options) {
-  var staticMiddleware = serveStatic(path.join(__dirname, '..', 'swagger-ui'), staticOptions);
+  var swaggerUiPath = options.swaggerUiDir ?
+	path.resolve(options.swaggerUiDir) :
+	path.join(__dirname, '..', 'swagger-ui');
   var apiDocs;
+  var staticMiddleware;
 
   // Validate arguments
   if (_.isUndefined(swaggerObject)) {
@@ -56,6 +61,16 @@ exports = module.exports = function swaggerUIMiddleware (swaggerObject, options)
     throw new TypeError('swaggerObject must be an object');
   }
 
+  if (options.swaggerUiDir) {
+    if (!fs.existsSync(swaggerUiPath)) {
+      throw new Error('options.swaggerUiDir path does not exist: ' + swaggerUiPath);
+    } else if (!fs.statSync(swaggerUiPath).isDirectory()) {
+      throw new Error('options.swaggerUiDir path is not a directory: ' + swaggerUiPath);
+    }
+  }
+
+  staticMiddleware = serveStatic(swaggerUiPath, staticOptions);
+  
   apiDocs = JSON.stringify(swaggerObject, null, 2);
 
   // Set the defaults

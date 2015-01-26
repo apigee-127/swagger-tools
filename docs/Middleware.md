@@ -401,6 +401,7 @@ The Swagger UI middleware is used to serve your Swagger document(s) via an API a
 * **options:** `object` The middleware options
 * **options.apiDocs:** `string=/api-docs` The path to serve the Swagger documents from
 * **options.swaggerUi:** `string=/docs` The path to serve Swagger UI from
+* **options.swaggerUiDir:** `string` The filesystem path to your custom swagger-ui deployment to serve
 
 **Returns**
 
