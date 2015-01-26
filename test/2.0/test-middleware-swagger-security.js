@@ -52,6 +52,15 @@ var SecurityDef = function (allow) {
     cb(allow ? null : new Error('disallowed'));
   };
 };
+var ApiKeySecurityDef = function() {
+  var self = this;
+  this.apiKey = undefined;
+  this.func = function(request, securityDefinition, key, cb) {
+    assert(key);
+    self.apiKey = key;
+    cb();
+  };
+};
 
 // Create security definitions
 petStoreJson.securityDefinitions.local = petStoreJson.securityDefinitions.local2 = {
@@ -63,12 +72,24 @@ petStoreJson.securityDefinitions.local = petStoreJson.securityDefinitions.local2
   authorizationUrl: 'http://localhost/authorize',
   tokenUrl: 'http://localhost/token'
 };
+petStoreJson.securityDefinitions.apiKeyQuery = {
+  type: 'apiKey',
+  name: 'apiKey',
+  in: 'query'
+};
+petStoreJson.securityDefinitions.apiKeyHeader = {
+  type: 'apiKey',
+  name: 'X-API-KEY',
+  in: 'header'
+};
 
 // Create paths
 petStoreJson.paths['/secured'] = _.cloneDeep(petStoreJson.paths['/pets']);
 petStoreJson.paths['/securedAnd'] = _.cloneDeep(petStoreJson.paths['/pets']);
 petStoreJson.paths['/securedOr'] = _.cloneDeep(petStoreJson.paths['/pets']);
 petStoreJson.paths['/unsecured'] = _.cloneDeep(petStoreJson.paths['/pets']);
+petStoreJson.paths['/securedApiKeyQuery'] = _.cloneDeep(petStoreJson.paths['/pets']);
+petStoreJson.paths['/securedApiKeyHeader'] = _.cloneDeep(petStoreJson.paths['/pets']);
 
 // Add security to paths
 petStoreJson.paths['/secured'].get.security = [
@@ -88,6 +109,16 @@ petStoreJson.paths['/securedOr'].get.security = [
     local: ['read']
   }, {
     local2: ['read']
+  }
+];
+petStoreJson.paths['/securedApiKeyQuery'].get.security = [
+  {
+    apiKeyQuery: []
+  }
+];
+petStoreJson.paths['/securedApiKeyHeader'].get.security = [
+  {
+    apiKeyHeader: []
   }
 ];
 
@@ -238,6 +269,60 @@ describe('Swagger Security Middleware v2.0', function () {
           .end(done);
       });
     });
+  });
+
+  describe('apiKey security should call handler', function() {
+
+    it('with apiKey from query', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+      var security = new ApiKeySecurityDef();
+      var API_KEY = 'abc123';
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerSecurityOptions: {
+          apiKeyQuery: security.func
+        }
+      },
+        function(app) {
+          request(app)
+            .get('/api/securedApiKeyQuery')
+            .query({ apiKey: API_KEY })
+            .expect(200)
+            .end(function(err) {
+              if (err) { return done(err); }
+
+              assert(security.apiKey === API_KEY);
+
+              done();
+            });
+        });
+    });
+
+    it('with apiKey from header', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+      var security = new ApiKeySecurityDef();
+      var API_KEY = 'abc123';
+
+      helpers.createServer([cPetStoreJson], {
+          swaggerSecurityOptions: {
+            apiKeyHeader: security.func
+          }
+        },
+        function(app) {
+          request(app)
+            .get('/api/securedApiKeyHeader')
+            .set({ 'X-API-KEY': API_KEY })
+            .expect(200)
+            .end(function(err) {
+              if (err) { return done(err); }
+
+              assert(security.apiKey === API_KEY);
+
+              done();
+            });
+        });
+    });
+
   });
 
   describe('AND requirements', function() {
