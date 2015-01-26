@@ -381,7 +381,7 @@ definitions and references in your Swagger document(s).
 * **options:** `object` The middleware options
 * **options[name]:** `object` For the authorization/security name, the value is a function that will be used to
 perform the authentication/authorization.  The function signature for the callback is:
-`function (req, authOrSecDef, scopes, callback)`.
+`function (req, authOrSecDef, scopesOrApiKey, callback)`.
 
 **Returns**
 
