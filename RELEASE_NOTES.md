@@ -1,6 +1,6 @@
 ## Release Notes
 
-### v0.8.0 (Unreleased)
+### v0.8.0 (2015-01-27)
 
 * Better handling of references to invalid objects _(Issue #120, #121)_
 * Fix bug validating models with a `defautl` attribute _(Issue #124)_
