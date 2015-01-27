@@ -271,34 +271,8 @@ describe('Swagger Security Middleware v2.0', function () {
     });
   });
 
-  describe('apiKey security should call handler', function() {
-
-    it('with apiKey from query', function (done) {
-      var cPetStoreJson = _.cloneDeep(petStoreJson);
-      var security = new ApiKeySecurityDef();
-      var API_KEY = 'abc123';
-
-      helpers.createServer([cPetStoreJson], {
-        swaggerSecurityOptions: {
-          apiKeyQuery: security.func
-        }
-      },
-        function(app) {
-          request(app)
-            .get('/api/securedApiKeyQuery')
-            .query({ apiKey: API_KEY })
-            .expect(200)
-            .end(function(err) {
-              if (err) { return done(err); }
-
-              assert(security.apiKey === API_KEY);
-
-              done();
-            });
-        });
-    });
-
-    it('with apiKey from header', function (done) {
+  describe('API Key support', function() {
+    it('in header', function (done) {
       var cPetStoreJson = _.cloneDeep(petStoreJson);
       var security = new ApiKeySecurityDef();
       var API_KEY = 'abc123';
@@ -312,6 +286,31 @@ describe('Swagger Security Middleware v2.0', function () {
           request(app)
             .get('/api/securedApiKeyHeader')
             .set({ 'X-API-KEY': API_KEY })
+            .expect(200)
+            .end(function(err) {
+              if (err) { return done(err); }
+
+              assert(security.apiKey === API_KEY);
+
+              done();
+            });
+        });
+    });
+
+    it('in query', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+      var security = new ApiKeySecurityDef();
+      var API_KEY = 'abc123';
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerSecurityOptions: {
+          apiKeyQuery: security.func
+        }
+      },
+        function(app) {
+          request(app)
+            .get('/api/securedApiKeyQuery')
+            .query({ apiKey: API_KEY })
             .expect(200)
             .end(function(err) {
               if (err) { return done(err); }

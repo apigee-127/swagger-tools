@@ -9,6 +9,7 @@
 * swaggerRouter middleware now handles void responses for mock mode _(Issue #112)_
 * swaggerRouter middleware now wraps controller calls in try/catch block and sends errors downstream via `next` _(Issue #123)_
 * swaggerSecurity middleware now sends authentication/authorization errors downstream via `next` _(Issue #117)_
+* swaggerSecurity middleware now handles API Key authentication/authorization _(Issue #128)_
 * swaggerUi middleware now allows you to serve your own custom swagger-ui resources _(Issue #111)_
 
 ### v0.7.4

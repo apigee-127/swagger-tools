@@ -36,9 +36,12 @@ var validators = require('../lib/validators');
 
 // Upstream middlewares
 var jsonBodyParser = bp.json();
+var parseQueryString = function parseQueryString(req) {
+  return req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
+};
 var queryParser = function (req, res, next) {
   if (!req.query) {
-    req.query = req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
+    req.query = parseQueryString(req);
   }
 
   return next();
@@ -306,6 +309,30 @@ var getMockValue = function getMockValue (version, schema) {
   }
 
   return value;
+};
+
+module.exports.getScopeOrAPIKey = function getScopeOrAPIKey (swaggerVersion, req, secDef, secName, secReq) {
+  var apiKeyPropName = swaggerVersion === '1.2' ? secDef.keyname : secDef.name;
+  var apiKeyLocation = swaggerVersion === '1.2' ? secDef.passAs : secDef.in;
+  var scopeOrKey;
+
+  if (secDef.type === 'oauth2') {
+    if (swaggerVersion === '1.2') {
+      scopeOrKey = _.map(secReq[secName], function (scope) {
+	return scope.scope;
+      });
+    } else {
+      scopeOrKey = secReq[secName];
+    }
+  } else if (secDef.type === 'apiKey') {
+    if (apiKeyLocation === 'query') {
+      scopeOrKey = (req.query ? req.query : parseQueryString(req))[apiKeyPropName];
+    } else if (apiKeyLocation === 'header') {
+      scopeOrKey = req.headers[apiKeyPropName.toLowerCase()];
+    }
+  }
+
+  return scopeOrKey;
 };
 
 var mockResponse = function mockResponse (version, req, res, next, handlerName) {

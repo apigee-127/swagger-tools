@@ -80,7 +80,7 @@ exports = module.exports = function swaggerSecurityMiddleware (options) {
 
         if (!handler) { return cb(new Error('unknown security handler: ' + name)); }
 
-        handler(req, secDef, secReq[name], cb);
+        handler(req, secDef, helpers.getScopeOrAPIKey('1.2', req, secDef, name, secReq), cb);
       }, function (err) {
         // swap normal err and result to short-circuit the logical OR
         if (err) { return cb(undefined, err); }

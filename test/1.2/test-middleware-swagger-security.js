@@ -55,6 +55,15 @@ var SecurityDef = function (allow) {
     cb(allow ? null : new Error('disallowed'));
   };
 };
+var ApiKeySecurityDef = function() {
+  var self = this;
+  this.apiKey = undefined;
+  this.func = function(request, securityDefinition, key, cb) {
+    assert(key);
+    self.apiKey = key;
+    cb();
+  };
+};
 
 // Create security definitions
 rlJson.authorizations.local = rlJson.authorizations.local2 = {
@@ -93,8 +102,20 @@ rlJson.authorizations.local = rlJson.authorizations.local2 = {
   ],
   type: 'oauth2'
 };
+rlJson.authorizations.apiKeyHeader = {
+  type: 'apiKey',
+  passAs: 'header',
+  keyname: 'X-API-KEY'
+};
+rlJson.authorizations.apiKeyQuery = {
+  type: 'apiKey',
+  passAs: 'query',
+  keyname: 'apiKey'
+};
 
 // Create paths
+petJson.apis.push(_.cloneDeep(petJson.apis[4]));
+petJson.apis.push(_.cloneDeep(petJson.apis[4]));
 petJson.apis.push(_.cloneDeep(petJson.apis[4]));
 petJson.apis.push(_.cloneDeep(petJson.apis[4]));
 petJson.apis.push(_.cloneDeep(petJson.apis[4]));
@@ -104,6 +125,8 @@ petJson.apis[5].path = '/secured';
 petJson.apis[6].path = '/securedAnd';
 petJson.apis[7].path = '/securedOr';
 petJson.apis[8].path = '/unsecured';
+petJson.apis[9].path = '/securedApiKeyHeader';
+petJson.apis[10].path = '/securedApiKeyQuery';
 
 // Add security to paths
 petJson.apis[5].operations[0].authorizations = {
@@ -142,6 +165,12 @@ petJson.apis[7].operations[0].authorizations = {
     }
   ]
 };
+petJson.apis[9].operations[0].authorizations = {
+  apiKeyHeader: []
+};
+petJson.apis[10].operations[0].authorizations = {
+  apiKeyQuery: []
+};
 
 
 delete petJson.authorizations;
@@ -151,6 +180,8 @@ petJson.apis[5].operations[0].parameters[0].required = false;
 petJson.apis[6].operations[0].parameters[0].required = false;
 petJson.apis[7].operations[0].parameters[0].required = false;
 petJson.apis[8].operations[0].parameters[0].required = false;
+petJson.apis[9].operations[0].parameters[0].required = false;
+petJson.apis[10].operations[0].parameters[0].required = false;
 
 describe('Swagger Security Middleware v1.2', function () {
   it('should call middleware when secured', function(done) {
@@ -308,6 +339,56 @@ describe('Swagger Security Middleware v1.2', function () {
   //     });
   //   });
   // });
+
+  describe('API Key support', function() {
+    it('in header', function (done) {
+      var security = new ApiKeySecurityDef();
+      var API_KEY = 'abc123';
+
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+          swaggerSecurityOptions: {
+            apiKeyHeader: security.func
+          }
+        },
+        function(app) {
+          request(app)
+            .get('/api/securedApiKeyHeader')
+            .set({ 'X-API-KEY': API_KEY })
+            .expect(200)
+            .end(function(err) {
+              if (err) { return done(err); }
+
+              assert(security.apiKey === API_KEY);
+
+              done();
+            });
+        });
+	});
+
+    it('in query', function (done) {
+      var security = new ApiKeySecurityDef();
+      var API_KEY = 'abc123';
+
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        swaggerSecurityOptions: {
+          apiKeyQuery: security.func
+        }
+      },
+        function(app) {
+          request(app)
+            .get('/api/securedApiKeyQuery')
+            .query({ apiKey: API_KEY })
+            .expect(200)
+            .end(function(err) {
+              if (err) { return done(err); }
+
+              assert(security.apiKey === API_KEY);
+
+              done();
+            });
+        });
+    });
+  });
 
   describe('AND requirements', function() {
     it('should authorize if both are true', function (done) {

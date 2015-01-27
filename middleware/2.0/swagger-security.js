@@ -69,23 +69,7 @@ exports = module.exports = function swaggerSecurityMiddleware (options) {
 
         if (!handler) { return cb(new Error('unknown security handler: ' + name)); }
 
-        var scopeOrKey;
-
-        if (secDef.type === 'oauth2') {
-          scopeOrKey = secReq[name];
-
-        } else if (secDef.type === 'apiKey') {
-
-          if (secDef.in === 'query') {
-            var query = req.query || require('url').parse(req.url, true).query;
-            scopeOrKey = query[secDef.name];
-
-          } else if (secDef.in === 'header') {
-            scopeOrKey = req.headers[secDef.name.toLowerCase()];
-          }
-        }
-
-        handler(req, secDef, scopeOrKey, cb);
+        handler(req, secDef, helpers.getScopeOrAPIKey('2.0', req, secDef, name, secReq), cb);
       }, function (err) {
         // swap normal err and result to short-circuit the logical OR
         if (err) { return cb(undefined, err); }
