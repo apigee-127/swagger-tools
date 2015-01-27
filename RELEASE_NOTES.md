@@ -3,7 +3,7 @@
 ### v0.8.0 (2015-01-27)
 
 * Better handling of references to invalid objects _(Issue #120, #121)_
-* Fix bug validating models with a `defautl` attribute _(Issue #124)_
+* Fix bug validating models with a `default` attribute _(Issue #124)_
 * Fix bug validating models without properties _(Issue #122)_
 * swaggerMetadata middleware now converts paramters to their appropriate type _(Issue #119)_
 * swaggerRouter middleware now handles void responses for mock mode _(Issue #112)_
