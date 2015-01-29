@@ -30,10 +30,12 @@ var _ = require('lodash');
 var async = require('async');
 var fs = require('fs');
 var helpers = require('../lib/helpers');
+var knownCommands = ['convert', 'help', 'info', 'validate'];
 var paddingAmount = 18;
 var path = require('path');
 var pkg = require('../package.json');
 var program = require('commander');
+var realArgs = process.argv.slice(2);
 var request = require('superagent');
 var S = require('string');
 var YAML = require('yamljs');
@@ -112,8 +114,15 @@ var getDocuments = function getDocuments (pathsAndOrUrls, callback) {
   });
 };
 
-program
-  .version(pkg.version);
+var handleUnknownCommand = function handleUnknownCommand (command) {
+  console.error(program._name + ' does not support the ' + command + ' command.');
+
+  program.outputHelp();
+};
+
+// Set name and version
+program._name = 'swagger-tools';
+program.version(pkg.version);
 
 program
   .command('convert <resourceListing> [apiDeclarations...]')
@@ -160,7 +169,7 @@ program
     }
 
     if (_.isUndefined(theCommand)) {
-      return exitWithError(program._name + ' does not support the ' + command + ' command.');
+      return handleUnknownCommand(command);
     }
 
     theCommand.help();
@@ -250,4 +259,10 @@ program
     });
   });
 
-program.parse(process.argv);
+if (!realArgs.length) {
+  program.outputHelp();
+} else if (knownCommands.indexOf(realArgs[0]) === -1) {
+  handleUnknownCommand(realArgs[0]);
+} else {
+  program.parse(process.argv);
+}
