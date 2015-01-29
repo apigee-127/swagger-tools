@@ -1,5 +1,11 @@
 ## Release Notes
 
+### v0.8.1 (2015-01-29)
+
+* swagger-tools CLI displays help output when an invalid command or no command is passed to swagger-tools CLI _(Issue #130)_
+* swagger-tools CLI handles invalid Swagger documents caused by an invalid/missing Swagger version _(Issue #129)_
+* Bumped all dependencies and development dependencies due to some upstream updates causing issues
+
 ### v0.8.0 (2015-01-27)
 
 * Better handling of references to invalid objects _(Issue #120, #121)_
