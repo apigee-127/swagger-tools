@@ -129,7 +129,7 @@ describe('Specification v1.2' + header, function () {
           assert.deepEqual(result.apiDeclarations[0].errors, [
             {
               code: 'OBJECT_ADDITIONAL_PROPERTIES',
-              message: 'Additional properties not allowed: extra',
+              message: 'Additional properties not allowed: ["extra"]',
               path: ['apis', '0', 'operations', '0', 'authorizations', 'oauth2', '0']
             }
           ]);
@@ -153,7 +153,7 @@ describe('Specification v1.2' + header, function () {
           assert.deepEqual(result.apiDeclarations[0].errors, [
             {
               code: 'INVALID_TYPE',
-              message: 'Expected type string but found type boolean',
+              message: 'Expected type "string" but found type "boolean"',
               path: ['models', 'Order', 'description']
             }
           ]);
@@ -177,7 +177,7 @@ describe('Specification v1.2' + header, function () {
           assert.deepEqual(result.errors, [
             {
               code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
-              message: 'Missing required property: apis',
+              message: 'Missing required property: "apis"',
               path: []
             }
           ]);
@@ -227,7 +227,7 @@ describe('Specification v1.2' + header, function () {
                 },
                 {
                   code: 'ENUM_MISMATCH',
-                  message: 'No enum match for: fake',
+                  message: 'No enum match for: "fake"',
                   path: [
                     'apis',
                     '1',
@@ -1344,7 +1344,7 @@ describe('Specification v1.2' + header, function () {
         assert.deepEqual(result.errors, [
           {
             code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
-            message: 'Missing required property: name',
+            message: 'Missing required property: "name"',
             path: []
           }
         ]);
@@ -1410,7 +1410,7 @@ describe('Specification v1.2' + header, function () {
         assert.deepEqual(result.apiDeclarations[0].errors, [
           {
             code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
-            message: 'Missing required property: items',
+            message: 'Missing required property: "items"',
             path: ['apis', '0', 'operations', '2']
           }
         ]);
@@ -1437,7 +1437,7 @@ describe('Specification v1.2' + header, function () {
         assert.deepEqual(result.apiDeclarations[0].errors, [
           {
             code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
-            message: 'Missing required property: items',
+            message: 'Missing required property: "items"',
             path: ['apis', '0', 'operations', '0', 'parameters', '1']
           }
         ]);

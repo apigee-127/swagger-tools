@@ -139,12 +139,12 @@ gulp.task('test-node', function () {
       '!./test/**/test-specs-browser.js'
     ])
     .pipe(istanbul())
+    .pipe(istanbul.hookRequire()) // Force `require` to return covered files
     .on('finish', function () {
       gulp.src([
-          'test/**/test-*.js',
-          '!./test/**/test-specs-browser.js'
-        ])
-        .pipe(mocha({reporter: 'spec'}));
+        'test/**/test-*.js',
+        '!./test/**/test-specs-browser.js'
+      ]).pipe(mocha({reporter: 'spec'}));
     });
 });
 
@@ -224,4 +224,4 @@ gulp.task('test', ['test-node', 'test-browser'], function () {
   gulp.src([])
     .pipe(istanbul.writeReports());
 });
-gulp.task('default', ['lint', 'test', 'test-browser']);
+gulp.task('default', ['lint', 'test']);

@@ -118,7 +118,7 @@ describe('Specification v2.0' + header, function () {
           assert.deepEqual(result.errors, [
             {
               code: 'OBJECT_ADDITIONAL_PROPERTIES',
-              message: 'Additional properties not allowed: extra',
+              message: 'Additional properties not allowed: ["extra"]',
 
               path: ['paths', '/pets', 'get']
             }
@@ -167,7 +167,7 @@ describe('Specification v2.0' + header, function () {
               code: 'INVALID_TYPE',
               // Visible because the schema provides it
               description: 'The identifying name of the contact person/organization.',
-              message: 'Expected type string but found type boolean',
+              message: 'Expected type "string" but found type "boolean"',
               path: ['info', 'contact', 'name']
             }
           ]);
@@ -190,7 +190,7 @@ describe('Specification v2.0' + header, function () {
           assert.deepEqual(result.errors, [
             {
               code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
-              message: 'Missing required property: paths',
+              message: 'Missing required property: "paths"',
               path: []
             }
           ]);
@@ -213,7 +213,7 @@ describe('Specification v2.0' + header, function () {
           assert.deepEqual(result.errors, [
             {
               code: 'ENUM_MISMATCH',
-              message: 'No enum match for: fake',
+              message: 'No enum match for: "fake"',
               path: ['schemes', '1']
             }
           ]);
@@ -2156,7 +2156,7 @@ describe('Specification v2.0' + header, function () {
         assert.deepEqual(result.errors, [
           {
             code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
-            message: 'Missing required property: name',
+            message: 'Missing required property: "name"',
             path: []
           }
         ]);
@@ -2257,7 +2257,7 @@ describe('Specification v2.0' + header, function () {
         assert.deepEqual(result.errors, [
           {
             code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
-            message: 'Missing required property: items',
+            message: 'Missing required property: "items"',
             path: ['paths', '/pets', 'get', 'responses', '200', 'schema']
           }
         ]);
