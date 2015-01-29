@@ -10,7 +10,8 @@ see what issues we are aware of and what features/enhancements we are working on
 * Developer dependencies: [![Dev Dependencies](https://david-dm.org/apigee-127/swagger-tools/dev-status.svg)](https://david-dm.org/apigee-127/swagger-tools#info=devDependencies&view=table)
 * Downloads: [![NPM Downloads Per Month](http://img.shields.io/npm/dm/swagger-tools.svg?style=flat)](https://www.npmjs.org/package/swagger-tools)
 * License: [![License](http://img.shields.io/npm/l/swagger-tools.svg?style=flat)](https://github.com/apigee-127/swagger-tools/blob/master/LICENSE)
-* Version: [![NPM Version](http://img.shields.io/npm/v/swagger-tools.svg?style=flat)](https://www.npmjs.org/package/swagger-tools)
+* Bower Version [![NPM Version](https://img.shields.io/bower/v/swagger-tools.svg?style=flat)](http://bower.io/search/?q=swagger-tools)
+* NPM Version: [![NPM Version](http://img.shields.io/npm/v/swagger-tools.svg?style=flat)](https://www.npmjs.org/package/swagger-tools)
 
 ## Supported Swagger Versions
 
