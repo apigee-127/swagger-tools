@@ -205,7 +205,23 @@ program
         version = resourceListing.swaggerVersion;
       }
 
+      // Convert the version to a number (Required for helpers.getSpec)
+      if (!_.isString(version)) {
+	version = version.toString();
+
+	// Handle rounding issues (Only required for when Swagger version ends in '.0')
+	if (version.indexOf('.') === -1) {
+	  version += '.0';
+	}
+      }
+
       spec = helpers.getSpec(version);
+
+      if (_.isUndefined(spec)) {
+	console.error('Unsupported Swagger version: %s', version);
+
+	process.exit(1);
+      }
 
       if (_.isUndefined(resourceListing)) {
         soArgs = [swaggerObject];
