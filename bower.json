@@ -30,16 +30,16 @@
     "test"
   ],
   "dependencies": {
-    "async": "~0.9.2",
-    "json-refs": "~0.1.5",
-    "lodash": "~3.0.0",
-    "spark-md5": "~0.0.5",
-    "swagger-converter": "~0.1.0",
-    "traverse": "~0.6.6",
-    "z-schema": "~3.3.2"
+    "async": "^0.9.2",
+    "json-refs": "^0.1.5",
+    "lodash": "^3.0.0",
+    "spark-md5": "^0.0.5",
+    "swagger-converter": "^0.1.0",
+    "traverse": "^0.6.6",
+    "z-schema": "^3.3.2"
   },
   "devDependencies": {
-    "mocha": "~2.1.0",
-    "should": "~4.6.2"
+    "mocha": "^2.1.0",
+    "should": "^4.6.2"
   }
 }
