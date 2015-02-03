@@ -129,7 +129,7 @@ describe('Specification v1.2' + header, function () {
           assert.deepEqual(result.apiDeclarations[0].errors, [
             {
               code: 'OBJECT_ADDITIONAL_PROPERTIES',
-              message: 'Additional properties not allowed: ["extra"]',
+              message: 'Additional properties not allowed: extra',
               path: ['apis', '0', 'operations', '0', 'authorizations', 'oauth2', '0']
             }
           ]);
@@ -153,7 +153,7 @@ describe('Specification v1.2' + header, function () {
           assert.deepEqual(result.apiDeclarations[0].errors, [
             {
               code: 'INVALID_TYPE',
-              message: 'Expected type "string" but found type "boolean"',
+              message: 'Expected type string but found type boolean',
               path: ['models', 'Order', 'description']
             }
           ]);
@@ -177,7 +177,7 @@ describe('Specification v1.2' + header, function () {
           assert.deepEqual(result.errors, [
             {
               code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
-              message: 'Missing required property: "apis"',
+              message: 'Missing required property: apis',
               path: []
             }
           ]);
@@ -227,7 +227,7 @@ describe('Specification v1.2' + header, function () {
                 },
                 {
                   code: 'ENUM_MISMATCH',
-                  message: 'No enum match for: "fake"',
+                  message: 'No enum match for: fake',
                   path: [
                     'apis',
                     '1',
@@ -1344,7 +1344,7 @@ describe('Specification v1.2' + header, function () {
         assert.deepEqual(result.errors, [
           {
             code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
-            message: 'Missing required property: "name"',
+            message: 'Missing required property: name',
             path: []
           }
         ]);
@@ -1390,125 +1390,6 @@ describe('Specification v1.2' + header, function () {
         } catch (err) {
           assert.equal(message, err.message);
         }
-      });
-    });
-  });
-
-  describe('issues', function () {
-    // This should be removed when the upstream bug in the Swagger schema is fixed
-    //   https://github.com/swagger-api/swagger-spec/issues/174
-    it('missing items property for operation array type (Issue 61)', function (done) {
-      var cPetJson = _.cloneDeep(petJson);
-
-      delete cPetJson.apis[0].operations[2].items;
-
-      spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
-        if (err) {
-          throw err;
-        }
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
-            message: 'Missing required property: "items"',
-            path: ['apis', '0', 'operations', '2']
-          }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
-
-        done();
-      });
-    });
-
-    it('missing items property for parameter array type (Issue 61)', function (done) {
-      var cPetJson = _.cloneDeep(petJson);
-
-      cPetJson.apis[0].operations[0].parameters.push({
-        paramType: 'query',
-        type: 'array',
-        name: 'fake'
-      });
-
-      spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
-        if (err) {
-          throw err;
-        }
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
-            message: 'Missing required property: "items"',
-            path: ['apis', '0', 'operations', '0', 'parameters', '1']
-          }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
-
-        done();
-      });
-    });
-
-    it('model id mismatch API declaration (Issue 71)', function (done) {
-      var cPetJson = _.cloneDeep(petJson);
-
-      cPetJson.models.Category.id = 'NotCategory';
-
-      spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
-        if (err) {
-          throw err;
-        }
-
-        assert.deepEqual(result.apiDeclarations[0].errors, [
-          {
-            code: 'MODEL_ID_MISMATCH',
-            message: 'Model id does not match id in models object: ' + cPetJson.models.Category.id,
-            path: ['models', 'Category', 'id']
-          }
-        ]);
-        assert.equal(result.apiDeclarations[0].warnings.length, 0);
-
-        done();
-      });
-    });
-
-    it('should handle path parameters that are not path segments (Issue 72)', function (done) {
-      var cPetJson = _.cloneDeep(petJson);
-
-      cPetJson.apis.push({
-        operations: [
-          {
-            authorizations: {},
-            method: 'GET',
-            nickname: 'exportData',
-            notes: 'Allow user to export data in supported format',
-            parameters: [
-              {
-                description: 'Collection name',
-                name: 'collection',
-                paramType: 'path',
-                type: 'string'
-              },
-              {
-                description: 'The export format',
-                name: 'format',
-                paramType: 'path',
-                type: 'string'
-              }
-            ],
-            summary: 'Export data in requested format',
-            type: 'string'
-          }
-        ],
-        path: '/export/{collection}.{format}'
-      });
-
-      spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
-        if (err) {
-          throw err;
-        }
-
-        assert.ok(_.isUndefined(result));
-
-        done();
       });
     });
   });
@@ -1610,6 +1491,125 @@ describe('Specification v1.2' + header, function () {
       spec.convert(rlJson, [cPetJson, storeJson, userJson], true, function (err, converted) {
         assert.ok(_.isUndefined(err));
         assert.ok(_.isPlainObject(converted));
+
+        done();
+      });
+    });
+  });
+
+  describe('issues', function () {
+    // This should be removed when the upstream bug in the Swagger schema is fixed
+    //   https://github.com/swagger-api/swagger-spec/issues/174
+    it('missing items property for operation array type (Issue 61)', function (done) {
+      var cPetJson = _.cloneDeep(petJson);
+
+      delete cPetJson.apis[0].operations[2].items;
+
+      spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.deepEqual(result.apiDeclarations[0].errors, [
+          {
+            code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
+            message: 'Missing required property: items',
+            path: ['apis', '0', 'operations', '2']
+          }
+        ]);
+        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+        done();
+      });
+    });
+
+    it('missing items property for parameter array type (Issue 61)', function (done) {
+      var cPetJson = _.cloneDeep(petJson);
+
+      cPetJson.apis[0].operations[0].parameters.push({
+        paramType: 'query',
+        type: 'array',
+        name: 'fake'
+      });
+
+      spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.deepEqual(result.apiDeclarations[0].errors, [
+          {
+            code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
+            message: 'Missing required property: items',
+            path: ['apis', '0', 'operations', '0', 'parameters', '1']
+          }
+        ]);
+        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+        done();
+      });
+    });
+
+    it('model id mismatch API declaration (Issue 71)', function (done) {
+      var cPetJson = _.cloneDeep(petJson);
+
+      cPetJson.models.Category.id = 'NotCategory';
+
+      spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.deepEqual(result.apiDeclarations[0].errors, [
+          {
+            code: 'MODEL_ID_MISMATCH',
+            message: 'Model id does not match id in models object: ' + cPetJson.models.Category.id,
+            path: ['models', 'Category', 'id']
+          }
+        ]);
+        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+        done();
+      });
+    });
+
+    it('should handle path parameters that are not path segments (Issue 72)', function (done) {
+      var cPetJson = _.cloneDeep(petJson);
+
+      cPetJson.apis.push({
+        operations: [
+          {
+            authorizations: {},
+            method: 'GET',
+            nickname: 'exportData',
+            notes: 'Allow user to export data in supported format',
+            parameters: [
+              {
+                description: 'Collection name',
+                name: 'collection',
+                paramType: 'path',
+                type: 'string'
+              },
+              {
+                description: 'The export format',
+                name: 'format',
+                paramType: 'path',
+                type: 'string'
+              }
+            ],
+            summary: 'Export data in requested format',
+            type: 'string'
+          }
+        ],
+        path: '/export/{collection}.{format}'
+      });
+
+      spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.ok(_.isUndefined(result));
 
         done();
       });
