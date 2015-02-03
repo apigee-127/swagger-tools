@@ -296,6 +296,7 @@ Each error object itself has the following properties:
 * **code:** This is the error/warning code
 * **message:** This is the human readable message describing the error/warning
 * **path:** This is an array containing the _path_ to the Swagger document property that failed validation
+* **description:** The description of the JSON Schema entry _(Optional)_
 
 The Error object can also have an `inner` property with a list of nested errors where applicable.
 
