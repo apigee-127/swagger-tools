@@ -130,7 +130,7 @@ exports = module.exports = function swaggerUIMiddleware (rlOrSO, apiDeclarations
     var isSwaggerUiPath = path === options.swaggerUi || path.indexOf(options.swaggerUi + '/') === 0;
 
     debug('%s %s', req.method, req.url);
-    debug('  Will process: %s', isApiDocsPath || isSwaggerUiPath ? 'no' : 'yes');
+    debug('  Will process: %s', isApiDocsPath || isSwaggerUiPath ? 'yes' : 'no');
 
     if (isApiDocsPath) {
       debug('  Serving API Docs');
