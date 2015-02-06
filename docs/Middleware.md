@@ -65,6 +65,24 @@ Swagger document(s).
 * **swaggerUi:** This middleware will serve your Swagger document(s) for public consumption and will also serve a local
 [Swagger UI][swagger-ui] instance.
 
+## Swagger Middleware Debuggin
+
+All Swagger Middleware uses the [debug](debug) module to allow you to have a better idea of what is going on during the
+middleware initialization and processing lifecycle.  To enable debugging globally, just set the `DEBUG` environment
+variable to be `swagger-tools:middleware:*`.  If you want to only see debugging output for a specific middleware, you
+can do that too.  To do so, you sould set `DEBUG` to a value like this:
+`swagger-tools:middleware:{middlware-short-name}` where the `middleware-short-name` is one of the following: `metadata`,
+`router`, `security`, `ui` or `validator`.  So if I wanted to see only swagger-validator debugging information, I would
+set `DEBUG` to `swagger-tools:middleware:validator`.  Here is an example of starting a Node.js server with debugging
+enabled for all Swagger middlewares:
+
+```
+DEBUG=swagger-tools:middleware:* node .
+```
+
+To see mode documentation on how to further talior the debugging to your needs, please view the [debug](debug) module
+documentation.
+
 ## Swagger Middleware Errors
 
 All Swagger Middleware errors are sent downstream per Connect middleware standards.  This means that no Swagger
@@ -528,6 +546,7 @@ swagger.initializeMiddleware(swaggerObject, function (middleware) {
 
 [body-parser]: https://github.com/expressjs/body-parser
 [connect]: https://github.com/senchalabs/connect
+[debug]: https://github.com/visionmedia/debug
 [issue-30]: https://github.com/apigee-127/swagger-tools/issues/30
 [qs]: https://github.com/hapijs/qs
 [swagger-ui]: https://github.com/wordnik/swagger-ui
