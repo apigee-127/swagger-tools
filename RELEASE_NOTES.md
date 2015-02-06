@@ -1,5 +1,10 @@
 ## Release Notes
 
+### TBD
+
+* Each middleware provided now is one implementation instead of one implementation per Swagger version _(This has zero consumer impact unless you were initializng Swagger middleware directly)_
+* Debugging support _(Issue #8)_
+
 ### v0.8.1 (2015-01-29)
 
 * swagger-tools CLI displays help output when an invalid command or no command is passed to swagger-tools CLI _(Issue #130)_
