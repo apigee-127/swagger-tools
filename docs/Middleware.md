@@ -78,6 +78,42 @@ enabled for all Swagger middlewares:
 
 ```
 DEBUG=swagger-tools:middleware:* node .
+  swagger-tools:middleware Initializing middleware +0ms
+  swagger-tools:middleware   Identified Swagger version: 2.0 +1ms
+  swagger-tools:middleware   Validation: succeeded +19ms
+  swagger-tools:middleware:metadata Initializing swagger-metadata middleware +23ms
+  swagger-tools:middleware:metadata   Identified Swagger version: 2.0 +1ms
+  swagger-tools:middleware:metadata   Found Path: /weather +1ms
+  swagger-tools:middleware:validator Initializing swagger-validator middleware +1ms
+  swagger-tools:middleware:validator   Response validation: disabled +0ms
+  swagger-tools:middleware:router Initializing swagger-metadata middleware +0ms
+  swagger-tools:middleware:router   Mock mode: disabled +0ms
+  swagger-tools:middleware:router   Controllers: +0ms
+  swagger-tools:middleware:router     /Users/notyou/projects/weather/controllers/Weather.js: +113ms
+  swagger-tools:middleware:router       Weather_getWeather +0ms
+  swagger-tools:middleware:ui Initializing swagger-ui middleware +17ms
+  swagger-tools:middleware:ui   Using swagger-ui from: internal +1ms
+  swagger-tools:middleware:ui   API Docs path: /api-docs +0ms
+  swagger-tools:middleware:ui   swagger-ui path: /docs +0ms
+Your server is listening on port 3000 (http://localhost:3000)
+  swagger-tools:middleware:metadata GET /api/weather?location=80538 +38s
+  swagger-tools:middleware:metadata   Is a Swagger path: true +0ms
+  swagger-tools:middleware:metadata   Is a Swagger operation: true +0ms
+  swagger-tools:middleware:metadata   Processing Parameters +0ms
+  swagger-tools:middleware:metadata     location +2ms
+  swagger-tools:middleware:metadata       Type: string +0ms
+  swagger-tools:middleware:metadata       Value provided: true +0ms
+  swagger-tools:middleware:metadata       Value: 80538 +0ms
+  swagger-tools:middleware:metadata     unit +0ms
+  swagger-tools:middleware:metadata       Type: string +0ms
+  swagger-tools:middleware:metadata       Value provided: false +0ms
+  swagger-tools:middleware:metadata       Value: F +0ms
+  swagger-tools:middleware:validator GET /api/weather?location=80538 +0ms
+  swagger-tools:middleware:validator   Will process: yes +0ms
+  swagger-tools:middleware:router GET /api/weather?location=80538 +1ms
+  swagger-tools:middleware:router   Will process: yes +0ms
+  swagger-tools:middleware:router   Route handler: Weather_getWeather +0ms
+  swagger-tools:middleware:router   Mock mode: false +0ms
 ```
 
 To see mode documentation on how to further talior the debugging to your needs, please view the [debug](debug) module
