@@ -65,7 +65,7 @@ Swagger document(s).
 * **swaggerUi:** This middleware will serve your Swagger document(s) for public consumption and will also serve a local
 [Swagger UI][swagger-ui] instance.
 
-## Swagger Middleware Debuggin
+## Swagger Middleware Debugging
 
 All Swagger Middleware uses the [debug](debug) module to allow you to have a better idea of what is going on during the
 middleware initialization and processing lifecycle.  To enable debugging globally, just set the `DEBUG` environment
