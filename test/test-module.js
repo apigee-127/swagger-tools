@@ -48,7 +48,7 @@ describe('swagger-tools', function () {
           assert.fail(null, null, 'Should had failed');
         });
       } catch (err) {
-        assert.equal('Unable to identify the Swagger version based on rlOrSO', err.message);
+        assert.equal('Unsupported Swagger version: undefined', err.message);
       }
     });
 

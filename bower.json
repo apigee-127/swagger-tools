@@ -36,7 +36,8 @@
     "spark-md5": "^0.0.5",
     "swagger-converter": "^0.1.0",
     "traverse": "^0.6.6",
-    "z-schema": "^3.3.2"
+    "z-schema": "^3.3.2",
+    "visionmedia-debug": "~2.1.1"
   },
   "devDependencies": {
     "mocha": "^2.1.0",

@@ -25,7 +25,9 @@
 'use strict';
 
 var _ = require('lodash');
+var debug = require('debug')('swagger-tools:middleware:ui');
 var fs = require('fs');
+var helpers = require('../lib/helpers');
 var parseurl = require('parseurl');
 var path = require('path');
 var serveStatic = require('serve-static');
@@ -37,9 +39,10 @@ var defaultOptions = {
 var staticOptions = {};
 
 /**
- * Middleware for serving the Swagger documents via an API and Swagger UI.
+ * Middleware for serving the Swagger documents and Swagger UI.
  *
- * @param {object} swaggerObject - The Swagger object
+ * @param {object} rlOrSO - The Resource Listing (Swagger 1.2) or Swagger Object (Swagger 2.0)
+ * @param {object[]} apiDeclarations - The array of API Declarations (Swagger 1.2)
  * @param {object} [options] - The configuration options
  * @param {string=/api-docs} [options.apiDocs] - The relative path to serve your Swagger documents from
  * @param {string=/docs} [options.swaggerUi] - The relative path to serve Swagger UI from
@@ -47,19 +50,40 @@ var staticOptions = {};
  *
  * @returns the middleware function
  */
-exports = module.exports = function swaggerUIMiddleware (swaggerObject, options) {
-  var swaggerUiPath = options.swaggerUiDir ?
-	path.resolve(options.swaggerUiDir) :
-	path.join(__dirname, '..', 'swagger-ui');
-  var apiDocs;
-  var staticMiddleware;
+exports = module.exports = function swaggerUIMiddleware (rlOrSO, apiDeclarations, options) {
+  debug('Initializing swagger-ui middleware');
 
-  // Validate arguments
-  if (_.isUndefined(swaggerObject)) {
-    throw new Error('swaggerObject is required');
-  } else if (!_.isPlainObject(swaggerObject)) {
-    throw new TypeError('swaggerObject must be an object');
+  var swaggerVersion = helpers.getSwaggerVersion(rlOrSO);
+  var apiDocsCache = {}; // Swagger document endpoints cache
+  var apiDocsPaths = [];
+  var staticMiddleware;
+  var swaggerUiPath;
+
+  if (swaggerVersion !== '1.2') {
+    options = apiDeclarations;
+    apiDeclarations = [];
   }
+
+  // Set the defaults
+  options = _.defaults(options || {}, defaultOptions);
+
+  if (_.isUndefined(rlOrSO)) {
+    throw new Error('rlOrSO is required');
+  } else if (!_.isPlainObject(rlOrSO)) {
+    throw new TypeError('rlOrSO must be an object');
+  }
+
+  if (swaggerVersion === '1.2') {
+    if (_.isUndefined(apiDeclarations)) {
+      throw new Error('apiDeclarations is required');
+    } else if (!_.isPlainObject(apiDeclarations)) {
+      throw new TypeError('apiDeclarations must be an object');
+    }
+  }
+
+  swaggerUiPath = options.swaggerUiDir ?
+    path.resolve(options.swaggerUiDir) :
+    path.join(__dirname, 'swagger-ui');
 
   if (options.swaggerUiDir) {
     if (!fs.existsSync(swaggerUiPath)) {
@@ -70,11 +94,6 @@ exports = module.exports = function swaggerUIMiddleware (swaggerObject, options)
   }
 
   staticMiddleware = serveStatic(swaggerUiPath, staticOptions);
-  
-  apiDocs = JSON.stringify(swaggerObject, null, 2);
-
-  // Set the defaults
-  options = _.defaults(options || {}, defaultOptions);
 
   // Sanitize values
   if (options.apiDocs.charAt(options.apiDocs.length -1) === '/') {
@@ -85,13 +104,43 @@ exports = module.exports = function swaggerUIMiddleware (swaggerObject, options)
     options.swaggerUi = options.swaggerUi.substring(0, options.swaggerUi.length - 1);
   }
 
+  debug('  Using swagger-ui from: %s', options.swaggerUiDir ? swaggerUiPath : 'internal');
+  debug('  API Docs path: %s', options.apiDocs);
+
+  // Add the Resource Listing or SwaggerObject to the response cache
+  apiDocsCache[options.apiDocs] = JSON.stringify(rlOrSO, null, 2);
+
+  // Add API Declarations to the response cache
+  _.each(apiDeclarations, function (resource, resourcePath) {
+    var adPath = options.apiDocs + resourcePath;
+
+    // Respond with pretty JSON (Configurable?)
+    apiDocsCache[adPath] = JSON.stringify(resource, null, 2);
+
+    debug('    API Declaration path: %s', adPath);
+  });
+
+  apiDocsPaths = Object.keys(apiDocsCache);
+
+  debug('  swagger-ui path: %s', options.swaggerUi);
+
   return function swaggerUI (req, res, next) {
     var path = parseurl(req).pathname;
+    var isApiDocsPath = apiDocsPaths.indexOf(path) > -1;
+    var isSwaggerUiPath = path === options.swaggerUi || path.indexOf(options.swaggerUi + '/') === 0;
 
-    if (path === options.apiDocs || path === options.apiDocs + '/') {
+    debug('%s %s', req.method, req.url);
+    debug('  Will process: %s', isApiDocsPath || isSwaggerUiPath ? 'no' : 'yes');
+
+    if (isApiDocsPath) {
+      debug('  Serving API Docs');
+
       res.setHeader('Content-Type', 'application/json');
-      return res.end(apiDocs);
-    } else if (path === options.swaggerUi || path.indexOf(options.swaggerUi + '/') === 0) {
+
+      return res.end(apiDocsCache[path]);
+    } else if (isSwaggerUiPath) {
+      debug('  Serving swagger-ui');
+
       res.setHeader('Swagger-API-Docs-URL', options.apiDocs);
 
       if (path === options.swaggerUi || path === options.swaggerUi + '/') {

@@ -65,13 +65,14 @@ gulp.task('browserify', function (cb) {
     if (!isStandalone) {
       // Expose Bower modules so they can be required
       exposify.config = {
-        'async': 'async',
-        'json-refs': 'JsonRefs',
-        'lodash': '_',
-        'spark-md5': 'SparkMD5',
-        'swagger-converter': 'SwaggerConverter.convert',
-        'traverse': 'traverse',
-        'z-schema': 'ZSchema'
+	'async': 'async',
+	'debug': 'debug',
+	'json-refs': 'JsonRefs',
+	'lodash': '_',
+	'spark-md5': 'SparkMD5',
+	'swagger-converter': 'SwaggerConverter.convert',
+	'traverse': 'traverse',
+	'z-schema': 'ZSchema'
       };
 
       b.transform('exposify');
@@ -82,10 +83,10 @@ gulp.task('browserify', function (cb) {
       .pipe(source('swagger-tools' + (isStandalone ? '-standalone' : '') + (!useDebug ? '-min' : '') + '.js'))
       .pipe(gulp.dest('./browser/'))
       .on('error', function (err) {
-        callback(err);
+	callback(err);
       })
       .on('end', function () {
-        callback();
+	callback();
       });
   }, function (err) {
     cb(err);
@@ -104,10 +105,10 @@ gulp.task('browserify-test', function (cb) {
       .pipe(source('test-specs-browser.js'))
       .pipe(gulp.dest(basePath + 'browser/'))
       .on('error', function (err) {
-        callback(err);
+	callback(err);
       })
       .on('end', function () {
-        callback();
+	callback();
       });
   }, function (err) {
     cb(err);
@@ -116,16 +117,16 @@ gulp.task('browserify-test', function (cb) {
 
 gulp.task('lint', function () {
   return gulp.src([
-      './bin/swagger-tools',
-      './index.js',
-      './lib/**/*.js',
-      './middleware/**/*.js',
-      './test/1.2/*.js',
-      './test/2.0/*.js',
-      './gulpfile.js',
-      '!./middleware/swagger-ui/**/*.js',
-      '!./test/**/test-specs-browser.js'
-    ])
+    './bin/swagger-tools',
+    './index.js',
+    './lib/**/*.js',
+    './middleware/swagger-*.js',
+    './test/1.2/*.js',
+    './test/2.0/*.js',
+    './gulpfile.js',
+    '!./middleware/swagger-ui/**/*.js',
+    '!./test/**/test-specs-browser.js'
+  ])
     .pipe(jshint())
     .pipe(jshint.reporter('jshint-stylish'))
     .pipe(jshint.reporter('fail'));
@@ -133,17 +134,17 @@ gulp.task('lint', function () {
 
 gulp.task('test-node', function () {
   return gulp.src([
-      'lib/**/*.js',
-      'middleware/1.2/**/*.js',
-      'middleware/2.0/**/*.js',
-      '!./test/**/test-specs-browser.js'
-    ])
+    'lib/**/*.js',
+    'middleware/swagger-*.js',
+    '!./middleware/swagger-ui/**/*.js',
+    '!./test/**/test-specs-browser.js'
+  ])
     .pipe(istanbul())
     .pipe(istanbul.hookRequire()) // Force `require` to return covered files
     .on('finish', function () {
       gulp.src([
-        'test/**/test-*.js',
-        '!./test/**/test-specs-browser.js'
+	'test/**/test-*.js',
+	'!./test/**/test-specs-browser.js'
       ]).pipe(mocha({reporter: 'spec'}));
     });
 });
@@ -169,28 +170,28 @@ gulp.task('test-prepare', ['browserify', 'clean-tests'], function (cb) {
 
     bower.commands.install([], {}, {cwd: basePath})
       .on('end', function () {
-        var b = browserify(basePath + '../test-specs.js', {
-          debug: true
-        });
+	var b = browserify(basePath + '../test-specs.js', {
+	  debug: true
+	});
 
-        b.transform('brfs')
-          .bundle()
-          .pipe(source('test-specs-browser.js'))
-          .pipe(gulp.dest(basePath))
-          .on('error', function (err) {
-            callback(err);
-          })
-          .on('end', function () {
-            // Copy the Swagger Tools browser builds to the test directory
-            fs.createReadStream('./browser/swagger-tools.js').pipe(fs.createWriteStream(basePath + 'swagger-tools.js'));
-            fs.createReadStream('./browser/swagger-tools-standalone.js')
-              .pipe(fs.createWriteStream(basePath + 'swagger-tools-standalone.js'));
+	b.transform('brfs')
+	  .bundle()
+	  .pipe(source('test-specs-browser.js'))
+	  .pipe(gulp.dest(basePath))
+	  .on('error', function (err) {
+	    callback(err);
+	  })
+	  .on('end', function () {
+	    // Copy the Swagger Tools browser builds to the test directory
+	    fs.createReadStream('./browser/swagger-tools.js').pipe(fs.createWriteStream(basePath + 'swagger-tools.js'));
+	    fs.createReadStream('./browser/swagger-tools-standalone.js')
+	      .pipe(fs.createWriteStream(basePath + 'swagger-tools-standalone.js'));
 
-            callback();
-        });
+	    callback();
+	});
       })
       .on('error', function (err) {
-        callback(err);
+	callback(err);
       });
   }, cb);
 });
@@ -199,16 +200,16 @@ gulp.task('test-browser', ['browserify', 'test-prepare'], function (cb) {
   gulp
     .src(_.reduce(browserTestsPaths, function (paths, basePath) {
       return paths.concat([
-        basePath + 'test-bower.html',
-        basePath + 'test-standalone.html'
+	basePath + 'test-bower.html',
+	basePath + 'test-standalone.html'
       ]);
     }, []))
     .pipe(mochaPhantomJS({
       phantomjs: {
-        settings: {
-          localToRemoteUrlAccessEnabled: true,
-          webSecurityEnabled: false
-        }
+	settings: {
+	  localToRemoteUrlAccessEnabled: true,
+	  webSecurityEnabled: false
+	}
       }
     }))
     .on('error', function (err) {

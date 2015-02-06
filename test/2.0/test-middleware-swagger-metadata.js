@@ -90,6 +90,7 @@ describe('Swagger Metadata Middleware v2.0', function () {
 
 	     try {
 	       assert.ok(!_.isUndefined(swagger));
+	       assert.equal('2.0', swagger.swaggerVersion);
 	       assert.deepEqual(swagger.apiPath, '/pets/{id}');
 	       assert.deepEqual(swagger.operation, rPath.get);
 	       assert.deepEqual(swagger.operationParameters, [
@@ -129,7 +130,7 @@ describe('Swagger Metadata Middleware v2.0', function () {
 	       return next(err.message);
 	     }
 
-	     res.end('OK');
+	     return res.end('OK');
 	   });
 	 }
        }, function (app) {
@@ -258,7 +259,6 @@ describe('Swagger Metadata Middleware v2.0', function () {
 	      value: 'fake'
 	    });
 	  } catch (err) {
-	    console.log(err);
 	    return next(err.message);
 	  }
 

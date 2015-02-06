@@ -25,12 +25,14 @@
 'use strict';
 
 var _ = require('lodash');
+var debug = require('debug')('swagger-tools:middleware');
 var helpers = require('./lib/helpers');
 
 var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, callback) {
   var args;
   var spec;
-  var swaggerVersion;
+
+  debug('Initializing middleware');
 
   if (_.isUndefined(rlOrSO)) {
     throw new Error('rlOrSO is required');
@@ -39,16 +41,18 @@ var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, cal
   }
 
   args = [rlOrSO];
-  swaggerVersion = helpers.getSwaggerVersion(rlOrSO);
+  spec = helpers.getSpec(helpers.getSwaggerVersion(rlOrSO), true);
 
-  if (!swaggerVersion) {
-    throw new Error('Unable to identify the Swagger version based on rlOrSO');
-  } else if (swaggerVersion === '1.2') {
+  debug('  Identified Swagger version: %s', spec.version);
+
+  if (spec.version === '1.2') {
     if (_.isUndefined(resources)) {
       throw new Error('resources is required');
     } else if (!_.isArray(resources)) {
       throw new TypeError('resources must be an array');
     }
+
+    debug('  Number of API Declarations: %d', resources.length);
 
     args.push(resources);
   } else {
@@ -70,29 +74,31 @@ var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, cal
       err.results = results;
     }
 
+    debug('  Validation: %s', err ? 'failed' : 'succeeded');
+
     if (err) {
       if (process.env.NODE_ENV === 'test') {
         throw err;
       } else {
-        return helpers.printValidationResults(swaggerVersion, rlOrSO, resources, results, true, true);
+        return helpers.printValidationResults(spec.version, rlOrSO, resources, results, true, true);
       }
     }
 
     callback({
       // Create a wrapper to avoid having to pass the non-optional arguments back to the swaggerMetadata middleware
       swaggerMetadata: function () {
-        var swaggerMetadata = require('./middleware/' + swaggerVersion + '/swagger-metadata');
+        var swaggerMetadata = require('./middleware/swagger-metadata');
 
         return swaggerMetadata.apply(undefined, args.slice(0, args.length - 1));
       },
-      swaggerRouter: require('./middleware/' + swaggerVersion + '/swagger-router'),
-      swaggerSecurity: require('./middleware/' + swaggerVersion + '/swagger-security'),
+      swaggerRouter: require('./middleware/swagger-router'),
+      swaggerSecurity: require('./middleware/swagger-security'),
       // Create a wrapper to avoid having to pass the non-optional arguments back to the swaggerUi middleware
       swaggerUi: function (options) {
-        var swaggerUi = require('./middleware/' + swaggerVersion + '/swagger-ui');
+        var swaggerUi = require('./middleware/swagger-ui');
         var suArgs = [rlOrSO];
 
-        if (swaggerVersion === '1.2') {
+        if (spec.version === '1.2') {
           suArgs.push(_.reduce(resources, function (map, resource) {
             map[resource.resourcePath] = resource;
 
@@ -104,11 +110,9 @@ var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, cal
 
         return swaggerUi.apply(undefined, suArgs);
       },
-      swaggerValidator: require('./middleware/' + swaggerVersion + '/swagger-validator')
+      swaggerValidator: require('./middleware/swagger-validator')
     });
   });
-
-  spec = helpers.getSpec(helpers.getSwaggerVersion(rlOrSO));
 
   spec.validate.apply(spec, args);
 };

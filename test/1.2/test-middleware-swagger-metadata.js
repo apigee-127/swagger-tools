@@ -64,6 +64,7 @@ describe('Swagger Metadata Middleware v1.2', function () {
 
            try {
              assert.ok(!_.isUndefined(swagger));
+	     assert.equal('1.2', swagger.swaggerVersion);
              assert.deepEqual(swagger.api, petJson.apis[0]);
              assert.deepEqual(swagger.apiDeclaration, petJson);
              assert.equal(swagger.apiIndex, 0);

@@ -149,6 +149,7 @@ program
       console.log(this.yaml ? YAML.stringify(converted, 2) : JSON.stringify(converted, null, 2));
     }.bind(this);
 
+    console.log();
     getDocuments([resourceListing].concat(apiDeclarations || []), function (err, documents) {
       helpers.getSpec('1.2').convert(documents.resourceListing, documents.apiDeclarations, !this.validation, doConvert);
     }.bind(this));
