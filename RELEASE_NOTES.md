@@ -1,6 +1,6 @@
 ## Release Notes
 
-### TBD
+### v0.8.2 (2015-02-09)
 
 * Debugging support _(Issue #8)_
 * Each middleware provided now is one implementation instead of one implementation per Swagger version _(This has zero consumer impact unless you were initializng Swagger middleware directly)_
