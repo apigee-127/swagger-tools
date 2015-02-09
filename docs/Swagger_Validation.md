@@ -61,7 +61,7 @@ some of the validations performed.
 | Each operation should have only one parameter of type `body` | * | Error |
 | Each reference must point to an existing definition. | * | Error |
 | Every place where a default value can be provided, the default value must validate against the corresponding schema/definition. _(This is not handled by JSON Schema validators, at least not the one I am using, so we have to do this manually.  See [json-schema/JSON-Schema-Test-Suite/pull/67](https://github.com/json-schema/JSON-Schema-Test-Suite/pull/67))_ | * | Error |
-| For each API path parameter, all operations for the API path require corresponding path parameter definitions. | * | Error |
+| For each API path parameter, all operations for the API path require corresponding path parameter definitions or the corresponding path parameter needs to be in the path's parameters. | * | Error |
 | Models are not allowed to descend from multiple models. _(Multiple Inheritance)_ | 1.2 | Error |
 | The Resource Listing has an API whose `path` is not defined in any of the API Declarations. | 1.2 | Warning |
 | The `items` property is required for all schemas/definitions of type `array`. _(See [swagger-api/swagger-spec/issues/174](https://github.com/swagger-api/swagger-spec/issues/174))_ | * | Error |
