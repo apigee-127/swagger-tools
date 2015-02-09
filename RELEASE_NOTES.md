@@ -2,8 +2,9 @@
 
 ### TBD
 
-* Each middleware provided now is one implementation instead of one implementation per Swagger version _(This has zero consumer impact unless you were initializng Swagger middleware directly)_
 * Debugging support _(Issue #8)_
+* Each middleware provided now is one implementation instead of one implementation per Swagger version _(This has zero consumer impact unless you were initializng Swagger middleware directly)_
+* Validate operation to ensure only one `body` parameter _(Issue #136)_
 
 ### v0.8.1 (2015-01-29)
 
