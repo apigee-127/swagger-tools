@@ -25,38 +25,46 @@ For Swagger 1.2, a Swagger API is treated as a [Resource Listing][resource-listi
 [API Declaration][api-declaration].  If you are not interested in validating the API as a whole, you might not need
 some of the validations performed.
 
+## Defined/Referenceable Types
+
+**Swagger 1.2**
+
+* Authorizations
+* Authorization Scopes
+* Models
+
+**Swagger 2.0**
+
+* Definitions
+* Parameters
+* Responses
+* Security
+* Security Scopes
+
 ## Semantic Validations
 
 | Description | Version(s) | Type |
 | :---------- |:----------:| :---:|
-| A definition/model cannot declare a property that is already defined by one of its ancestors | * | Error |
-| A model's ancestor cannot be a descendant of said model _(Circular reference)_ | 1.2 | Error |
-| All defined operation path parameters must correspond to a named element in the API's path _(For example, you cannot have a path parameter named `id` for the following path `/pets/{petId}`)_ | * | Error |
-| Authorization/Security defined but there are no references to it | * | Warning |
-| Authorization/Security scope defined but there are no reference to it | * | Warning |
-| Definition/Model defined but there are no references to it | * | Warning |
-| Each API `path` should be equivalently unique _(This applies to both the Resource Listing and the API Declaration for Swagger 1.2.  Example: `/pets/{id}` and `/pets/{petId}` are equivalently the same but not the same verbatim.)_ | * | Error |
-| Each API `path` should be unique verbatim _(This applies to both the Resource Listing and the API Declaration for Swagger 1.2)_ | 1.2 | Error |
-| Each `code` in an operation's `responseMessages` should be unique | 1.2 | Error |
-| Each `resourcePath` should be unique for each API Declaration | 1.2 | Error |
-| Each authorization/security reference must correspond to an authorization/security definition | * | Error |
-| Each authorization/security reference should contain only unique scopes _(Example: For an `oauth2` authorization/security requirement, when listing the required scopes, each scope should only be listed once.)_ | * | Warning |
-| Each authorization/security scope in an authorization/security definition should be unique | * | Warning |
-| Each authorization/security scope reference must correspond to an authorization/security scope definition | * | Error |
-| Each definition/model property listed in the `required` array must be defined in the `properties` of the model itself or one of its ancestors | * | Error |
-| Each definition/model reference must correspond to a definition/model definition | * | Error |
-| Each model's `id` property must match the corresponding key in the `models` section of the API Declaration | 1.2 | Error |
-| Each operation in an API should have a unique `method` property | 1.2 | Error |
-| Each operation parameter should have a unique `name` and type combination, where Swagger 1.2 uses the `paramType` property and in Swagger 2.0 uses the `in` property to indicate type | * | Error |
-| Each parameter reference must correspond to a parameter definition | 2.0 | Error |
-| Each response reference must correspond to a response definition | 2.0 | Error |
-| Every place where a default value can be provided, the default value must validate against the corresponding schema/definition _(This is not handled by JSON Schema validators, at least not the one I am using, so we have to do this manually.  See [json-schema/JSON-Schema-Test-Suite/pull/67](https://github.com/json-schema/JSON-Schema-Test-Suite/pull/67))_ | * | Error |
-| For each API path parameter, all operations for the API path require corresponding path parameter definitions | * | Error |
-| Models are not allowed to descend from multiple models _(Multiple inheritance)_ | 1.2 | Error |
-| Parameter defined but there is no reference to it | 2.0 | Warning |
-| Response defined but there is no reference to it | 2.0 | Warning |
-| The Resource Listing has an API whose `path` is not defined in any of the API Declarations | 1.2 | Warning |
-| The `items` property is required for all schemas/definitions of type `array` _(See [swagger-api/swagger-spec/issues/174](https://github.com/swagger-api/swagger-spec/issues/174))_ | * | Error |
+| A definition/model cannot declare a property that is already defined by one of its ancestors. | * | Error |
+| A definition/model's ancestor cannot be a descendant of said model. _(Circular Reference)_ | * | Error |
+| Each API `path` should be equivalently unique. _(This applies to both the Resource Listing and the API Declaration for Swagger 1.2.  Example: `/pets/{id}` and `/pets/{petId}` are equivalently the same but not the same verbatim.)_ | * | Error |
+| Each API `path` should be unique verbatim. _(This applies to both the Resource Listing and the API Declaration for Swagger 1.2)_ | 1.2 | Error |
+| Each `code` in an operation's `responseMessages` should be unique. | 1.2 | Error |
+| Each `resourcePath` should be unique for each API Declaration. | 1.2 | Error |
+| Each authorization/security reference should contain only unique scopes. _(Example: For an `oauth2` authorization/security requirement, when listing the required scopes, each scope should only be listed once.)_ | * | Warning |
+| Each authorization/security scope in an authorization/security definition should be unique. | * | Warning |
+| Each defined operation path parameters must correspond to a named element in the API's path pattern. _(For example, you cannot have a path parameter named `id` for the following path `/pets/{petId}` but you must have a path parameter named `petId`.)_ | * | Error |
+| Each referenceable definition must have references. | * | Warning |
+| Each definition/model property listed in the `required` array must be defined in the `properties` of the model itself or one of its ancestors. | * | Error |
+| Each model's `id` property must match the corresponding key in the `models` section of the API Declaration. | 1.2 | Error |
+| Each operation in an API should have a unique `method` property. | 1.2 | Error |
+| Each operation parameter should have a unique `name` and type combination, where Swagger 1.2 uses the `paramType` property and in Swagger 2.0 uses the `in` property to indicate type. | * | Error |
+| Each reference must point to an existing definition. | * | Error |
+| Every place where a default value can be provided, the default value must validate against the corresponding schema/definition. _(This is not handled by JSON Schema validators, at least not the one I am using, so we have to do this manually.  See [json-schema/JSON-Schema-Test-Suite/pull/67](https://github.com/json-schema/JSON-Schema-Test-Suite/pull/67))_ | * | Error |
+| For each API path parameter, all operations for the API path require corresponding path parameter definitions. | * | Error |
+| Models are not allowed to descend from multiple models. _(Multiple Inheritance)_ | 1.2 | Error |
+| The Resource Listing has an API whose `path` is not defined in any of the API Declarations. | 1.2 | Warning |
+| The `items` property is required for all schemas/definitions of type `array`. _(See [swagger-api/swagger-spec/issues/174](https://github.com/swagger-api/swagger-spec/issues/174))_ | * | Error |
 
 [api-declaration]: https://github.com/swagger-api/swagger-spec/blob/master/versions/1.2.md#52-api-declaration
 [json-schema]: http://json-schema.org/
