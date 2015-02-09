@@ -13,140 +13,55 @@ for doing full Swagger document validation.  swagger-tools starts all Swagger do
 file(s) and only once that validation passes will swagger-tools go through each pertinent _semantic_ validation in its
 catalog to do the rest of the validation.
 
-The purpose of this document is to serve as a human readable version of this catalog, a per-Swagger version list of the
-_extra_ validation required on top of the JSON Schema validation to _really_ validate a Sawgger document.  My hope is
-that this document could be used by Swagger maintainers to enhance their JSON Schema files, where possible, to
-alleviate the need for _extra_ validation.  I also hope that this document could be used as a template of sorts for
-others when writing Swagger validators in other languages, or even in JavaScript if you don't like what swagger-tools
-brings to the table.
+The purpose of this document is to serve as a human readable version of this catalog, a list of the _extra_ validation
+required on top of the JSON Schema validation to _really_ validate a Sawgger document.  My hope is that this document
+could be used by Swagger maintainers to enhance their JSON Schema files, where possible, to alleviate the need for
+_extra_ validation.  I also hope that this document could be used as a template of sorts for others when writing Swagger
+validators in other languages, or even in JavaScript if you don't like what swagger-tools brings to the table.
 
 One last thing before we get into the specifics, there are some situations that are flagged as a _warning_ in
 swagger-tools.  Warnings in swagger-tools are situations where the Swagger specification contract is not broken but
 there is a good chance you have done something you did not mean to, like creating a model definition and then not
 using it anywhere.  In the documentation below, we will break up the error validations from the warning validations.
 
-## Swagger 1.2
+**Note: Swagger 1.2 Support**
 
 For Swagger 1.2, a Swagger API is treated as a [Resource Listing][resource-listing] and at least one
 [API Declaration][api-declaration].  If you are not interested in validating the API as a whole, you might not need
 some of the validations performed.
 
-### Semantic Error Validations
+## Semantic Validations
 
-#### Child Model Redeclares Parent Model Property
-
-Whenever a child Model declares a property that was already defined in one of its ancestors.
-
-#### Circular Model Inheritance
-
-Whenever a Model's lineage results in a circular reference.
-
-#### Default Value Fails Schema Validation
-
-Whenever an Operation, Parameter or Model Property's `defaultValue` fails schema validation.  _(We have to do this
-manually since Swagger 1.2 types are not JSON Schema types and the JSON Schema validator does not handle these
-situations for us.)_
-
-#### Duplicate API Path in Resource Listing
-
-Whenever multiple APIs in the Resource Listing have the same `path` value.
-
-#### Duplicate API Path in API Declaration
-
-Whenever you have multiple API paths in your API Declaration(s) that have the same `path` value.  _(This check catches
-paths that are identically the same and those that are equivalently the same.  For example, `/pets/{id}` and
-`/pets/{petId}` are not identically the same but they are equivalently the same.)_
-
-#### Duplicate Operation Response Messages Code
-
-Whenver you have the same `code` value in an Operation's `responseMessages` array.
-
-#### Duplicate Operation Method
-
-Whenever an API has multiple Operations that have the same `method` value.
-
-#### Duplicate Operation Parameter
-
-Whenever an API Operation has multiple parameters that share the same `name`+`type` combination.
-
-#### Duplicate Resource Path in API Declarations
-
-Whenever you have you have multiple API Delcarations as part of the same API with the same `resourcePath` value.
-
-#### Invalid Array Structures
-
-Whenever you have an object of type `array`, it is required that the object have an `items` property.  _(The JSON
-Schema files for Swagger 1.2 do not catch this and we have to do it manually.
-[swagger-spec/issues/174](https://github.com/swagger-api/swagger-spec/issues/174))_
-
-#### Missing Operation Path Parameter
-
-Whenever you have an API `path` with a path parameter but do not define a corresponding Operation parameter.  _(For
-example, you have an API `path` of `/pets/{id}` but do not have an Operation parameter of type `path` with name of
-`id`.)_
-
-#### Missing Required Model Property
-
-Whenever you have a required Model property but do not define it in the `properties` object.  _(Since Swagger models
-are composed, we have to create the composed object model and then do the validation.  Otherwise we could rely on
-JSON Schema to do this.)_
-
-#### Model ID Mismatch
-
-Whenever you define a Model, its `id` is the key name in the `models` part of the API Declaration.  But each Model
-also can have an `id` property and they should be equal.
-
-#### Multiple Model Inheritance
-
-Whenever you have a Model that is a `subType` of more than one Model.
-
-#### Unresolvable Operation Path Parameter
-
-Whenever you define an Operation parameter of type `path` and its `name` does not correspond with a named parameter
-in the API `path` pattern value.  _(For example, you have an API `path` of `/pets/{id}` but have an Operation parameter
-of type `path` with its `name` not equal to `id`.  Or if you define an Operation parameter of type `path` but the
-API's `path` does not have any path parameters.)_
-
-#### Unresolvable Operation Response Message Response Model
-
-Whenever your Operation's `responseMessage`'s `responseModel` does not correspond to a defined model.  _(This is the
-same as `Unresolvable Model` but ensuring it works for the Operation's `responseMessage`'s `responseModel`.)_
-
-### Semantic Warning Validations
-
-#### Duplicate Authorization Scope Definition
-
-Whenever you have multiple scopes in a single `oauth2` authorization definition that have the same `scope` value.
-
-#### Duplicate Authorization Scope Reference
-
-Whenever you have multiple scopes in a single `oauth2` authorization reference that have the same `scope` value.
-
-#### Unresolvable Model
-
-Whenever you reference a Model by its id and there is no Model defined with said id.
-
-#### Unresolvable Resource Path
-
-Whenever you describe an API `path` in the Resource Declaration but there is no matching API Declaration with the same
-`resourcePath` value.
-
-#### Unused API Path in Resource Listing
-
-Whenever an API in the Resource Listing has a path that does not correspond to a provided API Declaration.
-
-#### Unused Authorization Definition
-
-Whenever you define an Authorization in the Resource Listing but no API Declaration Operations use the Authorization.
-
-#### Unused Authorization Scope Definition
-
-Whenever you define an `oauth2` Authorization in the Resource Listing but no API Declaration Operations use one of its
-scopes.
-
-#### Unused Model Definition
-
-Whenever you define a Model but there are no references to it.
+| Description | Version(s) | Type |
+| :---------- |:----------:| :---:|
+| A definition/model cannot declare a property that is already defined by one of its ancestors | * | Error |
+| A model's ancestor cannot be a descendant of said model _(Circular reference)_ | 1.2 | Error |
+| All defined operation path parameters must correspond to a named element in the API's path _(For example, you cannot have a path parameter named `id` for the following path `/pets/{petId}`)_ | * | Error |
+| Authorization/Security defined but there are no references to it | * | Warning |
+| Authorization/Security scope defined but there are no reference to it | * | Warning |
+| Definition/Model defined but there are no references to it | * | Warning |
+| Each API `path` should be equivalently unique _(This applies to both the Resource Listing and the API Declaration for Swagger 1.2.  Example: `/pets/{id}` and `/pets/{petId}` are equivalently the same but not the same verbatim.)_ | * | Error |
+| Each API `path` should be unique verbatim _(This applies to both the Resource Listing and the API Declaration for Swagger 1.2)_ | 1.2 | Error |
+| Each `code` in an operation's `responseMessages` should be unique | 1.2 | Error |
+| Each `resourcePath` should be unique for each API Declaration | 1.2 | Error |
+| Each authorization/security reference must correspond to an authorization/security definition | * | Error |
+| Each authorization/security reference should contain only unique scopes _(Example: For an `oauth2` authorization/security requirement, when listing the required scopes, each scope should only be listed once.)_ | * | Warning |
+| Each authorization/security scope in an authorization/security definition should be unique | * | Warning |
+| Each authorization/security scope reference must correspond to an authorization/security scope definition | * | Error |
+| Each definition/model property listed in the `required` array must be defined in the `properties` of the model itself or one of its ancestors | * | Error |
+| Each definition/model reference must correspond to a definition/model definition | * | Error |
+| Each model's `id` property must match the corresponding key in the `models` section of the API Declaration | 1.2 | Error |
+| Each operation in an API should have a unique `method` property | 1.2 | Error |
+| Each operation parameter should have a unique `name` and type combination, where Swagger 1.2 uses the `paramType` property and in Swagger 2.0 uses the `in` property to indicate type | * | Error |
+| Each parameter reference must correspond to a parameter definition | 2.0 | Error |
+| Each response reference must correspond to a response definition | 2.0 | Error |
+| Every place where a default value can be provided, the default value must validate against the corresponding schema/definition _(This is not handled by JSON Schema validators, at least not the one I am using, so we have to do this manually.  See [json-schema/JSON-Schema-Test-Suite/pull/67](https://github.com/json-schema/JSON-Schema-Test-Suite/pull/67))_ | * | Error |
+| For each API path parameter, all operations for the API path require corresponding path parameter definitions | * | Error |
+| Models are not allowed to descend from multiple models _(Multiple inheritance)_ | 1.2 | Error |
+| Parameter defined but there is no reference to it | 2.0 | Warning |
+| Response defined but there is no reference to it | 2.0 | Warning |
+| The Resource Listing has an API whose `path` is not defined in any of the API Declarations | 1.2 | Warning |
+| The `items` property is required for all schemas/definitions of type `array` _(See [swagger-api/swagger-spec/issues/174](https://github.com/swagger-api/swagger-spec/issues/174))_ | * | Error |
 
 [api-declaration]: https://github.com/swagger-api/swagger-spec/blob/master/versions/1.2.md#52-api-declaration
 [json-schema]: http://json-schema.org/
