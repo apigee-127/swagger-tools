@@ -6,6 +6,7 @@ tools:
 * [CLI][swagger-tools-cli]: The command line interface for swagger-tools
 * [Middleware][swagger-tools-middleware]: Connect middleware using Swagger information for various things
 (Ex: Request validation, routing, ...)
+* [Validation][swagger-tools-swagger-validation]: Documentation on how our Swagger validation works
 
 ## Installation
 
@@ -46,10 +47,6 @@ npm install -g swagger-tools
 
 At this point, you're ready for the [Quick Start][quick-start].
 
-## Validation
-
-To get a better idea of how we do validation, view our [Validation][swagger-tools-validation] documentation.
-
 [bower]: http://bower.io/
 [npm]: npmjs.org
 [quick-start]: https://github.com/apigee-127/swagger-tools/blob/master/docs/QuickStart.md
@@ -57,4 +54,4 @@ To get a better idea of how we do validation, view our [Validation][swagger-tool
 [swagger-tools-api]: https://github.com/apigee-127/swagger-tools/blob/master/docs/API.md
 [swagger-tools-cli]: https://github.com/apigee-127/swagger-tools/blob/master/docs/CLI.md
 [swagger-tools-middleware]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Middleware.md
-[swagger-tools-validation]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Validation.md
+[swagger-tools-swagger-validation]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Swagger_Validation.md
