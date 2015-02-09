@@ -49,13 +49,13 @@ some of the validations performed.
 | A definition/model's ancestor cannot be a descendant of said model. _(Circular Reference)_ | * | Error |
 | Each API `path` should be unique. _(For Swagger 1.2, this applies to both the Resource Listing and the API Declarations.  For all versions, being unique is both based on verbatim equality and equivalency.  Example: `/pets/{id}` and `/pets/{petId}` are equivalently the same but not the same verbatim.)_ | * | Error |
 | Each `code` in an operation's `responseMessages` should be unique. | 1.2 | Error |
-| Each `resourcePath` should be unique for each API Declaration. | 1.2 | Error |
+| Each `resourcePath` should be unique for each API Declaration in the API. | 1.2 | Error |
 | Each authorization/security reference should contain only unique scopes. _(Example: For an `oauth2` authorization/security requirement, when listing the required scopes, each scope should only be listed once.)_ | * | Warning |
 | Each authorization/security scope in an authorization/security definition should be unique. | * | Warning |
 | Each defined operation path parameters must correspond to a named element in the API's path pattern. _(For example, you cannot have a path parameter named `id` for the following path `/pets/{petId}` but you must have a path parameter named `petId`.)_ | * | Error |
 | Each referenceable definition must have references. | * | Warning |
 | Each definition/model property listed in the `required` array must be defined in the `properties` of the model itself or one of its ancestors. | * | Error |
-| Each model's `id` property must match the corresponding key in the `models` section of the API Declaration. | 1.2 | Error |
+| Each model's `id` property must match the corresponding key in the `models` section of the API Declaration. _(For example, a model with an id of `Person` should be found at the `Person` property in the API Declaration's `models` property and the `Person`'s `id` value must be `Person`.)_ | 1.2 | Error |
 | Each operation in an API should have a unique `method` property. | 1.2 | Error |
 | Each operation parameter should have a unique `name` and type combination, where Swagger 1.2 uses the `paramType` property and in Swagger 2.0 uses the `in` property to indicate type. | * | Error |
 | Each operation should have only one parameter of type `body` | * | Error |
