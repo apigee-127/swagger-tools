@@ -1,20 +1,15 @@
-One of the major parts of Swagger Tools is its comprehensive validation.  What most people don't realize when validating
-Swagger documents is that there are two sources of truth for validating Swagger documents against a particular version
-of Swagger:
-
-* The [JSON Schema][json-schema] file(s)
-* The Swagger Specification documentation
-
-To properly validate a Swagger document, the Swagger Specification document for the Swagger version in question is the
-source of truth.  This means that while the JSON Schema file(s) are important to initially validate the structure of
-your Swagger document, there may be some situations where the JSON Schema does not fullfil the complete contract as
-described in the Swagger specification documentation.  This is where swagger-tools has stepped in to help pave the way
-for doing full Swagger document validation.  swagger-tools starts all Swagger document validation using the JSON Schema
-file(s) and only once that validation passes will swagger-tools go through each pertinent _semantic_ validation in its
-catalog to do the rest of the validation.
+When validating Swagger document(s), the Swagger Specification document for the Swagger version in quesion is the
+single source of truth for validation.  To help aid in Swagger document validation, the Swagger project provides
+[JSON Schema][json-schema] file(s) but in the end, the Swagger Specification document is the real source of truth and
+the document swagger-tools tries to adhere to.  swagger-tools uses the provided JSON Schema file(s) to do the initial
+structural validation of the Swagger document(s) but that is just the beginnging.  There are some situations where the
+JSON Schema does not fullfil the complete contract as described in the Swagger specification documentation.  This is
+where swagger-tools has stepped in to help pave the way for doing full Swagger document validation.  swagger-tools
+starts all Swagger document validation using the JSON Schema file(s) and only once that validation passes will
+swagger-tools go through each pertinent _semantic_ validation in its catalog to do the rest of the validation.
 
 The purpose of this document is to serve as a human readable version of this catalog, a list of the _extra_ validation
-required on top of the JSON Schema validation to _really_ validate a Sawgger document.  My hope is that this document
+required on top of the JSON Schema validation to _really_ validate a Swagger document.  My hope is that this document
 could be used by Swagger maintainers to enhance their JSON Schema files, where possible, to alleviate the need for
 _extra_ validation.  I also hope that this document could be used as a template of sorts for others when writing Swagger
 validators in other languages, or even in JavaScript if you don't like what swagger-tools brings to the table.
