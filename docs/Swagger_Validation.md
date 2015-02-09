@@ -58,6 +58,7 @@ some of the validations performed.
 | Each model's `id` property must match the corresponding key in the `models` section of the API Declaration. | 1.2 | Error |
 | Each operation in an API should have a unique `method` property. | 1.2 | Error |
 | Each operation parameter should have a unique `name` and type combination, where Swagger 1.2 uses the `paramType` property and in Swagger 2.0 uses the `in` property to indicate type. | * | Error |
+| Each operation should have only one parameter of type `body` | * | Error |
 | Each reference must point to an existing definition. | * | Error |
 | Every place where a default value can be provided, the default value must validate against the corresponding schema/definition. _(This is not handled by JSON Schema validators, at least not the one I am using, so we have to do this manually.  See [json-schema/JSON-Schema-Test-Suite/pull/67](https://github.com/json-schema/JSON-Schema-Test-Suite/pull/67))_ | * | Error |
 | For each API path parameter, all operations for the API path require corresponding path parameter definitions. | * | Error |

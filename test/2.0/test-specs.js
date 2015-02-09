@@ -1239,14 +1239,10 @@ describe('Specification v2.0' + header, function () {
         it('schema object', function (done) {
           var swaggerObject = _.cloneDeep(petStoreJson);
 
-          swaggerObject.paths['/pets'].post.parameters.push({
-            name: 'fake',
-            in: 'body',
-            schema: {
-              type: 'integer',
-              default: 'fake'
-            }
-          });
+          swaggerObject.paths['/pets'].post.parameters[0].schema = {
+            type: 'integer',
+            default: 'fake'
+          };
 
           spec.validate(swaggerObject, function (err, result) {
             if (err) {
@@ -1257,10 +1253,16 @@ describe('Specification v2.0' + header, function () {
               {
                 code: 'INVALID_TYPE',
                 message: 'Not a valid integer: fake',
-                path: ['paths', '/pets', 'post', 'parameters', '1', 'schema', 'default']
+                path: ['paths', '/pets', 'post', 'parameters', '0', 'schema', 'default']
               }
             ]);
-            assert.equal(result.warnings.length, 0);
+            assert.deepEqual(result.warnings, [
+	      {
+		code: 'UNUSED_DEFINITION',
+		message: 'Definition is defined but is not used: #/definitions/newPet',
+		path: ['definitions', 'newPet']
+	      }
+	    ]);
 
             done();
           });
@@ -1311,13 +1313,7 @@ describe('Specification v2.0' + header, function () {
             type: 'integer',
             default: 'fake'
           };
-          swaggerObject.paths['/pets'].post.parameters.push({
-            name: 'fake',
-            in: 'body',
-            schema: {
-              $ref: '#/definitions/fake'
-            }
-          });
+          swaggerObject.paths['/pets'].post.parameters[0].schema.$ref = '#/definitions/fake';
 
           spec.validate(swaggerObject, function (err, result) {
             if (err) {
@@ -1333,10 +1329,16 @@ describe('Specification v2.0' + header, function () {
               {
                 code: 'INVALID_TYPE',
                 message: 'Not a valid integer: fake',
-                path: ['paths', '/pets', 'post', 'parameters', '1', 'schema', 'default']
+                path: ['paths', '/pets', 'post', 'parameters', '0', 'schema', 'default']
               }
             ]);
-            assert.equal(result.warnings.length, 0);
+	    assert.deepEqual(result.warnings, [
+	      {
+		code: 'UNUSED_DEFINITION',
+		message: 'Definition is defined but is not used: #/definitions/newPet',
+		path: ['definitions', 'newPet']
+	      }
+	    ]);
 
             done();
           });
@@ -1461,6 +1463,8 @@ describe('Specification v2.0' + header, function () {
             }
           ];
 
+	  delete swaggerObject.paths['/pets'].post.parameters;
+
           spec.validate(swaggerObject, function (err, result) {
             if (err) {
               throw err;
@@ -1474,7 +1478,13 @@ describe('Specification v2.0' + header, function () {
                 path: ['paths', '/pets', 'parameters', '0', 'schema', 'default']
               }
             ]);
-            assert.equal(result.warnings.length, 0);
+	    assert.deepEqual(result.warnings, [
+	      {
+		code: 'UNUSED_DEFINITION',
+		message: 'Definition is defined but is not used: #/definitions/newPet',
+		path: ['definitions', 'newPet']
+	      }
+	    ]);
 
             done();
           });
@@ -1538,6 +1548,8 @@ describe('Specification v2.0' + header, function () {
             }
           ];
 
+	  delete swaggerObject.paths['/pets'].post.parameters;
+
           spec.validate(swaggerObject, function (err, result) {
             if (err) {
               throw err;
@@ -1550,13 +1562,19 @@ describe('Specification v2.0' + header, function () {
                 message: 'Not a valid integer: fake',
                 path: ['definitions', 'fake', 'default']
               },
-              {
+	      {
                 code: 'INVALID_TYPE',
                 message: 'Not a valid integer: fake',
-                path: ['paths', '/pets', 'parameters', '0', 'schema', 'default']
+		path: ['paths', '/pets', 'parameters', '0', 'schema', 'default']
               }
             ]);
-            assert.equal(result.warnings.length, 0);
+	    assert.deepEqual(result.warnings, [
+	      {
+		code: 'UNUSED_DEFINITION',
+		message: 'Definition is defined but is not used: #/definitions/newPet',
+		path: ['definitions', 'newPet']
+	      }
+	    ]);
 
             done();
           });
@@ -2479,6 +2497,32 @@ describe('Specification v2.0' + header, function () {
           }
         ]);
         assert.equal(result.errors.length, 0);	
+
+        done();
+      });
+    });
+
+    it('should throw an error for an operation having more than one body parameter (Issue 136)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+      var cBodyParam = _.cloneDeep(swaggerObject.paths['/pets'].post.parameters[0]);
+
+      cBodyParam.name = 'duplicateBody';
+
+      swaggerObject.paths['/pets'].post.parameters.push(cBodyParam);
+
+      spec.validate(swaggerObject, function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'DULPICATE_API_BODY_PARAMETER',
+	    message: 'API has more than one body parameter',
+            path: ['paths', '/pets', 'post', 'parameters', '1']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
 
         done();
       });

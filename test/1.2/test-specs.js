@@ -1614,5 +1614,31 @@ describe('Specification v1.2' + header, function () {
         done();
       });
     });
+
+    it('should throw an error for an operation having more than one body parameter (Issue 136)', function (done) {
+      var cPetJson = _.cloneDeep(petJson);
+      var cBodyParam = _.cloneDeep(cPetJson.apis[2].operations[0].parameters[0]);
+
+      cBodyParam.name = 'duplicateBody';
+
+      cPetJson.apis[2].operations[0].parameters.push(cBodyParam);
+
+      spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.deepEqual(result.apiDeclarations[0].errors, [
+          {
+            code: 'DULPICATE_API_BODY_PARAMETER',
+	    message: 'API has more than one body parameter',
+            path: ['apis', '2', 'operations', '0', 'parameters', '1']
+          }
+        ]);
+        assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+        done();
+      });
+    });
   });
 });
