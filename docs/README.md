@@ -46,6 +46,10 @@ npm install -g swagger-tools
 
 At this point, you're ready for the [Quick Start][quick-start].
 
+## Validation
+
+To get a better idea of how we do validation, view our [Validation][swagger-tools-validation] documentation.
+
 [bower]: http://bower.io/
 [npm]: npmjs.org
 [quick-start]: https://github.com/apigee-127/swagger-tools/blob/master/docs/QuickStart.md
@@ -53,3 +57,4 @@ At this point, you're ready for the [Quick Start][quick-start].
 [swagger-tools-api]: https://github.com/apigee-127/swagger-tools/blob/master/docs/API.md
 [swagger-tools-cli]: https://github.com/apigee-127/swagger-tools/blob/master/docs/CLI.md
 [swagger-tools-middleware]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Middleware.md
+[swagger-tools-validation]: https://github.com/apigee-127/swagger-tools/blob/master/docs/Validation.md
