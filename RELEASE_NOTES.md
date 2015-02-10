@@ -1,5 +1,7 @@
 ## Release Notes
 
+* Fixed bug where unresolvable model references in operation parameters for Swagger 1.2 were not flagged
+
 ### v0.8.2 (2015-02-09)
 
 * Debugging support _(Issue #8)_
