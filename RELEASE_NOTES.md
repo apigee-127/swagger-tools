@@ -1,5 +1,7 @@
 ## Release Notes
 
+### v0.8.3 (2015-02-16)
+
 * Fixed bug where unresolvable model references in operation parameters for Swagger 1.2 were not flagged
 * Fixed bug in swagger-router where using mock mode caused the server to stop responding after the first request _(Issue #152)_
 
