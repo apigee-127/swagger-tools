@@ -44,8 +44,8 @@ var isModelParameter = module.exports.isModelParameter = function isModelParamet
     if (!_.isUndefined(param.type) && isModelType(spec, param.type)) {
       isModel = true;
     } else if (param.type === 'array' && isModelType(spec, param.items ?
-							     param.items.type || param.items.$ref :
-							     undefined)) {
+                                                             param.items.type || param.items.$ref :
+                                                             undefined)) {
       isModel = true;
     }
 
@@ -90,7 +90,7 @@ module.exports.getParameterValue = function getParameterValue (version, paramete
   case 'path':
     _.each(pathKeys, function (key, index) {
       if (key.name === parameter.name) {
-	val = match[index + 1];
+        val = match[index + 1];
       }
     });
 

@@ -142,8 +142,8 @@ var convertValue = function convertValue (value, schema, type) {
 var processOperationParameters = function processOperationParameters (version, pathKeys, pathMatch, req, res, next) {
   var swaggerMetadata = req.swagger;
   var parameters = !_.isUndefined(swaggerMetadata) ?
-		     (version === '1.2' ? swaggerMetadata.operation.parameters : swaggerMetadata.operationParameters) :
-		     undefined;
+                     (version === '1.2' ? swaggerMetadata.operation.parameters : swaggerMetadata.operationParameters) :
+                     undefined;
 
   if (!parameters) {
     return next();
@@ -197,12 +197,12 @@ var processOperationParameters = function processOperationParameters (version, p
       debug('      Value: %s', value);
 
       swaggerMetadata.params[parameter.name] = {
-	path: version === '1.2' ?
-		swaggerMetadata.operationPath.concat(['parameters', index.toString()]) :
-		parameterOrMetadata.path,
-	schema: parameter,
-	originalValue: oVal,
-	value: value
+        path: version === '1.2' ?
+                swaggerMetadata.operationPath.concat(['parameters', index.toString()]) :
+                parameterOrMetadata.path,
+        schema: parameter,
+        originalValue: oVal,
+        value: value
       };
     });
 
@@ -224,8 +224,8 @@ var processSwaggerDocuments = function processSwaggerDocuments (rlOrSO, apiDecla
 
     _.each(operation.parameters, function (parameter, index) {
       cParams.push({
-	path: apiPath.concat([method, 'parameters', index.toString()]),
-	schema: parameter
+        path: apiPath.concat([method, 'parameters', index.toString()]),
+        schema: parameter
       });
 
       seenParams.push(parameter.name + ':' + parameter.in);
@@ -233,10 +233,10 @@ var processSwaggerDocuments = function processSwaggerDocuments (rlOrSO, apiDecla
 
     _.each(path.parameters, function (parameter, index) {
       if (seenParams.indexOf(parameter.name + ':' + parameter.in) === -1) {
-	cParams.push({
-	  path: apiPath.concat(['parameters', index.toString()]),
-	  schema: parameter
-	});
+        cParams.push({
+          path: apiPath.concat(['parameters', index.toString()]),
+          schema: parameter
+        });
       }
     });
 
@@ -256,30 +256,30 @@ var processSwaggerDocuments = function processSwaggerDocuments (rlOrSO, apiDecla
     }
 
     debug(new Array(indent + 1).join(' ') + 'Found %s: %s',
-	  (spec.version === '1.2' ? 'API' : 'Path'),
-	  apiPath);
+          (spec.version === '1.2' ? 'API' : 'Path'),
+          apiPath);
 
     cacheEntry = apiCache[cacheKey] = spec.version === '1.2' ?
       {
-	api: apiOrPath,
-	apiDeclaration: adOrSO,
-	apiIndex: indexOrName,
-	keys: keys,
-	params: {},
-	re: re,
-	operations: {},
-	resourceListing: rlOrSO
+        api: apiOrPath,
+        apiDeclaration: adOrSO,
+        apiIndex: indexOrName,
+        keys: keys,
+        params: {},
+        re: re,
+        operations: {},
+        resourceListing: rlOrSO
       } :
       {
-	apiPath: indexOrName,
-	path: apiOrPath,
-	keys: keys,
-	re: re,
-	operations: {},
-	swaggerObject: {
-	  original: rlOrSO,
-	  resolved: adOrSO
-	}
+        apiPath: indexOrName,
+        path: apiOrPath,
+        keys: keys,
+        re: re,
+        operations: {},
+        swaggerObject: {
+          original: rlOrSO,
+          resolved: adOrSO
+        }
       };
 
     return cacheEntry;
@@ -300,17 +300,17 @@ var processSwaggerDocuments = function processSwaggerDocuments (rlOrSO, apiDecla
       debug('  Processing API Declaration %d', adIndex);
 
       _.each(apiDeclaration.apis, function (api, apiIndex) {
-	var cacheEntry = createCacheEntry(apiDeclaration, api, apiIndex, 4);
+        var cacheEntry = createCacheEntry(apiDeclaration, api, apiIndex, 4);
 
-	cacheEntry.resourceIndex = adIndex;
+        cacheEntry.resourceIndex = adIndex;
 
-	_.each(api.operations, function (operation, operationIndex) {
-	  cacheEntry.operations[operation.method.toLowerCase()] = {
-	    operation: operation,
-	    operationPath: ['apis', apiIndex.toString(), 'operations', operationIndex.toString()],
-	    operationParameters: operation.parameters
-	  };
-	});
+        _.each(api.operations, function (operation, operationIndex) {
+          cacheEntry.operations[operation.method.toLowerCase()] = {
+            operation: operation,
+            operationPath: ['apis', apiIndex.toString(), 'operations', operationIndex.toString()],
+            operationParameters: operation.parameters
+          };
+        });
       });
     });
   } else {
@@ -320,20 +320,20 @@ var processSwaggerDocuments = function processSwaggerDocuments (rlOrSO, apiDecla
     spec.resolve(rlOrSO, function (err, resolved) {
       // Gather the paths, their path regex patterns and the corresponding operations
       _.each(resolved.paths, function (path, pathName) {
-	var cacheEntry = createCacheEntry(resolved, path, pathName, 2);
+        var cacheEntry = createCacheEntry(resolved, path, pathName, 2);
 
-	_.each(['get', 'put', 'post', 'delete', 'options', 'head', 'patch'], function (method) {
-	  var operation = path[method];
+        _.each(['get', 'put', 'post', 'delete', 'options', 'head', 'patch'], function (method) {
+          var operation = path[method];
 
-	  if (!_.isUndefined(operation)) {
-	    cacheEntry.operations[method] = {
-	      operation: operation,
-	      operationPath: ['paths', pathName, method],
-	      // Required since we have to compose parameters based on the operation and the path
-	      operationParameters: composeParameters(['paths', pathName], method, path, operation)
-	    };
-	  }
-	});
+          if (!_.isUndefined(operation)) {
+            cacheEntry.operations[method] = {
+              operation: operation,
+              operationPath: ['paths', pathName, method],
+              // Required since we have to compose parameters based on the operation and the path
+              operationParameters: composeParameters(['paths', pathName], method, path, operation)
+            };
+          }
+        });
       });
     });
   }
@@ -395,16 +395,16 @@ exports = module.exports = function swaggerMetadataMiddleware (rlOrSO, apiDeclar
       }
 
       metadata = swaggerVersion === '1.2' ?
-	{
+        {
           api: cacheEntry.api,
           apiDeclaration: cacheEntry.apiDeclaration,
           apiIndex: cacheEntry.apiIndex,
           params: {},
           resourceIndex: cacheEntry.resourceIndex,
           resourceListing: cacheEntry.resourceListing
-	} :
+        } :
         {
-	  apiPath : cacheEntry.apiPath,
+          apiPath : cacheEntry.apiPath,
           path: cacheEntry.path,
           params: {},
           swaggerObject: cacheEntry.swaggerObject.resolved
@@ -414,12 +414,12 @@ exports = module.exports = function swaggerMetadataMiddleware (rlOrSO, apiDeclar
         metadata.operation = cacheEntry.operations[method].operation;
         metadata.operationPath = cacheEntry.operations[method].operationPath;
 
-	if (swaggerVersion === '1.2') {
+        if (swaggerVersion === '1.2') {
           metadata.authorizations = metadata.operation.authorizations || cacheEntry.apiDeclaration.authorizations;
-	} else {
-	  metadata.operationParameters = cacheEntry.operations[method].operationParameters;
-	  metadata.security = metadata.operation.security || metadata.swaggerObject.security || [];
-	}
+        } else {
+          metadata.operationParameters = cacheEntry.operations[method].operationParameters;
+          metadata.security = metadata.operation.security || metadata.swaggerObject.security || [];
+        }
       }
 
       metadata.swaggerVersion = swaggerVersion;

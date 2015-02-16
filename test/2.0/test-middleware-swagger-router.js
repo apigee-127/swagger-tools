@@ -254,12 +254,12 @@ describe('Swagger Router Middleware v2.0', function () {
         swaggerRouterOptions: {
           controllers: {
             'Pets_getPetById': function (req, res, next) {
-	      // This should throw an exception
-	      if (req['swagger-tools'].fake) {
-		next(new Error('This should have been reached'));
-	      }
-	      
-	      next();
+              // This should throw an exception
+              if (req['swagger-tools'].fake) {
+                next(new Error('This should have been reached'));
+              }
+
+              next();
             }
           }
         }
@@ -267,20 +267,20 @@ describe('Swagger Router Middleware v2.0', function () {
         request(app)
           .get('/api/pets/1')
           .expect(500)
-	  .end(helpers.expectContent('Cannot read property \'fake\' of undefined', done));
+          .end(helpers.expectContent('Cannot read property \'fake\' of undefined', done));
       });
     });
 
     it('mock mode should support void responses (Issue 112)', function (done) {
       helpers.createServer([petStoreJson], {
         swaggerRouterOptions: {
-	  useStubs: true
+          useStubs: true
         }
       }, function (app) {
         request(app)
           .delete('/api/pets/1')
           .expect(204)
-	  .end(helpers.expectContent('', done));
+          .end(helpers.expectContent('', done));
       });
     });
   });

@@ -64,7 +64,7 @@ describe('Swagger Metadata Middleware v1.2', function () {
 
            try {
              assert.ok(!_.isUndefined(swagger));
-	     assert.equal('1.2', swagger.swaggerVersion);
+             assert.equal('1.2', swagger.swaggerVersion);
              assert.deepEqual(swagger.api, petJson.apis[0]);
              assert.deepEqual(swagger.apiDeclaration, petJson);
              assert.equal(swagger.apiIndex, 0);
@@ -75,7 +75,7 @@ describe('Swagger Metadata Middleware v1.2', function () {
                petId: {
                  path: ['apis', '0', 'operations', '0', 'parameters', '0'],
                  schema: petJson.apis[0].operations[0].parameters[0],
-		 originalValue: '1',
+                 originalValue: '1',
                  value: 1
                }
              });
@@ -115,7 +115,7 @@ describe('Swagger Metadata Middleware v1.2', function () {
             assert.deepEqual(req.swagger.params['Auth-Token'], {
               path: ['apis', '0', 'operations', '0', 'parameters', '1'],
               schema: cPetJson.apis[0].operations[0].parameters[1],
-	      originalValue: 'fake',
+              originalValue: 'fake',
               value: 'fake'
             });
           } catch (err) {
@@ -136,56 +136,56 @@ describe('Swagger Metadata Middleware v1.2', function () {
     it('should convert parameteter values to the proper type (Issue 119)', function (done) {
       var argName = 'arg0';
       var queryValues = {
-	boolean: 'true',
-	integer: '1',
-	number: '1.1',
-	string: 'swagger-tools',
-	'string-date': '2014-06-16',
-	'string-date-time': '2014-06-16T18:20:35-06:00'
+        boolean: 'true',
+        integer: '1',
+        number: '1.1',
+        string: 'swagger-tools',
+        'string-date': '2014-06-16',
+        'string-date-time': '2014-06-16T18:20:35-06:00'
       };
       var paramValues = {
-	boolean: true,
-	integer: 1,
-	number: 1.1,
-	string: 'swagger-tools',
-	'string-date': new Date('2014-06-16'),
-	'string-date-time': new Date('2014-06-16T18:20:35-06:00')
+        boolean: true,
+        integer: 1,
+        number: 1.1,
+        string: 'swagger-tools',
+        'string-date': new Date('2014-06-16'),
+        'string-date-time': new Date('2014-06-16T18:20:35-06:00')
       };
 
       async.map(Object.keys(queryValues), function (type, callback) {
-	var queryValue = queryValues[type];
-	var paramValue = paramValues[type];
+        var queryValue = queryValues[type];
+        var paramValue = paramValues[type];
         var clonedP = _.cloneDeep(petJson);
-	var paramDef = {
-	  paramType: 'query',
-	  name: argName
-	};
-	var query = {};
-	var typeParts = type.split('-');
+        var paramDef = {
+          paramType: 'query',
+          name: argName
+        };
+        var query = {};
+        var typeParts = type.split('-');
 
-	if (typeParts.length === 1) {
-	  paramDef.type = type;
-	} else {
-	  paramDef.type = typeParts[0];
-	  paramDef.format = typeParts.slice(1).join('-');
-	}
+        if (typeParts.length === 1) {
+          paramDef.type = type;
+        } else {
+          paramDef.type = typeParts[0];
+          paramDef.format = typeParts.slice(1).join('-');
+        }
 
-	query[argName] = queryValue;
-	
-	clonedP.apis[0].operations[0].nickname = 'Pets_getPetById';
+        query[argName] = queryValue;
+
+        clonedP.apis[0].operations[0].nickname = 'Pets_getPetById';
         clonedP.apis[0].operations[0].parameters.push(paramDef);
 
-	helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {
-	  swaggerRouterOptions: {
+        helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {
+          swaggerRouterOptions: {
             controllers: {
-	      'Pets_getPetById': function (req, res) {
-		assert.deepEqual(paramValue, req.swagger.params[argName].value);
+              'Pets_getPetById': function (req, res) {
+                assert.deepEqual(paramValue, req.swagger.params[argName].value);
 
-		res.end('OK');
-	      }
+                res.end('OK');
+              }
             }
           }
-	}, function (app) {
+        }, function (app) {
           request(app)
             .get('/api/pet/1')
             .query(query)
@@ -193,15 +193,15 @@ describe('Swagger Metadata Middleware v1.2', function () {
             .end(callback);
         });
       }, function (err, responses) {
-	if (err) {
-	  throw err;
-	}
+        if (err) {
+          throw err;
+        }
 
-	_.each(responses, function (res) {
-	  assert.equal(res.text, 'OK');
-	});
+        _.each(responses, function (res) {
+          assert.equal(res.text, 'OK');
+        });
 
-	done();
+        done();
       });
     });
   });

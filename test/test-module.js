@@ -138,33 +138,33 @@ describe('swagger-tools', function () {
       });
 
       describe('issues', function () {
-	it('should handle invalid swagger version (Issue 137)', function (done) {
-	  var cRlJson = _.cloneDeep(rlJson);
+        it('should handle invalid swagger version (Issue 137)', function (done) {
+          var cRlJson = _.cloneDeep(rlJson);
 
-	  cRlJson.swaggerVersion = 1.2;
+          cRlJson.swaggerVersion = 1.2;
 
-	  try {
+          try {
             swagger.initializeMiddleware(cRlJson, [petJson, storeJson, userJson], function() {
-	      assert.fail(null, null, 'Should had failed');
+              assert.fail(null, null, 'Should had failed');
             });
-	  } catch (err) {
-	    assert.equal('Swagger document(s) failed validation so the server cannot start', err.message);
-	    assert.deepEqual({
-	      errors: [
-		{
-		  code: 'ENUM_MISMATCH',
-		  message: 'No enum match for: 1.2',
-		  path: [
-		    'swaggerVersion'
-		  ]
-		}
-	      ],
-	      warnings: []
-	    }, err.results);
+          } catch (err) {
+            assert.equal('Swagger document(s) failed validation so the server cannot start', err.message);
+            assert.deepEqual({
+              errors: [
+                {
+                  code: 'ENUM_MISMATCH',
+                  message: 'No enum match for: 1.2',
+                  path: [
+                    'swaggerVersion'
+                  ]
+                }
+              ],
+              warnings: []
+            }, err.results);
 
-	    done();
-	  }
-	});	
+            done();
+          }
+        });
       });
     });
 
@@ -254,42 +254,42 @@ describe('swagger-tools', function () {
       });
 
       describe('issues', function () {
-	it('should handle invalid swagger version (Issue 137)', function (done) {
-	  var cPetStoreJson = _.cloneDeep(petStoreJson);
+        it('should handle invalid swagger version (Issue 137)', function (done) {
+          var cPetStoreJson = _.cloneDeep(petStoreJson);
 
-	  cPetStoreJson.swagger = 2.0;
+          cPetStoreJson.swagger = 2.0;
 
-	  try {
+          try {
             swagger.initializeMiddleware(cPetStoreJson, function() {
-	      assert.fail(null, null, 'Should had failed');
+              assert.fail(null, null, 'Should had failed');
             });
-	  } catch (err) {
-	    assert.equal('Swagger document(s) failed validation so the server cannot start', err.message);
-	    assert.deepEqual({
-	      errors: [
-		{
-		  code: 'INVALID_TYPE',
-		  message: 'Expected type string but found type integer',
-		  path: [
-		    'swagger'
-		  ],
-		  description: 'The Swagger version of this document.'
-		},
-		{
-		  code: 'ENUM_MISMATCH',
-		  message: 'No enum match for: 2',
-		  path: [
-		    'swagger'
-		  ],
-		  description: 'The Swagger version of this document.'
-		}
-	      ],
-	      warnings: []
-	    }, err.results);
+          } catch (err) {
+            assert.equal('Swagger document(s) failed validation so the server cannot start', err.message);
+            assert.deepEqual({
+              errors: [
+                {
+                  code: 'INVALID_TYPE',
+                  message: 'Expected type string but found type integer',
+                  path: [
+                    'swagger'
+                  ],
+                  description: 'The Swagger version of this document.'
+                },
+                {
+                  code: 'ENUM_MISMATCH',
+                  message: 'No enum match for: 2',
+                  path: [
+                    'swagger'
+                  ],
+                  description: 'The Swagger version of this document.'
+                }
+              ],
+              warnings: []
+            }, err.results);
 
-	    done();
-	  }
-	});	
+            done();
+          }
+        });
       });
     });
   });

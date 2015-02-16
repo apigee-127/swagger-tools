@@ -73,27 +73,27 @@ var handlerCacheFromDir = function handlerCacheFromDir (dirOrDirs) {
       var controller;
 
       if (file.match(jsFileRegex)) {
-	controller = require(path.resolve(path.join(dir, controllerName)));
+        controller = require(path.resolve(path.join(dir, controllerName)));
 
-	debug('    %s%s:',
-	      path.resolve(path.join(dir, file)),
-	      (_.isPlainObject(controller) ? '' : ' (not an object, skipped)'));
+        debug('    %s%s:',
+              path.resolve(path.join(dir, file)),
+              (_.isPlainObject(controller) ? '' : ' (not an object, skipped)'));
 
-	if (_.isPlainObject(controller)) {
-	  _.each(controller, function (value, name) {
-	    var handlerId = controllerName + '_' + name;
+        if (_.isPlainObject(controller)) {
+          _.each(controller, function (value, name) {
+            var handlerId = controllerName + '_' + name;
 
-	    debug('      %s%s',
-		  handlerId,
-		  (_.isFunction(value) ? '' : ' (not a function, skipped)'));
+            debug('      %s%s',
+                  handlerId,
+                  (_.isFunction(value) ? '' : ' (not a function, skipped)'));
 
-	    // TODO: Log this situation
+            // TODO: Log this situation
 
-	    if (_.isFunction(value) && !handlerCache[handlerId]) {
-	      handlerCache[handlerId] = value;
-	    }
-	  });
-	}
+            if (_.isFunction(value) && !handlerCache[handlerId]) {
+              handlerCache[handlerId] = value;
+            }
+          });
+        }
       }
     });
   });
@@ -161,7 +161,7 @@ var getMockValue = function getMockValue (version, schema) {
 
     _.each(schema.allOf, function (parentSchema) {
       _.each(parentSchema.properties, function (property, propName) {
-	value[propName] = getMockValue(version, property);
+        value[propName] = getMockValue(version, property);
       });
     });
 
@@ -256,19 +256,19 @@ var mockResponse = function mockResponse (req, res, next, handlerName) {
   if (_.isPlainObject(responseType) || mHelpers.isModelType(spec, responseType)) {
     if (req.swagger.swaggerVersion === '1.2') {
       spec.composeModel(apiDOrSO, responseType, function (err, result) {
-	if (err) {
-	  return sendResponse(undefined, err);
-	} else {
-	  // Should we handle this differently as undefined typically means the model doesn't exist
-	  return sendResponse(undefined, _.isUndefined(result) ?
-					   stubResponse :
-					   JSON.stringify(getMockValue(req.swagger.swaggerVersion, result)));
-	}
+        if (err) {
+          return sendResponse(undefined, err);
+        } else {
+          // Should we handle this differently as undefined typically means the model doesn't exist
+          return sendResponse(undefined, _.isUndefined(result) ?
+                                           stubResponse :
+                                           JSON.stringify(getMockValue(req.swagger.swaggerVersion, result)));
+        }
       });
     } else {
       return sendResponse(undefined, JSON.stringify(getMockValue(req.swagger.swaggerVersion, responseType.schema ?
-									    responseType.schema :
-									    responseType)));
+                                                                            responseType.schema :
+                                                                            responseType)));
     }
   } else {
     return sendResponse(undefined, getMockValue(req.swagger.swaggerVersion, responseType));
@@ -286,9 +286,9 @@ var createStubHandler = function createStubHandler (req, res, next, handlerName)
 var send405 = function send405 (req, res, next) {
   var allowedMethods = [];
   var err = new Error('Route defined in Swagger specification (' +
-			(_.isUndefined(req.swagger.api) ? req.swagger.apiPath : req.swagger.api.path) +
-			') but there is no defined ' +
-		      (req.swagger.swaggerVersion === '1.2' ? req.method.toUpperCase() : req.method.toLowerCase()) + ' operation.');
+                        (_.isUndefined(req.swagger.api) ? req.swagger.apiPath : req.swagger.api.path) +
+                        ') but there is no defined ' +
+                      (req.swagger.swaggerVersion === '1.2' ? req.method.toUpperCase() : req.method.toLowerCase()) + ' operation.');
 
   if (!_.isUndefined(req.swagger.api)) {
     _.each(req.swagger.api.operations, function (operation) {
@@ -297,7 +297,7 @@ var send405 = function send405 (req, res, next) {
   } else {
     _.each(req.swagger.path, function (operation, method) {
       if (cHelpers.swaggerOperationMethods.indexOf(method.toUpperCase()) !== -1) {
-	allowedMethods.push(method.toUpperCase());
+        allowedMethods.push(method.toUpperCase());
       }
     });
   }
@@ -343,7 +343,7 @@ exports = module.exports = function swaggerRouterMiddleware (options) {
 
   if (_.isPlainObject(options.controllers)) {
     debug('  Controllers:');
-    
+
     // Create the handler cache from the passed in controllers object
     _.each(options.controllers, function (func, handlerName) {
       debug('    %s', handlerName);
@@ -370,31 +370,31 @@ exports = module.exports = function swaggerRouterMiddleware (options) {
 
     if (req.swagger) {
       if (operation) {
-	handlerName = getHandlerName(req);
-	handler = handlerCache[handlerName];
+        handlerName = getHandlerName(req);
+        handler = handlerCache[handlerName];
 
-	req.swagger.useStubs = options.useStubs;
+        req.swagger.useStubs = options.useStubs;
 
-	debug('  Route handler: %s', (_.isUndefined(handler) ? 'false' : handlerName));
-	debug('  Mock mode: %s', options.useStubs);
+        debug('  Route handler: %s', (_.isUndefined(handler) ? 'false' : handlerName));
+        debug('  Mock mode: %s', options.useStubs);
 
-	if (_.isUndefined(handler) && options.useStubs === true) {
+        if (_.isUndefined(handler) && options.useStubs === true) {
           handler = handlerCache[handlerName] = createStubHandler(req, res, next, handlerName);
-	}
+        }
 
-	if (!_.isUndefined(handler)) {
-	  try {
+        if (!_.isUndefined(handler)) {
+          try {
             return handler(req, res, next);
-	  } catch (err) {
-	    rErr = err;
+          } catch (err) {
+            rErr = err;
 
-	    debug('Handler threw an unexpected error: %s\n%s', err.message, err.stack);
-	  }
-	}
+            debug('Handler threw an unexpected error: %s\n%s', err.message, err.stack);
+          }
+        }
       } else {
-	debug('  No handler for method: %s', req.method);
+        debug('  No handler for method: %s', req.method);
 
-	return send405(req, res, next);
+        return send405(req, res, next);
       }
     }
 

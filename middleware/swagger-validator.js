@@ -49,9 +49,9 @@ var send400 = function send400 (req, res, next, err) {
     case 'MULTIPLE_OF':
     case 'INVALID_TYPE':
       if (err.code === 'INVALID_TYPE' && err.message.split(' ')[0] === 'Value') {
-	validationMessage += err.message.split(' ').slice(1).join(' ');
+        validationMessage += err.message.split(' ').slice(1).join(' ');
       } else {
-	validationMessage += 'is ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
+        validationMessage += 'is ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
       }
 
       break;
@@ -94,43 +94,43 @@ var validateValue = function validateValue (req, schema, path, val, callback) {
   if (isModel) {
     if (_.isString(val)) {
       try {
-	val = JSON.parse(val);
+        val = JSON.parse(val);
       } catch (err) {
-	err.failedValidation = true;
-	err.message = 'Value expected to be an array/object but is not';
+        err.failedValidation = true;
+        err.message = 'Value expected to be an array/object but is not';
 
-	throw err;
+        throw err;
       }
     }
 
     async.map(schema.type === 'array' ? val : [val], function (aVal, oCallback) {
       if (version === '1.2') {
-	spec.validateModel(document, '#/models/' + (schema.items ?
-						    schema.items.type || schema.items.$ref :
-						    schema.type), aVal, oCallback);
+        spec.validateModel(document, '#/models/' + (schema.items ?
+                                                    schema.items.type || schema.items.$ref :
+                                                    schema.type), aVal, oCallback);
       } else {
-	try {
-	  validators.validateAgainstSchema(schema.schema ? schema.schema : schema, val);
+        try {
+          validators.validateAgainstSchema(schema.schema ? schema.schema : schema, val);
 
-	  oCallback();
-	} catch (err) {
-	  oCallback(err);
-	}
+          oCallback();
+        } catch (err) {
+          oCallback(err);
+        }
       }
     }, function (err, allResults) {
       if (!err) {
-	_.each(allResults, function (results) {
-	  if (results && cHelpers.getErrorCount(results) > 0) {
-	    err = new Error('Failed schema validation');
+        _.each(allResults, function (results) {
+          if (results && cHelpers.getErrorCount(results) > 0) {
+            err = new Error('Failed schema validation');
 
-	    err.code = 'SCHEMA_VALIDATION_FAILED';
-	    err.errors = results.errors;
-	    err.warnings = results.warnings;
-	    err.failedValidation = true;
+            err.code = 'SCHEMA_VALIDATION_FAILED';
+            err.errors = results.errors;
+            err.warnings = results.warnings;
+            err.failedValidation = true;
 
-	    return false;
-	  }
-	});
+            return false;
+          }
+        });
       }
 
       callback(err);
@@ -159,65 +159,65 @@ var wrapEnd = function wrapEnd (req, res, next) {
     try {
       // Validate the content type
       try {
-	validators.validateContentType(req.swagger.apiDeclaration ?
-					 req.swagger.apiDeclaration.produces :
-					 req.swagger.swaggerObject.produces,
-				       operation.produces, res);
+        validators.validateContentType(req.swagger.apiDeclaration ?
+                                         req.swagger.apiDeclaration.produces :
+                                         req.swagger.swaggerObject.produces,
+                                       operation.produces, res);
       } catch (err) {
-	err.failedValidation = true;
+        err.failedValidation = true;
 
-	throw err;
+        throw err;
       }
 
       if (_.isUndefined(schema.type)) {
-	if (schema.schema) {
-	  schema = schema.schema;
-	} else if (req.swagger.swaggerVersion === '1.2') {
-	  schema = _.find(operation.responseMessages, function (responseMessage, index) {
-	    if (responseMessage.code === res.statusCode) {
-	      vPath.push('responseMessages', index.toString());
+        if (schema.schema) {
+          schema = schema.schema;
+        } else if (req.swagger.swaggerVersion === '1.2') {
+          schema = _.find(operation.responseMessages, function (responseMessage, index) {
+            if (responseMessage.code === res.statusCode) {
+              vPath.push('responseMessages', index.toString());
 
-	      return true;
-	    }
-	  });
+              return true;
+            }
+          });
 
-	  if (!_.isUndefined(schema)) {
-	    schema = schema.responseModel;
-	  }
-	} else {
-	  schema = _.find(operation.responses, function (response, code) {
-	    if (code === res.statusCode.toString()) {
-	      vPath.push('responses', code);
+          if (!_.isUndefined(schema)) {
+            schema = schema.responseModel;
+          }
+        } else {
+          schema = _.find(operation.responses, function (response, code) {
+            if (code === res.statusCode.toString()) {
+              vPath.push('responses', code);
 
-	      return true;
-	    }
-	  });
+              return true;
+            }
+          });
 
-	  if (_.isUndefined(schema) && operation.responses.default) {
-	    schema = operation.responses.default;
+          if (_.isUndefined(schema) && operation.responses.default) {
+            schema = operation.responses.default;
 
-	    vPath.push('responses', 'default');
-	  }
-	}
+            vPath.push('responses', 'default');
+          }
+        }
       }
 
       validateValue(req, schema, vPath, val,
-		    function (err) {
-		      if (err) {
-			throw err;
-		      }
+                    function (err) {
+                      if (err) {
+                        throw err;
+                      }
 
-		      // 'res.end' requires a Buffer or String so if it's not one, create a String
-		      if (!(data instanceof Buffer) && !_.isString(data)) {
-			data = JSON.stringify(data);
-		      }
+                      // 'res.end' requires a Buffer or String so if it's not one, create a String
+                      if (!(data instanceof Buffer) && !_.isString(data)) {
+                        data = JSON.stringify(data);
+                      }
 
-		      res.end(data, encoding);
-		    });
+                      res.end(data, encoding);
+                    });
     } catch (err) {
       if (err.failedValidation) {
-	err.originalResponse = data;
-	err.message = 'Response validation failed: ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
+        err.originalResponse = data;
+        err.message = 'Response validation failed: ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
       }
 
       return next(err);
@@ -265,50 +265,50 @@ exports = module.exports = function swaggerValidatorMiddleware (options) {
       try {
         // Validate the content type
         validators.validateContentType(req.swagger.swaggerVersion === '1.2' ?
-				         req.swagger.api.consumes :
-				         req.swagger.swaggerObject.consumes,
-				       operation.consumes, req);
+                                         req.swagger.api.consumes :
+                                         req.swagger.swaggerObject.consumes,
+                                       operation.consumes, req);
 
         async.map(swaggerVersion === '1.2' ?
-		  operation.parameters :
-		  req.swagger.operationParameters, function (parameter, oCallback) {
-		    var schema = swaggerVersion === '1.2' ? parameter : parameter.schema;
-		    var val;
+                  operation.parameters :
+                  req.swagger.operationParameters, function (parameter, oCallback) {
+                    var schema = swaggerVersion === '1.2' ? parameter : parameter.schema;
+                    var val;
 
-		    paramName = schema.name;
-		    paramPath = swaggerVersion === '1.2' ?
-		      req.swagger.operationPath.concat(['params', paramIndex.toString()]) :
-		      parameter.path;
-		    val = req.swagger.params[paramName].originalValue;
+                    paramName = schema.name;
+                    paramPath = swaggerVersion === '1.2' ?
+                      req.swagger.operationPath.concat(['params', paramIndex.toString()]) :
+                      parameter.path;
+                    val = req.swagger.params[paramName].originalValue;
 
-		    // Validate requiredness
-		    validators.validateRequiredness(val, schema.required);
+                    // Validate requiredness
+                    validators.validateRequiredness(val, schema.required);
 
-		    // Quick return if the value is not present
-		    if (_.isUndefined(val)) {
-		      return oCallback();
-		    }
+                    // Quick return if the value is not present
+                    if (_.isUndefined(val)) {
+                      return oCallback();
+                    }
 
-		    validateValue(req, schema, paramPath, val, oCallback);
+                    validateValue(req, schema, paramPath, val, oCallback);
 
-		    paramIndex++;
-		  }, function (err) {
-		    if (err) {
-		      throw err;
-		    } else {
-		      return next();
-		    }
-		  });
+                    paramIndex++;
+                  }, function (err) {
+                    if (err) {
+                      throw err;
+                    } else {
+                      return next();
+                    }
+                  });
       } catch (err) {
         if (err.failedValidation === true) {
           if (!err.path) {
             err.path = paramPath;
           }
-	  
+
           err.paramName = paramName;
         }
 
-	mHelpers.debugError(err, debug);
+        mHelpers.debugError(err, debug);
 
         return send400(req, res, next, err);
       }

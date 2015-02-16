@@ -265,7 +265,7 @@ describe('Specification v2.0' + header, function () {
       });
 
       describe('default value fails constraint/schema validation', function () {
-	describe('definition property', function () {
+        describe('definition property', function () {
           it('enum mismatch', function (done) {
             var swaggerObject = _.cloneDeep(petStoreJson);
 
@@ -277,15 +277,15 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'ENUM_MISMATCH',
                   message: 'Not an allowable value (A, B): fake',
                   path: ['definitions', 'Pet', 'properties', 'fake', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
@@ -304,15 +304,15 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'MAXIMUM',
                   message: 'Greater than the configured maximum (0): 1',
                   path: ['definitions', 'Pet', 'properties', 'fake', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
@@ -332,15 +332,15 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'MAXIMUM_EXCLUSIVE',
                   message: 'Greater than or equal to the configured maximum (1): 1',
                   path: ['definitions', 'Pet', 'properties', 'fake', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
@@ -354,7 +354,7 @@ describe('Specification v2.0' + header, function () {
             swaggerObject.definitions.Pet.properties.fake = {
               type: 'array',
               items: {
-		type: 'string'
+                type: 'string'
               },
               maxItems: 1,
               default: ['A', 'B']
@@ -362,15 +362,15 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'ARRAY_LENGTH_LONG',
                   message: 'Array is too long (2), maximum 1',
                   path: ['definitions', 'Pet', 'properties', 'fake', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
@@ -389,15 +389,15 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'MAX_LENGTH',
                   message: 'String is too long (4 chars), maximum 3',
                   path: ['definitions', 'Pet', 'properties', 'fake', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
@@ -412,22 +412,22 @@ describe('Specification v2.0' + header, function () {
               type: 'object',
               maxProperties: 1,
               default: {
-		a: 'a',
-		b: 'b'
+                a: 'a',
+                b: 'b'
               }
             };
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'MAX_PROPERTIES',
                   message: 'Number of properties is too many (2 properties), maximum 1',
                   path: ['definitions', 'Pet', 'properties', 'fake', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
@@ -446,15 +446,15 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'MINIMUM',
                   message: 'Less than the configured minimum (1): 0',
                   path: ['definitions', 'Pet', 'properties', 'fake', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
@@ -468,7 +468,7 @@ describe('Specification v2.0' + header, function () {
             swaggerObject.definitions.Pet.properties.fake = {
               type: 'array',
               items: {
-		type: 'string'
+                type: 'string'
               },
               minItems: 2,
               default: ['A']
@@ -476,15 +476,15 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'ARRAY_LENGTH_SHORT',
                   message: 'Array is too short (1), minimum 2',
                   path: ['definitions', 'Pet', 'properties', 'fake', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
@@ -503,15 +503,15 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'MIN_LENGTH',
                   message: 'String is too short (4 chars), minimum 5',
                   path: ['definitions', 'Pet', 'properties', 'fake', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
@@ -526,21 +526,21 @@ describe('Specification v2.0' + header, function () {
               type: 'object',
               minProperties: 2,
               default: {
-		a: 'a'
+                a: 'a'
               }
             };
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'MIN_PROPERTIES',
                   message: 'Number of properties is too few (1 properties), minimum 2',
                   path: ['definitions', 'Pet', 'properties', 'fake', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
@@ -559,15 +559,15 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'MULTIPLE_OF',
                   message: 'Not a multiple of 3',
                   path: ['definitions', 'Pet', 'properties', 'fake', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
@@ -586,15 +586,15 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'PATTERN',
                   message: 'Does not match required pattern: ^#.*',
                   path: ['definitions', 'Pet', 'properties', 'fake', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
@@ -602,7 +602,7 @@ describe('Specification v2.0' + header, function () {
             });
           });
 
-	  it('wrong type', function (done) {
+          it('wrong type', function (done) {
             var swaggerObject = _.cloneDeep(petStoreJson);
 
             swaggerObject.definitions.Pet.properties.fake = {
@@ -612,54 +612,54 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['definitions', 'Pet', 'properties', 'fake', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
               done();
             });
           });
-	});
+        });
 
-	describe('parameter definition', function () {
+        describe('parameter definition', function () {
           it('inline schema', function (done) {
             var swaggerObject = _.cloneDeep(petStoreJson);
 
             swaggerObject.parameters = {
               fake: {
-		name: 'fake',
-		type: 'integer',
-		  in: 'query',
-		default: 'fake'
+                name: 'fake',
+                type: 'integer',
+                  in: 'query',
+                default: 'fake'
               }
             };
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['parameters', 'fake', 'default']
-		}
+                }
               ]);
               assert.deepEqual(result.warnings, [
-		{
+                {
                   code: 'UNUSED_PARAMETER',
                   message: 'Parameter is defined but is not used: #/parameters/fake',
                   path: ['parameters', 'fake']
-		}
+                }
               ]);
 
               done();
@@ -671,33 +671,33 @@ describe('Specification v2.0' + header, function () {
 
             swaggerObject.parameters = {
               fake: {
-		name: 'fake',
-		  in: 'body',
-		schema: {
+                name: 'fake',
+                  in: 'body',
+                schema: {
                   type: 'integer',
                   default: 'fake'
-		}
+                }
               }
             };
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['parameters', 'fake', 'schema', 'default']
-		}
+                }
               ]);
               assert.deepEqual(result.warnings, [
-		{
+                {
                   code: 'UNUSED_PARAMETER',
                   message: 'Parameter is defined but is not used: #/parameters/fake',
                   path: ['parameters', 'fake']
-		}
+                }
               ]);
 
               done();
@@ -713,37 +713,37 @@ describe('Specification v2.0' + header, function () {
             };
             swaggerObject.parameters = {
               fake: {
-		name: 'fake',
-		  in: 'body',
-		schema: {
+                name: 'fake',
+                  in: 'body',
+                schema: {
                   $ref: '#/definitions/fake'
-		}
+                }
               }
             };
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['parameters', 'fake', 'schema', 'default']
-		},
-		{
+                },
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['definitions', 'fake', 'default']
-		}
+                }
               ]);
               assert.deepEqual(result.warnings, [
-		{
+                {
                   code: 'UNUSED_PARAMETER',
                   message: 'Parameter is defined but is not used: #/parameters/fake',
                   path: ['parameters', 'fake']
-		}
+                }
               ]);
 
               done();
@@ -751,30 +751,30 @@ describe('Specification v2.0' + header, function () {
           });
 
           // Testing all other constraints is unnecessary since the same code that validates them is tested above
-	});
+        });
 
-	describe('operation parameter', function () {
+        describe('operation parameter', function () {
           it('inline schema', function (done) {
             var swaggerObject = _.cloneDeep(petStoreJson);
 
             swaggerObject.paths['/pets'].post.parameters.push({
               name: 'fake',
               type: 'integer',
-		in: 'query',
+                in: 'query',
               default: 'fake'
             });
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['paths', '/pets', 'post', 'parameters', '1', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
@@ -792,23 +792,23 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['paths', '/pets', 'post', 'parameters', '0', 'schema', 'default']
-		}
+                }
               ]);
               assert.deepEqual(result.warnings, [
-		{
-		  code: 'UNUSED_DEFINITION',
-		  message: 'Definition is defined but is not used: #/definitions/newPet',
-		  path: ['definitions', 'newPet']
-		}
-	      ]);
+                {
+                  code: 'UNUSED_DEFINITION',
+                  message: 'Definition is defined but is not used: #/definitions/newPet',
+                  path: ['definitions', 'newPet']
+                }
+              ]);
 
               done();
             });
@@ -819,10 +819,10 @@ describe('Specification v2.0' + header, function () {
 
             swaggerObject.parameters = {
               fake: {
-		name: 'fake',
-		  in: 'query',
-		type: 'integer',
-		default: 'fake'
+                name: 'fake',
+                  in: 'query',
+                type: 'integer',
+                default: 'fake'
               }
             };
             swaggerObject.paths['/pets'].post.parameters.push({
@@ -831,20 +831,20 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['parameters', 'fake', 'default']
-		},
-		{
+                },
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['paths', '/pets', 'post', 'parameters', '1', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
@@ -863,61 +863,61 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['definitions', 'fake', 'default']
-		},
-		{
+                },
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['paths', '/pets', 'post', 'parameters', '0', 'schema', 'default']
-		}
+                }
               ]);
-	      assert.deepEqual(result.warnings, [
-		{
-		  code: 'UNUSED_DEFINITION',
-		  message: 'Definition is defined but is not used: #/definitions/newPet',
-		  path: ['definitions', 'newPet']
-		}
-	      ]);
+              assert.deepEqual(result.warnings, [
+                {
+                  code: 'UNUSED_DEFINITION',
+                  message: 'Definition is defined but is not used: #/definitions/newPet',
+                  path: ['definitions', 'newPet']
+                }
+              ]);
 
               done();
             });
           });
 
           // Testing all other constraints is unnecessary since the same code that validates them is tested above
-	});
+        });
 
-	describe('operation parameter (path level)', function () {
+        describe('operation parameter (path level)', function () {
           it('inline schema', function (done) {
             var swaggerObject = _.cloneDeep(petStoreJson);
 
             swaggerObject.paths['/pets'].parameters = [
               {
-		name: 'fake',
-		type: 'integer',
-		  in: 'query',
-		default: 'fake'
+                name: 'fake',
+                type: 'integer',
+                  in: 'query',
+                default: 'fake'
               }
             ];
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               // Since this is a path level parameter, all operations will get the same error
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['paths', '/pets', 'parameters', '0', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
@@ -930,37 +930,37 @@ describe('Specification v2.0' + header, function () {
 
             swaggerObject.paths['/pets'].parameters = [
               {
-		name: 'fake',
-		  in: 'body',
-		schema: {
+                name: 'fake',
+                  in: 'body',
+                schema: {
                   type: 'integer',
                   default: 'fake'
-		}
+                }
               }
             ];
 
-	    delete swaggerObject.paths['/pets'].post.parameters;
+            delete swaggerObject.paths['/pets'].post.parameters;
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               // Since this is a path level parameter, all operations will get the same error
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['paths', '/pets', 'parameters', '0', 'schema', 'default']
-		}
+                }
               ]);
-	      assert.deepEqual(result.warnings, [
-		{
-		  code: 'UNUSED_DEFINITION',
-		  message: 'Definition is defined but is not used: #/definitions/newPet',
-		  path: ['definitions', 'newPet']
-		}
-	      ]);
+              assert.deepEqual(result.warnings, [
+                {
+                  code: 'UNUSED_DEFINITION',
+                  message: 'Definition is defined but is not used: #/definitions/newPet',
+                  path: ['definitions', 'newPet']
+                }
+              ]);
 
               done();
             });
@@ -971,35 +971,35 @@ describe('Specification v2.0' + header, function () {
 
             swaggerObject.parameters = {
               fake: {
-		name: 'fake',
-		  in: 'query',
-		type: 'integer',
-		default: 'fake'
+                name: 'fake',
+                  in: 'query',
+                type: 'integer',
+                default: 'fake'
               }
             };
             swaggerObject.paths['/pets'].parameters = [
               {
-		$ref: '#/parameters/fake'
+                $ref: '#/parameters/fake'
               }
             ];
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               // Since this is a path level parameter, all operations will get the same error
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['parameters', 'fake', 'default']
-		},
-		{
+                },
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['paths', '/pets', 'parameters', '0', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
@@ -1016,72 +1016,72 @@ describe('Specification v2.0' + header, function () {
             };
             swaggerObject.paths['/pets'].parameters = [
               {
-		name: 'fake',
-		  in: 'body',
-		schema: {
+                name: 'fake',
+                  in: 'body',
+                schema: {
                   $ref: '#/definitions/fake'
-		}
+                }
               }
             ];
 
-	    delete swaggerObject.paths['/pets'].post.parameters;
+            delete swaggerObject.paths['/pets'].post.parameters;
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               // Since this is a path level parameter, all operations will get the same error
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['definitions', 'fake', 'default']
-		},
-		{
+                },
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
-		  path: ['paths', '/pets', 'parameters', '0', 'schema', 'default']
-		}
+                  path: ['paths', '/pets', 'parameters', '0', 'schema', 'default']
+                }
               ]);
-	      assert.deepEqual(result.warnings, [
-		{
-		  code: 'UNUSED_DEFINITION',
-		  message: 'Definition is defined but is not used: #/definitions/newPet',
-		  path: ['definitions', 'newPet']
-		}
-	      ]);
+              assert.deepEqual(result.warnings, [
+                {
+                  code: 'UNUSED_DEFINITION',
+                  message: 'Definition is defined but is not used: #/definitions/newPet',
+                  path: ['definitions', 'newPet']
+                }
+              ]);
 
               done();
             });
           });
 
           // Testing all other constraints is unnecessary since the same code that validates them is tested above
-	});
+        });
 
-	describe('operation response', function () {
+        describe('operation response', function () {
           it('schema object', function (done) {
             var swaggerObject = _.cloneDeep(petStoreJson);
 
             swaggerObject.paths['/pets'].get.responses['201'] = {
               description: 'Fake response',
               schema: {
-		type: 'integer',
-		default: 'fake'
+                type: 'integer',
+                default: 'fake'
               }
             };
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['paths', '/pets', 'get', 'responses', '201', 'schema', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
@@ -1099,26 +1099,26 @@ describe('Specification v2.0' + header, function () {
             swaggerObject.paths['/pets'].get.responses['201'] = {
               description: 'Fake response',
               schema: {
-		$ref: '#/definitions/fake'
+                $ref: '#/definitions/fake'
               }
             };
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['definitions', 'fake', 'default']
-		},
-		{
+                },
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['paths', '/pets', 'get', 'responses', '201', 'schema', 'default']
-		}
+                }
               ]);
               assert.equal(result.warnings.length, 0);
 
@@ -1127,40 +1127,40 @@ describe('Specification v2.0' + header, function () {
           });
 
           // Testing all other constraints is unnecessary since the same code that validates them is tested above
-	});
+        });
 
-	describe('response definition', function () {
+        describe('response definition', function () {
           it('schema object', function (done) {
             var swaggerObject = _.cloneDeep(petStoreJson);
 
             swaggerObject.responses = {
               fake: {
-		description: 'Fake response',
-		schema: {
+                description: 'Fake response',
+                schema: {
                   type: 'integer',
                   default: 'fake'
-		}
+                }
               }
             };
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['responses', 'fake', 'schema', 'default']
-		}
+                }
               ]);
               assert.deepEqual(result.warnings, [
-		{
+                {
                   code: 'UNUSED_RESPONSE',
                   message: 'Response is defined but is not used: #/responses/fake',
                   path: ['responses', 'fake']
-		}
+                }
               ]);
 
               done();
@@ -1176,36 +1176,36 @@ describe('Specification v2.0' + header, function () {
             };
             swaggerObject.responses = {
               fake: {
-		description: 'Fake response',
-		schema: {
+                description: 'Fake response',
+                schema: {
                   $ref: '#/definitions/fake'
-		}
+                }
               }
             };
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-		throw err;
+                throw err;
               }
 
               assert.deepEqual(result.errors, [
-		{
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['responses', 'fake', 'schema', 'default']
-		},
-		{
+                },
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['definitions', 'fake', 'default']
-		}
+                }
               ]);
               assert.deepEqual(result.warnings, [
-		{
+                {
                   code: 'UNUSED_RESPONSE',
                   message: 'Response is defined but is not used: #/responses/fake',
                   path: ['responses', 'fake']
-		}
+                }
               ]);
 
               done();
@@ -1213,7 +1213,7 @@ describe('Specification v2.0' + header, function () {
           });
 
           // Testing all other constraints is unnecessary since the same code that validates them is tested above
-	});
+        });
       });
 
       it('duplicate API path (equivalent)', function (done) {
@@ -1242,7 +1242,7 @@ describe('Specification v2.0' + header, function () {
       });
 
       describe('duplicate operation parameter (name+in)', function () {
-	it('path level', function (done) {
+        it('path level', function (done) {
           var swaggerObject = _.cloneDeep(petStoreJson);
           var cParam = _.cloneDeep(swaggerObject.paths['/pets/{id}'].parameters[0]);
 
@@ -1261,23 +1261,23 @@ describe('Specification v2.0' + header, function () {
             // Since this is a path level parameter, all operations that do not override the property will get the error
             assert.deepEqual(result.errors, [
               {
-		code: 'DUPLICATE_PARAMETER',
-		message: 'Parameter already defined: id',
-		path: ['paths', '/pets/{id}', 'parameters', '1', 'name']
+                code: 'DUPLICATE_PARAMETER',
+                message: 'Parameter already defined: id',
+                path: ['paths', '/pets/{id}', 'parameters', '1', 'name']
               },
               {
-		code: 'DUPLICATE_PARAMETER',
-		message: 'Parameter already defined: id',
-		path: ['paths', '/pets/{id}', 'get', 'parameters', '1', 'name']
+                code: 'DUPLICATE_PARAMETER',
+                message: 'Parameter already defined: id',
+                path: ['paths', '/pets/{id}', 'get', 'parameters', '1', 'name']
               }
             ]);
             assert.equal(result.warnings.length, 0);
 
             done();
           });
-	});
+        });
 
-	it('path level (remote)', function (done) {
+        it('path level (remote)', function (done) {
           var swaggerObject = _.cloneDeep(petStoreJson);
           var cPath = _.cloneDeep(swaggerObject.paths['/pets/{id}']);
           var cParam = _.cloneDeep(cPath.parameters[0]);
@@ -1301,23 +1301,23 @@ describe('Specification v2.0' + header, function () {
             // Since this is a path level parameter, all operations that do not override the property will get the error
             assert.deepEqual(result.errors, [
               {
-		code: 'DUPLICATE_PARAMETER',
-		message: 'Parameter already defined: id',
-		path: ['paths', '/people/{id}', 'parameters', '1', 'name']
+                code: 'DUPLICATE_PARAMETER',
+                message: 'Parameter already defined: id',
+                path: ['paths', '/people/{id}', 'parameters', '1', 'name']
               },
               {
-		code: 'DUPLICATE_PARAMETER',
-		message: 'Parameter already defined: id',
-		path: ['paths', '/people/{id}', 'get', 'parameters', '1', 'name']
+                code: 'DUPLICATE_PARAMETER',
+                message: 'Parameter already defined: id',
+                path: ['paths', '/people/{id}', 'get', 'parameters', '1', 'name']
               }
             ]);
             assert.equal(result.warnings.length, 0);
 
             done();
           });
-	});
+        });
 
-	it('operation level', function (done) {
+        it('operation level', function (done) {
           var swaggerObject = _.cloneDeep(petStoreJson);
           var cParam = _.cloneDeep(swaggerObject.paths['/pets/{id}'].delete.parameters[0]);
 
@@ -1335,24 +1335,24 @@ describe('Specification v2.0' + header, function () {
 
             assert.deepEqual(result.errors, [
               {
-		code: 'DUPLICATE_PARAMETER',
-		message: 'Parameter already defined: id',
-		path: ['paths', '/pets/{id}', 'delete', 'parameters', '1', 'name']
+                code: 'DUPLICATE_PARAMETER',
+                message: 'Parameter already defined: id',
+                path: ['paths', '/pets/{id}', 'delete', 'parameters', '1', 'name']
               }
             ]);
             assert.equal(result.warnings.length, 0);
 
             done();
           });
-	});
+        });
 
-	it('operation level (remote)', function (done) {
+        it('operation level (remote)', function (done) {
           var swaggerObject = _.cloneDeep(petStoreJson);
 
-	  // Make the parameter not identical but still having the same id
-	  swaggerObject.paths['/pets/{id}'].delete.parameters[0].type = 'string';
+          // Make the parameter not identical but still having the same id
+          swaggerObject.paths['/pets/{id}'].delete.parameters[0].type = 'string';
 
-	  delete swaggerObject.paths['/pets/{id}'].delete.parameters[0].format;
+          delete swaggerObject.paths['/pets/{id}'].delete.parameters[0].format;
 
           swaggerObject.paths['/pets/{id}'].delete.parameters.push({
             $ref: 'https://rawgit.com/apigee-127/swagger-tools/master/test/browser/people.json#/paths/~1people~1{id}/delete/parameters/0'
@@ -1365,16 +1365,16 @@ describe('Specification v2.0' + header, function () {
 
             assert.deepEqual(result.errors, [
               {
-		code: 'DUPLICATE_PARAMETER',
-		message: 'Parameter already defined: id',
-		path: ['paths', '/pets/{id}', 'delete', 'parameters', '1', 'name']
+                code: 'DUPLICATE_PARAMETER',
+                message: 'Parameter already defined: id',
+                path: ['paths', '/pets/{id}', 'delete', 'parameters', '1', 'name']
               }
             ]);
             assert.equal(result.warnings.length, 0);
 
             done();
           });
-	});
+        });
       });
 
       it('missing operation path parameter', function (done) {
@@ -1517,13 +1517,13 @@ describe('Specification v2.0' + header, function () {
       });
 
       describe('unresolvable model', function () {
-	it('model definition', function (done) {
+        it('model definition', function (done) {
           var swaggerObject = _.cloneDeep(petStoreJson);
 
           swaggerObject.definitions.Fake = {
             properties: {
               project: {
-		$ref: '#/definitions/Project'
+                $ref: '#/definitions/Project'
               }
             }
           };
@@ -1535,27 +1535,27 @@ describe('Specification v2.0' + header, function () {
 
             assert.deepEqual(result.errors, [
               {
-		code: 'UNRESOLVABLE_DEFINITION',
-		message: 'Definition could not be resolved: #/definitions/Project',
-		path: ['definitions', 'Fake', 'properties', 'project', '$ref']
+                code: 'UNRESOLVABLE_DEFINITION',
+                message: 'Definition could not be resolved: #/definitions/Project',
+                path: ['definitions', 'Fake', 'properties', 'project', '$ref']
               }
             ]);
             assert.deepEqual(result.warnings, [
               {
-		code: 'UNUSED_DEFINITION',
-		message: 'Definition is defined but is not used: #/definitions/Fake',
-		path: [
+                code: 'UNUSED_DEFINITION',
+                message: 'Definition is defined but is not used: #/definitions/Fake',
+                path: [
                   'definitions',
                   'Fake'
-		]
+                ]
               }
             ]);
 
             done();
           });
-	});
+        });
 
-	it('parameter', function (done) {
+        it('parameter', function (done) {
           var swaggerObject = _.cloneDeep(petStoreJson);
 
           swaggerObject.paths['/pets'].post.parameters[0].schema.$ref = '#/definitions/Fake';
@@ -1567,25 +1567,25 @@ describe('Specification v2.0' + header, function () {
 
             assert.deepEqual(result.errors, [
               {
-		code: 'UNRESOLVABLE_DEFINITION',
-		message: 'Definition could not be resolved: #/definitions/Fake',
-		path: ['paths', '/pets', 'post', 'parameters', '0', 'schema', '$ref']
+                code: 'UNRESOLVABLE_DEFINITION',
+                message: 'Definition could not be resolved: #/definitions/Fake',
+                path: ['paths', '/pets', 'post', 'parameters', '0', 'schema', '$ref']
               }
             ]);
             assert.deepEqual(result.warnings, [
               {
-		code: 'UNUSED_DEFINITION',
-		message: 'Definition is defined but is not used: #/definitions/newPet',
-		path: [
+                code: 'UNUSED_DEFINITION',
+                message: 'Definition is defined but is not used: #/definitions/newPet',
+                path: [
                   'definitions',
                   'newPet'
-		]
+                ]
               }
             ]);
 
             done();
           });
-	});
+        });
       });
 
       it('unresolvable security definition (global)', function (done) {
@@ -2364,7 +2364,7 @@ describe('Specification v2.0' + header, function () {
       var swaggerObject = _.cloneDeep(petStoreJson);
 
       swaggerObject.paths['/pets'].get.responses['200'] = {
-	$ref: '#/responses/missing'
+        $ref: '#/responses/missing'
       };
 
       spec.validate(swaggerObject, function (err, result) {
@@ -2379,7 +2379,7 @@ describe('Specification v2.0' + header, function () {
             path: ['paths', '/pets', 'get', 'responses', '200', '$ref']
           }
         ]);
-        assert.equal(result.warnings.length, 0);	
+        assert.equal(result.warnings.length, 0);
 
         done();
       });
@@ -2396,7 +2396,7 @@ describe('Specification v2.0' + header, function () {
         }
 
         assert.deepEqual(result.errors, [
-	  {
+          {
             code: 'MISSING_REQUIRED_DEFINITION_PROPERTY',
             message: 'Definition requires property but it is not defined: name',
             path: ['definitions', 'newPet', 'required', '0']
@@ -2407,7 +2407,7 @@ describe('Specification v2.0' + header, function () {
             path: ['definitions', 'newPet', 'allOf', '0', '$ref']
           }
         ]);
-        assert.equal(result.warnings.length, 0);	
+        assert.equal(result.warnings.length, 0);
 
         done();
       });
@@ -2417,15 +2417,15 @@ describe('Specification v2.0' + header, function () {
       var swaggerObject = _.cloneDeep(petStoreJson);
 
       swaggerObject.definitions.Person = {
-	default: {
-	  name: 'Anonymous Person'
-	},
-	properties: {
-	  name: {
-	    type: 'string'
-	  }
-	},
-	required: ['name']
+        default: {
+          name: 'Anonymous Person'
+        },
+        properties: {
+          name: {
+            type: 'string'
+          }
+        },
+        required: ['name']
       };
 
       spec.validate(swaggerObject, function (err, result) {
@@ -2434,7 +2434,7 @@ describe('Specification v2.0' + header, function () {
         }
 
         assert.deepEqual(result.warnings, [
-	  {
+          {
             code: 'UNUSED_DEFINITION',
             message: 'Definition is defined but is not used: #/definitions/Person',
             path: [
@@ -2443,7 +2443,7 @@ describe('Specification v2.0' + header, function () {
             ]
           }
         ]);
-        assert.equal(result.errors.length, 0);	
+        assert.equal(result.errors.length, 0);
 
         done();
       });
@@ -2453,11 +2453,11 @@ describe('Specification v2.0' + header, function () {
       var swaggerObject = _.cloneDeep(petStoreJson);
 
       swaggerObject.definitions.UberPet = {
-	allOf: [
-	  {
-	    $ref: '#/definitions/Pet'
-	  }
-	]
+        allOf: [
+          {
+            $ref: '#/definitions/Pet'
+          }
+        ]
       };
 
       spec.validate(swaggerObject, function (err, result) {
@@ -2466,7 +2466,7 @@ describe('Specification v2.0' + header, function () {
         }
 
         assert.deepEqual(result.warnings, [
-	  {
+          {
             code: 'UNUSED_DEFINITION',
             message: 'Definition is defined but is not used: #/definitions/UberPet',
             path: [
@@ -2475,7 +2475,7 @@ describe('Specification v2.0' + header, function () {
             ]
           }
         ]);
-        assert.equal(result.errors.length, 0);	
+        assert.equal(result.errors.length, 0);
 
         done();
       });
@@ -2497,7 +2497,7 @@ describe('Specification v2.0' + header, function () {
         assert.deepEqual(result.errors, [
           {
             code: 'DULPICATE_API_BODY_PARAMETER',
-	    message: 'API has more than one body parameter',
+            message: 'API has more than one body parameter',
             path: ['paths', '/pets', 'post', 'parameters', '1']
           }
         ]);

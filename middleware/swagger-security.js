@@ -37,7 +37,7 @@ var getScopeOrAPIKey = function getScopeOrAPIKey (req, secDef, secName, secReq) 
   if (secDef.type === 'oauth2') {
     if (swaggerVersion === '1.2') {
       scopeOrKey = _.map(secReq[secName], function (scope) {
-	return scope.scope;
+        return scope.scope;
       });
     } else {
       scopeOrKey = secReq[secName];
@@ -117,59 +117,59 @@ exports = module.exports = function swaggerSecurityMiddleware (options) {
 
     if (operation) {
       securityReqs = req.swagger.swaggerVersion === '1.2' ?
-	// Global (path level), authorization support is not possible:
-	//   Not possible due to https://github.com/swagger-api/swagger-spec/issues/159
-	_.reduce(req.swagger.operation.authorizations, function (arr, authorization, name) {
-	  var obj = {};
+        // Global (path level), authorization support is not possible:
+        //   Not possible due to https://github.com/swagger-api/swagger-spec/issues/159
+        _.reduce(req.swagger.operation.authorizations, function (arr, authorization, name) {
+          var obj = {};
 
-	  obj[name] = _.map(authorization, function (scope) {
-	    return scope.scope;
-	  });
+          obj[name] = _.map(authorization, function (scope) {
+            return scope.scope;
+          });
 
-	  return arr.concat(obj);
-	}, []) :
+          return arr.concat(obj);
+        }, []) :
       req.swagger.operation.security || req.swagger.swaggerObject.security;
 
       if (securityReqs && securityReqs.length > 0) {
-	async.map(securityReqs, function(secReq, cb) { // logical OR - any one can allow
-	  var secName;
+        async.map(securityReqs, function(secReq, cb) { // logical OR - any one can allow
+          var secName;
 
-	  async.map(Object.keys(secReq), function(name, cb) { // logical AND - all must allow
-	    var secDef = req.swagger.swaggerVersion === '1.2' ?
-		  req.swagger.resourceListing.authorizations[name] :
-		  req.swagger.swaggerObject.securityDefinitions[name];
-	    var handler = handlers[name];
+          async.map(Object.keys(secReq), function(name, cb) { // logical AND - all must allow
+            var secDef = req.swagger.swaggerVersion === '1.2' ?
+                  req.swagger.resourceListing.authorizations[name] :
+                  req.swagger.swaggerObject.securityDefinitions[name];
+            var handler = handlers[name];
 
-	    secName = name;
+            secName = name;
 
-	    if (!handler) {
-	      return cb(new Error('unknown security handler: ' + name));
-	    }
+            if (!handler) {
+              return cb(new Error('unknown security handler: ' + name));
+            }
 
-	    return handler(req, secDef, getScopeOrAPIKey(req, secDef, name, secReq), cb);
-	  }, function (err) {
-	    debug('    Security check (%s): %s', secName, _.isUndefined(err) ? 'allowed' : 'denied');
+            return handler(req, secDef, getScopeOrAPIKey(req, secDef, name, secReq), cb);
+          }, function (err) {
+            debug('    Security check (%s): %s', secName, _.isUndefined(err) ? 'allowed' : 'denied');
 
-	    // swap normal err and result to short-circuit the logical OR
-	    if (err) {
-	      return cb(undefined, err);
-	    }
+            // swap normal err and result to short-circuit the logical OR
+            if (err) {
+              return cb(undefined, err);
+            }
 
-	    return cb(new Error('OK'));
-	  });
-	}, function (ok, errors) { // note swapped results
-	  var allowed = !_.isUndefined(ok) && ok.message === 'OK';
+            return cb(new Error('OK'));
+          });
+        }, function (ok, errors) { // note swapped results
+          var allowed = !_.isUndefined(ok) && ok.message === 'OK';
 
-	  debug('    Request allowed: %s', allowed);
+          debug('    Request allowed: %s', allowed);
 
-	  if (allowed) {
-	    return next();
-	  }
+          if (allowed) {
+            return next();
+          }
 
-	  return sendSecurityError(errors[0], res, next);
-	});
+          return sendSecurityError(errors[0], res, next);
+        });
       } else {
-	return next();
+        return next();
       }
     } else {
       return next();

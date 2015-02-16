@@ -218,9 +218,9 @@ program
       spec = helpers.getSpec(version);
 
       if (_.isUndefined(spec)) {
-	console.error('Unsupported Swagger version: %s', version);
+        console.error('Unsupported Swagger version: %s', version);
 
-	process.exit(1);
+        process.exit(1);
       }
 
       if (_.isUndefined(resourceListing)) {

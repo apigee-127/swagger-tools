@@ -286,37 +286,37 @@ describe('Specification v1.2' + header, function () {
       });
 
       describe('default value fails constraint/schema validation', function () {
-	describe('model property', function () {
+        describe('model property', function () {
           it('wrong type', function (done) {
             var cPetJson = _.cloneDeep(petJson);
 
             cPetJson.models.Pet.properties.fake = {
-	      type: 'integer',
-	      defaultValue: 'fake'
+              type: 'integer',
+              defaultValue: 'fake'
             };
 
             spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
-	      if (err) {
-		throw err;
-	      }
+              if (err) {
+                throw err;
+              }
 
-	      assert.deepEqual(result.apiDeclarations[0].errors, [
-		{
+              assert.deepEqual(result.apiDeclarations[0].errors, [
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid integer: fake',
                   path: ['models', 'Pet', 'properties', 'fake', 'defaultValue']
-		}
-	      ]);
-	      assert.equal(result.apiDeclarations[0].warnings.length, 0);
+                }
+              ]);
+              assert.equal(result.apiDeclarations[0].warnings.length, 0);
 
-	      done();
+              done();
             });
           });
 
           // Testing all other constraints is unnecessary since the same code that validates them is tested above
-	});
+        });
 
-	describe('operation', function () {
+        describe('operation', function () {
           it('enum mismatch', function (done) {
             var cPetJson = _.cloneDeep(petJson);
 
@@ -325,20 +325,20 @@ describe('Specification v1.2' + header, function () {
             cPetJson.apis[0].operations[0].defaultValue = 'fake';
 
             spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
-	      if (err) {
-		throw err;
-	      }
+              if (err) {
+                throw err;
+              }
 
-	      assert.deepEqual(result.apiDeclarations[0].errors, [
-		{
+              assert.deepEqual(result.apiDeclarations[0].errors, [
+                {
                   code: 'ENUM_MISMATCH',
                   message: 'Not an allowable value (A, B): fake',
                   path: ['apis', '0', 'operations', '0', 'defaultValue']
-		}
-	      ]);
-	      assert.equal(result.apiDeclarations[0].warnings.length, 0);
+                }
+              ]);
+              assert.equal(result.apiDeclarations[0].warnings.length, 0);
 
-	      done();
+              done();
             });
           });
 
@@ -352,101 +352,101 @@ describe('Specification v1.2' + header, function () {
             cPetJson.apis[0].operations[0].type = 'integer';
 
             spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
-	      if (err) {
-		throw err;
-	      }
+              if (err) {
+                throw err;
+              }
 
-	      assert.deepEqual(result.apiDeclarations[0].errors, [
-		{
+              assert.deepEqual(result.apiDeclarations[0].errors, [
+                {
                   code: 'MAXIMUM',
                   message: 'Greater than the configured maximum (0): 1',
                   path: ['apis', '0', 'operations', '0', 'defaultValue']
-		}
-	      ]);
-	      assert.equal(result.apiDeclarations[0].warnings.length, 0);
+                }
+              ]);
+              assert.equal(result.apiDeclarations[0].warnings.length, 0);
 
-	      done();
+              done();
             });
 
             it('minimum', function (done) {
-	      var cPetJson = _.cloneDeep(petJson);
+              var cPetJson = _.cloneDeep(petJson);
 
-	      cPetJson.apis[0].operations[0].defaultValue = '0';
-	      cPetJson.apis[0].operations[0].minimum = '1';
-	      cPetJson.apis[0].operations[0].type = 'integer';
+              cPetJson.apis[0].operations[0].defaultValue = '0';
+              cPetJson.apis[0].operations[0].minimum = '1';
+              cPetJson.apis[0].operations[0].type = 'integer';
 
-	      spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
-		if (err) {
+              spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
+                if (err) {
                   throw err;
-		}
+                }
 
-		assert.deepEqual(result.apiDeclarations[0].errors, [
+                assert.deepEqual(result.apiDeclarations[0].errors, [
                   {
                     code: 'MAXIMUM',
                     message: 'Less than the configured minimum (1): 0',
                     path: ['apis', '0', 'operations', '0', 'defaultValue']
                   }
-		]);
-		assert.equal(result.apiDeclarations[0].warnings.length, 0);
+                ]);
+                assert.equal(result.apiDeclarations[0].warnings.length, 0);
 
-		done();
-	      });
+                done();
+              });
             });
 
-	    it('wrong type', function (done) {
-	      var cPetJson = _.cloneDeep(petJson);
+            it('wrong type', function (done) {
+              var cPetJson = _.cloneDeep(petJson);
 
-	      cPetJson.apis[0].operations[0].type = 'integer';
-	      cPetJson.apis[0].operations[0].defaultValue = 'fake';
+              cPetJson.apis[0].operations[0].type = 'integer';
+              cPetJson.apis[0].operations[0].defaultValue = 'fake';
 
-	      spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
-		if (err) {
-		  throw err;
-		}
+              spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
+                if (err) {
+                  throw err;
+                }
 
-		assert.deepEqual(result.apiDeclarations[0].errors, [
-		  {
+                assert.deepEqual(result.apiDeclarations[0].errors, [
+                  {
                     code: 'INVALID_TYPE',
                     message: 'Not a valid integer: fake',
                     path: ['apis', '0', 'operations', '0', 'defaultValue']
-		  }
-		]);
-		assert.equal(result.apiDeclarations[0].warnings.length, 0);
+                  }
+                ]);
+                assert.equal(result.apiDeclarations[0].warnings.length, 0);
 
-		done();
-	      });
+                done();
+              });
             });
           });
-	});
+        });
 
-	describe('parameter', function () {
+        describe('parameter', function () {
           it('wrong type', function (done) {
             var cPetJson = _.cloneDeep(petJson);
 
             cPetJson.apis[0].operations[0].parameters[0].defaultValue = 'fake';
 
             spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
-	      if (err) {
-		throw err;
-	      }
+              if (err) {
+                throw err;
+              }
 
-	      assert.deepEqual(result.apiDeclarations[0].errors, [
-		{
+              assert.deepEqual(result.apiDeclarations[0].errors, [
+                {
                   code: 'INVALID_TYPE',
                   message: 'Not a valid int64 integer: fake',
                   path: ['apis', '0', 'operations', '0', 'parameters', '0', 'defaultValue']
-		}
-	      ]);
-	      assert.equal(result.apiDeclarations[0].warnings.length, 0);
+                }
+              ]);
+              assert.equal(result.apiDeclarations[0].warnings.length, 0);
 
-	      done();
+              done();
             });
           });
 
           // Testing all other constraints is unnecessary since the same code that validates them is tested above
-	});
+        });
       });
-      
+
       it('duplicate API path in the Resource Listing', function (done) {
         var cRlJson = _.cloneDeep(rlJson);
 
@@ -625,11 +625,11 @@ describe('Specification v1.2' + header, function () {
       // This should be removed when the upstream bug in the Swagger schema is fixed
       //   https://github.com/swagger-api/swagger-spec/issues/174
       it('missing items property for array type (operation) (Issue 61)', function (done) {
-	var cPetJson = _.cloneDeep(petJson);
+        var cPetJson = _.cloneDeep(petJson);
 
-	delete cPetJson.apis[0].operations[2].items;
+        delete cPetJson.apis[0].operations[2].items;
 
-	spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -644,19 +644,19 @@ describe('Specification v1.2' + header, function () {
           assert.equal(result.apiDeclarations[0].warnings.length, 0);
 
           done();
-	});
+        });
       });
 
       it('missing items property for array type (parameter) (Issue 61)', function (done) {
-	var cPetJson = _.cloneDeep(petJson);
+        var cPetJson = _.cloneDeep(petJson);
 
-	cPetJson.apis[0].operations[0].parameters.push({
+        cPetJson.apis[0].operations[0].parameters.push({
           paramType: 'query',
           type: 'array',
           name: 'fake'
-	});
+        });
 
-	spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -671,7 +671,7 @@ describe('Specification v1.2' + header, function () {
           assert.equal(result.apiDeclarations[0].warnings.length, 0);
 
           done();
-	});
+        });
       });
 
       it('missing operation path parameter in API declaration', function (done) {
@@ -721,11 +721,11 @@ describe('Specification v1.2' + header, function () {
       });
 
       it('model id mismatch API declaration (Issue 71)', function (done) {
-	var cPetJson = _.cloneDeep(petJson);
+        var cPetJson = _.cloneDeep(petJson);
 
-	cPetJson.models.Category.id = 'NotCategory';
+        cPetJson.models.Category.id = 'NotCategory';
 
-	spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -740,7 +740,7 @@ describe('Specification v1.2' + header, function () {
           assert.equal(result.apiDeclarations[0].warnings.length, 0);
 
           done();
-	});
+        });
       });
 
       it('model is a subtype of multiple models (Multiple Inheritance)', function (done) {
@@ -840,14 +840,14 @@ describe('Specification v1.2' + header, function () {
       });
 
       it('multiple body parameters for an operation (Issue 136)', function (done) {
-	var cPetJson = _.cloneDeep(petJson);
-	var cBodyParam = _.cloneDeep(cPetJson.apis[2].operations[0].parameters[0]);
+        var cPetJson = _.cloneDeep(petJson);
+        var cBodyParam = _.cloneDeep(cPetJson.apis[2].operations[0].parameters[0]);
 
-	cBodyParam.name = 'duplicateBody';
+        cBodyParam.name = 'duplicateBody';
 
-	cPetJson.apis[2].operations[0].parameters.push(cBodyParam);
+        cPetJson.apis[2].operations[0].parameters.push(cBodyParam);
 
-	spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
             throw err;
           }
@@ -855,14 +855,14 @@ describe('Specification v1.2' + header, function () {
           assert.deepEqual(result.apiDeclarations[0].errors, [
             {
               code: 'DULPICATE_API_BODY_PARAMETER',
-	      message: 'API has more than one body parameter',
+              message: 'API has more than one body parameter',
               path: ['apis', '2', 'operations', '0', 'parameters', '1']
             }
           ]);
           assert.equal(result.apiDeclarations[0].warnings.length, 0);
 
           done();
-	});
+        });
       });
 
       it('unresolvable authorization', function (done) {
@@ -915,7 +915,7 @@ describe('Specification v1.2' + header, function () {
       });
 
       describe('unresolvable model', function () {
-	it('operation parameter', function (done) {
+        it('operation parameter', function (done) {
           var cPetJson = _.cloneDeep(petJson);
 
           cPetJson.apis[2].operations[0].parameters[0].type = 'Fake';
@@ -927,18 +927,18 @@ describe('Specification v1.2' + header, function () {
 
             assert.deepEqual(result.apiDeclarations[0].errors, [
               {
-		code: 'UNRESOLVABLE_MODEL',
-		message: 'Model could not be resolved: Fake',
-		path: ['apis', '2', 'operations', '0', 'parameters', '0', 'type']
+                code: 'UNRESOLVABLE_MODEL',
+                message: 'Model could not be resolved: Fake',
+                path: ['apis', '2', 'operations', '0', 'parameters', '0', 'type']
               }
             ]);
             assert.equal(result.apiDeclarations[0].warnings.length, 0);
 
             done();
           });
-	});
+        });
 
-	it('operation response', function (done) {
+        it('operation response', function (done) {
           var cPetJson = _.cloneDeep(petJson);
 
           cPetJson.apis[0].operations[0].type = 'Fake';
@@ -950,18 +950,18 @@ describe('Specification v1.2' + header, function () {
 
             assert.deepEqual(result.apiDeclarations[0].errors, [
               {
-		code: 'UNRESOLVABLE_MODEL',
-		message: 'Model could not be resolved: Fake',
-		path: ['apis', '0', 'operations', '0', 'type']
+                code: 'UNRESOLVABLE_MODEL',
+                message: 'Model could not be resolved: Fake',
+                path: ['apis', '0', 'operations', '0', 'type']
               }
             ]);
             assert.equal(result.apiDeclarations[0].warnings.length, 0);
 
             done();
           });
-	});
+        });
 
-	it('operation responseMessage', function (done) {
+        it('operation responseMessage', function (done) {
           var cPetJson = _.cloneDeep(petJson);
 
           cPetJson.apis[0].operations[0].responseMessages[0].responseModel = 'FakeError';
@@ -973,16 +973,16 @@ describe('Specification v1.2' + header, function () {
 
             assert.deepEqual(result.apiDeclarations[0].errors, [
               {
-		code: 'UNRESOLVABLE_MODEL',
-		message: 'Model could not be resolved: FakeError',
-		path: ['apis', '0', 'operations', '0', 'responseMessages', '0', 'responseModel']
+                code: 'UNRESOLVABLE_MODEL',
+                message: 'Model could not be resolved: FakeError',
+                path: ['apis', '0', 'operations', '0', 'responseMessages', '0', 'responseModel']
               }
             ]);
             assert.equal(result.apiDeclarations[0].warnings.length, 0);
 
             done();
           });
-	});
+        });
       });
 
       it('unresolvable operation path parameter', function (done) {
@@ -1109,9 +1109,9 @@ describe('Specification v1.2' + header, function () {
 
           assert.deepEqual(result.warnings, [
             {
-	      code: 'DUPLICATE_AUTHORIZATION_SCOPE_DEFINITION',
-	      message: 'Authorization scope definition already defined: ' + scope.scope,
-	      path: ['authorizations', 'oauth2', 'scopes', (cRlJson.authorizations.oauth2.scopes.length - 1).toString(),
+              code: 'DUPLICATE_AUTHORIZATION_SCOPE_DEFINITION',
+              message: 'Authorization scope definition already defined: ' + scope.scope,
+              path: ['authorizations', 'oauth2', 'scopes', (cRlJson.authorizations.oauth2.scopes.length - 1).toString(),
                      'scope']
             }
           ]);
@@ -1137,9 +1137,9 @@ describe('Specification v1.2' + header, function () {
 
           assert.deepEqual(result.apiDeclarations[0].warnings, [
             {
-	      code: 'DUPLICATE_AUTHORIZATION_SCOPE_REFERENCE',
-	      message: 'Authorization scope reference already defined: ' + scope.scope,
-	      path: ['apis', '0', 'operations', '1', 'authorizations', 'oauth2',
+              code: 'DUPLICATE_AUTHORIZATION_SCOPE_REFERENCE',
+              message: 'Authorization scope reference already defined: ' + scope.scope,
+              path: ['apis', '0', 'operations', '1', 'authorizations', 'oauth2',
                      cPetJson.apis[0].operations[1].authorizations.oauth2.length - 1, 'scope']
             }
           ]);
@@ -1167,9 +1167,9 @@ describe('Specification v1.2' + header, function () {
 
           assert.deepEqual(result.warnings, [
             {
-	      code: 'UNUSED_AUTHORIZATION',
-	      message: 'Authorization is defined but is not used: apiKey',
-	      path: ['authorizations', 'apiKey']
+              code: 'UNUSED_AUTHORIZATION',
+              message: 'Authorization is defined but is not used: apiKey',
+              path: ['authorizations', 'apiKey']
             }
           ]);
           assert.equal(result.errors.length, 0);
@@ -1193,9 +1193,9 @@ describe('Specification v1.2' + header, function () {
 
           assert.deepEqual(result.warnings, [
             {
-	      code: 'UNUSED_AUTHORIZATION_SCOPE',
-	      message: 'Authorization scope is defined but is not used: fake',
-	      path: ['authorizations', 'oauth2', 'scopes', '3']
+              code: 'UNUSED_AUTHORIZATION_SCOPE',
+              message: 'Authorization scope is defined but is not used: fake',
+              path: ['authorizations', 'oauth2', 'scopes', '3']
             }
           ]);
           assert.equal(result.errors.length, 0);

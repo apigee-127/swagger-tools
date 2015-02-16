@@ -363,7 +363,7 @@ describe('Swagger Security Middleware v1.2', function () {
               done();
             });
         });
-	});
+        });
 
     it('in query', function (done) {
       var security = new ApiKeySecurityDef();
