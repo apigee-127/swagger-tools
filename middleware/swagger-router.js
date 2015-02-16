@@ -214,8 +214,10 @@ var mockResponse = function mockResponse (req, res, next, handlerName) {
   var operation = req.swagger.operation;
   var sendResponse = function sendResponse (err, response) {
     if (err) {
+      debug('next with error: %j', err);
       return next(err);
     } else {
+      debug('send mock response: %s', response);
       return res.end(response);
     }
   };
@@ -266,9 +268,7 @@ var mockResponse = function mockResponse (req, res, next, handlerName) {
         }
       });
     } else {
-      return sendResponse(undefined, JSON.stringify(getMockValue(req.swagger.swaggerVersion, responseType.schema ?
-                                                                            responseType.schema :
-                                                                            responseType)));
+      return sendResponse(undefined, JSON.stringify(getMockValue(req.swagger.swaggerVersion, responseType.schema || responseType)));
     }
   } else {
     return sendResponse(undefined, getMockValue(req.swagger.swaggerVersion, responseType));
@@ -279,10 +279,11 @@ var createStubHandler = function createStubHandler (req, res, next, handlerName)
   // TODO: Handle examples (per mime-type) for 2.0
   // TODO: Handle non-JSON response types
 
-  return function stubHandler () {
+  return function stubHandler (req, res, next) {
     mockResponse(req, res, next, handlerName);
   };
 };
+
 var send405 = function send405 (req, res, next) {
   var allowedMethods = [];
   var err = new Error('Route defined in Swagger specification (' +
@@ -379,7 +380,7 @@ exports = module.exports = function swaggerRouterMiddleware (options) {
         debug('  Mock mode: %s', options.useStubs);
 
         if (_.isUndefined(handler) && options.useStubs === true) {
-          handler = handlerCache[handlerName] = createStubHandler(req, res, next, handlerName);
+          handler = handlerCache[handlerName] = createStubHandler(handlerName);
         }
 
         if (!_.isUndefined(handler)) {
