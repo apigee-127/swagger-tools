@@ -120,6 +120,7 @@ gulp.task('lint', function () {
     './bin/swagger-tools',
     './index.js',
     './lib/**/*.js',
+    'middleware/helpers.js',
     './middleware/swagger-*.js',
     './test/1.2/*.js',
     './test/2.0/*.js',
@@ -134,8 +135,9 @@ gulp.task('lint', function () {
 
 gulp.task('test-node', function () {
   return gulp.src([
-    'lib/index.js',
+    './index.js',
     'lib/**/*.js',
+    'middleware/helpers.js',
     'middleware/swagger-*.js',
     '!./middleware/swagger-ui/**/*.js',
     '!./test/**/test-specs-browser.js'
