@@ -134,6 +134,7 @@ gulp.task('lint', function () {
 
 gulp.task('test-node', function () {
   return gulp.src([
+    'lib/index.js',
     'lib/**/*.js',
     'middleware/swagger-*.js',
     '!./middleware/swagger-ui/**/*.js',
