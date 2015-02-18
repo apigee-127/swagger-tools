@@ -198,7 +198,7 @@ The Connect middleware function.
 
 The structure of `req.swagger` is as follows:
 
-* **apiPath:** `string[]` The API's path (The key used in the `paths` object for the corresponding API)
+* **apiPath:** `string` The API's path (The key used in the `paths` object for the corresponding API)
 * **path:** `object` The corresponding path in the Swagger object that the request maps to
 * **operation:** `object` The corresponding operation in the API Declaration that the request maps to
 * **operationParameters:** `object[]` The computed parameters for this operation
