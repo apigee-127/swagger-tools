@@ -1,7 +1,6 @@
 ## Release Notes
 
-### TBD
-
+### v0.8.4 (2015-02-19)
 * Support one single Swagger path definition being all undefined subpaths for said path _(Issue #162)_
 
 ### v0.8.3 (2015-02-16)
