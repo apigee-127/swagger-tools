@@ -347,4 +347,116 @@ describe('Swagger Metadata Middleware v2.0', function () {
       });
     });
   });
+
+  /* jshint unused: false */
+  describe('x-swagger-router-handle-subpaths option', function() {
+
+    var cPetStoreJson;
+    var subpathedPet;
+
+    /* global beforeEach */
+    beforeEach(function() {
+      cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      var petIdPath = cPetStoreJson.paths['/pets/{id}'];
+      petIdPath['x-swagger-router-controller'] = 'Pets';
+      delete(petIdPath.get.security);
+      delete(petIdPath.delete);
+
+      subpathedPet = _.cloneDeep(petIdPath);
+      subpathedPet['x-swagger-router-handle-subpaths'] = true;
+      delete(subpathedPet.parameters);
+      subpathedPet.get.operationId = 'getPetSubpath';
+      delete(subpathedPet.get.parameters);
+      cPetStoreJson.paths['/pets/9'] = subpathedPet;
+    });
+
+    it('should not match where there\'s a more specific path', function(done) {
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_getPetById': function(req, res) {
+              res.end('YES');
+            },
+            'Pets_getPetSubpath': function(req, res) {
+              assert(false, 'should not get here');
+            }
+          }
+        }
+      }, function(app) {
+        request(app)
+          .get('/api/pets/1')
+          .expect(200)
+          .end(helpers.expectContent('YES', done));
+      });
+    });
+
+    it('should match where there\'s not a more specific path', function(done) {
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_getPetById': function(req, res) {
+              assert(false, 'should not get here');
+            },
+            'Pets_getPetSubpath': function(req, res) {
+              res.end('YES');
+            }
+          }
+        }
+      }, function(app) {
+        request(app)
+          .get('/api/pets/9')
+          .expect(200)
+          .end(helpers.expectContent('YES', done));
+      });
+    });
+
+    it('should not match when not specified', function(done) {
+
+      delete(subpathedPet['x-swagger-router-handle-subpaths']);
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_getPetById': function(req, res) {
+              assert(false, 'should not get here');
+            },
+            'Pets_getPetSubpath': function(req, res) {
+              assert(false, 'should not get here');
+            }
+          }
+        }
+      }, function(app) {
+        request(app)
+          .get('/api/pets/9/1')
+          .expect(200)
+          .end(helpers.expectContent('OK', done)); // OK is from default handler
+      });
+    });
+
+    it('should not match when set to false', function(done) {
+
+      subpathedPet['x-swagger-router-handle-subpaths'] = false;
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_getPetById': function(req, res) {
+              assert(false, 'should not get here');
+            },
+            'Pets_getPetSubpath': function(req, res) {
+              assert(false, 'should not get here');
+            }
+          }
+        }
+      }, function(app) {
+        request(app)
+          .get('/api/pets/9/1')
+          .expect(200)
+          .end(helpers.expectContent('OK', done)); // OK is from default handler
+      });
+    });
+  });
 });
