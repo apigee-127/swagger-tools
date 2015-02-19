@@ -396,6 +396,42 @@ where each operation tells you which controller and function will be used based 
 }
 ```
 
+A new option (since 0.8.4) is the addition of the `x-swagger-router-handle-subpaths` extension to the Swagger path
+component. By setting this property to `true`, it indicates to Swagger Router that it should match and route all 
+requests to not only the specified path, but also any undeclared subpaths requested that do not match an explicitly 
+defined path in the Swagger. While you cannot specify wildcards in Swagger, this would be the spiritual equivalent
+of wildcarding the end of the path something like `/pets/**`. For example, the following Swagger would cause 
+Swagger Router to match and route `/pets`, `/pets/1`, or even `/pets/this/is/an/arbitrary/route` to the `Pets`
+controller:
+
+```json
+{
+  "swagger": 2.0,
+  "info": {
+    "version": "1.0.0",
+    "title": "Swagger Subpath Example"
+  },
+  "paths": {
+    "/pets": {
+      "x-swagger-router-controller": "Pets",
+      "x-swagger-router-handle-subpaths": true,
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": "default",
+            "schema": {
+              "$ref": "#/definitions/Default"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+
 ### Mock Mode
 
 Swagger Router also comes with a feature that can be useful during testing and/or design time.  This feature will
