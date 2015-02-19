@@ -1,5 +1,9 @@
 ## Release Notes
 
+### TBD
+
+* Support one single Swagger path definition being all undefined subpaths for said path _(Issue #162)_
+
 ### v0.8.3 (2015-02-16)
 
 * Fixed bug where unresolvable model references in operation parameters for Swagger 1.2 were not flagged
