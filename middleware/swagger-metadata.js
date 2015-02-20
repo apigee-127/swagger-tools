@@ -381,64 +381,58 @@ exports = module.exports = function swaggerMetadataMiddleware (rlOrSO, apiDeclar
     var match;
     var metadata;
 
-    try {
-      cacheEntry = apiCache[path] || _.find(apiCache, function (metadata) {
-        match = metadata.re.exec(path);
-        return _.isArray(match);
-      });
+    cacheEntry = apiCache[path] || _.find(apiCache, function (metadata) {
+      match = metadata.re.exec(path);
+      return _.isArray(match);
+    });
 
-      debug('%s %s', req.method, req.url);
-      debug('  Is a Swagger path: %s', !_.isUndefined(cacheEntry));
+    debug('%s %s', req.method, req.url);
+    debug('  Is a Swagger path: %s', !_.isUndefined(cacheEntry));
 
-      // Request does not match an API defined in the Swagger document(s)
-      if (!cacheEntry) {
-        return next();
-      }
+    // Request does not match an API defined in the Swagger document(s)
+    if (!cacheEntry) {
+      return next();
+    }
 
-      metadata = swaggerVersion === '1.2' ?
-        {
-          api: cacheEntry.api,
-          apiDeclaration: cacheEntry.apiDeclaration,
-          apiIndex: cacheEntry.apiIndex,
-          params: {},
-          resourceIndex: cacheEntry.resourceIndex,
-          resourceListing: cacheEntry.resourceListing
-        } :
-        {
-          apiPath : cacheEntry.apiPath,
-          path: cacheEntry.path,
-          params: {},
-          swaggerObject: cacheEntry.swaggerObject.resolved
-        };
+    metadata = swaggerVersion === '1.2' ?
+      {
+        api: cacheEntry.api,
+        apiDeclaration: cacheEntry.apiDeclaration,
+        apiIndex: cacheEntry.apiIndex,
+        params: {},
+        resourceIndex: cacheEntry.resourceIndex,
+        resourceListing: cacheEntry.resourceListing
+      } :
+    {
+      apiPath : cacheEntry.apiPath,
+      path: cacheEntry.path,
+      params: {},
+      swaggerObject: cacheEntry.swaggerObject.resolved
+    };
 
-      if (_.isPlainObject(cacheEntry.operations[method])) {
-        metadata.operation = cacheEntry.operations[method].operation;
-        metadata.operationPath = cacheEntry.operations[method].operationPath;
+    if (_.isPlainObject(cacheEntry.operations[method])) {
+      metadata.operation = cacheEntry.operations[method].operation;
+      metadata.operationPath = cacheEntry.operations[method].operationPath;
 
-        if (swaggerVersion === '1.2') {
-          metadata.authorizations = metadata.operation.authorizations || cacheEntry.apiDeclaration.authorizations;
-        } else {
-          metadata.operationParameters = cacheEntry.operations[method].operationParameters;
-          metadata.security = metadata.operation.security || metadata.swaggerObject.security || [];
-        }
-      }
-
-      metadata.swaggerVersion = swaggerVersion;
-
-      req.swagger = metadata;
-
-      debug('  Is a Swagger operation: %s', !_.isUndefined(metadata.operation));
-
-      if (metadata.operation) {
-        // Process the operation parameters
-        return processOperationParameters(swaggerVersion, cacheEntry.keys, match, req, res, next, debug);
+      if (swaggerVersion === '1.2') {
+        metadata.authorizations = metadata.operation.authorizations || cacheEntry.apiDeclaration.authorizations;
       } else {
-        return next();
+        metadata.operationParameters = cacheEntry.operations[method].operationParameters;
+        metadata.security = metadata.operation.security || metadata.swaggerObject.security || [];
       }
-    } catch (err) {
-      mHelpers.debugError(err, debug);
+    }
 
-      return next(err);
+    metadata.swaggerVersion = swaggerVersion;
+
+    req.swagger = metadata;
+
+    debug('  Is a Swagger operation: %s', !_.isUndefined(metadata.operation));
+
+    if (metadata.operation) {
+      // Process the operation parameters
+      return processOperationParameters(swaggerVersion, cacheEntry.keys, match, req, res, next, debug);
+    } else {
+      return next();
     }
   };
 };
