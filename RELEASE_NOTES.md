@@ -1,6 +1,11 @@
 ## Release Notes
 
+### v0.8.5 (2015-02-20)
+
+* Fix bug in swagger-metadata middleware that could cause `next` to be called more than once due to a downstream error _(Issue #165)_
+
 ### v0.8.4 (2015-02-19)
+
 * Support one single Swagger path definition being all undefined subpaths for said path _(Issue #162)_
 
 ### v0.8.3 (2015-02-16)
