@@ -250,10 +250,14 @@ program
     });
   });
 
+program
+  .command('*')
+  .action(function(cmd){
+    handleUnknownCommand(cmd);
+  });
+
 if (!realArgs.length) {
   program.outputHelp();
-} else if (knownCommands.indexOf(realArgs[0]) === -1) {
-  handleUnknownCommand(realArgs[0]);
 } else {
   program.parse(process.argv);
 }
