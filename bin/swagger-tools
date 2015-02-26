@@ -30,7 +30,6 @@ var _ = require('lodash');
 var async = require('async');
 var fs = require('fs');
 var helpers = require('../lib/helpers');
-var knownCommands = ['convert', 'help', 'info', 'validate'];
 var paddingAmount = 18;
 var path = require('path');
 var pkg = require('../package.json');
