@@ -37,7 +37,7 @@ var pathToRegexp = require('path-to-regexp');
 var jsonBodyParser = bp.json();
 var parseQueryString = mHelpers.parseQueryString;
 var queryParser = function (req, res, next) {
-  if (!req.query) {
+  if (_.isUndefined(req.query)) {
     req.query = parseQueryString(req);
   }
 
@@ -45,13 +45,17 @@ var queryParser = function (req, res, next) {
 };
 var urlEncodedBodyParser = bp.urlencoded({extended: false});
 var bodyParser = function (req, res, callback) {
-  urlEncodedBodyParser(req, res, function (err) {
-    if (err) {
-      callback(err);
-    } else {
-      jsonBodyParser(req, res, callback);
-    }
-  });
+  if (_.isUndefined(req.body)) {
+    urlEncodedBodyParser(req, res, function (err) {
+      if (err) {
+        callback(err);
+      } else {
+        jsonBodyParser(req, res, callback);
+      }
+    });
+  } else {
+    callback();
+  }
 };
 
 // Helper functions
