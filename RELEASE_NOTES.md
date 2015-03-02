@@ -1,5 +1,11 @@
 ## Release Notes
 
+### TBD
+
+* Fixed bug with CLI not handling invalid invocations properly
+* Fixed bug with bundled parsers being called unnecessarily in middleware _(Issues 172)_
+* Fixed bug with inline schemas for Swagger 2.0 inheritance _(Issue 173)_
+
 ### v0.8.5 (2015-02-20)
 
 * Fix bug in swagger-metadata middleware that could cause `next` to be called more than once due to a downstream error _(Issue #165)_
