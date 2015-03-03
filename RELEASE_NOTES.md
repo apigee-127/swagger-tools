@@ -3,8 +3,9 @@
 ### TBD
 
 * Fixed bug with CLI not handling invalid invocations properly
-* Fixed bug with bundled parsers being called unnecessarily in middleware _(Issues 172)_
-* Fixed bug with inline schemas for Swagger 2.0 inheritance _(Issue 173)_
+* Fixed bug with bundled parsers being called unnecessarily in middleware _(Issues #172)_
+* Fixed bug with inline schemas for Swagger 2.0 inheritance _(Issue #173)_
+* Fixed bug with validator middleware where the error object had the right message but the error stack did not _(Issue #175)_
 
 ### v0.8.5 (2015-02-20)
 
