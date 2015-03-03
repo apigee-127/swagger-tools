@@ -32,12 +32,14 @@ var mHelpers = require('./helpers');
 var validators = require('../lib/validators');
 
 var send400 = function send400 (req, res, next, err) {
+  var currentMessage;
   var validationMessage;
 
   res.statusCode = 400;
 
   // Format the errors to include the parameter information
   if (err.failedValidation === true) {
+    currentMessage = err.message;
     validationMessage = 'Parameter (' + err.paramName + ') ';
 
     switch (err.code) {
@@ -74,7 +76,11 @@ var send400 = function send400 (req, res, next, err) {
       validationMessage += err.message.charAt(0).toLowerCase() + err.message.substring(1);
     }
 
+    // Replace the message
     err.message = validationMessage;
+
+    // Replace the stack message
+    err.stack = err.stack.replace(currentMessage, validationMessage);
   }
 
   return next(err);
