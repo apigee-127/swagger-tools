@@ -1515,7 +1515,8 @@ module.exports={
             "number",
             "boolean",
             "integer",
-            "array"
+            "array",
+            "object"
           ]
         },
         "format": {
