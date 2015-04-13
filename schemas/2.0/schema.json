@@ -1376,7 +1376,6 @@
     "parametersList": {
       "type": "array",
       "description": "The parameters needed to send a valid API call.",
-      "minItems": 1,
       "additionalItems": false,
       "items": {
         "oneOf": [
