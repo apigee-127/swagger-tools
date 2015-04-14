@@ -219,7 +219,6 @@ describe('swagger-tools', function () {
         var cPetStoreJson = _.cloneDeep(petStoreJson);
 
         cPetStoreJson.definitions.Person = {
-          id: 'Person',
           properties: {
             age: {
               type: 'integer'

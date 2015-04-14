@@ -60,7 +60,7 @@ project root will lint check the source code and run the unit tests.
 [project-issues]: https://github.com/apigee/swagger-tools/issues
 [quick-start]: https://github.com/apigee-127/swagger-tools/blob/master/docs/QuickStart.md
 [release-notes]: https://github.com/apigee-127/swagger-tools/blob/master/RELEASE_NOTES.md
-[swagger]: https://helloreverb.com/developers/swagger
-[swagger-docs-v1_2]: https://github.com/wordnik/swagger-spec/blob/master/versions/1.2.md
-[swagger-docs-v2_0]: https://github.com/reverb/swagger-spec/blob/master/versions/2.0.md
-[swagger-ui]: https://github.com/wordnik/swagger-ui
+[swagger]: http://swagger.io/
+[swagger-docs-v1_2]: https://github.com/swagger-api/swagger-spec/blob/master/versions/1.2.md
+[swagger-docs-v2_0]: https://github.com/swagger-api/swagger-spec/blob/master/versions/2.0.md
+[swagger-ui]: https://github.com/swagger-api/swagger-ui
