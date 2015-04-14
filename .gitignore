@@ -4,5 +4,7 @@
 bower_components/
 coverage/
 .idea/
+test/1.2/browser
+test/2.0/browser
 test/1.2/test-specs-browser.js
 test/2.0/test-specs-browser.js
