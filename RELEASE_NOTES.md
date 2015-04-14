@@ -6,6 +6,7 @@
 * Fixed bug with bundled parsers being called unnecessarily in middleware _(Issues #172)_
 * Fixed bug with inline schemas for Swagger 2.0 inheritance _(Issue #173)_
 * Fixed bug with validator middleware where the error object had the right message but the error stack did not _(Issue #175)_
+* Update Swagger 2.0 JSON Schema from [swagger-spec][swagger-spec] _(Issue #189)_
 
 ### v0.8.5 (2015-02-20)
 
@@ -100,4 +101,5 @@ Swagger document(s) and return the appropriate middlewares _(Issue #77)_
 [jjv]: https://github.com/acornejo/jjv
 [jjve]: https://github.com/silas/jjve
 [qs]: https://github.com/hapijs/qs
+[swagger-spec]: https://github.com/swagger-api/swagger-spec
 [z-schema]: https://github.com/zaggino/z-schema

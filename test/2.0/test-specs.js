@@ -2506,5 +2506,25 @@ describe('Specification v2.0' + header, function () {
         done();
       });
     });
+
+    it('should handle operations with an empty parameters array (Issue 189)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+      var cOperation = _.cloneDeep(swaggerObject.paths['/pets'].post);
+
+      cOperation.operationId = 'putPet';
+      cOperation.parameters = [];
+
+      swaggerObject.paths['/pets'].put = cOperation;
+
+      spec.validate(swaggerObject, function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.ok(_.isUndefined(result));
+
+        done();
+      });
+    });
   });
 });
