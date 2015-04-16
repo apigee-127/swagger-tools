@@ -56,7 +56,7 @@ var getHandlerName = function getHandlerName (req) {
 };
 var handlerCacheFromDir = function handlerCacheFromDir (dirOrDirs) {
   var handlerCache = {};
-  var jsFileRegex = /\.js|\.coffee$/;
+  var jsFileRegex = /\.js$|\.coffee$/;
   var dirs = [];
 
   if (_.isArray(dirOrDirs)) {
