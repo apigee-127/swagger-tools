@@ -126,7 +126,7 @@ exports = module.exports = function swaggerUIMiddleware (rlOrSO, apiDeclarations
 
   return function swaggerUI (req, res, next) {
     var path = parseurl(req).pathname;
-    var isApiDocsPath = apiDocsPaths.indexOf(path) > -1;
+    var isApiDocsPath = apiDocsPaths.indexOf(path) > -1 || (swaggerVersion !== '1.2' && path === options.apiDocsPath);
     var isSwaggerUiPath = path === options.swaggerUi || path.indexOf(options.swaggerUi + '/') === 0;
 
     debug('%s %s', req.method, req.url);

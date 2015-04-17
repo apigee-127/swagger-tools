@@ -84,7 +84,7 @@ describe('Swagger UI Middleware v2.0', function () {
     });
   });
 
-    describe('issues', function () {
+  describe('issues', function () {
     describe('serve custom swagger-ui (Issue 111)', function () {
       it('should throw error when path points to missing directory', function (done) {
         try {
@@ -140,6 +140,19 @@ describe('Swagger UI Middleware v2.0', function () {
               done();
             });
         });
+      });
+    });
+
+    it('should serve Swagger document at explicit path (Issue 183)', function (done) {
+      helpers.createServer([swaggerObject], {
+        swaggerUiOptions: {
+          apiDocs: '/swagger.json'
+        }
+      }, function (app) {
+        request(app)
+          .get('/swagger.json')
+          .expect(200)
+          .end(helpers.expectContent(swaggerObject, done));
       });
     });
   });

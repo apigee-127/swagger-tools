@@ -3,6 +3,7 @@
 ### TBD
 
 * Fixed bug with inline schemas used for inheritance being marked as unused _(Issue #187)_
+* Fixed bug in swaggerUi middleware that did not allow an explicit `apiDocs` path for Swagger 2.0 documents _(Issue #183)_
 
 ### v0.8.6 (2015-04-16)
 
