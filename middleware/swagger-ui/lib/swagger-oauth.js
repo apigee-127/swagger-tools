@@ -3,6 +3,8 @@ var popupMask;
 var popupDialog;
 var clientId;
 var realm;
+var oauth2KeyName;
+var redirect_uri;
 
 function handleLogin() {
   var scopes = [];
@@ -14,6 +16,7 @@ function handleLogin() {
     for(key in defs) {
       var auth = defs[key];
       if(auth.type === 'oauth2' && auth.scopes) {
+        oauth2KeyName = key;
         var scope;
         if(Array.isArray(auth.scopes)) {
           // 1.2 support
@@ -86,6 +89,7 @@ function handleLogin() {
     popupDialog = [];
   });
 
+  $('button.api-popup-authbtn').unbind();
   popupDialog.find('button.api-popup-authbtn').click(function() {
     popupMask.hide();
     popupDialog.hide();
@@ -93,15 +97,19 @@ function handleLogin() {
     var authSchemes = window.swaggerUi.api.authSchemes;
     var host = window.location;
     var pathname = location.pathname.substring(0, location.pathname.lastIndexOf("/"));
-    var redirectUrl = host.protocol + '//' + host.host + pathname + '/o2c.html';
+    var defaultRedirectUrl = host.protocol + '//' + host.host + pathname + '/o2c.html';
+    var redirectUrl = window.oAuthRedirectUrl || defaultRedirectUrl;
     var url = null;
 
     for (var key in authSchemes) {
       if (authSchemes.hasOwnProperty(key)) {
-        if(authSchemes[key].type === 'oauth2' && authSchemes[key].flow === 'implicit') {
+        var flow = authSchemes[key].flow;
+
+        if(authSchemes[key].type === 'oauth2' && flow && (flow === 'implicit' || flow === 'accessCode')) {
           var dets = authSchemes[key];
-          url = dets.authorizationUrl + '?response_type=token';
-          window.swaggerUi.tokenName = dets.tokenUrl || 'access_token';          
+          url = dets.authorizationUrl + '?response_type=' + (flow === 'implicit' ? 'token' : 'code');
+          window.swaggerUi.tokenName = dets.tokenName || 'access_token';
+          window.swaggerUi.tokenUrl = (flow === 'accessCode' ? dets.tokenUrl : null);
         }
         else if(authSchemes[key].grantTypes) {
           // 1.2 support
@@ -113,6 +121,12 @@ function handleLogin() {
               url = dets.loginEndpoint.url + '?response_type=token';
               window.swaggerUi.tokenName = dets.tokenName;
             }
+            else if (o.hasOwnProperty(t) && t === 'accessCode') {
+              var dets = o[t];
+              var ep = dets.tokenRequestEndpoint.url;
+              url = dets.tokenRequestEndpoint.url + '?response_type=code';
+              window.swaggerUi.tokenName = dets.tokenName;
+            }
           }
         }
       }
@@ -121,15 +135,24 @@ function handleLogin() {
     var o = $('.api-popup-scopes').find('input:checked');
 
     for(k =0; k < o.length; k++) {
-      scopes.push($(o[k]).attr('scope'));
+      var scope = $(o[k]).attr('scope');
+
+      if (scopes.indexOf(scope) === -1)
+        scopes.push(scope);
     }
 
+    // Implicit auth recommends a state parameter.
+    var state = Math.random ();
+
     window.enabledScopes=scopes;
+
+    redirect_uri = redirectUrl;
 
     url += '&redirect_uri=' + encodeURIComponent(redirectUrl);
     url += '&realm=' + encodeURIComponent(realm);
     url += '&client_id=' + encodeURIComponent(clientId);
-    url += '&scope=' + encodeURIComponent(scopes);
+    url += '&scope=' + encodeURIComponent(scopes.join(' '));
+    url += '&state=' + encodeURIComponent(state);
 
     window.open(url);
   });
@@ -169,6 +192,7 @@ function initOAuth(opts) {
   }
 
   $('pre code').each(function(i, e) {hljs.highlightBlock(e)});
+  $('.api-ic').unbind();
   $('.api-ic').click(function(s) {
     if($(s.target).hasClass('ic-off'))
       handleLogin();
@@ -179,7 +203,30 @@ function initOAuth(opts) {
   });
 }
 
-function onOAuthComplete(token) {
+window.processOAuthCode = function processOAuthCode(data) {
+  var params = {
+    'client_id': clientId,
+    'code': data.code,
+    'grant_type': 'authorization_code',
+    'redirect_uri': redirect_uri
+  }
+  $.ajax(
+  {
+    url : window.swaggerUi.tokenUrl,
+    type: "POST",
+    data: params,
+    success:function(data, textStatus, jqXHR)
+    {
+      onOAuthComplete(data);
+    },
+    error: function(jqXHR, textStatus, errorThrown)
+    {
+      onOAuthComplete("");
+    }
+  });
+}
+
+window.onOAuthComplete = function onOAuthComplete(token) {
   if(token) {
     if(token.error) {
       var checkbox = $('input[type=checkbox],.secured')
@@ -226,11 +273,11 @@ function onOAuthComplete(token) {
               // all scopes are satisfied
               $(o).find('.api-ic').addClass('ic-info');
               $(o).find('.api-ic').removeClass('ic-warning');
-              $(o).find('.api-ic').removeClass('ic-error');          
+              $(o).find('.api-ic').removeClass('ic-error');
             }
           }
         });
-        window.authorizations.add('oauth2', new ApiKeyAuthorization('Authorization', 'Bearer ' + b, 'header'));
+        window.swaggerUi.api.clientAuthorizations.add(oauth2KeyName, new SwaggerClient.ApiKeyAuthorization('Authorization', 'Bearer ' + b, 'header'));
       }
     }
   }

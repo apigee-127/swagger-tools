@@ -6,7 +6,7 @@ module.exports.getWeather = function getWeather (req, res, next) {
   // Code necessary to consume the Weather API and respond
   weather.find({
     search: req.swagger.params.location.value,
-    degreeType: req.swagger.params.unit.value + '&&src=outlook' // Hack to work around API changes (Need new API)
+    degreeType: req.swagger.params.unit.value
   }, function(err, result) {
     if (err) {
       console.log(err.stack);
