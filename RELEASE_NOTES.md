@@ -4,6 +4,7 @@
 
 * Fixed bug with inline schemas used for inheritance being marked as unused _(Issue #187)_
 * Fixed bug in swaggerUi middleware that did not allow an explicit `apiDocs` path for Swagger 2.0 documents _(Issue #183)_
+* Updated CLI validation to have a `--verbose` flag to output pertinent verbose information regardless of validation result _(Issue #179)_
 
 ### v0.8.6 (2015-04-16)
 

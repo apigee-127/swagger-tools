@@ -194,24 +194,27 @@ program
 
 program
   .command('validate <resourceListingOrSwaggerDoc> [apiDeclarations...]')
+  .option('-v, --verbose', 'display verbose output')
   .description('Display validation results for the Swagger document(s)')
   .action(function (rlOrSO, apiDeclarations) {
+    var verbose = this.verbose;
+
     getDocuments([rlOrSO].concat(apiDeclarations || []), function (err, documents) {
       if (err) {
         throw err;
       }
 
-      var apiDeclarations = documents.apiDeclarations;
-      var resourceListing = documents.resourceListing;
+      var adDocs = documents.apiDeclarations;
+      var rlDoc = documents.resourceListing;
+      var soDoc = documents.swaggerObject;
       var soArgs = [];
-      var swaggerObject = documents.swaggerObject;
       var spec;
       var version;
 
-      if (swaggerObject && swaggerObject.swagger) {
-        version = swaggerObject.swagger;
+      if (soDoc && soDoc.swagger) {
+        version = soDoc.swagger;
       } else {
-        version = resourceListing.swaggerVersion;
+        version = rlDoc.swaggerVersion;
       }
 
       spec = helpers.getSpec(version);
@@ -222,15 +225,39 @@ program
         process.exit(1);
       }
 
-      if (_.isUndefined(resourceListing)) {
-        soArgs = [swaggerObject];
+      if (_.isUndefined(rlDoc)) {
+        soArgs = [soDoc];
       } else {
-        soArgs = [resourceListing, apiDeclarations];
+        soArgs = [rlDoc, adDocs];
       }
 
       soArgs.push(function (err, results) {
+        var printValidationDetails = function () {
+          if (!verbose) {
+            return;
+          }
+
+          console.log('Validation Details:');
+          console.log();
+          console.log('  Swagger Version: %s', version);
+
+          if (version === '1.2') {
+            console.log('  Swagger files:');
+            console.log();
+            console.log('    Resource Listing: %s', rlOrSO);
+            console.log('    API Declarations:');
+            console.log();
+
+            _.each(apiDeclarations, function (ad) {
+              console.log('      %s', ad);
+            });
+          } else {
+            console.log('  Swagger file: %s', rlOrSO);
+          }
+        };
+
         if (helpers.formatResults(results)) {
-          err = new Error('Swagger document(s) failed validation');
+          err = new Error('Swagger document' + (version === '1.2' ? '(s)' : '') + ' failed validation');
 
           err.results = results;
         }
@@ -239,8 +266,19 @@ program
           if (process.env.NODE_ENV === 'test') {
             throw err;
           } else {
-            return helpers.printValidationResults(version, resourceListing || swaggerObject, apiDeclarations, results,
-                                                  true, true);
+            printValidationDetails();
+
+            helpers.printValidationResults(version, rlDoc || soDoc, adDocs, results, true, true);
+          }
+        } else if (verbose) {
+          printValidationDetails();
+
+          console.log();
+
+          if (verbose === '1.2') {
+            console.log('Swagger documents are valid');
+          } else {
+            console.log('Swagger document is valid');
           }
         }
       });
