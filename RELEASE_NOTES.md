@@ -1,5 +1,9 @@
 ## Release Notes
 
+### TBD
+
+* Fixed bug with inline schemas used for inheritance being marked as unused _(Issue #187)_
+
 ### v0.8.6 (2015-04-16)
 
 * Fixed bug with CLI not handling invalid invocations properly

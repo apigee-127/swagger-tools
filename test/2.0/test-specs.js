@@ -2526,5 +2526,70 @@ describe('Specification v2.0' + header, function () {
         done();
       });
     });
+
+    it('inline models used for inheritance should not be marked as unused (Issue 187)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      // Definition
+      swaggerObject.paths['/pets'].get.responses.default.schema = {
+        allOf: [
+          {
+            properties: {
+              age: {
+                type: 'integer'
+              },
+              name: {
+                type: 'string'
+              }
+            }
+          }
+        ]
+      };
+
+      // Parameter
+      swaggerObject.paths['/pets'].post.parameters[0].schema = {
+        allOf: [
+          {
+            properties: {
+              age: {
+                type: 'integer'
+              },
+              name: {
+                type: 'string'
+              }
+            }
+          }
+        ]
+      };
+
+      // Response
+      swaggerObject.paths['/pets'].get.responses.default.schema = {
+        allOf: [
+          {
+            properties: {
+              age: {
+                type: 'integer'
+              },
+              name: {
+                type: 'string'
+              }
+            }
+          }
+        ]
+      };
+
+      // Remove reference to avoid unused warning
+      delete swaggerObject.definitions.newPet;
+
+      spec.validate(swaggerObject, function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.ok(_.isUndefined(result));
+
+        done();
+      });
+    });
   });
 });
