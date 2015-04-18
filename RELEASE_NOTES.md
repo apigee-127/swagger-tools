@@ -14,7 +14,7 @@
 * Fixed bug with middleware initialization due to upstream json-resf bug _(Issue #190)_
 * Fixed bug with validator middleware where the error object had the right message but the error stack did not _(Issue #175)_
 * Update Swagger 2.0 JSON Schema from [swagger-spec][swagger-spec] _(Issue #189)_
-* Update Swagger UI to latest
+* Update Swagger UI to latest _(Issue #163)_
 
 ### v0.8.5 (2015-02-20)
 
