@@ -335,7 +335,7 @@ var send405 = function send405 (req, res, next) {
 exports = module.exports = function swaggerRouterMiddleware (options) {
   var handlerCache = {};
 
-  debug('Initializing swagger-metadata middleware');
+  debug('Initializing swagger-router middleware');
 
   // Set the defaults
   options = _.defaults(options || {}, defaultOptions);
