@@ -52,7 +52,8 @@ Here is an example output by running `swagger-tools help validate`:
 
   Options:
 
-    -h, --help  output usage information
+    -h, --help     output usage information
+    -v, --verbose  display verbose output
 
 ```
 
