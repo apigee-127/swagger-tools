@@ -158,8 +158,8 @@ annotations to make life easier.
 Swagger Metadata also processes your request parameters for you.  So no matter how the parameters are provided (body,
 header, form data, query string, ...), as described in your Swagger document(s), the processing is handled for you to
 get the parameter values. _(No validation of the parameter values happens in the Swagger Metadata middleware.)_  During
-this process, Swagger Metadata will use [body-parser][body-parser] and [qs][qs] for body and query
-string parsing respectively if you do not provide your own parsers.
+this process, Swagger Metadata will use [body-parser][body-parser], [multer][multer] and [qs][qs] for body, multi-part
+body and query string parsing respectively if you do not provide your own parsers.
 
 ### Swagger 1.2
 
@@ -620,5 +620,6 @@ swagger.initializeMiddleware(swaggerObject, function (middleware) {
 [connect]: https://github.com/senchalabs/connect
 [debug]: https://github.com/visionmedia/debug
 [issue-30]: https://github.com/apigee-127/swagger-tools/issues/30
+[multer]: https://github.com/expressjs/multer
 [qs]: https://github.com/hapijs/qs
 [swagger-ui]: https://github.com/wordnik/swagger-ui
