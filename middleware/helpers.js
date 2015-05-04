@@ -66,17 +66,37 @@ var isModelParameter = module.exports.isModelParameter = function isModelParamet
   return isModel;
 };
 
+var getParameterType = module.exports.getParameterType = function getParameterType (schema) {
+  var type = schema.type;
+
+  if (!type && schema.schema) {
+    type = schema.type;
+  }
+
+  if (!type) {
+    type = 'object';
+  }
+
+  return type;
+};
+
 module.exports.getParameterValue = function getParameterValue (version, parameter, pathKeys, match, req, debug) {
   var defaultVal = version === '1.2' ? parameter.defaultValue : parameter.default;
-  var paramType = version === '1.2' ? parameter.paramType : parameter.in;
+  var paramLocation = version === '1.2' ? parameter.paramType : parameter.in;
+  var paramType = getParameterType(parameter);
   var val;
 
   // Get the value to validate based on the operation parameter type
-  switch (paramType) {
+  switch (paramLocation) {
   case 'body':
+    val = req.body;
+
+    break;
   case 'form':
   case 'formData':
-    if (isModelParameter(version, parameter)) {
+    if (paramType.toLowerCase() === 'file') {
+      val = req.files[parameter.name];
+    } else if (isModelParameter(version, parameter)) {
       val = req.body;
     } else {
       val = req.body[parameter.name];

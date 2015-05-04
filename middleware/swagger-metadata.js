@@ -30,10 +30,18 @@ var bp = require('body-parser');
 var cHelpers = require('../lib/helpers');
 var debug = require('debug')('swagger-tools:middleware:metadata');
 var mHelpers = require('./helpers');
+var multer = require('multer');
 var parseurl = require('parseurl');
 var pathToRegexp = require('path-to-regexp');
 
 // Upstream middlewares
+var bodyParserOptions = {
+  extended: false
+};
+var multerOptions = {
+  inMemory: true
+};
+
 var jsonBodyParser = bp.json();
 var parseQueryString = mHelpers.parseQueryString;
 var queryParser = function (req, res, next) {
@@ -43,7 +51,7 @@ var queryParser = function (req, res, next) {
 
   return next();
 };
-var urlEncodedBodyParser = bp.urlencoded({extended: false});
+var urlEncodedBodyParser = bp.urlencoded(bodyParserOptions);
 var bodyParser = function (req, res, callback) {
   if (_.isUndefined(req.body)) {
     urlEncodedBodyParser(req, res, function (err) {
@@ -57,6 +65,7 @@ var bodyParser = function (req, res, callback) {
     callback();
   }
 };
+var multiPartParser = multer(multerOptions);
 
 // Helper functions
 var expressStylePath = function expressStylePath (basePath, apiPath) {
@@ -80,22 +89,9 @@ var expressStylePath = function expressStylePath (basePath, apiPath) {
   // Replace Swagger syntax for path parameters with Express' version (All Swagger path parameters are required)
   return (basePath + apiPath).replace(/{/g, ':').replace(/}/g, '');
 };
-var getParameterType = function getParameterType (schema) {
-  var type = schema.type;
-
-  if (!type && schema.schema) {
-    type = schema.type;
-  }
-
-  if (!type) {
-    type = 'object';
-  }
-
-  return type;
-};
 var convertValue = function convertValue (value, schema, type) {
   if (_.isUndefined(type)) {
-    type = getParameterType(schema);
+    type = mHelpers.getParameterType(schema);
   }
 
   // If there is no value, do not convert it
@@ -156,14 +152,20 @@ var processOperationParameters = function processOperationParameters (version, p
   debug('  Processing Parameters');
 
   async.map(_.reduce(parameters, function (requestParsers, parameter) {
-    var paramType = version === '1.2' ? parameter.paramType : parameter.schema.in;
+    var contentType = req.headers['content-type'];
+    var paramLocation = version === '1.2' ? parameter.paramType : parameter.schema.in;
+    var paramType = mHelpers.getParameterType(version === '1.2' ? parameter : parameter.schema);
     var parser;
 
-    switch (paramType) {
+    switch (paramLocation) {
     case 'body':
     case 'form':
     case 'formData':
-      parser = bodyParser;
+      if (paramType.toLowerCase() === 'file' || (contentType && contentType.split(';')[0] === 'multipart/form-data')) {
+        parser = multiPartParser;
+      } else {
+        parser = bodyParser;
+      }
 
       break;
 
@@ -187,7 +189,7 @@ var processOperationParameters = function processOperationParameters (version, p
 
     _.each(parameters, function (parameterOrMetadata, index) {
       var parameter = version === '1.2' ? parameterOrMetadata : parameterOrMetadata.schema;
-      var pType = getParameterType(parameter);
+      var pType = mHelpers.getParameterType(parameter);
       var oVal;
       var value;
 

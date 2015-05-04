@@ -1,4 +1,4 @@
-/* global describe, it */
+/* global beforeEach, describe, it */
 
 /*
  * The MIT License (MIT)
@@ -33,7 +33,9 @@ var _ = require('lodash');
 var assert = require('assert');
 var async = require('async');
 var helpers = require('../helpers');
+var path = require('path');
 var petStoreJson = _.cloneDeep(require('../../samples/2.0/petstore.json'));
+var pkg = require('../../package.json');
 var request = require('supertest');
 var spec = require('../../lib/helpers').getSpec('2.0');
 
@@ -44,7 +46,10 @@ describe('Swagger Metadata Middleware v2.0', function () {
         if (req.swagger) {
           return next('This should not happen');
         }
+
         res.end('OK');
+
+        return next();
       }
     }, function (app) {
       request(app)
@@ -142,36 +147,6 @@ describe('Swagger Metadata Middleware v2.0', function () {
        });
   });
 
-  it('should populate parameter values for formData elements',
-    function (done) {
-      var cPetStoreJson = _.cloneDeep(petStoreJson);
-
-      // Add an operation parameter
-      cPetStoreJson.paths['/pets'].post.parameters = [
-        {
-          'in': 'formData',
-          'name': 'mock',
-          'description': 'Mock mode',
-          'required': false,
-          'type': 'boolean'
-        }
-      ];
-
-      helpers.createServer([cPetStoreJson], {
-        handler: function (req, res) {
-          assert.equal(req.swagger.params.mock.value, false);
-          res.end('OK');
-        }
-      }, function (app) {
-        request(app)
-          .post('/api/pets')
-          .type('form')
-          .send({mock: false})
-          .expect(200)
-          .end(helpers.expectContent('OK', done));
-      });
-    });
-
   it('should handle parameter references (Issue 79)', function (done) {
     var cPetStoreJson = _.cloneDeep(petStoreJson);
 
@@ -222,6 +197,8 @@ describe('Swagger Metadata Middleware v2.0', function () {
           }
 
           res.end('OK');
+
+          return next();
         });
       }
     }, function (app) {
@@ -230,6 +207,167 @@ describe('Swagger Metadata Middleware v2.0', function () {
         .query({mock: false})
         .expect(200)
         .end(helpers.expectContent('OK', done));
+    });
+  });
+
+  it('should handle body parameters', function (done) {
+    var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+    // Negate the validation as we don't care about that right now
+    cPetStoreJson.paths['/pets'].post.parameters[0].schema = {};
+
+    helpers.createServer([cPetStoreJson], {
+      handler: function (req, res, next) {
+        var newPet = req.swagger.params.pet.value;
+
+        assert.deepEqual(newPet, {name: 'Top Dog'});
+
+        newPet.id = 1;
+
+        res.end(JSON.stringify(newPet));
+
+        return next();
+      }
+    }, function (app) {
+      request(app)
+        .post('/api/pets')
+        .send({name: 'Top Dog'})
+        .expect(200)
+        .end(helpers.expectContent({id: 1, name: 'Top Dog'}, done));
+    });
+  });
+
+  describe('non-multipart form parameters', function () {
+    it('should handle primitives', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      // Add an operation parameter
+      cPetStoreJson.paths['/pets'].post.parameters = [
+        {
+          in: 'formData',
+          name: 'mock',
+          description: 'Mock mode',
+          required: false,
+          type: 'boolean'
+        }
+      ];
+
+      helpers.createServer([cPetStoreJson], {
+        handler: function (req, res) {
+          assert.equal(req.swagger.params.mock.value, false);
+          res.end('OK');
+        }
+      }, function (app) {
+        request(app)
+          .post('/api/pets')
+          .type('form')
+          .send({mock: false})
+          .expect(200)
+          .end(helpers.expectContent('OK', done));
+      });
+    });
+  });
+
+  describe('multipart form parameters (Issue 60)', function () {
+    it('should handle primitives', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+      var operation = _.cloneDeep(cPetStoreJson.paths['/pets']).post;
+
+      operation.consumes = [
+        'multipart/form-data'
+      ];
+      operation.parameters = [
+        {
+          name: 'id',
+            in: 'path',
+          required: true,
+          type: 'string'
+        },
+        {
+          name: 'name',
+            in: 'formData',
+          required: true,
+          type: 'string'
+        }
+      ];
+      operation.summary = 'Change Pet name.';
+
+      cPetStoreJson.paths['/pets/{id}/name'] = {
+        post: operation
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        handler: function (req, res, next) {
+          assert.equal(req.swagger.params.name.value, 'Top Dog');
+
+          res.end(JSON.stringify({
+            id: req.swagger.params.id.value,
+            name: req.swagger.params.name.value
+          }));
+
+          next();
+        }
+      }, function(app) {
+        request(app)
+          .post('/api/pets/1/name')
+          .field('name', 'Top Dog')
+          .expect(200)
+          .end(helpers.expectContent({id: 1, name: 'Top Dog'}, done));
+      });
+    });
+
+    it('should handle files', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+      var operation = _.cloneDeep(cPetStoreJson.paths['/pets']).post;
+
+      delete operation.responses['200'];
+
+      operation.consumes = [
+        'multipart/form-data'
+      ];
+      operation.parameters = [
+        {
+          name: 'id',
+            in: 'path',
+          required: true,
+          type: 'string'
+        },
+        {
+          name: 'file',
+            in: 'formData',
+          required: true,
+          type: 'file'
+        }
+      ];
+      operation.responses['201'] = {
+        description: 'Created file response'
+      };
+
+      cPetStoreJson.paths['/pets/{id}/files'] = {
+        post: operation
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        handler: function (req, res, next) {
+          var file = req.swagger.params.file;
+
+          assert.ok(_.isPlainObject(file));
+          assert.equal(file.value.originalname, 'package.json');
+          assert.equal(file.value.mimetype, 'application/json');
+          assert.deepEqual(JSON.parse(file.value.buffer), pkg);
+
+          res.statusCode = 201;
+          res.end();
+
+          next();
+        }
+      }, function(app) {
+        request(app)
+          .post('/api/pets/1/files')
+          .attach('file', path.resolve(path.join(__dirname, '..', '..', 'package.json')), 'package.json')
+          .expect(201)
+          .end(done);
+      });
     });
   });
 
@@ -250,7 +388,6 @@ describe('Swagger Metadata Middleware v2.0', function () {
 
       helpers.createServer([cPetStoreJson], {
         handler: function (req, res, next) {
-
           try {
             assert.deepEqual(req.swagger.params['Auth-Token'], {
               path: ['paths', '/pets', 'get', 'parameters', '0'],
@@ -263,6 +400,8 @@ describe('Swagger Metadata Middleware v2.0', function () {
           }
 
           res.end('OK');
+
+          return next();
         }
       }, function (app) {
         request(app)
@@ -348,38 +487,40 @@ describe('Swagger Metadata Middleware v2.0', function () {
     });
   });
 
-  /* jshint unused: false */
   describe('x-swagger-router-handle-subpaths option', function() {
-
     var cPetStoreJson;
-    var subpathedPet;
+    var subPathedPet;
 
-    /* global beforeEach */
     beforeEach(function() {
       cPetStoreJson = _.cloneDeep(petStoreJson);
 
       var petIdPath = cPetStoreJson.paths['/pets/{id}'];
+
       petIdPath['x-swagger-router-controller'] = 'Pets';
+
       delete(petIdPath.get.security);
       delete(petIdPath.delete);
 
-      subpathedPet = _.cloneDeep(petIdPath);
-      subpathedPet['x-swagger-router-handle-subpaths'] = true;
-      delete(subpathedPet.parameters);
-      subpathedPet.get.operationId = 'getPetSubpath';
-      delete(subpathedPet.get.parameters);
-      cPetStoreJson.paths['/pets/9'] = subpathedPet;
+      subPathedPet = _.cloneDeep(petIdPath);
+      subPathedPet['x-swagger-router-handle-subpaths'] = true;
+
+      delete(subPathedPet.parameters);
+
+      subPathedPet.get.operationId = 'getPetSubpath';
+
+      delete(subPathedPet.get.parameters);
+
+      cPetStoreJson.paths['/pets/9'] = subPathedPet;
     });
 
     it('should not match where there\'s a more specific path', function(done) {
-
       helpers.createServer([cPetStoreJson], {
         swaggerRouterOptions: {
           controllers: {
             'Pets_getPetById': function(req, res) {
               res.end('YES');
             },
-            'Pets_getPetSubpath': function(req, res) {
+            'Pets_getPetSubpath': function() {
               assert(false, 'should not get here');
             }
           }
@@ -393,11 +534,10 @@ describe('Swagger Metadata Middleware v2.0', function () {
     });
 
     it('should match where there\'s not a more specific path', function(done) {
-
       helpers.createServer([cPetStoreJson], {
         swaggerRouterOptions: {
           controllers: {
-            'Pets_getPetById': function(req, res) {
+            'Pets_getPetById': function() {
               assert(false, 'should not get here');
             },
             'Pets_getPetSubpath': function(req, res) {
@@ -414,16 +554,15 @@ describe('Swagger Metadata Middleware v2.0', function () {
     });
 
     it('should not match when not specified', function(done) {
-
-      delete(subpathedPet['x-swagger-router-handle-subpaths']);
+      delete(subPathedPet['x-swagger-router-handle-subpaths']);
 
       helpers.createServer([cPetStoreJson], {
         swaggerRouterOptions: {
           controllers: {
-            'Pets_getPetById': function(req, res) {
+            'Pets_getPetById': function() {
               assert(false, 'should not get here');
             },
-            'Pets_getPetSubpath': function(req, res) {
+            'Pets_getPetSubpath': function() {
               assert(false, 'should not get here');
             }
           }
@@ -437,16 +576,15 @@ describe('Swagger Metadata Middleware v2.0', function () {
     });
 
     it('should not match when set to false', function(done) {
-
-      subpathedPet['x-swagger-router-handle-subpaths'] = false;
+      subPathedPet['x-swagger-router-handle-subpaths'] = false;
 
       helpers.createServer([cPetStoreJson], {
         swaggerRouterOptions: {
           controllers: {
-            'Pets_getPetById': function(req, res) {
+            'Pets_getPetById': function() {
               assert(false, 'should not get here');
             },
-            'Pets_getPetSubpath': function(req, res) {
+            'Pets_getPetSubpath': function() {
               assert(false, 'should not get here');
             }
           }

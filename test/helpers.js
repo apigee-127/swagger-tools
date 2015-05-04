@@ -40,6 +40,8 @@ var errorHandler = module.exports.errorHandler = function errorHandler() {
       // console.log(err.stack);
 
       res.end(err.message);
+
+      return next();
     } else {
       return next();
     }
@@ -49,7 +51,7 @@ var errorHandler = module.exports.errorHandler = function errorHandler() {
 module.exports.createServer = function createServer (initArgs, options, callback) {
   var app = require('connect')();
   var serverInit = function (middleware) {
-    var handler = options.handler || function(req, res) {
+    var handler = options.handler || function (req, res) {
       res.end('OK');
     };
 

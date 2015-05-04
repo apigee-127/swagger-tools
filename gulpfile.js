@@ -148,7 +148,7 @@ gulp.task('test-node', function () {
       gulp.src([
         'test/**/test-*.js',
         '!./test/**/test-specs-browser.js'
-      ]).pipe(mocha({reporter: 'spec'}));
+      ]).pipe(mocha({reporter: 'spec', timeout: 5000}));
     });
 });
 

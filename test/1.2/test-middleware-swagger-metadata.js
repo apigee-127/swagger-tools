@@ -33,7 +33,9 @@ var _ = require('lodash');
 var assert = require('assert');
 var async = require('async');
 var helpers = require('../helpers');
+var path = require('path');
 var petJson = _.cloneDeep(require('../../samples/1.2/pet.json'));
+var pkg = require('../../package.json');
 var rlJson = _.cloneDeep(require('../../samples/1.2/resource-listing.json'));
 var storeJson = _.cloneDeep(require('../../samples/1.2/store.json'));
 var userJson = _.cloneDeep(require('../../samples/1.2/user.json'));
@@ -86,6 +88,8 @@ describe('Swagger Metadata Middleware v1.2', function () {
            }
 
            res.end('OK');
+
+           return next();
          }
        }, function (app) {
          request(app)
@@ -93,6 +97,138 @@ describe('Swagger Metadata Middleware v1.2', function () {
            .expect(200)
            .end(helpers.expectContent('OK', done));
        });
+     });
+
+  it('should handle body parameters', function (done) {
+    var cPetJson = _.cloneDeep(petJson);
+
+    // Negate the validation as we don't care about that right now
+    cPetJson.models.Pet = {
+      id: 'Pet',
+      properties: {}
+    };
+
+    helpers.createServer([rlJson, [cPetJson, storeJson, userJson]], {
+      handler: function (req, res, next) {
+        assert.deepEqual(req.swagger.params.body.value, {name: 'Top Dog'});
+
+        res.statusCode = 201;
+        res.end();
+
+        return next();
+      }
+    }, function (app) {
+      request(app)
+        .post('/api/pet')
+        .send({name: 'Top Dog'})
+        .expect(201)
+        .end(done);
+    });
+  });
+
+  describe('non-multipart form parameters', function () {
+    it('should handle primitives', function (done) {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        handler: function (req, res, next) {
+          assert.equal(req.swagger.params.name.value, 'Top Dog');
+          assert.ok(_.isUndefined(req.swagger.params.status.value));
+
+          res.statusCode = 201;
+          res.end();
+
+          return next();
+        }
+      }, function (app) {
+        request(app)
+          .post('/api/pet/1')
+          .type('form')
+          .send({name: 'Top Dog'})
+          .expect(201)
+          .end(done);
+      });
+    });
+  });
+
+  describe('multipart form parameters (Issue 60)', function () {
+    it('should handle primitives', function (done) {
+      var cPetJson = _.cloneDeep(petJson);
+
+      cPetJson.apis.push({
+        path: '/pet/{id}/name',
+        operations: [
+          {
+            authorizations: {},
+            method: 'POST',
+            nickname: 'changePetName',
+            parameters: [
+              {
+                name: 'id',
+                paramType: 'path',
+                required: true,
+                type: 'integer'
+              },
+              {
+                name: 'name',
+                paramType: 'form',
+                required: true,
+                type: 'string'
+              }
+            ],
+            responseMessages: [
+              {
+                code: 400,
+                message: 'Invalid request'
+              }
+            ],
+            type: 'Pet'
+          }
+        ]
+      });
+
+      helpers.createServer([rlJson, [cPetJson, storeJson, userJson]], {
+        handler: function (req, res, next) {
+          assert.equal(req.swagger.params.name.value, 'Top Dog');
+
+          res.statusCode = 200;
+          res.end(JSON.stringify({
+            id: req.swagger.params.id.value,
+            name: req.swagger.params.name.value
+          }));
+
+          return next();
+        }
+      }, function (app) {
+        request(app)
+          .post('/api/pet/1/name')
+          .field('name', 'Top Dog')
+          .expect(200)
+          .end(helpers.expectContent({id: 1, name: 'Top Dog'}, done));
+      });
+    });
+
+    it('should handle files', function (done) {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        handler: function (req, res, next) {
+          var file = req.swagger.params.file;
+
+          assert.ok(_.isPlainObject(file));
+          assert.equal(file.value.originalname, 'package.json');
+          assert.equal(file.value.mimetype, 'application/json');
+          assert.deepEqual(JSON.parse(file.value.buffer), pkg);
+
+          res.statusCode = 201;
+          res.end();
+
+          next();
+        }
+      }, function(app) {
+        request(app)
+          .post('/api/pet/uploadImage')
+          .attach('file', path.resolve(path.join(__dirname, '..', '..', 'package.json')), 'package.json')
+          .expect(201)
+          .end(done);
+      });
+    });
   });
 
   describe('issues', function () {
@@ -123,6 +259,8 @@ describe('Swagger Metadata Middleware v1.2', function () {
           }
 
           res.end('OK');
+
+          return next();
         }
       }, function (app) {
         request(app)
