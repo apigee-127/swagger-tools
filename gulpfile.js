@@ -141,8 +141,7 @@ gulp.task('test-node', function () {
     'middleware/swagger-*.js',
     '!./middleware/swagger-ui/**/*.js',
     '!./test/**/test-specs-browser.js'
-  ])
-    .pipe(istanbul())
+  ]).pipe(istanbul())
     .pipe(istanbul.hookRequire()) // Force `require` to return covered files
     .on('finish', function () {
       gulp.src([

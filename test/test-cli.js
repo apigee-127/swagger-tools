@@ -63,13 +63,13 @@ var globalHelp = [
 describe('CLI Global', function () {
   var originalNodeEnv;
 
-  before(function() {
+  before(function () {
     originalNodeEnv = process.env.NODE_ENV;
 
     process.env.NODE_ENV = '';
   });
 
-  after(function() {
+  after(function () {
     process.env.NODE_ENV = originalNodeEnv;
   });
 
