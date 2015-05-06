@@ -26,8 +26,9 @@
 
 var _ = require('lodash');
 var assert = require('assert');
-var cli = require('../lib/cli');
-var StdOutFixture = require('fixture-stdout');
+var cp = require('child_process')
+var fs = require('fs');
+var path = require('path');
 var swagger = require('../');
 
 var errorHandler = module.exports.errorHandler = function errorHandler() {
@@ -105,59 +106,10 @@ module.exports.expectContent = function expectContent (content, done) {
 };
 
 module.exports.executeCLI = function executeCLI (args, done) {
-  var exitCode = 0;
-  var originalExit = process.exit;
-  var stderr = '';
-  var stderrFixture = new StdOutFixture({stream: process.stderr});
-  var stdout = '';
-  var stdoutFixture = new StdOutFixture({stream: process.stdout});
-  var cliErr;
-
   // Add Node args
-  args.unshift('node', 'swagger-tools');
+  args.unshift('node', path.resolve(path.join(__dirname, '..', 'bin', 'swagger-tools')));
 
-  // Capture process.stderr
-  stderrFixture.capture(function (string) {
-    stderr += string;
-
-    // Return 'false' to avoid logging
-    return false;
+  cp.exec(args.join(' '), function (err, stdout, stderr) {
+    done(stderr, stdout);
   });
-
-  // Capture process.stdout
-  stdoutFixture.capture(function (string) {
-    stdout += string;
-
-    // Return 'false' to avoid logging
-    return false;
-  });
-
-  // Disable process.exit
-  process.exit = function (code) {
-    exitCode = code || 0;
-
-    throw new Error('Trapped process.exit(' + (code || 0) + ')');
-  };
-
-  try {
-    cli.execute(args);
-  } catch (err) {
-    // The nature of trapping process.exit means we can end up with our callbacks being called more than once but this
-    // cannot happen in the wild.
-    if (err.message.indexOf('Trapped process.exit(') !== -1 &&
-        err.message.indexOf('Callback was already called') !== -1) {
-      cliErr = err;
-    }
-  }
-
-  // Wire up original process.stderr, process.stdout and process.exit
-  stderrFixture.release();
-  stdoutFixture.release();
-  process.exit = originalExit;
-
-  if (cliErr) {
-    throw cliErr;
-  }
-
-  done(stderr, stdout, exitCode);
 };

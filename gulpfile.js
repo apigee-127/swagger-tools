@@ -36,6 +36,7 @@ var istanbul = require('gulp-istanbul');
 var jshint = require('gulp-jshint');
 var mocha = require('gulp-mocha');
 var mochaPhantomJS = require('gulp-mocha-phantomjs');
+var runSequence = require('run-sequence');
 var source = require('vinyl-source-stream');
 var versions = ['1.2', '2.0'];
 var browserTestsPaths = _.reduce(versions, function (paths, version) {
@@ -133,8 +134,8 @@ gulp.task('lint', function () {
     .pipe(jshint.reporter('fail'));
 });
 
-gulp.task('test-node', function () {
-  return gulp.src([
+gulp.task('test-node', function (cb) {
+  gulp.src([
     './index.js',
     './lib/**/*.js',
     './middleware/helpers.js',
@@ -147,7 +148,9 @@ gulp.task('test-node', function () {
       gulp.src([
         './test/**/test-*.js',
         '!./test/**/test-specs-browser.js'
-      ]).pipe(mocha({reporter: 'spec', timeout: 5000}));
+      ]).pipe(mocha({reporter: 'spec', timeout: 5000}))
+        .pipe(istanbul.writeReports())
+        .on('end', cb);
     });
 });
 
@@ -212,19 +215,19 @@ gulp.task('test-browser', ['browserify', 'test-prepare'], function (cb) {
           localToRemoteUrlAccessEnabled: true,
           webSecurityEnabled: false
         }
-      }
+      },
+      timeout: 5000
     }))
-    .on('error', function (err) {
-      cb(err);
-    })
     .on('finish', function () {
       // Clean up
       del(browserTestsPaths, cb);
     });
 });
 
-gulp.task('test', ['test-node', 'test-browser'], function () {
-  gulp.src([])
-    .pipe(istanbul.writeReports());
+gulp.task('test', function (cb) {
+  // Done this way to ensure that test-node runs prior to test-browser.  Since both of those tasks are independent,
+  // doing this 'The Gulp Way' isn't feasible.
+  runSequence('test-node', 'test-browser', cb);
 });
+
 gulp.task('default', ['lint', 'test']);
