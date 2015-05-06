@@ -1,0 +1,576 @@
+/* global after, before, describe, it */
+
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2015 Apigee Corporation
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+'use strict';
+
+var _ = require('lodash');
+var assert = require('assert');
+var executeCLI = require('./helpers').executeCLI;
+var path = require('path');
+var pkg = require('../package.json');
+var YAML = require('yamljs');
+
+var petJsonPath = path.resolve(path.join(__dirname, '..', 'samples', '1.2', 'pet.json'));
+var petstoreJsonPath = path.resolve(path.join(__dirname, '..', 'samples', '2.0', 'petstore.json'));
+var pkgPath = path.resolve(path.join(__dirname, '..', 'package.json'));
+var rlJsonPath = path.resolve(path.join(__dirname, '..', 'samples', '1.2', 'resource-listing.json'));
+var storeJsonPath = path.resolve(path.join(__dirname, '..', 'samples', '1.2', 'store.json'));
+var userJsonPath = path.resolve(path.join(__dirname, '..', 'samples', '1.2', 'user.json'));
+
+var globalHelp = [
+  '',
+  '  Usage: swagger-tools [options] [command]',
+  '',
+  '',
+  '  Commands:',
+  '',
+  '    convert [options] <resourceListing> [apiDeclarations...]               Converts Swagger 1.2 documents to a Swagger 2.0 document',
+  '    help [command]                                                         Display help information',
+  '    info <version>                                                         Display information about the Swagger version requested',
+  '    validate [options] <resourceListingOrSwaggerDoc> [apiDeclarations...]  Display validation results for the Swagger document(s)',
+  '',
+  '  Options:',
+  '',
+  '    -h, --help     output usage information',
+  '    -V, --version  output the version number',
+  '',
+  ''
+].join('\n');
+
+describe('CLI Global', function () {
+  var originalNodeEnv;
+
+  before(function() {
+    originalNodeEnv = process.env.NODE_ENV;
+
+    process.env.NODE_ENV = '';
+  });
+
+  after(function() {
+    process.env.NODE_ENV = originalNodeEnv;
+  });
+
+  describe('global help', function () {
+    it('no arguments', function () {
+      executeCLI([], function (stderr, stdout) {
+        assert.equal(stderr, '');
+        assert.equal(stdout, globalHelp);
+      });
+    });
+
+    it('help command without argument', function () {
+      executeCLI(['help'], function (stderr, stdout) {
+        assert.equal(stderr, '');
+        assert.equal(stdout, globalHelp);
+      });
+    });
+
+    it('invalid command', function () {
+      executeCLI(['fake'], function (stderr, stdout) {
+        assert.equal(stderr, '');
+        assert.equal(stdout, 'swagger-tools does not support the fake command.\n' + globalHelp);
+      });
+    });
+
+    it('--help flag', function () {
+      executeCLI([], function (stderr, stdout) {
+        assert.equal(stderr, '');
+        assert.equal(stdout, globalHelp);
+      });
+    });
+  });
+
+  describe('commands', function () {
+    describe('convert', function () {
+      it('missing resourceListing argument', function () {
+        executeCLI(['convert'], function (stderr, stdout) {
+          assert.equal(stderr, [
+            '',
+            '  error: missing required argument `resourceListing\'',
+            '',
+            ''
+          ].join('\n'));
+          assert.equal(stdout, '');
+        }); 
+      });
+
+      it('invalid resourceListing argument (non-existent file)', function () {
+        executeCLI(['convert', './fake.json'], function (stderr, stdout) {
+          assert.equal(stderr, [
+            '',
+            '  error: ENOENT, no such file or directory \'' + (path.join(process.cwd(), 'fake.json')) + '\'',
+            '',
+            ''
+          ].join('\n'));
+          assert.equal(stdout, '');
+        });
+      });
+
+      it('invalid resourceListing argument (not a Swagger document)', function () {
+        executeCLI(['convert', pkgPath], function (stderr, stdout) {
+          assert.equal(stderr, [
+            '',
+            '  error: Unable to identify the Swagger version for document: ' + pkgPath,
+            '',
+            ''
+          ].join('\n'));
+          assert.equal(stdout, '');
+        });
+      });
+
+      it('invalid resourceListing argument (a Swagger 2.0 document)', function () {
+        executeCLI(['convert', petstoreJsonPath], function (stderr, stdout) {
+          assert.equal(stderr, [
+            '',
+            '  error: Unable to identify the Swagger version for document: ' + petstoreJsonPath,
+            '',
+            ''
+          ].join('\n'));
+          assert.equal(stdout, '');
+        });
+      });
+
+      it('invalid Swagger document(s)', function () {
+        executeCLI(['convert', rlJsonPath], function (stderr, stdout) {
+          assert.equal(stderr, [
+            '',
+            'The Swagger document(s) are invalid (Run with --no-validation to skip validation)',
+            '',
+            'API Errors:',
+            '',
+            '  #/apis/0/path: Resource path is defined but is not used: /pet',
+            '  #/apis/1/path: Resource path is defined but is not used: /user',
+            '  #/apis/2/path: Resource path is defined but is not used: /store',
+            '',
+            'API Warnings:',
+            '',
+            '  #/authorizations/oauth2: Authorization is defined but is not used: oauth2',
+            '  #/authorizations/oauth2/scopes/0: Authorization scope is defined but is not used: write:pets',
+            '  #/authorizations/oauth2/scopes/1: Authorization scope is defined but is not used: read:pets',
+            '  #/authorizations/oauth2/scopes/2: Authorization scope is defined but is not used: test:anything',
+            '',
+            '3 errors and 4 warnings',
+            '',
+            ''
+          ].join('\n'));
+          assert.equal(stdout, '');
+        });
+      });
+
+      it('invalid Swagger document(s) but with validation disabled', function () {
+        executeCLI(['convert', rlJsonPath, '--no-validation'], function (stderr, stdout) {
+          assert.equal(stderr, '');
+          assert.ok(_.isPlainObject(JSON.parse(stdout)));
+        });
+      });
+
+      it('valid Swagger documents', function () {
+        executeCLI(['convert', rlJsonPath, petJsonPath, storeJsonPath, userJsonPath], function (stderr, stdout) {
+          assert.equal(stderr, '');
+          assert.ok(_.isPlainObject(JSON.parse(stdout)));
+        });
+      });
+
+      it('valid Swagger documents as YAML', function () {
+        executeCLI(['convert', '--yaml', rlJsonPath, petJsonPath, storeJsonPath, userJsonPath], function (stderr, stdout) {
+          assert.equal(stderr, '');
+          assert.ok(_.isPlainObject(YAML.parse(stdout)));
+        });
+      });
+
+      it('--help', function () {
+        executeCLI(['convert', '--help'], function (stderr, stdout) {
+          assert.equal(stderr, '');
+          assert.equal(stdout, [
+            '',
+            '  Usage: convert [options] <resourceListing> [apiDeclarations...]',
+            '',
+            '  Converts Swagger 1.2 documents to a Swagger 2.0 document',
+            '',
+            '  Options:',
+            '',
+            '    -h, --help           output usage information',
+            '    -n, --no-validation  disable pre-conversion validation of the Swagger document(s)',
+            '    -y, --yaml           output as YAML instead of JSON',
+            '',
+            ''
+          ].join('\n'));
+        });
+      });      
+    });
+
+    describe('help', function () {
+      it('convert', function () {
+        executeCLI(['help', 'convert'], function (stderr, stdout) {
+          assert.equal(stderr, '');
+          assert.equal(stdout, [
+            '',
+            '  Usage: convert [options] <resourceListing> [apiDeclarations...]',
+            '',
+            '  Converts Swagger 1.2 documents to a Swagger 2.0 document',
+            '',
+            '  Options:',
+            '',
+            '    -h, --help           output usage information',
+            '    -n, --no-validation  disable pre-conversion validation of the Swagger document(s)',
+            '    -y, --yaml           output as YAML instead of JSON',
+            '',
+            ''
+          ].join('\n'));
+        });
+      });
+
+      it('help', function () {
+        executeCLI(['help', 'help'], function (stderr, stdout) {
+          assert.equal(stderr, '');
+          assert.equal(stdout, [
+            '',
+            '  Usage: help [options] [command]',
+            '',
+            '  Display help information',
+            '',
+            '  Options:',
+            '',
+            '    -h, --help  output usage information',
+            '',
+            ''
+          ].join('\n'));
+        });
+      });
+
+      it('info', function () {
+        executeCLI(['help', 'info'], function (stderr, stdout) {
+          assert.equal(stderr, '');
+          assert.equal(stdout, [
+            '',
+            '  Usage: info [options] <version>',
+            '',
+            '  Display information about the Swagger version requested',
+            '',
+            '  Options:',
+            '',
+            '    -h, --help  output usage information',
+            '',
+            ''
+          ].join('\n'));
+        });
+      });
+
+      it('validate', function () {
+        executeCLI(['help', 'validate'], function (stderr, stdout) {
+          assert.equal(stderr, '');
+          assert.equal(stdout, [
+            '',
+            '  Usage: validate [options] <resourceListingOrSwaggerDoc> [apiDeclarations...]',
+            '',
+            '  Display validation results for the Swagger document(s)',
+            '',
+            '  Options:',
+            '',
+            '    -h, --help     output usage information',
+            '    -v, --verbose  display verbose output',
+            '',
+            ''
+          ].join('\n'));
+        });
+      });
+
+      it('--help', function () {
+        executeCLI(['help', '--help'], function (stderr, stdout) {
+          assert.equal(stderr, '');
+          assert.equal(stdout, [
+            '',
+            '  Usage: help [options] [command]',
+            '',
+            '  Display help information',
+            '',
+            '  Options:',
+            '',
+            '    -h, --help  output usage information',
+            '',
+            ''
+          ].join('\n'));
+        });
+      });
+    });
+
+    describe('info', function () {
+      it('missing version argument', function () {
+        executeCLI(['info'], function (stderr, stdout) {
+          assert.equal(stderr, [
+            '',
+            '  error: missing required argument `version\'',
+            '',
+            ''
+          ].join('\n'));
+          assert.equal(stdout, '');
+        }); 
+      });
+
+      it('invalid version argument', function () {
+        executeCLI(['info', 'fake'], function (stderr, stdout) {
+          assert.equal(stderr, [
+            '',
+            '  error: Unsupported Swagger version: fake',
+            '',
+            ''
+          ].join('\n'));
+          assert.equal(stdout, '');
+        }); 
+      });
+
+      it('Swagger 1.2', function () {
+        executeCLI(['info', '1.2'], function (stderr, stdout) {
+          assert.equal(stderr, '');
+          assert.equal(stdout, [
+            '',
+            'Swagger 1.2 Information:',
+            '',
+            '  documentation url https://github.com/swagger-api/swagger-spec/blob/master/versions/1.2.md',
+            '  schema(s) url     https://github.com/swagger-api/swagger-spec/tree/master/schemas/v1.2',
+            '',
+            ''
+          ].join('\n'));
+        }); 
+      });
+
+      it('Swagger 2.0', function () {
+        executeCLI(['info', '2.0'], function (stderr, stdout) {
+          assert.equal(stderr, '');
+          assert.equal(stdout, [
+            '',
+            'Swagger 2.0 Information:',
+            '',
+            '  documentation url https://github.com/swagger-api/swagger-spec/blob/master/versions/2.0.md',
+            '  schema(s) url     https://github.com/swagger-api/swagger-spec/tree/master/schemas/v2.0',
+            '',
+            ''
+          ].join('\n'));
+        }); 
+      });
+
+      it('--help', function () {
+        executeCLI(['info', '--help'], function (stderr, stdout) {
+          assert.equal(stderr, '');
+          assert.equal(stdout, [
+            '',
+            '  Usage: info [options] <version>',
+            '',
+            '  Display information about the Swagger version requested',
+            '',
+            '  Options:',
+            '',
+            '    -h, --help  output usage information',
+            '',
+            ''
+          ].join('\n'));
+        });
+      });
+    });
+
+    describe('validate', function () {
+      it('missing resourceListing or swaggerObject argument', function () {
+        executeCLI(['validate'], function (stderr, stdout) {
+          assert.equal(stderr, [
+            '',
+            '  error: missing required argument `resourceListingOrSwaggerDoc\'',
+            '',
+            ''
+          ].join('\n'));
+          assert.equal(stdout, '');
+        }); 
+      });
+
+      it('invalid resourceListing or swaggerObject argument (non-existent file)', function () {
+        executeCLI(['validate', './fake.json'], function (stderr, stdout) {
+          assert.equal(stderr, [
+            '',
+            '  error: ENOENT, no such file or directory \'' + (path.join(process.cwd(), 'fake.json')) + '\'',
+            '',
+            ''
+          ].join('\n'));
+          assert.equal(stdout, '');
+        });
+      });
+
+      it('invalid resourceListing or swaggerObject argument (not a Swagger document)', function () {
+        executeCLI(['validate', pkgPath], function (stderr, stdout) {
+          assert.equal(stderr, [
+            '',
+            '  error: Unable to identify the Swagger version for document: ' + pkgPath,
+            '',
+            ''
+          ].join('\n'));
+          assert.equal(stdout, '');
+        });
+      });
+
+      describe('Swagger 1.2', function () {
+        it('invalid', function () {
+          executeCLI(['validate', rlJsonPath], function (stderr, stdout) {
+            assert.equal(stderr, [
+              '',
+              'API Errors:',
+              '',
+              '  #/apis/0/path: Resource path is defined but is not used: /pet',
+              '  #/apis/1/path: Resource path is defined but is not used: /user',
+              '  #/apis/2/path: Resource path is defined but is not used: /store',
+              '',
+              'API Warnings:',
+              '',
+              '  #/authorizations/oauth2: Authorization is defined but is not used: oauth2',
+              '  #/authorizations/oauth2/scopes/0: Authorization scope is defined but is not used: write:pets',
+              '  #/authorizations/oauth2/scopes/1: Authorization scope is defined but is not used: read:pets',
+              '  #/authorizations/oauth2/scopes/2: Authorization scope is defined but is not used: test:anything',
+              '',
+              '3 errors and 4 warnings',
+              '',
+              ''
+            ].join('\n'));
+            assert.equal(stdout, '');
+          });        
+        });
+
+        it('invalid (verbose)', function () {
+          executeCLI(['validate', rlJsonPath, petJsonPath, '--verbose'], function (stderr, stdout) {
+            assert.equal(stderr, [
+              '',
+              'Validation Details:',
+              '',
+              '  Swagger Version: 1.2',
+              '  Swagger files:',
+              '',
+              '    Resource Listing: ' + rlJsonPath,
+              '    API Declarations:',
+              '',
+              '      ' + petJsonPath,
+              '',
+              'API Errors:',
+              '',
+              '  #/apis/1/path: Resource path is defined but is not used: /user',
+              '  #/apis/2/path: Resource path is defined but is not used: /store',
+              '',
+              'API Warnings:',
+              '',
+              '  #/authorizations/oauth2/scopes/2: Authorization scope is defined but is not used: test:anything',
+              '',
+              '2 errors and 1 warning',
+              '',
+              ''
+            ].join('\n'));
+            assert.equal(stdout, '');
+          });
+        });
+
+        it('valid', function () {
+          executeCLI(['validate', rlJsonPath, petJsonPath, storeJsonPath, userJsonPath], function (stderr, stdout) {
+            assert.equal(stderr, '');
+            assert.equal(stdout, '');
+          });        
+        });
+
+        it('valid (verbose)', function () {
+          executeCLI(['validate', rlJsonPath, petJsonPath, storeJsonPath, userJsonPath, '--verbose'],
+                     function (stderr, stdout) {
+                       assert.equal(stderr, '');
+                       assert.equal(stdout, [
+                         '',
+                         'Validation Details:',
+                         '',
+                         '  Swagger Version: 1.2',
+                         '  Swagger files:',
+                         '',
+                         '    Resource Listing: ' + rlJsonPath,
+                         '    API Declarations:',
+                         '',
+                         '      ' + petJsonPath,
+                         '      ' + storeJsonPath,
+                         '      ' + userJsonPath,
+                         '',
+                         'Swagger documents are valid',
+                         ''
+                       ].join('\n'));
+                     });
+        });
+      });
+
+      describe('Swagger 2.0', function () {
+        // Testing for invalid documents means writing invalid documents to filesystem and it's not something I want to
+        // do right now.
+
+        it('valid', function () {
+          executeCLI(['validate', petstoreJsonPath], function (stderr, stdout) {
+            assert.equal(stderr, '');
+            assert.equal(stdout, '');
+          });        
+        });
+
+        it('valid (verbose)', function () {
+          executeCLI(['validate', petstoreJsonPath, '--verbose'],
+                     function (stderr, stdout) {
+                       assert.equal(stderr, '');
+                       assert.equal(stdout, [
+                         '',
+                         'Validation Details:',
+                         '',
+                         '  Swagger Version: 2.0',
+                         '  Swagger file: ' + petstoreJsonPath,
+                         '',
+                         'Swagger document is valid',
+                         ''
+                       ].join('\n'));
+                     });
+        });
+      });
+
+      it('--help', function () {
+        executeCLI(['validate', '--help'], function (stderr, stdout) {
+          assert.equal(stderr, '');
+          assert.equal(stdout, [
+            '',
+            '  Usage: validate [options] <resourceListingOrSwaggerDoc> [apiDeclarations...]',
+            '',
+            '  Display validation results for the Swagger document(s)',
+            '',
+            '  Options:',
+            '',
+            '    -h, --help     output usage information',
+            '    -v, --verbose  display verbose output',
+            '',
+            ''
+          ].join('\n'));
+        });
+      });
+    });
+  });
+
+  it('--version flag', function () {
+    executeCLI(['--version'], function (stderr, stdout) {
+      assert.equal(stderr, '');
+      assert.equal(stdout, pkg.version + '\n');
+    });
+  });
+});

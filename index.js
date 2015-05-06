@@ -25,6 +25,7 @@
 'use strict';
 
 var _ = require('lodash');
+var cli = require('./lib/cli');
 var debug = require('debug')('swagger-tools:middleware');
 var helpers = require('./lib/helpers');
 
@@ -80,7 +81,7 @@ var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, cal
       if (process.env.NODE_ENV === 'test') {
         throw err;
       } else {
-        return helpers.printValidationResults(spec.version, rlOrSO, resources, results, true, true);
+        return cli.printValidationResults(spec.version, rlOrSO, resources, results, true, true);
       }
     }
 
