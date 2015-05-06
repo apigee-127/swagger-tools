@@ -43,6 +43,8 @@ var browserTestsPaths = _.reduce(versions, function (paths, version) {
   return paths.concat('./test/' + version + '/browser/');
 }, []);
 
+var runningAllTests = false;
+
 gulp.task('browserify', function (cb) {
   // Builds 4 browser binaries:
   //
@@ -149,8 +151,14 @@ gulp.task('test-node', function (cb) {
         './test/**/test-*.js',
         '!./test/**/test-specs-browser.js'
       ]).pipe(mocha({reporter: 'spec', timeout: 5000}))
-        .pipe(istanbul.writeReports())
-        .on('end', cb);
+        .on('end', function () {
+          if (!runningAllTests) {
+            gulp.src([])
+              .pipe(istanbul.writeReports());
+          }
+
+          cb();
+        });
     });
 });
 
@@ -219,12 +227,19 @@ gulp.task('test-browser', ['browserify', 'test-prepare'], function (cb) {
       timeout: 5000
     }))
     .on('finish', function () {
+      if (runningAllTests) {
+        gulp.src([])
+          .pipe(istanbul.writeReports());
+      }
+
       // Clean up
       del(browserTestsPaths, cb);
     });
 });
 
 gulp.task('test', function (cb) {
+  runningAllTests = true;
+
   // Done this way to ensure that test-node runs prior to test-browser.  Since both of those tasks are independent,
   // doing this 'The Gulp Way' isn't feasible.
   runSequence('test-node', 'test-browser', cb);
