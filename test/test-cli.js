@@ -119,12 +119,22 @@ describe('CLI Global', function () {
 
       it('invalid resourceListing argument (non-existent file)', function () {
         executeCLI(['convert', './fake.json'], function (stderr, stdout) {
-          assert.equal(stderr, [
-            '',
-            '  error: ENOENT, no such file or directory \'' + (path.join(process.cwd(), 'fake.json')) + '\'',
-            '',
-            ''
-          ].join('\n'));
+          assert.ok([
+            // node.js
+            [
+              '',
+              '  error: ENOENT, no such file or directory \'' + (path.join(process.cwd(), 'fake.json')) + '\'',
+              '',
+              ''
+            ].join('\n'),
+            // io.js
+            [
+              '',
+              '  error: ENOENT, no such file or directory, open \'' + (path.join(process.cwd(), 'fake.json')) + '\'',
+              '',
+              ''
+            ].join('\n')
+          ].indexOf(stderr) > -1);
           assert.equal(stdout, '');
         });
       });
@@ -406,12 +416,22 @@ describe('CLI Global', function () {
 
       it('invalid resourceListing or swaggerObject argument (non-existent file)', function () {
         executeCLI(['validate', './fake.json'], function (stderr, stdout) {
-          assert.equal(stderr, [
-            '',
-            '  error: ENOENT, no such file or directory \'' + (path.join(process.cwd(), 'fake.json')) + '\'',
-            '',
-            ''
-          ].join('\n'));
+          assert.ok([
+            // node.js
+            [
+              '',
+              '  error: ENOENT, no such file or directory \'' + (path.join(process.cwd(), 'fake.json')) + '\'',
+              '',
+              ''
+            ].join('\n'),
+            // io.js
+            [
+              '',
+              '  error: ENOENT, no such file or directory, open \'' + (path.join(process.cwd(), 'fake.json')) + '\'',
+              '',
+              ''
+            ].join('\n')
+          ].indexOf(stderr) > -1);
           assert.equal(stdout, '');
         });
       });
