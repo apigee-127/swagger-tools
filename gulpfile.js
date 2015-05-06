@@ -120,7 +120,7 @@ gulp.task('lint', function () {
     './bin/swagger-tools',
     './index.js',
     './lib/**/*.js',
-    'middleware/helpers.js',
+    './middleware/helpers.js',
     './middleware/swagger-*.js',
     './test/1.2/*.js',
     './test/2.0/*.js',
@@ -136,16 +136,16 @@ gulp.task('lint', function () {
 gulp.task('test-node', function () {
   return gulp.src([
     './index.js',
-    'lib/**/*.js',
-    'middleware/helpers.js',
-    'middleware/swagger-*.js',
+    './lib/**/*.js',
+    './middleware/helpers.js',
+    './middleware/swagger-*.js',
     '!./middleware/swagger-ui/**/*.js',
     '!./test/**/test-specs-browser.js'
   ]).pipe(istanbul())
     .pipe(istanbul.hookRequire()) // Force `require` to return covered files
     .on('finish', function () {
       gulp.src([
-        'test/**/test-*.js',
+        './test/**/test-*.js',
         '!./test/**/test-specs-browser.js'
       ]).pipe(mocha({reporter: 'spec', timeout: 5000}));
     });
