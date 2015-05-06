@@ -74,38 +74,46 @@ describe('CLI Global', function () {
   });
 
   describe('global help', function () {
-    it('no arguments', function () {
+    it('no arguments', function (done) {
       executeCLI([], function (stderr, stdout) {
         assert.equal(stderr, '');
         assert.equal(stdout, globalHelp);
+
+        done();
       });
     });
 
-    it('help command without argument', function () {
+    it('help command without argument', function (done) {
       executeCLI(['help'], function (stderr, stdout) {
         assert.equal(stderr, '');
         assert.equal(stdout, globalHelp);
+
+        done();
       });
     });
 
-    it('invalid command', function () {
+    it('invalid command', function (done) {
       executeCLI(['fake'], function (stderr, stdout) {
         assert.equal(stderr, '');
         assert.equal(stdout, 'swagger-tools does not support the fake command.\n' + globalHelp);
+
+        done();
       });
     });
 
-    it('--help flag', function () {
+    it('--help flag', function (done) {
       executeCLI([], function (stderr, stdout) {
         assert.equal(stderr, '');
         assert.equal(stdout, globalHelp);
+
+        done();
       });
     });
   });
 
   describe('commands', function () {
     describe('convert', function () {
-      it('missing resourceListing argument', function () {
+      it('missing resourceListing argument', function (done) {
         executeCLI(['convert'], function (stderr, stdout) {
           assert.equal(stderr, [
             '',
@@ -114,10 +122,12 @@ describe('CLI Global', function () {
             ''
           ].join('\n'));
           assert.equal(stdout, '');
+
+          done();
         }); 
       });
 
-      it('invalid resourceListing argument (non-existent file)', function () {
+      it('invalid resourceListing argument (non-existent file)', function (done) {
         executeCLI(['convert', './fake.json'], function (stderr, stdout) {
           assert.ok([
             // node.js
@@ -136,10 +146,12 @@ describe('CLI Global', function () {
             ].join('\n')
           ].indexOf(stderr) > -1);
           assert.equal(stdout, '');
+
+          done();
         });
       });
 
-      it('invalid resourceListing argument (not a Swagger document)', function () {
+      it('invalid resourceListing argument (not a Swagger document)', function (done) {
         executeCLI(['convert', pkgPath], function (stderr, stdout) {
           assert.equal(stderr, [
             '',
@@ -148,10 +160,12 @@ describe('CLI Global', function () {
             ''
           ].join('\n'));
           assert.equal(stdout, '');
+
+          done();
         });
       });
 
-      it('invalid resourceListing argument (a Swagger 2.0 document)', function () {
+      it('invalid resourceListing argument (a Swagger 2.0 document)', function (done) {
         executeCLI(['convert', petstoreJsonPath], function (stderr, stdout) {
           assert.equal(stderr, [
             '',
@@ -160,10 +174,12 @@ describe('CLI Global', function () {
             ''
           ].join('\n'));
           assert.equal(stdout, '');
+
+          done();
         });
       });
 
-      it('invalid Swagger document(s)', function () {
+      it('invalid Swagger document(s)', function (done) {
         executeCLI(['convert', rlJsonPath], function (stderr, stdout) {
           assert.equal(stderr, [
             '',
@@ -187,31 +203,39 @@ describe('CLI Global', function () {
             ''
           ].join('\n'));
           assert.equal(stdout, '');
+
+          done();
         });
       });
 
-      it('invalid Swagger document(s) but with validation disabled', function () {
+      it('invalid Swagger document(s) but with validation disabled', function (done) {
         executeCLI(['convert', rlJsonPath, '--no-validation'], function (stderr, stdout) {
           assert.equal(stderr, '');
           assert.ok(_.isPlainObject(JSON.parse(stdout)));
+
+          done();
         });
       });
 
-      it('valid Swagger documents', function () {
+      it('valid Swagger documents', function (done) {
         executeCLI(['convert', rlJsonPath, petJsonPath, storeJsonPath, userJsonPath], function (stderr, stdout) {
           assert.equal(stderr, '');
           assert.ok(_.isPlainObject(JSON.parse(stdout)));
+
+          done();
         });
       });
 
-      it('valid Swagger documents as YAML', function () {
+      it('valid Swagger documents as YAML', function (done) {
         executeCLI(['convert', '--yaml', rlJsonPath, petJsonPath, storeJsonPath, userJsonPath], function (stderr, stdout) {
           assert.equal(stderr, '');
           assert.ok(_.isPlainObject(YAML.safeLoad(stdout)));
+
+          done();
         });
       });
 
-      it('--help', function () {
+      it('--help', function (done) {
         executeCLI(['convert', '--help'], function (stderr, stdout) {
           assert.equal(stderr, '');
           assert.equal(stdout, [
@@ -228,12 +252,14 @@ describe('CLI Global', function () {
             '',
             ''
           ].join('\n'));
+
+          done();
         });
       });      
     });
 
     describe('help', function () {
-      it('convert', function () {
+      it('convert', function (done) {
         executeCLI(['help', 'convert'], function (stderr, stdout) {
           assert.equal(stderr, '');
           assert.equal(stdout, [
@@ -250,10 +276,12 @@ describe('CLI Global', function () {
             '',
             ''
           ].join('\n'));
+
+          done();
         });
       });
 
-      it('help', function () {
+      it('help', function (done) {
         executeCLI(['help', 'help'], function (stderr, stdout) {
           assert.equal(stderr, '');
           assert.equal(stdout, [
@@ -268,10 +296,12 @@ describe('CLI Global', function () {
             '',
             ''
           ].join('\n'));
+
+          done();
         });
       });
 
-      it('info', function () {
+      it('info', function (done) {
         executeCLI(['help', 'info'], function (stderr, stdout) {
           assert.equal(stderr, '');
           assert.equal(stdout, [
@@ -286,10 +316,12 @@ describe('CLI Global', function () {
             '',
             ''
           ].join('\n'));
+
+          done();
         });
       });
 
-      it('validate', function () {
+      it('validate', function (done) {
         executeCLI(['help', 'validate'], function (stderr, stdout) {
           assert.equal(stderr, '');
           assert.equal(stdout, [
@@ -305,10 +337,12 @@ describe('CLI Global', function () {
             '',
             ''
           ].join('\n'));
+
+          done();
         });
       });
 
-      it('--help', function () {
+      it('--help', function (done) {
         executeCLI(['help', '--help'], function (stderr, stdout) {
           assert.equal(stderr, '');
           assert.equal(stdout, [
@@ -323,12 +357,14 @@ describe('CLI Global', function () {
             '',
             ''
           ].join('\n'));
+
+          done();
         });
       });
     });
 
     describe('info', function () {
-      it('missing version argument', function () {
+      it('missing version argument', function (done) {
         executeCLI(['info'], function (stderr, stdout) {
           assert.equal(stderr, [
             '',
@@ -337,10 +373,12 @@ describe('CLI Global', function () {
             ''
           ].join('\n'));
           assert.equal(stdout, '');
+
+          done();
         }); 
       });
 
-      it('invalid version argument', function () {
+      it('invalid version argument', function (done) {
         executeCLI(['info', 'fake'], function (stderr, stdout) {
           assert.equal(stderr, [
             '',
@@ -349,10 +387,12 @@ describe('CLI Global', function () {
             ''
           ].join('\n'));
           assert.equal(stdout, '');
+
+          done();
         }); 
       });
 
-      it('Swagger 1.2', function () {
+      it('Swagger 1.2', function (done) {
         executeCLI(['info', '1.2'], function (stderr, stdout) {
           assert.equal(stderr, '');
           assert.equal(stdout, [
@@ -364,10 +404,12 @@ describe('CLI Global', function () {
             '',
             ''
           ].join('\n'));
+
+          done();
         }); 
       });
 
-      it('Swagger 2.0', function () {
+      it('Swagger 2.0', function (done) {
         executeCLI(['info', '2.0'], function (stderr, stdout) {
           assert.equal(stderr, '');
           assert.equal(stdout, [
@@ -379,10 +421,12 @@ describe('CLI Global', function () {
             '',
             ''
           ].join('\n'));
+
+          done();
         }); 
       });
 
-      it('--help', function () {
+      it('--help', function (done) {
         executeCLI(['info', '--help'], function (stderr, stdout) {
           assert.equal(stderr, '');
           assert.equal(stdout, [
@@ -397,12 +441,14 @@ describe('CLI Global', function () {
             '',
             ''
           ].join('\n'));
+
+          done();
         });
       });
     });
 
     describe('validate', function () {
-      it('missing resourceListing or swaggerObject argument', function () {
+      it('missing resourceListing or swaggerObject argument', function (done) {
         executeCLI(['validate'], function (stderr, stdout) {
           assert.equal(stderr, [
             '',
@@ -411,10 +457,12 @@ describe('CLI Global', function () {
             ''
           ].join('\n'));
           assert.equal(stdout, '');
+
+          done();
         }); 
       });
 
-      it('invalid resourceListing or swaggerObject argument (non-existent file)', function () {
+      it('invalid resourceListing or swaggerObject argument (non-existent file)', function (done) {
         executeCLI(['validate', './fake.json'], function (stderr, stdout) {
           assert.ok([
             // node.js
@@ -433,10 +481,12 @@ describe('CLI Global', function () {
             ].join('\n')
           ].indexOf(stderr) > -1);
           assert.equal(stdout, '');
+
+          done();
         });
       });
 
-      it('invalid resourceListing or swaggerObject argument (not a Swagger document)', function () {
+      it('invalid resourceListing or swaggerObject argument (not a Swagger document)', function (done) {
         executeCLI(['validate', pkgPath], function (stderr, stdout) {
           assert.equal(stderr, [
             '',
@@ -445,11 +495,13 @@ describe('CLI Global', function () {
             ''
           ].join('\n'));
           assert.equal(stdout, '');
+
+          done();
         });
       });
 
       describe('Swagger 1.2', function () {
-        it('invalid', function () {
+        it('invalid', function (done) {
           executeCLI(['validate', rlJsonPath], function (stderr, stdout) {
             assert.equal(stderr, [
               '',
@@ -471,10 +523,12 @@ describe('CLI Global', function () {
               ''
             ].join('\n'));
             assert.equal(stdout, '');
+
+            done();
           });        
         });
 
-        it('invalid (verbose)', function () {
+        it('invalid (verbose)', function (done) {
           executeCLI(['validate', rlJsonPath, petJsonPath, '--verbose'], function (stderr, stdout) {
             assert.equal(stderr, [
               '',
@@ -502,17 +556,21 @@ describe('CLI Global', function () {
               ''
             ].join('\n'));
             assert.equal(stdout, '');
+
+            done();
           });
         });
 
-        it('valid', function () {
+        it('valid', function (done) {
           executeCLI(['validate', rlJsonPath, petJsonPath, storeJsonPath, userJsonPath], function (stderr, stdout) {
             assert.equal(stderr, '');
             assert.equal(stdout, '');
+
+            done();
           });        
         });
 
-        it('valid (verbose)', function () {
+        it('valid (verbose)', function (done) {
           executeCLI(['validate', rlJsonPath, petJsonPath, storeJsonPath, userJsonPath, '--verbose'],
                      function (stderr, stdout) {
                        assert.equal(stderr, '');
@@ -533,6 +591,8 @@ describe('CLI Global', function () {
                          'Swagger documents are valid',
                          ''
                        ].join('\n'));
+
+                       done();
                      });
         });
       });
@@ -541,14 +601,16 @@ describe('CLI Global', function () {
         // Testing for invalid documents means writing invalid documents to filesystem and it's not something I want to
         // do right now.
 
-        it('valid', function () {
+        it('valid', function (done) {
           executeCLI(['validate', petstoreJsonPath], function (stderr, stdout) {
             assert.equal(stderr, '');
             assert.equal(stdout, '');
+
+            done();
           });        
         });
 
-        it('valid (verbose)', function () {
+        it('valid (verbose)', function (done) {
           executeCLI(['validate', petstoreJsonPath, '--verbose'],
                      function (stderr, stdout) {
                        assert.equal(stderr, '');
@@ -562,11 +624,13 @@ describe('CLI Global', function () {
                          'Swagger document is valid',
                          ''
                        ].join('\n'));
+
+                       done();
                      });
         });
       });
 
-      it('--help', function () {
+      it('--help', function (done) {
         executeCLI(['validate', '--help'], function (stderr, stdout) {
           assert.equal(stderr, '');
           assert.equal(stdout, [
@@ -582,15 +646,19 @@ describe('CLI Global', function () {
             '',
             ''
           ].join('\n'));
+
+          done();
         });
       });
     });
   });
 
-  it('--version flag', function () {
+  it('--version flag', function (done) {
     executeCLI(['--version'], function (stderr, stdout) {
       assert.equal(stderr, '');
       assert.equal(stdout, pkg.version + '\n');
+
+      done();
     });
   });
 });
