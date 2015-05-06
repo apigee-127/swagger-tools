@@ -37,7 +37,8 @@
     "swagger-converter": "^0.1.0",
     "traverse": "^0.6.6",
     "z-schema": "^3.3.2",
-    "visionmedia-debug": "~2.1.1"
+    "visionmedia-debug": "~2.1.1",
+    "js-yaml": "~3.3.0"
   },
   "devDependencies": {
     "mocha": "^2.1.0",

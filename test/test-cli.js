@@ -31,7 +31,7 @@ var assert = require('assert');
 var executeCLI = require('./helpers').executeCLI;
 var path = require('path');
 var pkg = require('../package.json');
-var YAML = require('yamljs');
+var YAML = require('js-yaml');
 
 var petJsonPath = path.resolve(path.join(__dirname, '..', 'samples', '1.2', 'pet.json'));
 var petstoreJsonPath = path.resolve(path.join(__dirname, '..', 'samples', '2.0', 'petstore.json'));
@@ -197,7 +197,7 @@ describe('CLI Global', function () {
       it('valid Swagger documents as YAML', function () {
         executeCLI(['convert', '--yaml', rlJsonPath, petJsonPath, storeJsonPath, userJsonPath], function (stderr, stdout) {
           assert.equal(stderr, '');
-          assert.ok(_.isPlainObject(YAML.parse(stdout)));
+          assert.ok(_.isPlainObject(YAML.safeLoad(stdout)));
         });
       });
 
