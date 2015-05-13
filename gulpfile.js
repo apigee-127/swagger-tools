@@ -219,12 +219,10 @@ gulp.task('test-browser', ['browserify', 'test-prepare'], function (cb) {
     }, []))
     .pipe(mochaPhantomJS({
       phantomjs: {
-        settings: {
-          localToRemoteUrlAccessEnabled: true,
-          webSecurityEnabled: false
-        }
-      },
-      timeout: 5000
+        localToRemoteUrlAccessEnabled: true,
+        webSecurityEnabled: false,
+        ignoreResourceErrors: true
+      }
     }))
     .on('finish', function () {
       if (runningAllTests) {

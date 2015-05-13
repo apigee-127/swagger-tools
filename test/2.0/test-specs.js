@@ -2496,7 +2496,7 @@ describe('Specification v2.0' + header, function () {
 
         assert.deepEqual(result.errors, [
           {
-            code: 'DULPICATE_API_BODY_PARAMETER',
+            code: 'DUPLICATE_API_BODY_PARAMETER',
             message: 'API has more than one body parameter',
             path: ['paths', '/pets', 'post', 'parameters', '1']
           }
