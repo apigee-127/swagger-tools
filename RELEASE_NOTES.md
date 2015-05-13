@@ -4,6 +4,7 @@
 
 * Added support for file/multipart parameters and added tests for all known usages of `form`/`formData` parameters _(Issue #60)_
 * Added unit tests for the CLI _(And fixed a number of inconsistencies/bugs as a result)_ _(Issue #84)_
+* Always use `YAML.load` in the CLI when reading files instead of choosing JSON or YAML based on the file extension _(Issue #215)_
 * Fixed bug with inline schemas used for inheritance being marked as unused _(Issue #187)_
 * Fixed bug in swaggerUi middleware that did not allow an explicit `apiDocs` path for Swagger 2.0 documents _(Issue #183)_
 * Updated CLI validation to have a `--verbose` flag to output pertinent verbose information regardless of validation result _(Issue #179)_

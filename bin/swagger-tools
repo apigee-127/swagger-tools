@@ -51,16 +51,7 @@ var getDocument = function getDocument (pathOrUrl, callback) {
     var response;
 
     try {
-      switch (path.extname(pathOrUrl)) {
-      case '.yaml':
-      case '.yml':
-        response = YAML.safeLoad(content);
-
-        break;
-
-      default:
-        response = JSON.parse(content);
-      }
+      response = YAML.safeLoad(content);
     } catch (e) {
       err = e;
     }
