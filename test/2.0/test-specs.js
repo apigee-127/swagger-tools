@@ -2507,6 +2507,35 @@ describe('Specification v2.0' + header, function () {
       });
     });
 
+    it('body and formData parameter for an operation (Issue 211)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.paths['/pets'].post.parameters.push({
+        description: 'Updated name of the pet',
+        name: 'name',
+        in: 'formData',
+        required: false,
+        type: 'string'
+      });
+
+      spec.validate(swaggerObject, function (err, result) {
+        if (err) {
+          throw err;
+        }
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'INVALID_PARAMETER_COMBINATION',
+            message: 'API cannot have a a body parameter and a formData parameter',
+            path: ['paths', '/pets', 'post', 'parameters', '1']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+
+        done();
+      });
+    });
+
     it('should handle operations with an empty parameters array (Issue 189)', function (done) {
       var swaggerObject = _.cloneDeep(petStoreJson);
       var cOperation = _.cloneDeep(swaggerObject.paths['/pets'].post);

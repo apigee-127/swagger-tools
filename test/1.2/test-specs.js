@@ -865,6 +865,36 @@ describe('Specification v1.2' + header, function () {
         });
       });
 
+      it('body and form parameter for an operation (Issue 211)', function (done) {
+        var cPetJson = _.cloneDeep(petJson);
+
+        cPetJson.apis[2].operations[1].parameters.push({
+          allowMultiple: false,
+          description: 'Updated name of the pet',
+          name: 'name',
+          paramType: 'form',
+          required: false,
+          type: 'string'
+        });
+
+        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
+          if (err) {
+            throw err;
+          }
+
+          assert.deepEqual(result.apiDeclarations[0].errors, [
+            {
+              code: 'INVALID_PARAMETER_COMBINATION',
+              message: 'API cannot have a a body parameter and a form parameter',
+              path: ['apis', '2', 'operations', '1', 'parameters', '1']
+            }
+          ]);
+          assert.equal(result.apiDeclarations[0].warnings.length, 0);
+
+          done();
+        });
+      });
+
       it('unresolvable authorization', function (done) {
         var cPetJson = _.cloneDeep(petJson);
 
