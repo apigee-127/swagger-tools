@@ -101,6 +101,23 @@ var convertValue = function convertValue (value, schema, type) {
 
   switch (type) {
   case 'array':
+    if (_.isString(value) && !_.isUndefined(schema.collectionFormat) && schema.collectionFormat !== 'multi') {
+      switch (schema.collectionFormat) {
+      case 'csv':
+        value = value.split(',');
+        break;
+      case 'pipes':
+        value = value.split('|');
+        break;
+      case 'ssv':
+        value = value.split(' ');
+        break;
+      case 'tsv':
+        value = value.split('\t');
+        break;
+      }
+    }
+
     value = _.map(value, function (item) {
       return convertValue(item, _.isArray(schema.items) ? schema.items[0] : schema.items);
     });

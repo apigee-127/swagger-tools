@@ -2,6 +2,7 @@
 
 ### TBD
 
+* Added support for collectionFormat in swagger-metadata middleware _(Issue #167)_
 * Added support for file/multipart parameters and added tests for all known usages of `form`/`formData` parameters _(Issue #60)_
 * Added unit tests for the CLI _(And fixed a number of inconsistencies/bugs as a result)_ _(Issue #84)_
 * Added validation that checks for operations with both a body and a form/formData parameter _(Issue #211)_

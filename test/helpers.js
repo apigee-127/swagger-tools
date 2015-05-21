@@ -26,8 +26,7 @@
 
 var _ = require('lodash');
 var assert = require('assert');
-var cp = require('child_process')
-var fs = require('fs');
+var cp = require('child_process');
 var path = require('path');
 var swagger = require('../');
 

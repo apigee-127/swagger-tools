@@ -66,11 +66,11 @@ describe('Swagger Metadata Middleware v2.0', function () {
        // Add an operation parameter
        cPetStoreJson.paths['/pets/{id}'].get.parameters = [
          {
-           'in': 'query',
-           'name': 'mock',
-           'description': 'Mock mode',
-           'required': false,
-           'type': 'boolean'
+           in: 'query',
+           name: 'mock',
+           description: 'Mock mode',
+           required: false,
+           type: 'boolean'
          }
        ];
 
@@ -575,7 +575,7 @@ describe('Swagger Metadata Middleware v2.0', function () {
       });
     });
 
-    it('should not match when set to false', function(done) {
+    it('should not match when set to false', function (done) {
       subPathedPet['x-swagger-router-handle-subpaths'] = false;
 
       helpers.createServer([cPetStoreJson], {
@@ -594,6 +594,80 @@ describe('Swagger Metadata Middleware v2.0', function () {
           .get('/api/pets/9/1')
           .expect(200)
           .end(helpers.expectContent('OK', done)); // OK is from default handler
+      });
+    });
+
+    it('should handle collectionFormat (Issue #167)', function (done) {
+      var values = ['me', 'you', 'us'];
+
+      async.map(['csv', 'multi', 'pipes', 'ssv', 'tsv'], function (format, callback) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.paths['/pets'].get.parameters.push({
+            in: 'query',
+          name: 'myArr',
+          description: 'Simple array value',
+          required: true,
+          type: 'array',
+          items: {
+            type: 'string'
+          },
+          collectionFormat: format
+        });
+
+        helpers.createServer([swaggerObject], {
+          handler: function (req, res) {
+            assert.deepEqual(values, req.swagger.params.myArr.value);
+
+            res.end('OK');
+          }
+        }, function(app) {
+          var d;
+          var v;
+
+          switch (format) {
+          case 'csv':
+          case 'pipes':
+          case 'ssv':
+          case 'tsv':
+            switch (format) {
+            case 'csv':
+              d = ',';
+
+              break;
+            case 'pipes':
+              d = '|';
+
+              break;
+            case 'ssv':
+              d = ' ';
+
+              break;
+            case 'tsv':
+              d = '\t';
+
+              break;
+            }
+
+            v = values.join(d);
+
+            break;
+          case 'multi':
+            v = values;
+
+            break;
+          }
+
+          request(app)
+            .get('/api/pets')
+            .query({myArr: v})
+            .expect(200)
+            .end(helpers.expectContent('OK', callback)); // OK is from default handler
+        });
+      }, function (err) {
+        assert.ok(_.isUndefined(err));
+
+        done();
       });
     });
   });
