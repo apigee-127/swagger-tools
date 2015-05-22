@@ -1,7 +1,7 @@
 {
   "name": "swagger-tools",
   "main": "browser/swagger-tools.js",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "homepage": "https://github.com/apigee-127/swagger-tools",
   "authors": [
     "Jeremy Whitlock <jwhitlock@apache.org>"
