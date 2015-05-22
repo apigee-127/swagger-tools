@@ -1,6 +1,6 @@
 ## Release Notes
 
-### TBD
+### v0.8.7 (2015-05-22)
 
 * Added support for collectionFormat in swagger-metadata middleware _(Issue #167)_
 * Added support for file/multipart parameters and added tests for all known usages of `form`/`formData` parameters _(Issue #60)_
