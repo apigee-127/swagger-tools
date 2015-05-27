@@ -123,7 +123,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(cRlJson, [cUserJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -147,7 +147,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(cRlJson, [cStoreJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -171,7 +171,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(cRlJson, [cPetJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.errors, [
@@ -195,7 +195,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(cRlJson, [cPetJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -269,7 +269,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -297,7 +297,7 @@ describe('Specification v1.2' + header, function () {
 
             spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -326,7 +326,7 @@ describe('Specification v1.2' + header, function () {
 
             spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -353,7 +353,7 @@ describe('Specification v1.2' + header, function () {
 
             spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -377,7 +377,7 @@ describe('Specification v1.2' + header, function () {
 
               spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
                 if (err) {
-                  throw err;
+                  return done(err);
                 }
 
                 assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -401,7 +401,7 @@ describe('Specification v1.2' + header, function () {
 
               spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
                 if (err) {
-                  throw err;
+                  return done(err);
                 }
 
                 assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -427,7 +427,7 @@ describe('Specification v1.2' + header, function () {
 
             spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -454,7 +454,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(cRlJson, [petJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.errors, [
@@ -488,7 +488,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -512,7 +512,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -535,7 +535,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -558,7 +558,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -581,7 +581,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -606,7 +606,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, cUserJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[2].errors, [
@@ -631,7 +631,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -658,7 +658,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -681,7 +681,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -704,7 +704,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -727,7 +727,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -774,7 +774,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -818,7 +818,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -849,7 +849,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -879,7 +879,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -905,7 +905,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -928,7 +928,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -952,7 +952,7 @@ describe('Specification v1.2' + header, function () {
 
           spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
             if (err) {
-              throw err;
+              return done(err);
             }
 
             assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -975,7 +975,7 @@ describe('Specification v1.2' + header, function () {
 
           spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
             if (err) {
-              throw err;
+              return done(err);
             }
 
             assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -998,7 +998,7 @@ describe('Specification v1.2' + header, function () {
 
           spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
             if (err) {
-              throw err;
+              return done(err);
             }
 
             assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -1025,7 +1025,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].errors, [
@@ -1049,7 +1049,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [petJson, storeJson, cUserJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[2].errors, [
@@ -1075,7 +1075,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(cRlJson, [petJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.errors, [
@@ -1108,7 +1108,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].warnings, [
@@ -1134,7 +1134,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(cRlJson, [petJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.warnings, [
@@ -1162,7 +1162,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.apiDeclarations[0].warnings, [
@@ -1192,7 +1192,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(cRlJson, [petJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.warnings, [
@@ -1218,7 +1218,7 @@ describe('Specification v1.2' + header, function () {
 
         spec.validate(cRlJson, [petJson, storeJson, userJson], function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.warnings, [
@@ -1259,7 +1259,7 @@ describe('Specification v1.2' + header, function () {
     it('should return undefined for unresolvable model', function (done) {
       spec.composeModel(_.cloneDeep(petJson), 'Liger', function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.ok(_.isUndefined(result));
@@ -1424,7 +1424,7 @@ describe('Specification v1.2' + header, function () {
         });
       }, function (err, results) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         _.each(results, function (result, index) {
@@ -1498,7 +1498,7 @@ describe('Specification v1.2' + header, function () {
         id: 1
       }, function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.deepEqual(result.errors, [
@@ -1521,7 +1521,7 @@ describe('Specification v1.2' + header, function () {
         name: 'Jeremy'
       }, function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.ok(_.isUndefined(result));
@@ -1691,7 +1691,7 @@ describe('Specification v1.2' + header, function () {
 
       spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.ok(_.isUndefined(result));

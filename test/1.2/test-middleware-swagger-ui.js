@@ -58,7 +58,7 @@ describe('Swagger UI Middleware v1.2', function () {
       });
     }, function (err) {
       if (err) {
-        throw err;
+        return done(err);
       }
 
       done();
@@ -86,7 +86,7 @@ describe('Swagger UI Middleware v1.2', function () {
       });
     }, function (err) {
       if (err) {
-        throw err;
+        return done(err);
       }
 
       done();
@@ -126,7 +126,7 @@ describe('Swagger UI Middleware v1.2', function () {
               swaggerUiDir: '../browser'
             }
           }, function () {
-            throw Error('Should not initialize with options.swaggerUiDir pointing to a missing path');
+            done(new Error('Should not initialize with options.swaggerUiDir pointing to a missing path'));
           });
         } catch (err) {
           assert.ok(err.message.indexOf('options.swaggerUiDir path does not exist: ') === 0);
@@ -142,7 +142,7 @@ describe('Swagger UI Middleware v1.2', function () {
               swaggerUiDir: path.join(__dirname, '..', 'browser', 'test-bower.html')
             }
           }, function () {
-            throw Error('Should not initialize with options.swaggerUiDir pointing to a file');
+            done(new Error('Should not initialize with options.swaggerUiDir pointing to a file'));
           });
         } catch (err) {
           assert.ok(err.message.indexOf('options.swaggerUiDir path is not a directory: ') === 0);
@@ -165,7 +165,7 @@ describe('Swagger UI Middleware v1.2', function () {
             .expect('content-type', 'text/html; charset=UTF-8')
             .end(function (err, res) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.ok(res.text.indexOf('<title>Mocha Test Runner (Swagger Tools Bower Build)</title>') > -1);

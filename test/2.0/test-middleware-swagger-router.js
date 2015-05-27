@@ -237,7 +237,7 @@ describe('Swagger Router Middleware v2.0', function () {
       });
     }, function (err, responses) {
       if (err) {
-        throw err;
+        return done(err);
       }
 
       _.each(responses, function (res) {

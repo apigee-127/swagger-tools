@@ -94,7 +94,7 @@ describe('Specification v2.0' + header, function () {
     it('should return undefined for valid JSON files', function (done) {
       spec.validate(petStoreJson, function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.ok(_.isUndefined(err));
@@ -112,7 +112,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.errors, [
@@ -136,7 +136,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.errors, [
@@ -159,7 +159,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.errors, [
@@ -184,7 +184,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.errors, [
@@ -207,7 +207,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.errors, [
@@ -248,7 +248,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.errors, [
@@ -277,7 +277,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -304,7 +304,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -332,7 +332,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -362,7 +362,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -389,7 +389,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -419,7 +419,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -446,7 +446,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -476,7 +476,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -503,7 +503,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -532,7 +532,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -559,7 +559,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -586,7 +586,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -612,7 +612,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -644,7 +644,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -682,7 +682,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -723,7 +723,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -766,7 +766,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -792,7 +792,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -831,7 +831,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -863,7 +863,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -908,7 +908,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               // Since this is a path level parameter, all operations will get the same error
@@ -943,7 +943,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               // Since this is a path level parameter, all operations will get the same error
@@ -985,7 +985,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               // Since this is a path level parameter, all operations will get the same error
@@ -1028,7 +1028,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               // Since this is a path level parameter, all operations will get the same error
@@ -1073,7 +1073,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -1105,7 +1105,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -1145,7 +1145,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -1185,7 +1185,7 @@ describe('Specification v2.0' + header, function () {
 
             spec.validate(swaggerObject, function (err, result) {
               if (err) {
-                throw err;
+                return done(err);
               }
 
               assert.deepEqual(result.errors, [
@@ -1225,7 +1225,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.errors, [
@@ -1255,7 +1255,7 @@ describe('Specification v2.0' + header, function () {
 
           spec.validate(swaggerObject, function (err, result) {
             if (err) {
-              throw err;
+              return done(err);
             }
 
             // Since this is a path level parameter, all operations that do not override the property will get the error
@@ -1295,7 +1295,7 @@ describe('Specification v2.0' + header, function () {
 
           spec.validate(swaggerObject, function (err, result) {
             if (err) {
-              throw err;
+              return done(err);
             }
 
             // Since this is a path level parameter, all operations that do not override the property will get the error
@@ -1330,7 +1330,7 @@ describe('Specification v2.0' + header, function () {
 
           spec.validate(swaggerObject, function (err, result) {
             if (err) {
-              throw err;
+              return done(err);
             }
 
             assert.deepEqual(result.errors, [
@@ -1360,7 +1360,7 @@ describe('Specification v2.0' + header, function () {
 
           spec.validate(swaggerObject, function (err, result) {
             if (err) {
-              throw err;
+              return done(err);
             }
 
             assert.deepEqual(result.errors, [
@@ -1385,7 +1385,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           // Since this is a path level parameter, all operations will get the same error
@@ -1414,7 +1414,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.errors, [
@@ -1467,7 +1467,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.errors, [
@@ -1500,7 +1500,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.errors, [
@@ -1530,7 +1530,7 @@ describe('Specification v2.0' + header, function () {
 
           spec.validate(swaggerObject, function (err, result) {
             if (err) {
-              throw err;
+              return done(err);
             }
 
             assert.deepEqual(result.errors, [
@@ -1562,7 +1562,7 @@ describe('Specification v2.0' + header, function () {
 
           spec.validate(swaggerObject, function (err, result) {
             if (err) {
-              throw err;
+              return done(err);
             }
 
             assert.deepEqual(result.errors, [
@@ -1599,7 +1599,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.errors, [
@@ -1626,7 +1626,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.errors, [
@@ -1653,7 +1653,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.errors, [
@@ -1680,7 +1680,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.errors, [
@@ -1715,7 +1715,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.warnings, [
@@ -1745,7 +1745,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.warnings, [
@@ -1777,7 +1777,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.warnings, [
@@ -1806,7 +1806,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.equal(result.errors.length, 0);
@@ -1837,7 +1837,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.equal(result.errors.length, 0);
@@ -1864,7 +1864,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.warnings, [
@@ -1887,7 +1887,7 @@ describe('Specification v2.0' + header, function () {
 
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(result.warnings, [
@@ -1929,7 +1929,7 @@ describe('Specification v2.0' + header, function () {
     it('should return undefined for unresolvable model', function (done) {
       spec.composeModel(_.cloneDeep(petStoreJson), '#/definitions/Liger', function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.ok(_.isUndefined(result));
@@ -2090,7 +2090,7 @@ describe('Specification v2.0' + header, function () {
         });
       }, function (err, results) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         _.each(results, function (result, index) {
@@ -2147,7 +2147,7 @@ describe('Specification v2.0' + header, function () {
         id: 1
       }, function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.deepEqual(result.errors, [
@@ -2170,7 +2170,7 @@ describe('Specification v2.0' + header, function () {
         name: 'Jeremy'
       }, function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.ok(_.isUndefined(result));
@@ -2204,12 +2204,12 @@ describe('Specification v2.0' + header, function () {
     it('should return the whole document when there is no pointer argument', function (done) {
       spec.resolve(petStoreJson, function (err, resolved) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         JsonRefs.resolveRefs(petStoreJson, function (err, json) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(json, resolved);
@@ -2222,12 +2222,12 @@ describe('Specification v2.0' + header, function () {
     it('should return the document fragment corresponding to the pointer argument', function (done) {
       spec.resolve(petStoreJson, '#/definitions/Pet', function (err, resolved) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.deepEqual(JsonRefs.resolveRefs(petStoreJson, function (err, json) {
           if (err) {
-            throw err;
+            return done(err);
           }
 
           assert.deepEqual(json.definitions.Pet, resolved);
@@ -2260,7 +2260,7 @@ describe('Specification v2.0' + header, function () {
 
       spec.validate(swaggerObject, function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.deepEqual(result.errors, [
@@ -2286,7 +2286,7 @@ describe('Specification v2.0' + header, function () {
 
       spec.validate(swaggerObject, function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.ok(_.isUndefined(result));
@@ -2335,7 +2335,7 @@ describe('Specification v2.0' + header, function () {
 
       spec.validate(swaggerObject, function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.ok(_.isUndefined(result));
@@ -2351,7 +2351,7 @@ describe('Specification v2.0' + header, function () {
 
       spec.validate(swaggerObject, function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.ok(_.isUndefined(result));
@@ -2369,7 +2369,7 @@ describe('Specification v2.0' + header, function () {
 
       spec.validate(swaggerObject, function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.deepEqual(result.errors, [
@@ -2392,7 +2392,7 @@ describe('Specification v2.0' + header, function () {
 
       spec.validate(swaggerObject, function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.deepEqual(result.errors, [
@@ -2430,7 +2430,7 @@ describe('Specification v2.0' + header, function () {
 
       spec.validate(swaggerObject, function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.deepEqual(result.warnings, [
@@ -2462,7 +2462,7 @@ describe('Specification v2.0' + header, function () {
 
       spec.validate(swaggerObject, function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.deepEqual(result.warnings, [
@@ -2491,7 +2491,7 @@ describe('Specification v2.0' + header, function () {
 
       spec.validate(swaggerObject, function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.deepEqual(result.errors, [
@@ -2520,7 +2520,7 @@ describe('Specification v2.0' + header, function () {
 
       spec.validate(swaggerObject, function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.deepEqual(result.errors, [
@@ -2547,7 +2547,7 @@ describe('Specification v2.0' + header, function () {
 
       spec.validate(swaggerObject, function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.ok(_.isUndefined(result));
@@ -2612,7 +2612,7 @@ describe('Specification v2.0' + header, function () {
 
       spec.validate(swaggerObject, function (err, result) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         assert.ok(_.isUndefined(result));

@@ -238,7 +238,7 @@ describe('Swagger Validator Middleware v2.0', function () {
             .expect(200)
             .end(function (err, res) {
               if (err) {
-                throw err;
+                return callback(err);
               }
 
               helpers.expectContent('OK')(undefined, res);
@@ -250,7 +250,7 @@ describe('Swagger Validator Middleware v2.0', function () {
         index++;
       }, function (err) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         done();
@@ -329,7 +329,7 @@ describe('Swagger Validator Middleware v2.0', function () {
         index++;
       }, function (err, responses) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         _.each(responses, function (res) {
@@ -391,7 +391,7 @@ describe('Swagger Validator Middleware v2.0', function () {
         index++;
       }, function (err) {
         if (err) {
-          throw err;
+          return done(err);
         }
 
         done();
