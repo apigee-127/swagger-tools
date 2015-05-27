@@ -2620,5 +2620,22 @@ describe('Specification v2.0' + header, function () {
         done();
       });
     });
+
+    it('should handle YAML remote references', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.paths['/pets'].get.responses['200'].schema.items.$ref =
+        'http://petstore.swagger.io/v2/swagger.yaml#/definitions/Pet';
+
+      spec.validate(swaggerObject, function (err, result) {
+        if (err) {
+          return done(err);
+        }
+
+        assert.ok(_.isUndefined(result));
+
+        done();
+      });
+    });
   });
 });

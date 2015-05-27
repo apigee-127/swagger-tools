@@ -71,6 +71,7 @@ gulp.task('browserify', function (cb) {
         'async': 'async',
         'debug': 'debug',
         'json-refs': 'JsonRefs',
+        'js-yaml': 'jsyaml',
         'lodash': '_',
         'spark-md5': 'SparkMD5',
         'swagger-converter': 'SwaggerConverter.convert',

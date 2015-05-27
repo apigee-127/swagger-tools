@@ -1,5 +1,9 @@
 ## Release Notes
 
+### TBD
+
+* Added support for YAML remote references _(Issue #222)_
+
 ### v0.8.7 (2015-05-22)
 
 * Added support for collectionFormat in swagger-metadata middleware _(Issue #167)_
