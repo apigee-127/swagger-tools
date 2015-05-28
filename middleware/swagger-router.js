@@ -44,10 +44,14 @@ var getHandlerName = function getHandlerName (req) {
     break;
 
   case '2.0':
-    handlerName = (req.swagger.operation['x-swagger-router-controller'] ?
-      req.swagger.operation['x-swagger-router-controller'] :
-      req.swagger.path['x-swagger-router-controller']) + '_' +
-      (req.swagger.operation.operationId ? req.swagger.operation.operationId : req.method.toLowerCase());
+    if (req.swagger.operation['x-swagger-router-controller'] || req.swagger.path['x-swagger-router-controller']) {
+      handlerName = (req.swagger.operation['x-swagger-router-controller'] ?
+        req.swagger.operation['x-swagger-router-controller'] :
+        req.swagger.path['x-swagger-router-controller']) + '_' +
+        (req.swagger.operation.operationId ? req.swagger.operation.operationId : req.method.toLowerCase());
+    } else {
+      handlerName = req.swagger.operation.operationId;
+    }
 
     break;
   }

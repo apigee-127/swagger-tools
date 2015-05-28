@@ -396,6 +396,10 @@ where each operation tells you which controller and function will be used based 
 }
 ```
 
+If `x-swagger-router-controller` is omitted and only `operationId` is given, the router will try to match directly
+to a method  using the `operationId` as method name.
+This works only if the controller is passed to the router directly as an object.
+
 A new option (since 0.8.4) is the addition of the `x-swagger-router-handle-subpaths` extension to the Swagger path
 component. By setting this property to `true`, it indicates to Swagger Router that it should match and route all 
 requests to not only the specified path, but also any undeclared subpaths requested that do not match an explicitly 
