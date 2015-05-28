@@ -35,39 +35,14 @@ var isModelType = module.exports.isModelType = function isModelType (spec, type)
   return spec.primitives.indexOf(type) === -1;
 };
 
-var isModelParameter = module.exports.isModelParameter = function isModelParameter (version, param) {
-  var spec = helpers.getSpec(version);
-  var isModel = false;
-
-  switch (version) {
-  case '1.2':
-    if (!_.isUndefined(param.type) && isModelType(spec, param.type)) {
-      isModel = true;
-    } else if (param.type === 'array' && isModelType(spec, param.items ?
-                                                             param.items.type || param.items.$ref :
-                                                             undefined)) {
-      isModel = true;
-    }
-
-    break;
-
-  case '2.0':
-    if (param.type === 'object' || !param.type) {
-      isModel = true;
-    } else if (!_.isUndefined(param.schema) && (param.schema.type === 'object' || !_.isUndefined(param.schema.$ref))) {
-      isModel = true;
-    }
-
-    // 2.0 does not allow arrays of models in the same way Swagger 1.2 does
-
-    break;
-  }
-
-  return isModel;
-};
-
 var getParameterType = module.exports.getParameterType = function getParameterType (schema) {
-  var type = schema.type;
+  var type;
+
+  if (schema.schema) {
+    type = getParameterType(schema.schema);
+  } else {
+    type = schema.type;
+  }
 
   if (!type && schema.schema) {
     type = schema.type;
@@ -78,6 +53,22 @@ var getParameterType = module.exports.getParameterType = function getParameterTy
   }
 
   return type;
+};
+
+var isModelParameter = module.exports.isModelParameter = function isModelParameter (version, param) {
+  var spec = helpers.getSpec(version);
+  var type = getParameterType(param);
+  var isModel = false;
+
+  if (type === 'object' || isModelType(spec, type)) {
+    isModel = true;
+  } else if (type === 'array' && isModelType(spec, param.items ?
+                                             param.items.type || param.items.$ref :
+                                             undefined)) {
+    isModel = true;
+  }
+
+  return isModel;
 };
 
 module.exports.getParameterValue = function getParameterValue (version, parameter, pathKeys, match, req, debug) {

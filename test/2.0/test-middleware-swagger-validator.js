@@ -619,7 +619,7 @@ describe('Swagger Validator Middleware v2.0', function () {
             '200': {
               description: 'Valid response',
               schema: {
-                type: 'integer'
+                type: 'string'
               }
             }
           }
@@ -630,7 +630,7 @@ describe('Swagger Validator Middleware v2.0', function () {
         swaggerRouterOptions: {
           controllers: {
             'Pets_getCategoryCount': function (req, res) {
-              return res.end('1');
+              return res.end('swagger-tools');
             }
           }
         },
@@ -641,7 +641,7 @@ describe('Swagger Validator Middleware v2.0', function () {
         request(app)
           .get('/api/pets/categories/count')
           .expect(200)
-          .end(helpers.expectContent('1', done));
+          .end(helpers.expectContent('swagger-tools', done));
       });
     });
 
