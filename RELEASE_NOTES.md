@@ -5,6 +5,7 @@
 * Added support for YAML remote references _(Issue #222)_
 * Added support to do `operationId` based mapping of controllers _(Do not confuse this with Issue #219/#221)_ _(PR #218)_
 * Fix bug where a primitive string response could trigger a validation failure due to it treated as a model _(Issue #224)_
+* Updated version of swagger-converter _(PR #226)_
 
 ### v0.8.7 (2015-05-22)
 
