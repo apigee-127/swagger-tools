@@ -85,6 +85,16 @@ var send400 = function send400 (req, res, next, err) {
 
   return next(err);
 };
+
+var sendData = function sendData(res, data, encoding)
+{
+  // 'res.end' requires a Buffer or String so if it's not one, create a String
+  if (!(data instanceof Buffer) && !_.isString(data)) {
+    data = JSON.stringify(data);
+  }
+  res.end(data, encoding); 
+};
+
 var validateValue = function validateValue (req, schema, path, val, callback) {
   var document = req.swagger.apiDeclaration || req.swagger.swaggerObject;
   var version = req.swagger.apiDeclaration ? '1.2' : '2.0';
@@ -206,20 +216,17 @@ var wrapEnd = function wrapEnd (req, res, next) {
           }
         }
       }
-
-      validateValue(req, schema, vPath, val,
-                    function (err) {
-                      if (err) {
-                        throw err;
-                      }
-
-                      // 'res.end' requires a Buffer or String so if it's not one, create a String
-                      if (!(data instanceof Buffer) && !_.isString(data)) {
-                        data = JSON.stringify(data);
-                      }
-
-                      res.end(data, encoding);
-                    });
+      if(_.isUndefined(schema)) {
+        sendData(res, data, encoding);
+      } else {
+        validateValue(req, schema, vPath, val,
+                      function (err) {
+                        if (err) {
+                          throw err;
+                        }
+                        sendData(res, data, encoding);  
+                      });
+      }
     } catch (err) {
       if (err.failedValidation) {
         err.originalResponse = data;
