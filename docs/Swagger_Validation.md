@@ -47,6 +47,7 @@ some of the validations performed.
 | :---------- |:----------:| :---:|
 | A definition/model cannot declare a property that is already defined by one of its ancestors. | * | Error |
 | A definition/model's ancestor cannot be a descendant of said model. _(Circular Reference)_ | * | Error |
+| An operation cannot have a `form` or `formData` parameter if it has a `body` parameter | * | Error |
 | Each API `path` should be unique. _(For Swagger 1.2, this applies to both the Resource Listing and the API Declarations.  For all versions, being unique is both based on verbatim equality and equivalency.  Example: `/pets/{id}` and `/pets/{petId}` are equivalently the same but not the same verbatim.)_ | * | Error |
 | Each `code` in an operation's `responseMessages` should be unique. | 1.2 | Error |
 | Each `resourcePath` should be unique for each API Declaration in the API. | 1.2 | Error |
