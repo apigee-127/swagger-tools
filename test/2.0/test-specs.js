@@ -30,7 +30,7 @@ var _ = require('lodash');
 var assert = require('assert');
 var async = require('async');
 var JsonRefs = require('json-refs');
-var spec = (typeof window === 'undefined' ? require('../../') : SwaggerTools).specs.v2_0; // jshint ignore:line
+var spec = (typeof window === 'undefined' ? require('../../lib/specs') : SwaggerTools.specs).v2_0; // jshint ignore:line
 var header = typeof window === 'undefined' ?
                '' :
                ' (Browser ' + (window.bowerTests ? 'Bower' : 'Standalone') + ' Build)';

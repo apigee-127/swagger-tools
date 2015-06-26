@@ -97,28 +97,6 @@ gulp.task('browserify', function (cb) {
   });
 });
 
-gulp.task('browserify-test', function (cb) {
-  async.map(versions, function (version, callback) {
-    var basePath = './test/' + version + '/';
-    var b = browserify(basePath + 'test-specs.js', {
-      debug: true
-    });
-
-    b.transform('brfs')
-      .bundle()
-      .pipe(source('test-specs-browser.js'))
-      .pipe(gulp.dest(basePath + 'browser/'))
-      .on('error', function (err) {
-        callback(err);
-      })
-      .on('end', function () {
-        callback();
-      });
-  }, function (err) {
-    cb(err);
-  });
-});
-
 gulp.task('lint', function () {
   return gulp.src([
     './bin/swagger-tools',
