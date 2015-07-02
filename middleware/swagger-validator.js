@@ -223,7 +223,8 @@ var wrapEnd = function wrapEnd (req, res, next) {
     } catch (err) {
       if (err.failedValidation) {
         err.originalResponse = data;
-        err.message = 'Response validation failed: ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
+        err.message = 'Response validation failed: ' + err.message.charAt(0).toLowerCase() + err.message.substring(1)
+            + '\nResults of validation: ' + JSON.stringify(err.results, null, 2);
       }
 
       return next(err);
