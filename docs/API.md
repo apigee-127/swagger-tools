@@ -354,6 +354,7 @@ spec.validate(swaggerObject, function (err, result) {
   } else {
     console.log('Swagger document is valid');
   }
+});
 ```
 
 **Swagger 1.2**
