@@ -443,9 +443,11 @@ describe('Swagger Validator Middleware v2.0', function () {
       cPetStoreJson.paths['/pets/{id}'].get.operationId = 'getPetById';
 
       helpers.createServer([cPetStoreJson], {
-        conrollers: {
-          'Pets_getPetById': function (req, res) {
-            res.end('OK');
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_getPetById': function (req, res) {
+              res.end('OK');
+            }
           }
         },
         swaggerValidatorOptions: {
