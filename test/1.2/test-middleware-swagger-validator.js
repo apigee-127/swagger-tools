@@ -71,7 +71,15 @@ describe('Swagger Validator Middleware v1.2', function () {
 
       clonedP.consumes = ['application/json'];
 
-      helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {}, function (app) {
+      helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {
+        swaggerRouterOptions: {
+          controllers: {
+            getPetById: function (req, res) {
+              res.end('OK');
+            }
+          }
+        }
+      }, function (app) {
         request(app)
           .get('/api/pet/1')
           .expect(200)
@@ -80,7 +88,15 @@ describe('Swagger Validator Middleware v1.2', function () {
     });
 
     it('should not return an error for valid request content type', function (done) {
-      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {}, function (app) {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        swaggerRouterOptions: {
+          controllers: {
+            updatePetWithForm: function (req, res) {
+              res.end('OK');
+            }
+          }
+        }
+      }, function (app) {
         request(app)
           .post('/api/pet/1')
           .set('Content-Type', 'application/x-www-form-urlencoded')
@@ -90,7 +106,15 @@ describe('Swagger Validator Middleware v1.2', function () {
     });
 
     it('should not return an error for valid request content type with charset', function (done) {
-      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {}, function (app) {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        swaggerRouterOptions: {
+          controllers: {
+            updatePetWithForm: function (req, res) {
+              res.end('OK');
+            }
+          }
+        }
+      }, function (app) {
         request(app)
           .post('/api/pet/1')
           .set('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8')
@@ -130,7 +154,15 @@ describe('Swagger Validator Middleware v1.2', function () {
         defaultValue: 'false'
       });
 
-      helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {}, function (app) {
+      helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {
+        swaggerRouterOptions: {
+          controllers: {
+            getPetById: function (req, res) {
+              res.end('OK');
+            }
+          }
+        }
+      }, function (app) {
         request(app)
           .get('/api/pet/1')
           .expect(200)
@@ -149,7 +181,15 @@ describe('Swagger Validator Middleware v1.2', function () {
         type: 'boolean'
       });
 
-      helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {}, function (app) {
+      helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {
+        swaggerRouterOptions: {
+          controllers: {
+            getPetById: function (req, res) {
+              res.end('OK');
+            }
+          }
+        }
+      }, function (app) {
         request(app)
           .get('/api/pet/1')
           .query({mock: 'true'})
@@ -245,7 +285,15 @@ describe('Swagger Validator Middleware v1.2', function () {
             content = {arg0: scenario.defaultValue};
           }
 
-          helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {}, function (app) {
+          helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {
+            swaggerRouterOptions: {
+              controllers: {
+                getPetById: function (req, res) {
+                  res.end('OK');
+                }
+              }
+            }
+          }, function (app) {
             request(app)
               .get('/api/pet/1')
               .query(content)
@@ -349,7 +397,15 @@ describe('Swagger Validator Middleware v1.2', function () {
 
         clonedP.apis[0].operations[0].parameters.push(scenario);
 
-        helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {}, function (app) {
+        helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {
+          swaggerRouterOptions: {
+            controllers: {
+              getPetById: function (req, res) {
+                res.end('OK');
+              }
+            }
+          }
+        }, function (app) {
           request(app)
             .get('/api/pet/1')
             .query({arg0: values[index]})
@@ -382,7 +438,15 @@ describe('Swagger Validator Middleware v1.2', function () {
     });
 
     it('should not return an error for a valid model parameter', function (done) {
-      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {}, function (app) {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        swaggerRouterOptions: {
+          controllers: {
+            addPet: function (req, res) {
+              res.end('OK');
+            }
+          }
+        }
+      }, function (app) {
         request(app)
           .post('/api/pet')
           .send({
@@ -515,9 +579,11 @@ describe('Swagger Validator Middleware v1.2', function () {
       cPetJson.apis[0].operations[0].nickname = 'Pets_getPetById';
 
       helpers.createServer([rlJson, [cPetJson, storeJson, userJson]], {
-        conrollers: {
-          'Pets_getPetById': function (req, res) {
-            res.end('OK');
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_getPetById': function (req, res) {
+              res.end('OK');
+            }
           }
         },
         swaggerValidatorOptions: {
@@ -557,7 +623,7 @@ describe('Swagger Validator Middleware v1.2', function () {
       });
     });
 
-    it('should not return an error for valid response content type', function (done) {
+    it('should not return error for valid response content type', function (done) {
       var cPetJson = _.cloneDeep(petJson);
 
       cPetJson.apis[0].operations[0].nickname = 'Pets_getPetById';

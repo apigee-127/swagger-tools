@@ -395,6 +395,10 @@ exports = module.exports = function swaggerRouterMiddleware (options) {
 
             debug('Handler threw an unexpected error: %s\n%s', err.message, err.stack);
           }
+        } else {
+          rErr = new Error('Cannot resolve the configured swagger-router handler: ' + handlerName);
+
+          res.statusCode = 500;
         }
       } else {
         debug('  No handler for method: %s', req.method);

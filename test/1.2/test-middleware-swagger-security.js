@@ -114,80 +114,123 @@ rlJson.authorizations.apiKeyQuery = {
 };
 
 // Create paths
-petJson.apis.push(_.cloneDeep(petJson.apis[4]));
-petJson.apis.push(_.cloneDeep(petJson.apis[4]));
-petJson.apis.push(_.cloneDeep(petJson.apis[4]));
-petJson.apis.push(_.cloneDeep(petJson.apis[4]));
-petJson.apis.push(_.cloneDeep(petJson.apis[4]));
-petJson.apis.push(_.cloneDeep(petJson.apis[4]));
-
-petJson.apis[5].path = '/secured';
-petJson.apis[6].path = '/securedAnd';
-petJson.apis[7].path = '/securedOr';
-petJson.apis[8].path = '/unsecured';
-petJson.apis[9].path = '/securedApiKeyHeader';
-petJson.apis[10].path = '/securedApiKeyQuery';
-
-// Add security to paths
-petJson.apis[5].operations[0].authorizations = {
-  local: [
-    {
-      description: 'Read your',
-      scope: 'read:pets'
-    }
-  ]
-};
-petJson.apis[6].operations[0].authorizations = {
-  local: [
-    {
-      description: 'Read your',
-      scope: 'read:pets'
-    }
-  ],
-  local2: [
-    {
-      description: 'Read your',
-      scope: 'read:pets'
-    }
-  ]
-};
-petJson.apis[7].operations[0].authorizations = {
-  local: [
-    {
-      description: 'Read your',
-      scope: 'read:pets'
-    }
-  ],
-  local2: [
-    {
-      description: 'Read your',
-      scope: 'read:pets'
-    }
-  ]
-};
-petJson.apis[9].operations[0].authorizations = {
-  apiKeyHeader: []
-};
-petJson.apis[10].operations[0].authorizations = {
-  apiKeyQuery: []
+// Create paths
+var swaggerRouterOptions = {
+  controllers: {}
 };
 
+_.forEach([
+  'secured',
+  'securedAnd',
+  'securedOr',
+  'unsecured',
+  'securedApiKeyQuery',
+  'securedApiKeyHeader'], function (name) {
+    var cApiDef = _.cloneDeep(petJson.apis[4]);
+    var authorizations;
+    var operation;
 
+    // Delete all but the 'GET' operation
+    _.forEach(cApiDef.operations, function (opDef, index) {
+      if (opDef.method !== 'GET') {
+        delete cApiDef.operations[index];
+      } else {
+        operation = opDef;
+      }
+    });
+
+    // Set the path
+    cApiDef.path = '/' + name;
+
+    // Add security
+    switch (name) {
+    case 'secured':
+      authorizations = {
+        local: [
+          {
+            description: 'Read your',
+            scope: 'read:pets'
+          }
+        ]
+      };
+      break;
+
+    case 'securedAnd':
+      authorizations = {
+        local: [
+          {
+            description: 'Read your',
+            scope: 'read:pets'
+          }
+        ],
+        local2: [
+          {
+            description: 'Read your',
+            scope: 'read:pets'
+          }
+        ]
+      };
+      break;
+
+    case 'securedOr':
+      authorizations = {
+        local: [
+          {
+            description: 'Read your',
+            scope: 'read:pets'
+          }
+        ],
+        local2: [
+          {
+            description: 'Read your',
+            scope: 'read:pets'
+          }
+        ]
+      };
+      break;
+
+    case 'securedApiKeyQuery':
+      authorizations = {
+        apiKeyQuery: []
+      };
+      break;
+
+    case 'securedApiKeyHeader':
+      authorizations = {
+        apiKeyHeader: []
+      };
+    }
+
+    if (_.isUndefined(authorizations)) {
+      delete cApiDef.authorizations;
+    } else {
+      operation.authorizations = authorizations;
+    }
+
+    // Set the operation properties
+    operation.nickname = name;
+
+    // Make parameter optional
+    operation.parameters[0].required = false; 
+
+    // Add the path
+    petJson.apis.push(cApiDef);
+
+    // Create handler
+    swaggerRouterOptions.controllers[name] = function (req, res) {
+      res.end('OK');
+    };
+  });
+
+// Delete global security
 delete petJson.authorizations;
-delete petJson.apis[8].operations[0].authorizations;
-
-petJson.apis[5].operations[0].parameters[0].required = false;
-petJson.apis[6].operations[0].parameters[0].required = false;
-petJson.apis[7].operations[0].parameters[0].required = false;
-petJson.apis[8].operations[0].parameters[0].required = false;
-petJson.apis[9].operations[0].parameters[0].required = false;
-petJson.apis[10].operations[0].parameters[0].required = false;
 
 describe('Swagger Security Middleware v1.2', function () {
   it('should call middleware when secured', function(done) {
     var localDef = new SecurityDef();
 
     helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+      swaggerRouterOptions: swaggerRouterOptions,
       swaggerSecurityOptions: {
         local: localDef.func
       }
@@ -209,6 +252,7 @@ describe('Swagger Security Middleware v1.2', function () {
     var localDef = new SecurityDef();
 
     helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+      swaggerRouterOptions: swaggerRouterOptions,
       swaggerSecurityOptions: {
         local: localDef.func
       }
@@ -230,6 +274,7 @@ describe('Swagger Security Middleware v1.2', function () {
     var localDef = new SecurityDef(false);
 
     helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+      swaggerRouterOptions: swaggerRouterOptions,
       swaggerSecurityOptions: {
         local: localDef.func
       }
@@ -346,30 +391,32 @@ describe('Swagger Security Middleware v1.2', function () {
       var API_KEY = 'abc123';
 
       helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
-          swaggerSecurityOptions: {
-            apiKeyHeader: security.func
-          }
-        },
-        function(app) {
-          request(app)
-            .get('/api/securedApiKeyHeader')
-            .set({ 'X-API-KEY': API_KEY })
-            .expect(200)
-            .end(function(err) {
-              if (err) { return done(err); }
+        swaggerRouterOptions: swaggerRouterOptions,
+        swaggerSecurityOptions: {
+          apiKeyHeader: security.func
+        }
+      },
+                           function(app) {
+                             request(app)
+                               .get('/api/securedApiKeyHeader')
+                               .set({ 'X-API-KEY': API_KEY })
+                               .expect(200)
+                               .end(function(err) {
+                                 if (err) { return done(err); }
 
-              assert(security.apiKey === API_KEY);
+                                 assert(security.apiKey === API_KEY);
 
-              done();
-            });
-        });
-        });
+                                 done();
+                               });
+                           });
+    });
 
     it('in query', function (done) {
       var security = new ApiKeySecurityDef();
       var API_KEY = 'abc123';
 
       helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        swaggerRouterOptions: swaggerRouterOptions,
         swaggerSecurityOptions: {
           apiKeyQuery: security.func
         }
@@ -396,6 +443,7 @@ describe('Swagger Security Middleware v1.2', function () {
       var local2 = new SecurityDef(true);
 
       helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        swaggerRouterOptions: swaggerRouterOptions,
         swaggerSecurityOptions: {
           local: local.func,
           local2: local2.func
@@ -413,6 +461,7 @@ describe('Swagger Security Middleware v1.2', function () {
       var local2 = new SecurityDef(true);
 
       helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        swaggerRouterOptions: swaggerRouterOptions,
         swaggerSecurityOptions: {
           local: local.func,
           local2: local2.func
@@ -430,6 +479,7 @@ describe('Swagger Security Middleware v1.2', function () {
       var local2 = new SecurityDef(false);
 
       helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        swaggerRouterOptions: swaggerRouterOptions,
         swaggerSecurityOptions: {
           local: local.func,
           local2: local2.func
@@ -447,6 +497,7 @@ describe('Swagger Security Middleware v1.2', function () {
       var local2 = new SecurityDef(false);
 
       helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        swaggerRouterOptions: swaggerRouterOptions,
         swaggerSecurityOptions: {
           local: local.func,
           local2: local2.func
@@ -466,6 +517,7 @@ describe('Swagger Security Middleware v1.2', function () {
       var local2 = new SecurityDef(true);
 
       helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        swaggerRouterOptions: swaggerRouterOptions,
         swaggerSecurityOptions: {
           local: local.func,
           local2: local2.func
@@ -483,6 +535,7 @@ describe('Swagger Security Middleware v1.2', function () {
       var local2 = new SecurityDef(false);
 
       helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        swaggerRouterOptions: swaggerRouterOptions,
         swaggerSecurityOptions: {
           local: local.func,
           local2: local2.func
@@ -500,6 +553,7 @@ describe('Swagger Security Middleware v1.2', function () {
       var local2 = new SecurityDef(true);
 
       helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        swaggerRouterOptions: swaggerRouterOptions,
         swaggerSecurityOptions: {
           local: local.func,
           local2: local2.func
@@ -517,6 +571,7 @@ describe('Swagger Security Middleware v1.2', function () {
       var local2 = new SecurityDef(false);
 
       helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        swaggerRouterOptions: swaggerRouterOptions,
         swaggerSecurityOptions: {
           local: local.func,
           local2: local2.func

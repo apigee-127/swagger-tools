@@ -61,35 +61,39 @@ describe('Swagger Metadata Middleware v1.2', function () {
   it('should add Swagger middleware to the request when there is a route match and there are operations',
      function (done) {
        helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
-         handler: function (req, res, next) {
-           var swagger = req.swagger;
+         swaggerRouterOptions: {
+           controllers: {
+             getPetById: function (req, res, next) {
+               var swagger = req.swagger;
 
-           try {
-             assert.ok(!_.isUndefined(swagger));
-             assert.equal('1.2', swagger.swaggerVersion);
-             assert.deepEqual(swagger.api, petJson.apis[0]);
-             assert.deepEqual(swagger.apiDeclaration, petJson);
-             assert.equal(swagger.apiIndex, 0);
-             assert.deepEqual(swagger.authorizations, petJson.apis[0].authorizations || {});
-             assert.deepEqual(swagger.operation, petJson.apis[0].operations[0]);
-             assert.deepEqual(swagger.operationPath, ['apis', '0', 'operations', '0']);
-             assert.deepEqual(swagger.params, {
-               petId: {
-                 path: ['apis', '0', 'operations', '0', 'parameters', '0'],
-                 schema: petJson.apis[0].operations[0].parameters[0],
-                 originalValue: '1',
-                 value: 1
+               try {
+                 assert.ok(!_.isUndefined(swagger));
+                 assert.equal('1.2', swagger.swaggerVersion);
+                 assert.deepEqual(swagger.api, petJson.apis[0]);
+                 assert.deepEqual(swagger.apiDeclaration, petJson);
+                 assert.equal(swagger.apiIndex, 0);
+                 assert.deepEqual(swagger.authorizations, petJson.apis[0].authorizations || {});
+                 assert.deepEqual(swagger.operation, petJson.apis[0].operations[0]);
+                 assert.deepEqual(swagger.operationPath, ['apis', '0', 'operations', '0']);
+                 assert.deepEqual(swagger.params, {
+                   petId: {
+                     path: ['apis', '0', 'operations', '0', 'parameters', '0'],
+                     schema: petJson.apis[0].operations[0].parameters[0],
+                     originalValue: '1',
+                     value: 1
+                   }
+                 });
+                 assert.equal(swagger.resourceIndex, 0);
+                 assert.deepEqual(swagger.resourceListing, rlJson);
+               } catch (err) {
+                 return next(err.message);
                }
-             });
-             assert.equal(swagger.resourceIndex, 0);
-             assert.deepEqual(swagger.resourceListing, rlJson);
-           } catch (err) {
-             return next(err.message);
+
+               res.end('OK');
+
+               return next();
+             }
            }
-
-           res.end('OK');
-
-           return next();
          }
        }, function (app) {
          request(app)
@@ -109,13 +113,17 @@ describe('Swagger Metadata Middleware v1.2', function () {
     };
 
     helpers.createServer([rlJson, [cPetJson, storeJson, userJson]], {
-      handler: function (req, res, next) {
-        assert.deepEqual(req.swagger.params.body.value, {name: 'Top Dog'});
+      swaggerRouterOptions: {
+        controllers: {
+          addPet: function (req, res, next) {
+            assert.deepEqual(req.swagger.params.body.value, {name: 'Top Dog'});
 
-        res.statusCode = 201;
-        res.end();
+            res.statusCode = 201;
+            res.end();
 
-        return next();
+            return next();
+          }
+        }
       }
     }, function (app) {
       request(app)
@@ -129,14 +137,18 @@ describe('Swagger Metadata Middleware v1.2', function () {
   describe('non-multipart form parameters', function () {
     it('should handle primitives', function (done) {
       helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
-        handler: function (req, res, next) {
-          assert.equal(req.swagger.params.name.value, 'Top Dog');
-          assert.ok(_.isUndefined(req.swagger.params.status.value));
+        swaggerRouterOptions: {
+          controllers: {
+            updatePetWithForm: function (req, res, next) {
+              assert.equal(req.swagger.params.name.value, 'Top Dog');
+              assert.ok(_.isUndefined(req.swagger.params.status.value));
 
-          res.statusCode = 201;
-          res.end();
+              res.statusCode = 201;
+              res.end();
 
-          return next();
+              return next();
+            }
+          }
         }
       }, function (app) {
         request(app)
@@ -159,7 +171,7 @@ describe('Swagger Metadata Middleware v1.2', function () {
           {
             authorizations: {},
             method: 'POST',
-            nickname: 'changePetName',
+            nickname: 'Pets_changePetName',
             parameters: [
               {
                 name: 'id',
@@ -186,16 +198,20 @@ describe('Swagger Metadata Middleware v1.2', function () {
       });
 
       helpers.createServer([rlJson, [cPetJson, storeJson, userJson]], {
-        handler: function (req, res, next) {
-          assert.equal(req.swagger.params.name.value, 'Top Dog');
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_changePetName': function (req, res, next) {
+              assert.equal(req.swagger.params.name.value, 'Top Dog');
 
-          res.statusCode = 200;
-          res.end(JSON.stringify({
-            id: req.swagger.params.id.value,
-            name: req.swagger.params.name.value
-          }));
+              res.statusCode = 200;
+              res.end(JSON.stringify({
+                id: req.swagger.params.id.value,
+                name: req.swagger.params.name.value
+              }));
 
-          return next();
+              return next();
+            }
+          }
         }
       }, function (app) {
         request(app)
@@ -207,19 +223,27 @@ describe('Swagger Metadata Middleware v1.2', function () {
     });
 
     it('should handle files', function (done) {
-      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
-        handler: function (req, res, next) {
-          var file = req.swagger.params.file;
+      var cPetJson = _.cloneDeep(petJson);
 
-          assert.ok(_.isPlainObject(file));
-          assert.equal(file.value.originalname, 'package.json');
-          assert.equal(file.value.mimetype, 'application/json');
-          assert.deepEqual(JSON.parse(file.value.buffer), pkg);
+      cPetJson.apis[1].operations[0].nickname = 'Pets_uploadImage';
 
-          res.statusCode = 201;
-          res.end();
+      helpers.createServer([rlJson, [cPetJson, storeJson, userJson]], {
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_uploadImage': function (req, res, next) {
+              var file = req.swagger.params.file;
 
-          next();
+              assert.ok(_.isPlainObject(file));
+              assert.equal(file.value.originalname, 'package.json');
+              assert.equal(file.value.mimetype, 'application/json');
+              assert.deepEqual(JSON.parse(file.value.buffer), pkg);
+
+              res.statusCode = 201;
+              res.end();
+
+              next();
+            }
+          }
         }
       }, function(app) {
         request(app)
@@ -245,22 +269,26 @@ describe('Swagger Metadata Middleware v1.2', function () {
       });
 
       helpers.createServer([rlJson, [cPetJson, storeJson, userJson]], {
-        handler: function (req, res, next) {
+        swaggerRouterOptions: {
+          controllers: {
+            getPetById: function (req, res, next) {
 
-          try {
-            assert.deepEqual(req.swagger.params['Auth-Token'], {
-              path: ['apis', '0', 'operations', '0', 'parameters', '1'],
-              schema: cPetJson.apis[0].operations[0].parameters[1],
-              originalValue: 'fake',
-              value: 'fake'
-            });
-          } catch (err) {
-            return next(err.message);
+              try {
+                assert.deepEqual(req.swagger.params['Auth-Token'], {
+                  path: ['apis', '0', 'operations', '0', 'parameters', '1'],
+                  schema: cPetJson.apis[0].operations[0].parameters[1],
+                  originalValue: 'fake',
+                  value: 'fake'
+                });
+              } catch (err) {
+                return next(err.message);
+              }
+
+              res.end('OK');
+
+              return next();
+            }
           }
-
-          res.end('OK');
-
-          return next();
         }
       }, function (app) {
         request(app)
@@ -310,13 +338,12 @@ describe('Swagger Metadata Middleware v1.2', function () {
 
         query[argName] = queryValue;
 
-        clonedP.apis[0].operations[0].nickname = 'Pets_getPetById';
         clonedP.apis[0].operations[0].parameters.push(paramDef);
 
         helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {
           swaggerRouterOptions: {
             controllers: {
-              'Pets_getPetById': function (req, res) {
+               getPetById: function (req, res) {
                 assert.deepEqual(paramValue, req.swagger.params[argName].value);
 
                 res.end('OK');

@@ -159,17 +159,18 @@ describe('Swagger Router Middleware v2.0', function () {
     });
   });
 
-  it('should not do any routing when there is no controller and use of stubs is off', function (done) {
+  it('should return an error when there is no controller and use of stubs is off', function (done) {
+    var cOptions = _.cloneDeep(optionsWithControllersDir);
+
+    cOptions.controllers = {};
+
     helpers.createServer([petStoreJson], {
-      handler: function (req, res) {
-        res.end('NOT OK');
-      },
-      swaggerRouterOptions: optionsWithControllersDir
+      swaggerRouterOptions: cOptions
     }, function (app) {
       request(app)
-        .get('/api/pet/1')
-        .expect(200)
-        .end(helpers.expectContent('NOT OK', done));
+        .get('/api/pets/1')
+        .expect(500)
+        .end(helpers.expectContent('Cannot resolve the configured swagger-router handler: Pets_getPetById', done));
     });
   });
 
@@ -230,18 +231,20 @@ describe('Swagger Router Middleware v2.0', function () {
     async.map([0, 1], function (n, callback) {
       var useStubs = n === 1 ? true : false;
       var options = {
-        controllers: {
-          'Pets_getById': function (req, res) {
-            if (useStubs === req.swagger.useStubs) {
-              res.end('OK');
-            } else {
-              res.end('NOT OK');
-            }
-          }
-        },
+        controllers: {},
         useStubs: useStubs
       };
       var expectedMessage = n === 1 ? samplePet : 'OK';
+
+      if (useStubs === false) {
+        options.controllers.Pets_getPetById = function (req, res) { // jshint ignore:line
+          if (useStubs === req.swagger.useStubs) {
+            res.end('OK');
+          } else {
+            res.end('NOT OK');
+          }
+        };
+      }
 
       helpers.createServer([petStoreJson], {
         swaggerRouterOptions: options

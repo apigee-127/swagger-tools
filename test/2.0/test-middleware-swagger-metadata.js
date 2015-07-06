@@ -87,56 +87,60 @@ describe('Swagger Metadata Middleware v2.0', function () {
        ];
 
        helpers.createServer([cPetStoreJson], {
-         handler: function (req, res, next) {
-           var swagger = req.swagger;
+         swaggerRouterOptions: {
+           controllers: {
+             getPetById: function (req, res, next) {
+               var swagger = req.swagger;
 
-           spec.resolve(cPetStoreJson, function (err, resolved) {
-             var rPath = resolved.paths['/pets/{id}'];
+               spec.resolve(cPetStoreJson, function (err, resolved) {
+                 var rPath = resolved.paths['/pets/{id}'];
 
-             try {
-               assert.ok(!_.isUndefined(swagger));
-               assert.equal('2.0', swagger.swaggerVersion);
-               assert.deepEqual(swagger.apiPath, '/pets/{id}');
-               assert.deepEqual(swagger.operation, rPath.get);
-               assert.deepEqual(swagger.operationParameters, [
-                 {
-                   path: ['paths', '/pets/{id}', 'get', 'parameters', '0'],
-                   schema: rPath.get.parameters[0]
-                 },
-                 {
-                   path: ['paths', '/pets/{id}', 'parameters', '0'],
-                   schema: rPath.parameters[0]
-                 }
-               ]);
-               assert.deepEqual(swagger.operationPath, ['paths', '/pets/{id}', 'get']);
-               assert.deepEqual(swagger.path, resolved.paths['/pets/{id}']);
-               assert.deepEqual(swagger.security, [
-                 {
-                   oauth2: ['read']
-                 }
-               ]);
+                 try {
+                   assert.ok(!_.isUndefined(swagger));
+                   assert.equal('2.0', swagger.swaggerVersion);
+                   assert.deepEqual(swagger.apiPath, '/pets/{id}');
+                   assert.deepEqual(swagger.operation, rPath.get);
+                   assert.deepEqual(swagger.operationParameters, [
+                     {
+                       path: ['paths', '/pets/{id}', 'get', 'parameters', '0'],
+                       schema: rPath.get.parameters[0]
+                     },
+                     {
+                       path: ['paths', '/pets/{id}', 'parameters', '0'],
+                       schema: rPath.parameters[0]
+                     }
+                   ]);
+                   assert.deepEqual(swagger.operationPath, ['paths', '/pets/{id}', 'get']);
+                   assert.deepEqual(swagger.path, resolved.paths['/pets/{id}']);
+                   assert.deepEqual(swagger.security, [
+                     {
+                       oauth2: ['read']
+                     }
+                   ]);
 
-               assert.deepEqual(swagger.params, {
-                 id: {
-                   path: ['paths', '/pets/{id}', 'parameters', '0'],
-                   schema: rPath.parameters[0],
-                   originalValue: '1',
-                   value: 1
-                 },
-                 mock: {
-                   path: ['paths', '/pets/{id}', 'get', 'parameters', '0'],
-                   schema: rPath.get.parameters[0],
-                   originalValue: 'false',
-                   value: false
+                   assert.deepEqual(swagger.params, {
+                     id: {
+                       path: ['paths', '/pets/{id}', 'parameters', '0'],
+                       schema: rPath.parameters[0],
+                       originalValue: '1',
+                       value: 1
+                     },
+                     mock: {
+                       path: ['paths', '/pets/{id}', 'get', 'parameters', '0'],
+                       schema: rPath.get.parameters[0],
+                       originalValue: 'false',
+                       value: false
+                     }
+                   });
+                   assert.deepEqual(swagger.swaggerObject, resolved);
+                 } catch (err) {
+                   return next(err.message);
                  }
+
+                 return res.end('OK');
                });
-               assert.deepEqual(swagger.swaggerObject, resolved);
-             } catch (err) {
-               return next(err.message);
              }
-
-             return res.end('OK');
-           });
+           }
          }
        }, function (app) {
          request(app)
@@ -169,37 +173,41 @@ describe('Swagger Metadata Middleware v2.0', function () {
     ];
 
     helpers.createServer([cPetStoreJson], {
-      handler: function (req, res, next) {
-        var swagger = req.swagger;
+      swaggerRouterOptions: {
+        controllers: {
+          getPetById: function (req, res, next) {
+            var swagger = req.swagger;
 
-        spec.resolve(cPetStoreJson, function (err, resolved) {
-          if (err) {
-            return next(err);
-          }
-
-          try {
-            assert.deepEqual(swagger.params, {
-              id: {
-                path: ['paths', '/pets/{id}', 'parameters', '0'],
-                schema: resolved.paths['/pets/{id}'].parameters[0],
-                originalValue: '1',
-                value: 1
-              },
-              mock: {
-                path: ['paths', '/pets/{id}', 'get', 'parameters', '0'],
-                schema: resolved.parameters.mock,
-                originalValue: 'false',
-                value: false
+            spec.resolve(cPetStoreJson, function (err, resolved) {
+              if (err) {
+                return next(err);
               }
+
+              try {
+                assert.deepEqual(swagger.params, {
+                  id: {
+                    path: ['paths', '/pets/{id}', 'parameters', '0'],
+                    schema: resolved.paths['/pets/{id}'].parameters[0],
+                    originalValue: '1',
+                    value: 1
+                  },
+                  mock: {
+                    path: ['paths', '/pets/{id}', 'get', 'parameters', '0'],
+                    schema: resolved.parameters.mock,
+                    originalValue: 'false',
+                    value: false
+                  }
+                });
+              } catch (err) {
+                return next(err);
+              }
+
+              res.end('OK');
+
+              return next();
             });
-          } catch (err) {
-            return next(err);
           }
-
-          res.end('OK');
-
-          return next();
-        });
+        }
       }
     }, function (app) {
       request(app)
@@ -217,16 +225,20 @@ describe('Swagger Metadata Middleware v2.0', function () {
     cPetStoreJson.paths['/pets'].post.parameters[0].schema = {};
 
     helpers.createServer([cPetStoreJson], {
-      handler: function (req, res, next) {
-        var newPet = req.swagger.params.pet.value;
+      swaggerRouterOptions: {
+        controllers: {
+          createPet: function (req, res, next) {
+            var newPet = req.swagger.params.pet.value;
 
-        assert.deepEqual(newPet, {name: 'Top Dog'});
+            assert.deepEqual(newPet, {name: 'Top Dog'});
 
-        newPet.id = 1;
+            newPet.id = 1;
 
-        res.end(JSON.stringify(newPet));
+            res.end(JSON.stringify(newPet));
 
-        return next();
+            return next();
+          }
+        }
       }
     }, function (app) {
       request(app)
@@ -253,9 +265,13 @@ describe('Swagger Metadata Middleware v2.0', function () {
       ];
 
       helpers.createServer([cPetStoreJson], {
-        handler: function (req, res) {
-          assert.equal(req.swagger.params.mock.value, false);
-          res.end('OK');
+        swaggerRouterOptions: {
+          controllers: {
+            createPet: function (req, res) {
+              assert.equal(req.swagger.params.mock.value, false);
+              res.end('OK');
+            }
+          }
         }
       }, function (app) {
         request(app)
@@ -276,6 +292,7 @@ describe('Swagger Metadata Middleware v2.0', function () {
       operation.consumes = [
         'multipart/form-data'
       ];
+      operation.operationId = 'updatePetName';
       operation.parameters = [
         {
           name: 'id',
@@ -297,15 +314,19 @@ describe('Swagger Metadata Middleware v2.0', function () {
       };
 
       helpers.createServer([cPetStoreJson], {
-        handler: function (req, res, next) {
-          assert.equal(req.swagger.params.name.value, 'Top Dog');
+        swaggerRouterOptions: {
+          controllers: {
+            updatePetName: function (req, res, next) {
+              assert.equal(req.swagger.params.name.value, 'Top Dog');
 
-          res.end(JSON.stringify({
-            id: req.swagger.params.id.value,
-            name: req.swagger.params.name.value
-          }));
+              res.end(JSON.stringify({
+                id: req.swagger.params.id.value,
+                name: req.swagger.params.name.value
+              }));
 
-          next();
+              next();
+            }
+          }
         }
       }, function(app) {
         request(app)
@@ -325,6 +346,7 @@ describe('Swagger Metadata Middleware v2.0', function () {
       operation.consumes = [
         'multipart/form-data'
       ];
+      operation.operationId = 'getPetFiles';
       operation.parameters = [
         {
           name: 'id',
@@ -348,18 +370,22 @@ describe('Swagger Metadata Middleware v2.0', function () {
       };
 
       helpers.createServer([cPetStoreJson], {
-        handler: function (req, res, next) {
-          var file = req.swagger.params.file;
+        swaggerRouterOptions: {
+          controllers: {
+            getPetFiles: function (req, res, next) {
+              var file = req.swagger.params.file;
 
-          assert.ok(_.isPlainObject(file));
-          assert.equal(file.value.originalname, 'package.json');
-          assert.equal(file.value.mimetype, 'application/json');
-          assert.deepEqual(JSON.parse(file.value.buffer), pkg);
+              assert.ok(_.isPlainObject(file));
+              assert.equal(file.value.originalname, 'package.json');
+              assert.equal(file.value.mimetype, 'application/json');
+              assert.deepEqual(JSON.parse(file.value.buffer), pkg);
 
-          res.statusCode = 201;
-          res.end();
+              res.statusCode = 201;
+              res.end();
 
-          next();
+              next();
+            }
+          }
         }
       }, function(app) {
         request(app)
@@ -387,21 +413,25 @@ describe('Swagger Metadata Middleware v2.0', function () {
       ];
 
       helpers.createServer([cPetStoreJson], {
-        handler: function (req, res, next) {
-          try {
-            assert.deepEqual(req.swagger.params['Auth-Token'], {
-              path: ['paths', '/pets', 'get', 'parameters', '0'],
-              schema: cPetStoreJson.paths['/pets'].get.parameters[0],
-              originalValue: 'fake',
-              value: 'fake'
-            });
-          } catch (err) {
-            return next(err.message);
+        swaggerRouterOptions: {
+          controllers: {
+            getAllPets: function (req, res, next) {
+              try {
+                assert.deepEqual(req.swagger.params['Auth-Token'], {
+                  path: ['paths', '/pets', 'get', 'parameters', '0'],
+                  schema: cPetStoreJson.paths['/pets'].get.parameters[0],
+                  originalValue: 'fake',
+                  value: 'fake'
+                });
+              } catch (err) {
+                return next(err.message);
+              }
+
+              res.end('OK');
+
+              return next();
+            }
           }
-
-          res.end('OK');
-
-          return next();
         }
       }, function (app) {
         request(app)
@@ -505,10 +535,14 @@ describe('Swagger Metadata Middleware v2.0', function () {
         });
 
         helpers.createServer([swaggerObject], {
-          handler: function (req, res) {
-            assert.deepEqual(values, req.swagger.params.myArr.value);
+          swaggerRouterOptions: {
+            controllers: {
+              getAllPets: function (req, res) {
+                assert.deepEqual(values, req.swagger.params.myArr.value);
 
-            res.end('OK');
+                res.end('OK');
+              }
+            }
           }
         }, function(app) {
           var d;

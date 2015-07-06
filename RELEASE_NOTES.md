@@ -6,6 +6,7 @@
 * Added support to do `operationId` based mapping of controllers _(Do not confuse this with Issue #219/#221)_ _(PR #218)_
 * Fix bug where a primitive string response could trigger a validation failure due to it treated as a model _(Issue #224)_
 * Fix problem where references to missing parameters could result in a runtime error _(Issue #233)_
+* Updated swagger-router to throw a `500` when there is a configured route handler but it is missing _(Issue #155)_
 * Updated version of swagger-converter _(PR #226)_
 
 ### v0.8.7 (2015-05-22)

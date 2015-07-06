@@ -76,7 +76,15 @@ describe('Swagger Validator Middleware v2.0', function () {
 
       swaggerObject.paths['/pets'].get.consumes = ['application/xml'];
 
-      helpers.createServer([swaggerObject], {}, function (app) {
+      helpers.createServer([swaggerObject], {
+        swaggerRouterOptions: {
+          controllers: {
+            getAllPets: function (req, res) {
+              res.end('OK');
+            }
+          }
+        }
+      }, function (app) {
         request(app)
           .get('/api/pets')
           .expect(200)
@@ -89,7 +97,15 @@ describe('Swagger Validator Middleware v2.0', function () {
 
       swaggerObject.paths['/pets'].post.consumes = ['application/xml', 'application/json'];
 
-      helpers.createServer([swaggerObject], {}, function (app) {
+      helpers.createServer([swaggerObject], {
+        swaggerRouterOptions: {
+          controllers: {
+            createPet: function (req, res) {
+              res.end('OK');
+            }
+          }
+        }
+      }, function (app) {
         request(app)
         .post('/api/pets')
         .send({
@@ -106,7 +122,15 @@ describe('Swagger Validator Middleware v2.0', function () {
 
       swaggerObject.paths['/pets'].post.consumes = ['application/xml', 'application/json'];
 
-      helpers.createServer([swaggerObject], {}, function (app) {
+      helpers.createServer([swaggerObject], {
+        swaggerRouterOptions: {
+          controllers: {
+            createPet: function (req, res) {
+              res.end('OK');
+            }
+          }
+        }
+      }, function (app) {
         request(app)
         .post('/api/pets')
         .send({
@@ -138,7 +162,15 @@ describe('Swagger Validator Middleware v2.0', function () {
       swaggerObject.paths['/pets'].get.parameters[0].default = true;
       swaggerObject.paths['/pets'].get.parameters[0].required = true;
 
-      helpers.createServer([swaggerObject], {}, function (app) {
+      helpers.createServer([swaggerObject], {
+        swaggerRouterOptions: {
+          controllers: {
+            getAllPets: function (req, res) {
+              res.end('OK');
+            }
+          }
+        }
+      }, function (app) {
         request(app)
           .get('/api/pets')
           .expect(200)
@@ -151,7 +183,15 @@ describe('Swagger Validator Middleware v2.0', function () {
 
       swaggerObject.paths['/pets'].get.parameters[0].required = true;
 
-      helpers.createServer([swaggerObject], {}, function (app) {
+      helpers.createServer([swaggerObject], {
+        swaggerRouterOptions: {
+          controllers: {
+            getAllPets: function (req, res) {
+              res.end('OK');
+            }
+          }
+        }
+      }, function (app) {
         request(app)
         .get('/api/pets')
         .query({status: 'waiting'})
@@ -231,7 +271,15 @@ describe('Swagger Validator Middleware v2.0', function () {
 
         cPetStoreJson.paths['/pets/{id}'].get.parameters = [cScenario];
 
-        helpers.createServer([cPetStoreJson], {}, function (app) {
+        helpers.createServer([cPetStoreJson], {
+          swaggerRouterOptions: {
+            controllers: {
+              getPetById: function (req, res) {
+                res.end('OK');
+              }
+            }
+          }
+        }, function (app) {
           request(app)
             .get('/api/pets/1')
             .query({arg0: values[index]})
@@ -378,7 +426,15 @@ describe('Swagger Validator Middleware v2.0', function () {
 
         cPetStoreJson.paths['/pets/{id}'].get.parameters = [scenario];
 
-        helpers.createServer([cPetStoreJson], {}, function (app) {
+        helpers.createServer([cPetStoreJson], {
+          swaggerRouterOptions: {
+            controllers: {
+              getPetById: function (req, res) {
+                res.end('OK');
+              }
+            }
+          }
+        }, function (app) {
           request(app)
           .get('/api/pets/1')
           .query({
@@ -409,7 +465,15 @@ describe('Swagger Validator Middleware v2.0', function () {
     });
 
     it('should not return an error for a valid model parameter', function (done) {
-      helpers.createServer([petStoreJson], {}, function (app) {
+      helpers.createServer([petStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            createPet: function (req, res) {
+              res.end('OK');
+            }
+          }
+        }
+      }, function (app) {
         request(app)
           .post('/api/pets')
           .send({
@@ -443,9 +507,11 @@ describe('Swagger Validator Middleware v2.0', function () {
       cPetStoreJson.paths['/pets/{id}'].get.operationId = 'getPetById';
 
       helpers.createServer([cPetStoreJson], {
-        conrollers: {
-          'Pets_getPetById': function (req, res) {
-            res.end('OK');
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_getPetById': function (req, res) {
+              res.end('OK');
+            }
           }
         },
         swaggerValidatorOptions: {
