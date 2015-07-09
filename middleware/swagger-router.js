@@ -222,6 +222,10 @@ var mockResponse = function mockResponse (req, res, next, handlerName) {
       return next(err);
     } else {
       debug('send mock response: %s', response);
+
+      // Mock mode only supports JSON right now
+      res.setHeader('Content-Type', 'application/json');
+
       return res.end(response);
     }
   };
