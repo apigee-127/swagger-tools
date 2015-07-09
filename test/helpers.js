@@ -24,7 +24,7 @@
 
 'use strict';
 
-var _ = require('lodash');
+var _ = require('lodash-compat');
 var assert = require('assert');
 var cp = require('child_process');
 var path = require('path');
@@ -40,6 +40,7 @@ var errorHandler = module.exports.errorHandler = function errorHandler() {
       // Useful for debugging
       // console.log(err);
       // console.log(err.stack);
+      // console.log(JSON.stringify(err.results, null, 2));
 
       res.end(err.message);
 

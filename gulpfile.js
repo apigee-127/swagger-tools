@@ -24,7 +24,7 @@
 
 'use strict';
 
-var _ = require('lodash');
+var _ = require('lodash-compat');
 var async = require('async');
 var bower = require('bower');
 var browserify = require('browserify');
@@ -72,7 +72,7 @@ gulp.task('browserify', function (cb) {
         'debug': 'debug',
         'json-refs': 'JsonRefs',
         'js-yaml': 'jsyaml',
-        'lodash': '_',
+        'lodash-compat': '_',
         'spark-md5': 'SparkMD5',
         'swagger-converter': 'SwaggerConverter.convert',
         'traverse': 'traverse',

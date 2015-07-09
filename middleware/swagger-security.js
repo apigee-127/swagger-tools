@@ -23,7 +23,7 @@
  */
 'use strict';
 
-var _ = require('lodash');
+var _ = require('lodash-compat');
 var async = require('async');
 var debug = require('debug')('swagger-tools:middleware:security');
 var helpers = require('./helpers');
@@ -148,7 +148,7 @@ exports = module.exports = function swaggerSecurityMiddleware (options) {
 
             return handler(req, secDef, getScopeOrAPIKey(req, secDef, name, secReq), cb);
           }, function (err) {
-            debug('    Security check (%s): %s', secName, _.isUndefined(err) ? 'allowed' : 'denied');
+            debug('    Security check (%s): %s', secName, _.isNull(err) ? 'allowed' : 'denied');
 
             // swap normal err and result to short-circuit the logical OR
             if (err) {
@@ -158,7 +158,7 @@ exports = module.exports = function swaggerSecurityMiddleware (options) {
             return cb(new Error('OK'));
           });
         }, function (ok, errors) { // note swapped results
-          var allowed = !_.isUndefined(ok) && ok.message === 'OK';
+          var allowed = !_.isNull(ok) && ok.message === 'OK';
 
           debug('    Request allowed: %s', allowed);
 

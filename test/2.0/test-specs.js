@@ -26,7 +26,7 @@
 
 'use strict';
 
-var _ = require('lodash');
+var _ = require('lodash-compat');
 var assert = require('assert');
 var async = require('async');
 var JsonRefs = require('json-refs');
@@ -129,7 +129,7 @@ describe('Specification v2.0' + header, function () {
         });
       });
 
-      it('invalid reference', function (done) {
+      it('missing reference', function (done) {
         var swaggerObject = _.cloneDeep(petStoreJson);
 
         swaggerObject.paths['/pets'].get.responses['200'].schema.items.$ref = 'Pet';
@@ -141,8 +141,8 @@ describe('Specification v2.0' + header, function () {
 
           assert.deepEqual(result.errors, [
             {
-              code: 'INVALID_REFERENCE',
-              message: 'Not a valid JSON Reference',
+              code: 'UNRESOLVABLE_REFERENCE',
+              message: 'Reference could not be resolved: Pet',
               path: ['paths', '/pets', 'get', 'responses', '200', 'schema', 'items', '$ref']
             }
           ]);

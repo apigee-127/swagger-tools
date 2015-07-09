@@ -28,7 +28,7 @@
 // Here to quiet down Connect logging errors
 process.env.NODE_ENV = 'test';
 
-var _ = require('lodash');
+var _ = require('lodash-compat');
 var assert = require('assert');
 var helpers = require('../helpers');
 var request = require('supertest');

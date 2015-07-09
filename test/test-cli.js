@@ -26,7 +26,7 @@
 
 'use strict';
 
-var _ = require('lodash');
+var _ = require('lodash-compat');
 var assert = require('assert');
 var executeCLI = require('./helpers').executeCLI;
 var path = require('path');

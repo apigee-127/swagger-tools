@@ -29,7 +29,7 @@
 // Here to quiet down Connect logging errors
 process.env.NODE_ENV = 'test';
 
-var _ = require('lodash');
+var _ = require('lodash-compat');
 var async = require('async');
 var path = require('path');
 var request = require('supertest');

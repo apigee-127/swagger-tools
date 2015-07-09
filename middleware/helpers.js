@@ -26,7 +26,7 @@
 
 /* This module contains code that is reused in more than one of the Swagger middlewares */
 
-var _ = require('lodash');
+var _ = require('lodash-compat');
 var helpers = require('../lib/helpers');
 var parseurl = require('parseurl');
 var qs = require('qs');

@@ -29,7 +29,7 @@
 // Here to quiet down Connect logging errors
 process.env.NODE_ENV = 'test';
 
-var _ = require('lodash');
+var _ = require('lodash-compat');
 var assert = require('assert');
 var async = require('async');
 var helpers = require('../helpers');
@@ -588,7 +588,7 @@ describe('Swagger Metadata Middleware v2.0', function () {
             .end(helpers.expectContent('OK', callback)); // OK is from default handler
         });
       }, function (err) {
-        assert.ok(_.isUndefined(err));
+        assert.ok(_.isNull(err));
 
         done();
       });

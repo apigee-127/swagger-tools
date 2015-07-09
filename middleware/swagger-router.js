@@ -24,7 +24,7 @@
 
 'use strict';
 
-var _ = require('lodash');
+var _ = require('lodash-compat');
 var cHelpers = require('../lib/helpers');
 var debug = require('debug')('swagger-tools:middleware:router');
 var fs = require('fs');

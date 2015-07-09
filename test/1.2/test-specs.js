@@ -26,7 +26,7 @@
 
 'use strict';
 
-var _ = require('lodash');
+var _ = require('lodash-compat');
 var assert = require('assert');
 var async = require('async');
 var spec = (typeof window === 'undefined' ? require('../../lib/specs') : SwaggerTools.specs).v1_2; // jshint ignore:line
