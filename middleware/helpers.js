@@ -127,7 +127,11 @@ module.exports.parseQueryString = function parseQueryString(req) {
 };
 
 module.exports.debugError = function debugError (err, debug) {
-  debug('  Reason: %s', err.message);
+  var reason = err.message.replace(/^.*validation failed: /, '');
+
+  reason = reason.charAt(0).toUpperCase() + reason.substring(1);
+
+  debug('  Reason: %s', reason);
 
   if (err.failedValidation === true) {
     if (err.results) {
