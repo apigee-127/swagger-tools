@@ -2637,5 +2637,21 @@ describe('Specification v2.0' + header, function () {
         done();
       });
     });
+
+    it('should handle unknown formats (Issue 243)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.paths['/pets'].get.parameters[0].format = 'uuid';
+
+      spec.validate(swaggerObject, function (err, result) {
+        if (err) {
+          return done(err);
+        }
+
+        assert.ok(_.isUndefined(result));
+
+        done();
+      });
+    });
   });
 });
