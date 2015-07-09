@@ -11,6 +11,7 @@
 * Fix problem where references to missing parameters could result in a runtime error _(Issue #233)_
 * Updated swagger-router to throw a `500` when there is a configured route handler but it is missing _(Issue #155)_
 * Update swagger-metadata to set the `value` property of `req.swagger.params` to be the original value if type coercion fails
+* Update swagger-validator to not perform response validation whenever there is no response schema _(PR, 231, Issue #232)_
 * Updated version of swagger-converter _(PR #226)_
 
 ### v0.8.7 (2015-05-22)

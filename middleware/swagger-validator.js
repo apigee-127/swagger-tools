@@ -31,6 +31,25 @@ var debug = require('debug')('swagger-tools:middleware:validator');
 var mHelpers = require('./helpers');
 var validators = require('../lib/validators');
 
+var sendData = function sendData (swaggerVersion, res, data, encoding, skipped) {
+  // 'res.end' requires a Buffer or String so if it's not one, create a String
+  if (!(data instanceof Buffer) && !_.isString(data)) {
+    data = JSON.stringify(data);
+  }
+
+  if (skipped) {
+    if (swaggerVersion === '1.2') {
+      debug('  Response validation: skipped (No responseMessage definition for \'%d\')', res.statusCode);
+    } else {
+      debug('  Response validation: skipped (No response definition for \'%d\' or \'default\')', res.statusCode);
+    }
+  } else {
+    debug('  Response validation: succeeded');
+  }
+
+  res.end(data, encoding);
+};
+
 var send400 = function send400 (req, res, next, err) {
   var currentMessage;
   var validationMessage;
@@ -149,6 +168,7 @@ var wrapEnd = function wrapEnd (req, res, next) {
   var operation = req.swagger.operation;
   var originalEnd = res.end;
   var vPath = _.cloneDeep(req.swagger.operationPath);
+  var swaggerVersion = req.swagger.swaggerVersion;
 
   res.end = function end (data, encoding) {
     var schema = operation;
@@ -178,7 +198,7 @@ var wrapEnd = function wrapEnd (req, res, next) {
       if (_.isUndefined(schema.type)) {
         if (schema.schema) {
           schema = schema.schema;
-        } else if (req.swagger.swaggerVersion === '1.2') {
+        } else if (swaggerVersion === '1.2') {
           schema = _.find(operation.responseMessages, function (responseMessage, index) {
             if (responseMessage.code === res.statusCode) {
               vPath.push('responseMessages', index.toString());
@@ -207,22 +227,17 @@ var wrapEnd = function wrapEnd (req, res, next) {
         }
       }
 
-      validateValue(req, schema, vPath, val,
-                    function (err) {
-                      if (err) {
-                        throw err;
-                      }
-
-                      // 'res.end' requires a Buffer or String so if it's not one, create a String
-                      if (!(data instanceof Buffer) && !_.isString(data)) {
-                        data = JSON.stringify(data);
-                      }
-
-                      
-                      debug('  Response validation: succeeded');
-
-                      res.end(data, encoding);
-                    });
+      if (_.isUndefined(schema)) {
+        sendData(swaggerVersion, res, data, encoding, true);
+      } else {
+        validateValue(req, schema, vPath, val, function (err) {
+          if (err) {
+            throw err;
+          }
+          
+          sendData(swaggerVersion, res, data, encoding, false);
+        });
+      }
     } catch (err) {
       if (err.failedValidation) {
         err.originalResponse = data;

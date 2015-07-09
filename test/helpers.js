@@ -40,7 +40,10 @@ var errorHandler = module.exports.errorHandler = function errorHandler() {
       // Useful for debugging
       // console.log(err);
       // console.log(err.stack);
-      // console.log(JSON.stringify(err.results, null, 2));
+
+      // if (err.results) {
+      //   console.log(JSON.stringify(err.results, null, 2));
+      // }
 
       res.end(err.message);
 

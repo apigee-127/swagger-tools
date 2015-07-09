@@ -1159,5 +1159,34 @@ describe('Swagger Validator Middleware v2.0', function () {
           .end(helpers.expectContent('OK', done));
       });
     });
+
+    it('should not validate response when there is no schema for the response code (Issue 232)', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      delete cPetStoreJson.paths['/pets/{id}'].get.responses.default;
+
+      cPetStoreJson.paths['/pets/{id}'].get['x-swagger-router-controller'] = 'Pets';
+      cPetStoreJson.paths['/pets/{id}'].get.operationId = 'getPetById';
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_getPetById': function (req, res) {
+              res.statusCode = 304;
+
+              res.end();
+            }
+          }
+        },
+        swaggerValidatorOptions: {
+          validateResponse: true
+        }
+      }, function (app) {
+        request(app)
+          .get('/api/pets/1')
+          .expect(304)
+          .end(done);
+      });
+    });
   });
 });
