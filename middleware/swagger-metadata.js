@@ -90,6 +90,8 @@ var expressStylePath = function expressStylePath (basePath, apiPath) {
   return (basePath + apiPath).replace(/{/g, ':').replace(/}/g, '');
 };
 var convertValue = function convertValue (value, schema, type) {
+  var original = value;
+
   if (_.isUndefined(type)) {
     type = mHelpers.getParameterType(schema);
   }
@@ -126,7 +128,11 @@ var convertValue = function convertValue (value, schema, type) {
 
   case 'boolean':
     if (!_.isBoolean(value)) {
-      value = value === 'true' || value === true ? true : false;
+      if (['false', 'true'].indexOf(value) === -1) {
+        value = original;
+      } else {
+        value = value === 'true' || value === true ? true : false;
+      }
     }
 
     break;
@@ -134,6 +140,10 @@ var convertValue = function convertValue (value, schema, type) {
   case 'integer':
     if (!_.isNumber(value)) {
       value = parseInt(value, 10);
+
+      if (isNaN(value)) {
+        value = original;
+      }
     }
 
     break;
@@ -141,6 +151,10 @@ var convertValue = function convertValue (value, schema, type) {
   case 'number':
     if (!_.isNumber(value)) {
       value = parseFloat(value);
+
+      if (isNaN(value)) {
+        value = original;
+      }
     }
 
     break;
@@ -148,6 +162,10 @@ var convertValue = function convertValue (value, schema, type) {
   case 'string':
     if (['date', 'date-time'].indexOf(schema.format) > -1 && !_.isDate(value)) {
       value = new Date(value);
+
+      if (!_.isDate(value) || value.toString() === 'Invalid Date') {
+        value = original;
+      }
     }
 
     break;

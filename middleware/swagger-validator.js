@@ -292,7 +292,7 @@ exports = module.exports = function swaggerValidatorMiddleware (options) {
                     paramPath = swaggerVersion === '1.2' ?
                       req.swagger.operationPath.concat(['params', paramIndex.toString()]) :
                       parameter.path;
-                    val = req.swagger.params[paramName].originalValue;
+                    val = req.swagger.params[paramName].value;
 
                     // Validate requiredness
                     validators.validateRequiredness(val, schema.required);

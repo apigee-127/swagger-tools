@@ -226,7 +226,15 @@ describe('Swagger Validator Middleware v1.2', function () {
                               badValue;
         }
 
-        helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {}, function (app) {
+        helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {
+          swaggerRouterOptions: {
+            controllers: {
+              getPetById: function (req, res) {
+                res.end('OK');
+              }
+            }
+          }
+        }, function (app) {
           request(app)
             .get('/api/pet/1')
             .query(content)

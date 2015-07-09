@@ -6,9 +6,11 @@
 * Added support to do `operationId` based mapping of controllers _(Do not confuse this with Issue #219/#221)_ _(PR #218)_
 * Better error handling and debugging for request/response validation
 * Fix bug where a primitive string response could trigger a validation failure due to it treated as a model _(Issue #224)_
+* Fix bug where Swagger 2.0 default values were being type coerced unnecessarily _(Issue #235)_
 * Fix issue where custom formats would break validation _(Issue #243)_
 * Fix problem where references to missing parameters could result in a runtime error _(Issue #233)_
 * Updated swagger-router to throw a `500` when there is a configured route handler but it is missing _(Issue #155)_
+* Update swagger-metadata to set the `value` property of `req.swagger.params` to be the original value if type coercion fails
 * Updated version of swagger-converter _(PR #226)_
 
 ### v0.8.7 (2015-05-22)
