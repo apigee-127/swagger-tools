@@ -1124,5 +1124,40 @@ describe('Swagger Validator Middleware v2.0', function () {
           .end(helpers.expectContent(samplePet, done));
       });
     });
+
+    it('should not throw an error for requests using non-string collectionFormats (Issue 242)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+      var expectedValue = [1, 2, 3];
+
+      swaggerObject.paths['/pets'].get.parameters.push({
+          in: 'query',
+        name: 'myArr',
+        description: 'Simple array value',
+        required: true,
+        type: 'array',
+        items: {
+          type: 'string'
+        },
+        collectionFormat: 'pipes'
+      });
+
+      helpers.createServer([swaggerObject], {
+        swaggerRouterOptions: {
+          controllers: {
+            getAllPets: function (req, res) {
+              assert.deepEqual(expectedValue, req.swagger.params.myArr.value);
+
+              res.end('OK');
+            }
+          }
+        }
+      }, function(app) {
+        request(app)
+          .get('/api/pets')
+          .query({myArr: expectedValue.join('|')})
+          .expect(200)
+          .end(helpers.expectContent('OK', done));
+      });
+    });
   });
 });
