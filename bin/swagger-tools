@@ -64,6 +64,9 @@ var getDocument = function getDocument (pathOrUrl, callback) {
   } else if (/^https?:\/\//.test(pathOrUrl)) {
     request.get(pathOrUrl)
       .set('user-agent', 'apigee-127/swagger-tools')
+      .accept('application/json')
+      .accept('application/x-yaml')
+      .accept('text/plain') // Here just in case
       .end(function (err, res) {
         if (err) {
           callback(err);
