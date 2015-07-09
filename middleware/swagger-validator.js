@@ -77,7 +77,7 @@ var send400 = function send400 (req, res, next, err) {
     }
 
     // Replace the message
-    err.message = validationMessage;
+    err.message = 'Request validation failed: ' + validationMessage;
 
     // Replace the stack message
     err.stack = err.stack.replace(currentMessage, validationMessage);
@@ -218,12 +218,19 @@ var wrapEnd = function wrapEnd (req, res, next) {
                         data = JSON.stringify(data);
                       }
 
+                      
+                      debug('  Response validation: succeeded');
+
                       res.end(data, encoding);
                     });
     } catch (err) {
       if (err.failedValidation) {
         err.originalResponse = data;
         err.message = 'Response validation failed: ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
+        
+        debug('  Response validation: failed');
+
+        mHelpers.debugError(err, debug);
       }
 
       return next(err);
@@ -302,6 +309,8 @@ exports = module.exports = function swaggerValidatorMiddleware (options) {
                     if (err) {
                       throw err;
                     } else {
+                      debug('  Request validation: succeeded');
+
                       return next();
                     }
                   });
@@ -314,12 +323,13 @@ exports = module.exports = function swaggerValidatorMiddleware (options) {
           err.paramName = paramName;
         }
 
+        debug('  Request validation: failed');
+
         mHelpers.debugError(err, debug);
 
         return send400(req, res, next, err);
       }
     } else {
-      debug('  Request validation: succeeded');
       return next();
     }
   };

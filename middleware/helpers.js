@@ -127,15 +127,29 @@ module.exports.parseQueryString = function parseQueryString(req) {
 };
 
 module.exports.debugError = function debugError (err, debug) {
+  debug('  Reason: %s', err.message);
+
   if (err.failedValidation === true) {
-    debug('Failed validation: %s', err.message);
-  } else {
-    debug('Unexpected error: %s', err.message);
+    if (err.results) {
+      debug('  Errors:');
+
+      _.each(err.results.errors, function (error, index) {
+        debug('    %d:', index);
+        debug('      code: %s', error.code);
+        debug('      message: %s', error.message);
+        debug('      path: %s', JSON.stringify(error.path));
+      });
+    }
   }
 
   if (err.stack) {
-    _.each(err.stack.split('\n'), function (line) {
-      debug('  %s', line);
+    debug('  Stack:');
+
+    _.each(err.stack.split('\n'), function (line, index) {
+      // Skip the first line since it's in the reasonx
+      if (index > 0) {
+        debug('  %s', line);
+      }
     });
   }
 };

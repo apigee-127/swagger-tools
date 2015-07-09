@@ -138,7 +138,7 @@ describe('Swagger Validator Middleware v1.2', function () {
         request(app)
           .get('/api/pet/1')
           .expect(400)
-          .end(helpers.expectContent('Parameter (mock) is required', done));
+          .end(helpers.expectContent('Request validation failed: Parameter (mock) is required', done));
       });
     });
 
@@ -233,7 +233,7 @@ describe('Swagger Validator Middleware v1.2', function () {
             .expect(400)
             .end(function (err, res) {
               if (res) {
-                res.expectedMessage = expectedMessage;
+                res.expectedMessage = 'Request validation failed: ' + expectedMessage;
               }
 
               callback(err, res);
@@ -355,7 +355,7 @@ describe('Swagger Validator Middleware v1.2', function () {
           .expect(400)
           .end(function (err, res) {
             if (res) {
-              res.expectedMessage = expectedMessage;
+              res.expectedMessage = 'Request validation failed: ' + expectedMessage;
             }
 
             callback(err, res);
@@ -433,7 +433,7 @@ describe('Swagger Validator Middleware v1.2', function () {
           .post('/api/pet')
           .send({})
           .expect(400)
-          .end(helpers.expectContent('Parameter (body) failed schema validation', done));
+          .end(helpers.expectContent('Request validation failed: Parameter (body) failed schema validation', done));
       });
     });
 
@@ -504,7 +504,7 @@ describe('Swagger Validator Middleware v1.2', function () {
             }
           ])
           .expect(400)
-          .end(helpers.expectContent('Parameter (body) failed schema validation', done));
+          .end(helpers.expectContent('Request validation failed: Parameter (body) failed schema validation', done));
       });
     });
 
