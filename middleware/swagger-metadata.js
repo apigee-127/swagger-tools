@@ -121,7 +121,7 @@ var convertValue = function convertValue (value, schema, type) {
     }
 
     value = _.map(value, function (item) {
-      return convertValue(item, _.isArray(schema.items) ? schema.items[0] : schema.items);
+      return convertValue(item, _.isArray(schema.items) ? schema.items[0] : schema.items.type);
     });
 
     break;
