@@ -1,6 +1,6 @@
 ## Release Notes
 
-### TBD
+### v0.9.0 (2015-07-09)
 
 * Added support for YAML remote references _(Issue #222)_
 * Added support to do `operationId` based mapping of controllers _(Do not confuse this with Issue #219/#221)_ _(PR #218)_
