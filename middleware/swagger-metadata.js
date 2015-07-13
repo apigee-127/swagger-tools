@@ -103,9 +103,10 @@ var convertValue = function convertValue (value, schema, type) {
 
   switch (type) {
   case 'array':
-    if (_.isString(value) && !_.isUndefined(schema.collectionFormat) && schema.collectionFormat !== 'multi') {
+    if (_.isString(value) && schema.collectionFormat !== 'multi') {
       switch (schema.collectionFormat) {
       case 'csv':
+      case undefined:
         value = value.split(',');
         break;
       case 'pipes':

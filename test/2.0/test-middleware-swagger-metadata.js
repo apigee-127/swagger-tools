@@ -519,20 +519,25 @@ describe('Swagger Metadata Middleware v2.0', function () {
     it('should handle collectionFormat (Issue #167)', function (done) {
       var values = ['me', 'you', 'us'];
 
-      async.map(['csv', 'multi', 'pipes', 'ssv', 'tsv'], function (format, callback) {
+      async.map(['csv', 'multi', 'pipes', 'ssv', 'tsv', undefined], function (format, callback) {
         var swaggerObject = _.cloneDeep(petStoreJson);
 
-        swaggerObject.paths['/pets'].get.parameters.push({
-            in: 'query',
+        var param = {
+          in: 'query',
           name: 'myArr',
           description: 'Simple array value',
           required: true,
           type: 'array',
           items: {
             type: 'string'
-          },
-          collectionFormat: format
-        });
+          }
+        };
+
+        if(format) {
+          param.collectionFormat = format;
+        }
+
+        swaggerObject.paths['/pets'].get.parameters.push(param);
 
         helpers.createServer([swaggerObject], {
           swaggerRouterOptions: {
@@ -553,7 +558,9 @@ describe('Swagger Metadata Middleware v2.0', function () {
           case 'pipes':
           case 'ssv':
           case 'tsv':
+          case undefined:
             switch (format) {
+            case undefined:
             case 'csv':
               d = ',';
 
