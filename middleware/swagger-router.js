@@ -58,9 +58,10 @@ var getHandlerName = function (req) {
 
   return handlerName;
 };
-var handlerCacheFromDir = function (dirOrDirs) {
+var handlerCacheFromDir = function handlerCacheFromDir (dirOrDirs, controllersNamesRegEx) {
   var handlerCache = {};
   var jsFileRegex = /\.(coffee|js)$/;
+  var controllersNamesRegEx = controllersNamesRegEx || jsFileRegex;
   var dirs = [];
 
   if (_.isArray(dirOrDirs)) {
@@ -76,7 +77,7 @@ var handlerCacheFromDir = function (dirOrDirs) {
       var controllerName = file.replace(jsFileRegex, '');
       var controller;
 
-      if (file.match(jsFileRegex)) {
+      if (file.match(controllersNamesRegEx)) {
         controller = require(path.resolve(path.join(dir, controllerName)));
 
         debug('    %s%s:',
@@ -336,6 +337,8 @@ var send405 = function (req, res, next) {
  *                                                                        in.  If it's an object, the keys are the
  *                                                                        controller "name" (as described above) and the
  *                                                                        value is a function.
+ *                                                                        
+ * @param {RegExp} [options.controllersNamesRegEx] - RegExp describing the names of the controllers to load from options.controllers dirs
  * @param {boolean} [options.useStubs=false] - Whether or not to stub missing controllers and methods
  *
  * @returns the middleware function
@@ -364,8 +367,11 @@ exports = module.exports = function (options) {
 
     handlerCache = options.controllers;
   } else {
+    if (options.controllersNamesRegEx && !(options.controllersNamesRegEx instanceof RegExp)) {
+        throw new Error('options.controllersNamesRegEx value must be RegExp');
+    }
     // Create the handler cache from the modules in the controllers directory
-    handlerCache = handlerCacheFromDir(options.controllers);
+    handlerCache = handlerCacheFromDir(options.controllers, options.controllersNamesRegEx);
   }
 
   return function swaggerRouter (req, res, next) {
