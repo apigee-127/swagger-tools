@@ -182,6 +182,12 @@ var wrapEnd = function wrapEnd (req, res, next) {
       val = data.toString(encoding);
     }
 
+    // Express 4.x will issue a 304 and strip headers and data when data hasn't changed, so skip validation
+    if (res.statusCode === 304) {
+      sendData(swaggerVersion, res, data, encoding, true);
+      return next();
+    }
+
     try {
       // Validate the content type
       try {
