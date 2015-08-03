@@ -98,8 +98,8 @@ var send400 = function send400 (req, res, next, err) {
     // Replace the message
     err.message = 'Request validation failed: ' + validationMessage;
 
-    // Replace the stack message
-    err.stack = err.stack.replace(currentMessage, validationMessage);
+    // Delete the stack message
+    delete err.stack;
   }
 
   return next(err);
@@ -234,7 +234,7 @@ var wrapEnd = function wrapEnd (req, res, next) {
           if (err) {
             throw err;
           }
-          
+
           sendData(swaggerVersion, res, data, encoding, false);
         });
       }
@@ -242,7 +242,7 @@ var wrapEnd = function wrapEnd (req, res, next) {
       if (err.failedValidation) {
         err.originalResponse = data;
         err.message = 'Response validation failed: ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
-        
+
         debug('  Response validation: failed');
 
         mHelpers.debugError(err, debug);
