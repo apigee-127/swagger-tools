@@ -26,15 +26,15 @@
 
 var response = module.exports.response = 'controllers/Pets swagger-router OK';
 
-module.exports.delete = function deletePet (req, res, next) {
+module.exports.delete = function deletePet (req, res) {
   res.writeHead(204);
   res.end();
 };
 
-module.exports.getAllPets = module.exports._getAllPets = function getAllPets (req, res, next) {
+module.exports.getAllPets = module.exports._getAllPets = function getAllPets (req, res) {
   res.end(response);
 };
 
-module.exports.getPetById = module.exports._getPetById = function getPetById (req, res, next) {
+module.exports.getPetById = module.exports._getPetById = function getPetById (req, res) {
   res.end(response);
 };

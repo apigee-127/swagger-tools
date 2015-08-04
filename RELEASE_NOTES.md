@@ -1,5 +1,10 @@
 ## Release Notes
 
+### v0.9.1 TBD
+
+* Updated the build process to produce smaller browser binaries
+* Updated the Swagger 2.0 JSON Schema file
+
 ### v0.9.0 (2015-07-09)
 
 * Added support for YAML remote references _(Issue #222)_

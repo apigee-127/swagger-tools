@@ -31,13 +31,9 @@ var assert = require('assert');
 var async = require('async');
 var JsonRefs = require('json-refs');
 var spec = (typeof window === 'undefined' ? require('../../lib/specs') : SwaggerTools.specs).v2_0; // jshint ignore:line
-var header = typeof window === 'undefined' ?
-               '' :
-               ' (Browser ' + (window.bowerTests ? 'Bower' : 'Standalone') + ' Build)';
-
 var petStoreJson = _.cloneDeep(require('../../samples/2.0/petstore.json'));
 
-describe('Specification v2.0' + header, function () {
+describe('Specification v2.0', function () {
   var server;
 
   afterEach(function () {
@@ -1800,7 +1796,7 @@ describe('Specification v2.0' + header, function () {
           fake: {
             name: 'fake',
             type: 'string',
-              in: 'path'
+              in: 'query'
           }
         };
 
@@ -2306,13 +2302,15 @@ describe('Specification v2.0' + header, function () {
               description: 'Collection name',
               name: 'collection',
               in: 'path',
-              type: 'string'
+              type: 'string',
+              required: true
             },
             {
               description: 'The export format',
               name: 'format',
               in: 'path',
-              type: 'string'
+              type: 'string',
+              required: true
             }
           ],
           responses: {

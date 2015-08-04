@@ -24,77 +24,72 @@
 
 'use strict';
 
-var _ = require('lodash-compat');
-var async = require('async');
-var bower = require('bower');
+var $ = require('gulp-load-plugins')();
 var browserify = require('browserify');
+var buffer = require('vinyl-buffer');
 var del = require('del');
 var exposify = require('exposify');
 var fs = require('fs');
 var gulp = require('gulp');
-var istanbul = require('gulp-istanbul');
-var jshint = require('gulp-jshint');
-var mocha = require('gulp-mocha');
-var mochaPhantomJS = require('gulp-mocha-phantomjs');
+var KarmaServer = require('karma').Server;
+var path = require('path');
 var runSequence = require('run-sequence');
 var source = require('vinyl-source-stream');
-var versions = ['1.2', '2.0'];
-var browserTestsPaths = _.reduce(versions, function (paths, version) {
-  return paths.concat('./test/' + version + '/browser/');
-}, []);
-
 var runningAllTests = false;
 
-gulp.task('browserify', function (cb) {
-  // Builds 4 browser binaries:
-  //
-  // 1 (swagger-tools.js): Bower build without uglification and including source maps
-  // 2 (swagger-tools-min.js): Bower build uglified and without source maps
-  // 3 (swagger-tools-standalone.js): Standalone build without uglification and including source maps
-  // 4 (swagger-tools-standalone-min.js): Standalone build uglified and without source maps
+function displayCoverageReport (display) {
+  if (display) {
+    gulp.src([])
+      .pipe($.istanbul.writeReports());
+  }
+}
 
-  async.map([0,1,2,3], function (n, callback) {
-    var useDebug = n === 0 || n === 2;
-    var isStandalone = n >= 2;
-    var b = browserify('./lib/specs.js', {
-      debug: useDebug,
-      standalone: 'SwaggerTools.specs'
-    });
+gulp.task('browserify', function () {
+  function browserifyBuild (isStandalone, useDebug) {
+    return function () {
+      return new Promise(function (resolve, reject) {
+        var b = browserify('./lib/specs.js', {
+          debug: useDebug,
+          standalone: 'SwaggerTools.specs'
+        });
 
-    if (!useDebug) {
-      b.transform({global: true}, 'uglifyify');
-    }
+        if (!isStandalone) {
+          // Expose Bower modules so they can be required
+          exposify.config = {
+            'async': 'async',
+            'debug': 'debug',
+            'json-refs': 'JsonRefs',
+            'js-yaml': 'jsyaml',
+            'lodash-compat': '_',
+            'spark-md5': 'SparkMD5',
+            'swagger-converter': 'SwaggerConverter.convert',
+            'traverse': 'traverse',
+            'z-schema': 'ZSchema'
+          };
 
-    if (!isStandalone) {
-      // Expose Bower modules so they can be required
-      exposify.config = {
-        'async': 'async',
-        'debug': 'debug',
-        'json-refs': 'JsonRefs',
-        'js-yaml': 'jsyaml',
-        'lodash-compat': '_',
-        'spark-md5': 'SparkMD5',
-        'swagger-converter': 'SwaggerConverter.convert',
-        'traverse': 'traverse',
-        'z-schema': 'ZSchema'
-      };
+          b.transform('exposify');
+        }
 
-      b.transform('exposify');
-    }
-
-    b.transform('brfs')
-      .bundle()
-      .pipe(source('swagger-tools' + (isStandalone ? '-standalone' : '') + (!useDebug ? '-min' : '') + '.js'))
-      .pipe(gulp.dest('./browser/'))
-      .on('error', function (err) {
-        callback(err);
-      })
-      .on('end', function () {
-        callback();
+        b.bundle()
+          .pipe(source('swagger-tools' + (isStandalone ? '-standalone' : '') + (!useDebug ? '-min' : '') + '.js'))
+          .pipe($.if(!useDebug, buffer()))
+          .pipe($.if(!useDebug, $.uglify()))
+          .pipe(gulp.dest('browser/'))
+          .on('error', reject)
+          .on('end', resolve);
       });
-  }, function (err) {
-    cb(err);
-  });
+    };
+  }
+
+  return Promise.resolve()
+    // Standalone build with source maps and complete source
+    .then(browserifyBuild(true, true))
+    // Standalone build minified and without source maps
+    .then(browserifyBuild(true, false))
+    // Bower build with source maps and complete source
+    .then(browserifyBuild(false, true))
+    // Bower build minified and without source maps
+    .then(browserifyBuild(false, false));
 });
 
 gulp.task('lint', function () {
@@ -104,115 +99,123 @@ gulp.task('lint', function () {
     './lib/**/*.js',
     './middleware/helpers.js',
     './middleware/swagger-*.js',
-    './test/1.2/*.js',
-    './test/2.0/*.js',
+    './test/**/*.js',
     './gulpfile.js',
     '!./middleware/swagger-ui/**/*.js',
-    '!./test/**/test-specs-browser.js'
+    '!./test/**/test-specs-browser.js',
+    '!./test/browser/vendor/*.js'
   ])
-    .pipe(jshint())
-    .pipe(jshint.reporter('jshint-stylish'))
-    .pipe(jshint.reporter('fail'));
+    .pipe($.jshint())
+    .pipe($.jshint.reporter('jshint-stylish'))
+    .pipe($.jshint.reporter('fail'));
 });
 
-gulp.task('test-node', function (cb) {
-  gulp.src([
-    './index.js',
-    './lib/**/*.js',
-    './middleware/helpers.js',
-    './middleware/swagger-*.js',
-    '!./middleware/swagger-ui/**/*.js',
-    '!./test/**/test-specs-browser.js'
-  ])
-    .pipe(istanbul())
-    .pipe(istanbul.hookRequire()) // Force `require` to return covered files
-    .on('finish', function () {
-      gulp.src([
-        './test/**/test-*.js',
-        '!./test/**/test-specs-browser.js'
-      ]).pipe(mocha({reporter: 'spec', timeout: 5000}))
-        .on('end', function () {
-          if (!runningAllTests) {
-            gulp.src([])
-              .pipe(istanbul.writeReports());
-          }
-
-          cb();
-        });
-    });
-});
-
-gulp.task('clean-tests', function (cb) {
-  del(browserTestsPaths, cb);
-});
-
-gulp.task('test-prepare', ['browserify', 'clean-tests'], function (cb) {
-  async.map(versions, function (version, callback) {
-    var basePath = './test/' + version + '/browser/';
-
-    // Create browser test directory
-    fs.mkdirSync(basePath);
-
-    // Copy test HTML files
-    _.each(['test-bower.html', 'test-standalone.html'], function (fileName) {
-      fs.createReadStream('./test/browser/' + fileName).pipe(fs.createWriteStream(basePath + fileName));
-    });
-
-    // Copy bower.json to the test directory
-    fs.createReadStream('./bower.json').pipe(fs.createWriteStream(basePath + 'bower.json'));
-
-    bower.commands.install([], {}, {cwd: basePath})
-      .on('end', function () {
-        var b = browserify(basePath + '../test-specs.js', {
-          debug: true
-        });
-
-        b.transform('brfs')
-          .bundle()
-          .pipe(source('test-specs-browser.js'))
-          .pipe(gulp.dest(basePath))
+gulp.task('test-node', function () {
+  return new Promise(function (resolve, reject) {
+    gulp.src([
+      './index.js',
+      './lib/**/*.js',
+      './middleware/helpers.js',
+      './middleware/swagger-*.js',
+      '!./middleware/swagger-ui/**/*.js',
+      '!./test/**/test-specs-browser.js'
+    ])
+      .pipe($.istanbul())
+      .pipe($.istanbul.hookRequire()) // Force `require` to return covered files
+      .on('finish', function () {
+        gulp.src([
+          './test/**/test-*.js',
+          '!./test/**/test-specs-browser.js'
+        ]).pipe($.mocha({reporter: 'spec', timeout: 5000}))
           .on('error', function (err) {
-            callback(err);
-          })
+              reject(err);
+            })
           .on('end', function () {
-            // Copy the Swagger Tools browser builds to the test directory
-            fs.createReadStream('./browser/swagger-tools.js').pipe(fs.createWriteStream(basePath + 'swagger-tools.js'));
-            fs.createReadStream('./browser/swagger-tools-standalone.js')
-              .pipe(fs.createWriteStream(basePath + 'swagger-tools-standalone.js'));
+            displayCoverageReport(!runningAllTests);
 
-            callback();
-        });
-      })
-      .on('error', function (err) {
-        callback(err);
+            resolve();
+          });
       });
-  }, cb);
+    });
 });
 
-gulp.task('test-browser', ['browserify', 'test-prepare'], function (cb) {
-  gulp
-    .src(_.reduce(browserTestsPaths, function (paths, basePath) {
-      return paths.concat([
-        basePath + 'test-bower.html',
-        basePath + 'test-standalone.html'
-      ]);
-    }, []))
-    .pipe(mochaPhantomJS({
-      phantomjs: {
-        localToRemoteUrlAccessEnabled: true,
-        webSecurityEnabled: false,
-        ignoreResourceErrors: true
-      }
-    }))
-    .on('finish', function () {
-      if (runningAllTests) {
-        gulp.src([])
-          .pipe(istanbul.writeReports());
-      }
+gulp.task('test-browser', ['browserify'], function () {
+  function cleanUpEach () {
+    del([
+      './test/browser/test-browser.js'
+    ]);
+  }
 
-      // Clean up
-      del(browserTestsPaths, cb);
-    });
+  function cleanUpAll () {
+    cleanUpEach();
+
+    del([
+      './test/browser/swagger-tools.js',
+      './test/browser/swagger-tools-standalone.js'
+    ]);
+  }
+
+  function finisher (err) {
+    cleanUpAll();
+
+    displayCoverageReport(runningAllTests);
+
+    console.log(err);
+
+    return err;
+  }
+
+  function makeTest (version, standalone) {
+    return function () {
+      return Promise.resolve()
+        .then(cleanUpEach)
+        .then(function () {
+          return new Promise(function (resolve, reject) {
+            var b = browserify([
+              './test/' + version + '/test-specs.js'
+            ], {
+              debug: true
+            });
+
+            b.bundle()
+              .pipe(source('test-browser.js'))
+              .pipe(gulp.dest('./test/browser'))
+              .on('error', reject)
+              .on('end', resolve);
+          });
+        })
+        .then(function () {
+          return new Promise(function (resolve, reject) {
+            new KarmaServer({
+              configFile: path.join(__dirname,
+                                    'test/browser/karma-' + (standalone ? 'standalone' : 'bower') + '.conf.js'),
+              singleRun: true
+            }, function (err) {
+              if (err) {
+                reject(err);
+              } else {
+                resolve();
+              }
+            }).start();
+          });
+        });
+    };
+  }
+
+  return Promise.resolve()
+    .then(cleanUpAll)
+    .then(function () {
+      // Copy the Swagger Tools browser builds to the per-version test container
+      fs.createReadStream('./browser/swagger-tools.js')
+        .pipe(fs.createWriteStream('test/browser/swagger-tools.js'));
+      fs.createReadStream('./browser/swagger-tools-standalone.js')
+        .pipe(fs.createWriteStream('./test/browser/swagger-tools-standalone.js'));
+    })
+    .then(makeTest('1.2', false))
+    .then(makeTest('1.2', true))
+    .then(makeTest('2.0', false))
+    .then(makeTest('2.0', true))
+    .then(finisher, finisher);
 });
 
 gulp.task('test', function (cb) {

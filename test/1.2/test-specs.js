@@ -35,11 +35,8 @@ var petJson = _.cloneDeep(require('../../samples/1.2/pet.json'));
 var rlJson = _.cloneDeep(require('../../samples/1.2/resource-listing.json'));
 var storeJson = _.cloneDeep(require('../../samples/1.2/store.json'));
 var userJson = _.cloneDeep(require('../../samples/1.2/user.json'));
-var header = typeof window === 'undefined' ?
-               '' :
-               ' (Browser ' + (window.bowerTests ? 'Bower' : 'Standalone') + ' Build)';
 
-describe('Specification v1.2' + header, function () {
+describe('Specification v1.2', function () {
   describe('metadata', function () {
     it('should have proper docsUrl, primitives, options, schemasUrl and verison properties', function () {
       assert.strictEqual(spec.docsUrl, 'https://github.com/swagger-api/swagger-spec/blob/master/versions/1.2.md');

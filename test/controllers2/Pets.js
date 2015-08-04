@@ -26,6 +26,6 @@
 
 var response = module.exports.response = 'controllers2/Pets swagger-router OK';
 
-module.exports.createPet = module.exports._createPet = function createPet (req, res, next) {
+module.exports.createPet = module.exports._createPet = function createPet (req, res) {
   res.end(response);
 };

@@ -33,6 +33,7 @@ var _ = require('lodash-compat');
 var assert = require('assert');
 var helpers = require('../helpers');
 var path = require('path');
+var pkg = require('../../package.json');
 var request = require('supertest');
 
 var swaggerObject = _.cloneDeep(require('../../samples/2.0/petstore.json'));
@@ -106,7 +107,7 @@ describe('Swagger UI Middleware v2.0', function () {
         try {
           helpers.createServer([swaggerObject], {
             swaggerUiOptions: {
-              swaggerUiDir: path.join(__dirname, '..', 'browser', 'test-bower.html')
+              swaggerUiDir: path.join(__dirname, '..', '..', 'package.json')
             }
           }, function () {
             done(new Error('Should not initialize with options.swaggerUiDir pointing to a file'));
@@ -123,19 +124,19 @@ describe('Swagger UI Middleware v2.0', function () {
         // as requested, that's all this test needs to do.
         helpers.createServer([swaggerObject], {
           swaggerUiOptions: {
-            swaggerUiDir: path.join(__dirname, '..', 'browser')
+            swaggerUiDir: path.join(__dirname, '..', '..')
           }
         }, function (app) {
           request(app)
-            .get('/docs/test-bower.html')
+            .get('/docs/package.json')
             .expect(200)
-            .expect('content-type', 'text/html; charset=UTF-8')
+            .expect('content-type', 'application/json')
             .end(function (err, res) {
               if (err) {
                 return done(err);
               }
 
-              assert.ok(res.text.indexOf('<title>Mocha Test Runner (Swagger Tools Bower Build)</title>') > -1);
+              assert.deepEqual(JSON.parse(res.text), pkg);
 
               done();
             });
