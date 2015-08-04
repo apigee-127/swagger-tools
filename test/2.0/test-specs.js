@@ -1219,6 +1219,13 @@ describe('Specification v2.0', function () {
         swaggerObject.paths['/pets/{petId}'].parameters[0].name = 'petId';
         swaggerObject.paths['/pets/{petId}'].delete.parameters[0].name = 'petId';
 
+        // Make operationIds unique
+        _.each(swaggerObject.paths['/pets/{petId}'], function (operation) {
+          if (!_.isUndefined(operation.operationId)) {
+            operation.operationId += 'Dup';
+          }
+        });
+
         spec.validate(swaggerObject, function (err, result) {
           if (err) {
             return done(err);
@@ -1275,15 +1282,6 @@ describe('Specification v2.0', function () {
 
         it('path level (remote)', function (done) {
           var swaggerObject = _.cloneDeep(petStoreJson);
-          var cPath = _.cloneDeep(swaggerObject.paths['/pets/{id}']);
-          var cParam = _.cloneDeep(cPath.parameters[0]);
-
-          // Make the parameter not identical but still having the same id
-          cParam.type = 'string';
-
-          delete cParam.format;
-
-          cPath.parameters.push(cParam);
 
           swaggerObject.paths['/people/{id}'] = {
             $ref: 'https://rawgit.com/apigee-127/swagger-tools/master/test/browser/people.json#/paths/~1people~1{id}'
@@ -1370,6 +1368,30 @@ describe('Specification v2.0', function () {
 
             done();
           });
+        });
+      });
+
+      it('duplicate operationId', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.paths['/pets/{id}'].get.operationId = swaggerObject.paths['/pets/{id}'].delete.operationId;
+
+        spec.validate(swaggerObject, function (err, result) {
+          if (err) {
+            return done(err);
+          }
+
+          // Since this is a path level parameter, all operations will get the same error
+          assert.deepEqual(result.errors, [
+            {
+              code: 'DUPLICATE_API_OPERATIONID',
+              message: 'API operationId already defined: ' + swaggerObject.paths['/pets/{id}'].delete.operationId,
+              path: ['paths', '/pets/{id}', 'get', 'operationId']
+            }
+          ]);
+          assert.equal(result.warnings.length, 0);
+
+          done();
         });
       });
 
