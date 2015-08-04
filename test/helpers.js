@@ -61,19 +61,26 @@ module.exports.createServer = function createServer (initArgs, options, callback
       res.end('OK');
     };
 
-    app.use(middleware.swaggerMetadata());
+    function register (middleware) {
+      if (_.isUndefined(options.mountPoint)) {
+        app.use(middleware); 
+      } else {
+        app.use(options.mountPoint, middleware);
+      }
+    }
+
+    register(middleware.swaggerMetadata());
 
     // Conditionally enable security (To avoid having to rewrite all Swagger documents or all tests)
     if (Object.keys(options.swaggerSecurityOptions || {}).length > 0) {
-      app.use(middleware.swaggerSecurity(options.swaggerSecurityOptions));
+      register(middleware.swaggerSecurity(options.swaggerSecurityOptions));
     }
 
-    app.use(middleware.swaggerValidator(options.swaggerValidatorOptions));
-    app.use(middleware.swaggerRouter(options.swaggerRouterOptions));
+    register(middleware.swaggerValidator(options.swaggerValidatorOptions));
+    register(middleware.swaggerRouter(options.swaggerRouterOptions));
+    register(middleware.swaggerUi(options.swaggerUiOptions));
 
-    app.use(middleware.swaggerUi(options.swaggerUiOptions));
-
-    app.use(handler);
+    register(handler);
 
     // Error handler middleware to pass errors downstream as JSON
     app.use(errorHandler());

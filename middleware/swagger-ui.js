@@ -57,6 +57,7 @@ exports = module.exports = function swaggerUIMiddleware (rlOrSO, apiDeclarations
   var apiDocsCache = {}; // Swagger document endpoints cache
   var apiDocsPaths = [];
   var staticMiddleware;
+  var swaggerApiDocsURL;
   var swaggerUiPath;
 
   if (swaggerVersion !== '1.2') {
@@ -129,6 +130,17 @@ exports = module.exports = function swaggerUIMiddleware (rlOrSO, apiDeclarations
     var isApiDocsPath = apiDocsPaths.indexOf(path) > -1 || (swaggerVersion !== '1.2' && path === options.apiDocsPath);
     var isSwaggerUiPath = path === options.swaggerUi || path.indexOf(options.swaggerUi + '/') === 0;
 
+    if (_.isUndefined(swaggerApiDocsURL)) {
+      // Start with the original path
+      swaggerApiDocsURL = parseurl.original(req).pathname;
+
+      // Remove the part after the mount point
+      swaggerApiDocsURL = swaggerApiDocsURL.substring(0, swaggerApiDocsURL.indexOf(req.url));
+
+      // Add the API docs path and remove any double dashes
+      swaggerApiDocsURL = (swaggerApiDocsURL + options.apiDocs).replace(/\/\//g, '/');
+    }
+
     debug('%s %s', req.method, req.url);
     debug('  Will process: %s', isApiDocsPath || isSwaggerUiPath ? 'yes' : 'no');
 
@@ -141,7 +153,7 @@ exports = module.exports = function swaggerUIMiddleware (rlOrSO, apiDeclarations
     } else if (isSwaggerUiPath) {
       debug('  Serving swagger-ui');
 
-      res.setHeader('Swagger-API-Docs-URL', options.apiDocs);
+      res.setHeader('Swagger-API-Docs-URL', swaggerApiDocsURL);
 
       if (path === options.swaggerUi || path === options.swaggerUi + '/') {
         req.url = '/';

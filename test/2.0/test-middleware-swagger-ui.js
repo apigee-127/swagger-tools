@@ -156,5 +156,24 @@ describe('Swagger UI Middleware v2.0', function () {
           .end(helpers.expectContent(swaggerObject, done));
       });
     });
+
+    it('should serve swagger-ui from a mount point (Issue 256)', function (done) {
+      helpers.createServer([swaggerObject], {
+        mountPoint: '/foo'
+      }, function (app) {
+        request(app)
+          .get('/foo/docs/') // Trailing slash to avoid a 303
+          .expect(200)
+          .end(function (err, res) {
+            if (err) {
+              return done(err);
+            }
+
+            assert.equal(res.header['swagger-api-docs-url'], '/foo/api-docs');
+
+            done();
+          });
+      });
+    });
   });
 });
