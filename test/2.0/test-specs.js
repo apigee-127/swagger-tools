@@ -2673,5 +2673,42 @@ describe('Specification v2.0', function () {
         done();
       });
     });
+
+    it('should handle references within objects properly (Issue 176)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.definitions.Person = {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string'
+          }
+        }
+      };
+
+      swaggerObject.definitions.Surname = {
+        $ref: '#/definitions/Person/properties/name'
+      };
+
+      spec.validate(swaggerObject, function (err, result) {
+        if (err) {
+          return done(err);
+        }
+
+        assert.equal(result.errors.length, 0);
+        assert.deepEqual(result.warnings, [
+          {
+            code: 'UNUSED_DEFINITION',
+            message: 'Definition is defined but is not used: #/definitions/Surname',
+            path: [
+              'definitions',
+              'Surname'
+            ]
+          }
+        ]);
+
+        done();
+      });
+    });
   });
 });
