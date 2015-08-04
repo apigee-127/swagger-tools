@@ -600,6 +600,32 @@ describe('Swagger Metadata Middleware v2.0', function () {
         done();
       });
     });
+
+    it('should handle URI encoded path parameters', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      // Change the type to string so we can send an encoded value
+      cPetStoreJson.paths['/pets/{id}'].parameters[0].type = 'string';
+
+      delete cPetStoreJson.paths['/pets/{id}'].parameters[0].format;
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            getPetById: function (req, res, next) {
+              assert.equal(req.swagger.params.id.value, 'abc:HZ');
+
+              next();
+            }
+          }
+        }
+      }, function (app) {
+        request(app)
+          .get('/api/pets/abc%3AHZ')
+          .expect(200)
+          .end(helpers.expectContent('OK', done));
+      });
+    });
   });
 
   describe('x-swagger-router-handle-subpaths option', function() {

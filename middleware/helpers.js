@@ -95,7 +95,7 @@ module.exports.getParameterValue = function getParameterValue (version, paramete
   case 'path':
     _.each(pathKeys, function (key, index) {
       if (key.name === parameter.name) {
-        val = match[index + 1];
+        val = decodeURIComponent(match[index + 1]);
       }
     });
 

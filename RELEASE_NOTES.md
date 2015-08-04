@@ -2,6 +2,7 @@
 
 ### v0.9.1 TBD
 
+* Added support for URI encoded path parameters _(Issue #230)_
 * Fixed problem for Express where 204/204 remove the `Content-Type` header which makes response validation impossible _(PR #258)_
 * Updated the build process to produce smaller browser binaries
 * Updated the Swagger 2.0 JSON Schema file

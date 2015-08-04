@@ -369,5 +369,31 @@ describe('Swagger Metadata Middleware v1.2', function () {
         done();
       });
     });
+
+    it('should handle URI encoded path parameters', function (done) {
+      var cPetJson = _.cloneDeep(petJson);
+
+      // Change the type to string so we can send an encoded value
+      cPetJson.apis[0].operations[0].parameters[0].type = 'string';
+
+      delete cPetJson.apis[0].operations[0].parameters[0].format;
+
+      helpers.createServer([rlJson, [cPetJson, storeJson, userJson]], {
+        swaggerRouterOptions: {
+          controllers: {
+            getPetById: function (req, res, next) {
+              assert.equal(req.swagger.params.petId.value, 'abc:HZ');
+
+              next();
+            }
+          }
+        }
+      }, function (app) {
+        request(app)
+          .get('/api/pet/abc%3AHZ')
+          .expect(200)
+          .end(helpers.expectContent('OK', done));
+      });
+    });
   });
 });
