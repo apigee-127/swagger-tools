@@ -35,7 +35,7 @@ var defaultOptions = {
   controllers: {},
   useStubs: false // Should we set this automatically based on process.env.NODE_ENV?
 };
-var getHandlerName = function getHandlerName (req) {
+var getHandlerName = function (req) {
   var handlerName;
 
   switch (req.swagger.swaggerVersion) {
@@ -58,7 +58,7 @@ var getHandlerName = function getHandlerName (req) {
 
   return handlerName;
 };
-var handlerCacheFromDir = function handlerCacheFromDir (dirOrDirs) {
+var handlerCacheFromDir = function (dirOrDirs) {
   var handlerCache = {};
   var jsFileRegex = /\.(coffee|js)$/;
   var dirs = [];
@@ -104,7 +104,7 @@ var handlerCacheFromDir = function handlerCacheFromDir (dirOrDirs) {
 
   return handlerCache;
 };
-var getMockValue = function getMockValue (version, schema) {
+var getMockValue = function (version, schema) {
   var type = _.isPlainObject(schema) ? schema.type : schema;
   var value;
 
@@ -213,10 +213,10 @@ var getMockValue = function getMockValue (version, schema) {
 
   return value;
 };
-var mockResponse = function mockResponse (req, res, next, handlerName) {
+var mockResponse = function (req, res, next, handlerName) {
   var method = req.method.toLowerCase();
   var operation = req.swagger.operation;
-  var sendResponse = function sendResponse (err, response) {
+  var sendResponse = function (err, response) {
     if (err) {
       debug('next with error: %j', err);
       return next(err);
@@ -282,7 +282,7 @@ var mockResponse = function mockResponse (req, res, next, handlerName) {
     return sendResponse(undefined, getMockValue(req.swagger.swaggerVersion, responseType));
   }
 };
-var createStubHandler = function createStubHandler (req, res, next, handlerName) {
+var createStubHandler = function (req, res, next, handlerName) {
   // TODO: Handle headers for 2.0
   // TODO: Handle examples (per mime-type) for 2.0
   // TODO: Handle non-JSON response types
@@ -292,7 +292,7 @@ var createStubHandler = function createStubHandler (req, res, next, handlerName)
   };
 };
 
-var send405 = function send405 (req, res, next) {
+var send405 = function (req, res, next) {
   var allowedMethods = [];
   var err = new Error('Route defined in Swagger specification (' +
                         (_.isUndefined(req.swagger.api) ? req.swagger.apiPath : req.swagger.api.path) +
@@ -340,7 +340,7 @@ var send405 = function send405 (req, res, next) {
  *
  * @returns the middleware function
  */
-exports = module.exports = function swaggerRouterMiddleware (options) {
+exports = module.exports = function (options) {
   var handlerCache = {};
 
   debug('Initializing swagger-router middleware');

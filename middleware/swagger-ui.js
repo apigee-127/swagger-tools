@@ -50,7 +50,7 @@ var staticOptions = {};
  *
  * @returns the middleware function
  */
-exports = module.exports = function swaggerUIMiddleware (rlOrSO, apiDeclarations, options) {
+exports = module.exports = function (rlOrSO, apiDeclarations, options) {
   debug('Initializing swagger-ui middleware');
 
   var swaggerVersion = helpers.getSwaggerVersion(rlOrSO);

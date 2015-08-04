@@ -38,15 +38,15 @@ var request = require('superagent');
 var S = require('string');
 var YAML = require('js-yaml');
 
-var exitWithError = function exitWithError (msg) {
+var exitWithError = function (msg) {
   console.error();
   console.error('  error: ' + msg);
   console.error(); // Here only to match the output of commander.js
 
   process.exit(1);
 };
-var getDocument = function getDocument (pathOrUrl, callback) {
-  var parseContent = function parseContent (content) {
+var getDocument = function (pathOrUrl, callback) {
+  var parseContent = function (content) {
     var err;
     var response;
 
@@ -83,11 +83,11 @@ var getDocument = function getDocument (pathOrUrl, callback) {
   }
 };
 
-var handleUnidentifiableVersion = function handleUnidentifiableVersion (path) {
+var handleUnidentifiableVersion = function (path) {
   return exitWithError('Unable to identify the Swagger version for document: ' + path);
 };
 
-var getDocuments = function getDocuments (pathsAndOrUrls, callback) {
+var getDocuments = function (pathsAndOrUrls, callback) {
   var resolvedDocuments = {};
 
   async.map(pathsAndOrUrls, getDocument, function (err, documents) {
@@ -119,11 +119,11 @@ var getDocuments = function getDocuments (pathsAndOrUrls, callback) {
   });
 };
 
-var handleUnsupportedVersion = function handleUnsupportedVersion (version) {
+var handleUnsupportedVersion = function (version) {
   exitWithError('Unsupported Swagger version: ' + version);
 };
 
-var handleUnknownCommand = function handleUnknownCommand (command) {
+var handleUnknownCommand = function (command) {
   // Using log instead of error since commander.js uses console.log for help output
   console.log(program._name + ' does not support the ' + command + ' command.');
 
@@ -140,7 +140,7 @@ program
   .option('-n, --no-validation', 'disable pre-conversion validation of the Swagger document(s)')
   .option('-y, --yaml', 'output as YAML instead of JSON')
   .action(function (resourceListing, apiDeclarations) {
-    var doConvert = function doConvert (err, converted) {
+    var doConvert = function (err, converted) {
       var results;
 
       if (err) {

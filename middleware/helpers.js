@@ -31,11 +31,11 @@ var helpers = require('../lib/helpers');
 var parseurl = require('parseurl');
 var qs = require('qs');
 
-var isModelType = module.exports.isModelType = function isModelType (spec, type) {
+var isModelType = module.exports.isModelType = function (spec, type) {
   return spec.primitives.indexOf(type) === -1;
 };
 
-var getParameterType = module.exports.getParameterType = function getParameterType (schema) {
+var getParameterType = module.exports.getParameterType = function (schema) {
   var type = schema.type;
 
   if (!type && schema.schema) {
@@ -49,7 +49,7 @@ var getParameterType = module.exports.getParameterType = function getParameterTy
   return type;
 };
 
-var isModelParameter = module.exports.isModelParameter = function isModelParameter (version, param) {
+var isModelParameter = module.exports.isModelParameter = function (version, param) {
   var spec = helpers.getSpec(version);
   var type = getParameterType(param);
   var isModel = false;
@@ -65,7 +65,7 @@ var isModelParameter = module.exports.isModelParameter = function isModelParamet
   return isModel;
 };
 
-module.exports.getParameterValue = function getParameterValue (version, parameter, pathKeys, match, req, debug) {
+module.exports.getParameterValue = function (version, parameter, pathKeys, match, req, debug) {
   var defaultVal = version === '1.2' ? parameter.defaultValue : parameter.default;
   var paramLocation = version === '1.2' ? parameter.paramType : parameter.in;
   var paramType = getParameterType(parameter);
@@ -116,11 +116,11 @@ module.exports.getParameterValue = function getParameterValue (version, paramete
   return val;
 };
 
-module.exports.parseQueryString = function parseQueryString(req) {
+module.exports.parseQueryString = function(req) {
   return req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
 };
 
-module.exports.debugError = function debugError (err, debug) {
+module.exports.debugError = function (err, debug) {
   var reason = err.message.replace(/^.*validation failed: /, '');
 
   reason = reason.charAt(0).toUpperCase() + reason.substring(1);

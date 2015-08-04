@@ -68,7 +68,7 @@ var bodyParser = function (req, res, callback) {
 var multiPartParser = multer(multerOptions);
 
 // Helper functions
-var expressStylePath = function expressStylePath (basePath, apiPath) {
+var expressStylePath = function (basePath, apiPath) {
   basePath = parseurl({url: basePath || '/'}).pathname || '/';
 
   // Make sure the base path starts with '/'
@@ -89,7 +89,7 @@ var expressStylePath = function expressStylePath (basePath, apiPath) {
   // Replace Swagger syntax for path parameters with Express' version (All Swagger path parameters are required)
   return (basePath + apiPath).replace(/{/g, ':').replace(/}/g, '');
 };
-var convertValue = function convertValue (value, schema, type) {
+var convertValue = function (value, schema, type) {
   var original = value;
 
   if (_.isUndefined(type)) {
@@ -175,7 +175,7 @@ var convertValue = function convertValue (value, schema, type) {
 
   return value;
 };
-var processOperationParameters = function processOperationParameters (version, pathKeys, pathMatch, req, res, next) {
+var processOperationParameters = function (version, pathKeys, pathMatch, req, res, next) {
   var swaggerMetadata = req.swagger;
   var parameters = !_.isUndefined(swaggerMetadata) ?
                      (version === '1.2' ? swaggerMetadata.operation.parameters : swaggerMetadata.operationParameters) :
@@ -251,7 +251,7 @@ var processOperationParameters = function processOperationParameters (version, p
     return next();
   });
 };
-var processSwaggerDocuments = function processSwaggerDocuments (rlOrSO, apiDeclarations) {
+var processSwaggerDocuments = function (rlOrSO, apiDeclarations) {
   if (_.isUndefined(rlOrSO)) {
     throw new Error('rlOrSO is required');
   } else if (!_.isPlainObject(rlOrSO)) {
@@ -260,7 +260,7 @@ var processSwaggerDocuments = function processSwaggerDocuments (rlOrSO, apiDecla
 
   var spec = cHelpers.getSpec(cHelpers.getSwaggerVersion(rlOrSO), true);
   var apiCache = {};
-  var composeParameters = function composeParameters (apiPath, method, path, operation) {
+  var composeParameters = function (apiPath, method, path, operation) {
     var cParams = [];
     var seenParams = [];
 
@@ -284,7 +284,7 @@ var processSwaggerDocuments = function processSwaggerDocuments (rlOrSO, apiDecla
 
     return cParams;
   };
-  var createCacheEntry = function createCacheEntry (adOrSO, apiOrPath, indexOrName, indent) {
+  var createCacheEntry = function (adOrSO, apiOrPath, indexOrName, indent) {
     var apiPath = spec.version === '1.2' ? apiOrPath.path : indexOrName;
     var expressPath = expressStylePath(adOrSO.basePath, spec.version === '1.2' ? apiOrPath.path: indexOrName);
     var keys = [];
@@ -396,7 +396,7 @@ var processSwaggerDocuments = function processSwaggerDocuments (rlOrSO, apiDecla
  *
  * @returns the middleware function
  */
-exports = module.exports = function swaggerMetadataMiddleware (rlOrSO, apiDeclarations) {
+exports = module.exports = function (rlOrSO, apiDeclarations) {
   debug('Initializing swagger-metadata middleware');
 
   var apiCache = processSwaggerDocuments(rlOrSO, apiDeclarations);

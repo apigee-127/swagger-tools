@@ -28,7 +28,7 @@ var async = require('async');
 var debug = require('debug')('swagger-tools:middleware:security');
 var helpers = require('./helpers');
 
-var getScopeOrAPIKey = function getScopeOrAPIKey (req, secDef, secName, secReq) {
+var getScopeOrAPIKey = function (req, secDef, secName, secReq) {
   var swaggerVersion = req.swagger.swaggerVersion;
   var apiKeyPropName = swaggerVersion === '1.2' ? secDef.keyname : secDef.name;
   var apiKeyLocation = swaggerVersion === '1.2' ? secDef.passAs : secDef.in;
@@ -52,7 +52,7 @@ var getScopeOrAPIKey = function getScopeOrAPIKey (req, secDef, secName, secReq) 
 
   return scopeOrKey;
 };
-var sendSecurityError = function sendSecurityError (err, res, next) {
+var sendSecurityError = function (err, res, next) {
   // Populate default values if not present
   if (!err.code) {
     err.code = 'server_error';
@@ -98,7 +98,7 @@ var sendSecurityError = function sendSecurityError (err, res, next) {
  *
  * @returns the middleware function
  */
-exports = module.exports = function swaggerSecurityMiddleware (options) {
+exports = module.exports = function (options) {
   var handlers = options || {};
 
   debug('Initializing swagger-security middleware');
@@ -131,10 +131,10 @@ exports = module.exports = function swaggerSecurityMiddleware (options) {
       req.swagger.operation.security || req.swagger.swaggerObject.security;
 
       if (securityReqs && securityReqs.length > 0) {
-        async.map(securityReqs, function(secReq, cb) { // logical OR - any one can allow
+        async.map(securityReqs, function (secReq, cb) { // logical OR - any one can allow
           var secName;
 
-          async.map(Object.keys(secReq), function(name, cb) { // logical AND - all must allow
+          async.map(Object.keys(secReq), function (name, cb) { // logical AND - all must allow
             var secDef = req.swagger.swaggerVersion === '1.2' ?
                   req.swagger.resourceListing.authorizations[name] :
                   req.swagger.swaggerObject.securityDefinitions[name];

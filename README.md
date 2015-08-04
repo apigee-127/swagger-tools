@@ -40,9 +40,40 @@ based on the [JSON Schema][json-schema] associated with that version of the spec
 
 ## Installation
 
-swagger-tools is distributed via [NPM][npm] so installation is the usual: `npm install swagger-tools --save`.  _(If you
-plan on using the CLI, you would install using `npm install swagger-tools -g`.)_  You can also install swagger-tools
-using [Bower][bower] for browser-based applications using `bower install swagger-tools --save`.
+Swagger Tools is available for both Node.js and the browser.  Installation instructions for each environment are below.
+
+### Browser
+
+Installation for browser applications can be done via [Bower][bower] or by downloading a standalone binary.
+
+#### Using Bower
+
+```
+bower install swagger-tools --save
+```
+
+#### Standalone Binaries
+
+The standalone binaries come in two flavors:
+
+* [swagger-tools-standalone.js](https://raw.github.com/apigee-127/swagger-tools/master/browser/swagger-tools-standalone.js): _2,280kb_, full source _(including all dependencies)_ and source maps
+* [swagger-tools-standalone-min.js](https://raw.github.com/apigee-127/swagger-tools/master/browser/swagger-tools-standalone-min.js): _316kb_, minified, compressed
+and no sourcemap
+
+### Node.js
+
+Installation for Node.js applications can be done via [NPM][npm].
+
+```
+npm install swagger-tools --save
+```
+
+If you want to use the `swagger-tools` executable for validating Swagger documents, you can install swagger-tools
+globally using the following:
+
+```
+npm install -g swagger-tools
+```
 
 ## Documentation
 

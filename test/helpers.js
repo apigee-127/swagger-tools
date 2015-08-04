@@ -30,7 +30,7 @@ var cp = require('child_process');
 var path = require('path');
 var swagger = require('../');
 
-var errorHandler = module.exports.errorHandler = function errorHandler() {
+var errorHandler = module.exports.errorHandler = function () {
   return function (err, req, res, next) {
     if (err) {
       if (res.statusCode < 400) {
@@ -54,7 +54,7 @@ var errorHandler = module.exports.errorHandler = function errorHandler() {
   };
 };
 
-module.exports.createServer = function createServer (initArgs, options, callback) {
+module.exports.createServer = function (initArgs, options, callback) {
   var app = require('connect')();
   var serverInit = function (middleware) {
     var handler = options.handler || function (req, res) {
@@ -93,11 +93,11 @@ module.exports.createServer = function createServer (initArgs, options, callback
   swagger.initializeMiddleware.apply(undefined, initArgs);
 };
 
-var prepareText = module.exports.prepareText = function prepareText (text) {
+var prepareText = module.exports.prepareText = function (text) {
   return text.replace(/&nbsp;/g, ' ').replace(/\n/g, '');
 };
 
-module.exports.expectContent = function expectContent (content, done) {
+module.exports.expectContent = function (content, done) {
   return function (err, res) {
     if (err) {
       throw err;
@@ -115,7 +115,7 @@ module.exports.expectContent = function expectContent (content, done) {
   };
 };
 
-module.exports.executeCLI = function executeCLI (args, done) {
+module.exports.executeCLI = function (args, done) {
   // Add Node args
   args.unshift('node', path.resolve(path.join(__dirname, '..', 'bin', 'swagger-tools')));
 
