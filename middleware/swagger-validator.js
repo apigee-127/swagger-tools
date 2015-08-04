@@ -38,7 +38,10 @@ var sendData = function sendData (swaggerVersion, res, data, encoding, skipped) 
   }
 
   if (skipped) {
-    if (swaggerVersion === '1.2') {
+    if (_.isUndefined(res.getHeader('content-type'))) {
+      // This scenario only happens for a 204/304 response and there is no Content-Type
+      debug('  Response validation: skipped (Cached response for \'%d\')', res.statusCode);
+    } else if (swaggerVersion === '1.2') {
       debug('  Response validation: skipped (No responseMessage definition for \'%d\')', res.statusCode);
     } else {
       debug('  Response validation: skipped (No response definition for \'%d\' or \'default\')', res.statusCode);
@@ -182,8 +185,8 @@ var wrapEnd = function wrapEnd (req, res, next) {
       val = data.toString(encoding);
     }
 
-    // Express 4.x will issue a 304 and strip headers and data when data hasn't changed, so skip validation
-    if (res.statusCode === 304) {
+    // Express removes the Content-Type header from 204/304 responses which makes response validation impossible
+    if (_.isUndefined(res.getHeader('content-type')) && [204, 304].indexOf(res.statusCode) > -1) {
       sendData(swaggerVersion, res, data, encoding, true);
       return next();
     }
