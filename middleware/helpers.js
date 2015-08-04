@@ -36,16 +36,10 @@ var isModelType = module.exports.isModelType = function isModelType (spec, type)
 };
 
 var getParameterType = module.exports.getParameterType = function getParameterType (schema) {
-  var type;
-
-  if (schema.schema) {
-    type = getParameterType(schema.schema);
-  } else {
-    type = schema.type;
-  }
+  var type = schema.type;
 
   if (!type && schema.schema) {
-    type = schema.type;
+    type = getParameterType(schema.schema);
   }
 
   if (!type) {
