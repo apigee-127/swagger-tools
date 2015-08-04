@@ -1,6 +1,6 @@
 ## Release Notes
 
-### v0.9.1 TBD
+### v0.9.1 (2015-08-04)
 
 * Added support for URI encoded path parameters _(Issue #230)_
 * Added validation for duplicate nicknames _(Swagger 1.2)_ and duplicate operationIds _(Swagger 2.0)_ _(Issue # 219)_
