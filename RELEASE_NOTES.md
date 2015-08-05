@@ -1,9 +1,12 @@
 ## Release Notes
 
+### v0.9.2 (2015-08-05)
+
+* Reverted a463907 _(Issue #259)_
+
 ### v0.9.1 (2015-08-04)
 
 * Added support for URI encoded path parameters _(Issue #230)_
-* Added validation for duplicate nicknames _(Swagger 1.2)_ and duplicate operationIds _(Swagger 2.0)_ _(Issue # 219)_
 * Fixed problem for Express where 204/204 remove the `Content-Type` header which makes response validation impossible _(PR #258)_
 * Fixed problem for references to within referenceable objects not marking the referenceable object as referenced _(Issue #176)_
 * Updated the build process to produce smaller browser binaries

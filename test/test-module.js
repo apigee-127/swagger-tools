@@ -195,12 +195,6 @@ describe('swagger-tools', function () {
         cPetStoreJson.paths['/pets/{petId}'].parameters[0].name = 'petId';
         cPetStoreJson.paths['/pets/{petId}'].delete.parameters[0].name = 'petId';
 
-        _.each(cPetStoreJson.paths['/pets/{petId}'], function (operation) {
-          if (!_.isUndefined(operation.operationId)) {
-            operation.operationId += 'Dup';
-          }
-        });
-
         try {
           swagger.initializeMiddleware(cPetStoreJson, function () {
             assert.fail(null, null, 'Should had thrown an error');

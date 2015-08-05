@@ -469,14 +469,11 @@ describe('Specification v1.2', function () {
 
       it('duplicate API path (equivalent) in an API Declaration', function (done) {
         var cPetJson = _.cloneDeep(petJson);
-        var newPath = _.cloneDeep(cPetJson.apis[0]);
+        var newPath = cPetJson.apis[0];
 
         newPath.path = newPath.path.replace(/petId/, 'id');
 
         _.each(newPath.operations, function (operation) {
-          // Make the nickname unique
-          operation.nickname += 'Dup';
-
           _.each(operation.parameters, function (parameter) {
             if (parameter.paramType === 'path' && parameter.name === 'petId') {
               parameter.name = 'id';
@@ -495,7 +492,7 @@ describe('Specification v1.2', function () {
             {
               code: 'DUPLICATE_API_PATH',
               message: 'API path (or equivalent) already defined: /pet/{id}',
-              path: ['apis', (cPetJson.apis.length - 1).toString(), 'path']
+              path: ['apis', cPetJson.apis.length - 1, 'path']
             }
           ]);
           assert.equal(result.apiDeclarations[0].warnings.length, 0);
@@ -508,11 +505,6 @@ describe('Specification v1.2', function () {
         var cPetJson = _.cloneDeep(petJson);
         var newPath = _.cloneDeep(cPetJson.apis[0]);
 
-        // Make the nicknames unique
-        _.forEach(newPath.operations, function (operation) {
-          operation.nickname += 'Dup';
-        });
-
         cPetJson.apis.push(newPath);
 
         spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
@@ -524,7 +516,7 @@ describe('Specification v1.2', function () {
             {
               code: 'DUPLICATE_API_PATH',
               message: 'API path (or equivalent) already defined: /pet/{petId}',
-              path: ['apis', (cPetJson.apis.length - 1).toString(), 'path']
+              path: ['apis', cPetJson.apis.length - 1, 'path']
             }
           ]);
           assert.equal(result.apiDeclarations[0].warnings.length, 0);
@@ -622,29 +614,6 @@ describe('Specification v1.2', function () {
             }
           ]);
           assert.equal(result.apiDeclarations[2].warnings.length, 0);
-
-          done();
-        });
-      });
-
-      it('duplicate nickname', function (done) {
-        var cPetJson = _.cloneDeep(petJson);
-
-        cPetJson.apis[0].operations[1].nickname = cPetJson.apis[0].operations[0].nickname;
-
-        spec.validate(rlJson, [cPetJson, storeJson, userJson], function (err, result) {
-          if (err) {
-            return done(err);
-          }
-
-          assert.deepEqual(result.apiDeclarations[0].errors, [
-            {
-              code: 'DUPLICATE_API_NICKNAME',
-              message: 'API nickname already defined: ' + cPetJson.apis[0].operations[0].nickname,
-              path: ['apis', '0', 'operations', '1', 'nickname']
-            }
-          ]);
-          assert.equal(result.apiDeclarations[0].warnings.length, 0);
 
           done();
         });

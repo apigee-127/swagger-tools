@@ -10,7 +10,7 @@
           }
         ],
         "description": "Deletes the Pet by id",
-        "operationId": "deletePetDup",
+        "operationId": "deletePet",
         "parameters": [
           {
             "name": "id",
@@ -44,7 +44,7 @@
         "tags": [
           "Pet Operations"
         ],
-        "operationId": "getPetByIdDup",
+        "operationId": "getPetById",
         "summary": "Finds the pet by id",
         "responses": {
           "200": {
