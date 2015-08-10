@@ -42,7 +42,7 @@ var multerOptions = {
   inMemory: true
 };
 
-var jsonBodyParser = bp.json();
+var jsonBodyParser = bp.json({limit: '1000kb'});
 var parseQueryString = mHelpers.parseQueryString;
 var queryParser = function (req, res, next) {
   if (_.isUndefined(req.query)) {
