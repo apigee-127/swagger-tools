@@ -92,6 +92,12 @@ var expressStylePath = function (basePath, apiPath) {
 var convertValue = function (value, schema, type) {
   var original = value;
 
+  // Default to {}
+  if (_.isUndefined(schema)) {
+    schema = {};
+  }
+
+  // Try to find the type or default to 'object'
   if (_.isUndefined(type)) {
     type = mHelpers.getParameterType(schema);
   }
@@ -234,7 +240,7 @@ var processOperationParameters = function (version, pathKeys, pathMatch, req, re
 
       // Located here to make the debug output pretty
       oVal = mHelpers.getParameterValue(version, parameter, pathKeys, pathMatch, req, debug);
-      value = convertValue(oVal, parameter, pType);
+      value = convertValue(oVal, _.isUndefined(parameter.schema) ? parameter : parameter.schema, pType);
 
       debug('      Value: %s', value);
 

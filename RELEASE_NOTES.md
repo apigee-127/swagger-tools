@@ -1,5 +1,9 @@
 ## Release Notes
 
+### TBD
+
+* Fixed an issue where body parameters did not use their real schema during parameter processing _(Issue #251)_
+
 ### v0.9.2 (2015-08-05)
 
 * Reverted a463907 _(Issue #259)_
