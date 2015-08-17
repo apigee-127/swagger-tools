@@ -1,6 +1,6 @@
 ## Release Notes
 
-### TBD
+### v0.9.3 (2015-08-17)
 
 * Fixed an issue where body parameters did not use their real schema during parameter processing _(Issue #251)_
 
