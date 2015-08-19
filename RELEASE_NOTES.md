@@ -1,6 +1,6 @@
 ## Release Notes
 
-### TBD
+### v0.9.4 (2015-08-19)
 
 * Fixed a problem with mock support in Hapi.js _(Issue #269)_
 
