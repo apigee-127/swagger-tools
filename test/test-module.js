@@ -273,14 +273,6 @@ describe('swagger-tools', function () {
                     'swagger'
                   ],
                   description: 'The Swagger version of this document.'
-                },
-                {
-                  code: 'ENUM_MISMATCH',
-                  message: 'No enum match for: 2',
-                  path: [
-                    'swagger'
-                  ],
-                  description: 'The Swagger version of this document.'
                 }
               ],
               warnings: []

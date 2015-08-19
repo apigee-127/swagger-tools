@@ -80,6 +80,6 @@
     "superagent": "^1.2.0",
     "swagger-converter": "^0.1.7",
     "traverse": "^0.6.6",
-    "z-schema": "^3.12.0"
+    "z-schema": "^3.12.3"
   }
 }
