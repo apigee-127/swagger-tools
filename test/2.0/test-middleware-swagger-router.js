@@ -308,5 +308,23 @@ describe('Swagger Router Middleware v2.0', function () {
           .end(helpers.expectContent('', done));
       });
     });
+
+    it('should explicitly set res.statusCode if missing (Issue 269)', function (done) {
+      helpers.createServer([petStoreJson], {
+        handler: function (req, res, next) {
+          delete res.statusCode;
+
+          next();
+        },
+        swaggerRouterOptions: {
+          useStubs: true
+        }
+      }, function (app) {
+        request(app)
+          .get('/api/pets/1')
+          .expect(200)
+          .end(helpers.expectContent(samplePet, done));
+      });
+    });
   });
 });

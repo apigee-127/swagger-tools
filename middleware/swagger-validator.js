@@ -221,7 +221,7 @@ var wrapEnd = function (req, res, next) {
           }
         } else {
           schema = _.find(operation.responses, function (response, code) {
-            if (code === res.statusCode.toString()) {
+            if (code === (res.statusCode || 200).toString()) {
               vPath.push('responses', code);
 
               return true;

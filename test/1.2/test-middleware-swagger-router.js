@@ -262,5 +262,23 @@ describe('Swagger Router Middleware v1.2', function () {
           .end(helpers.expectContent('', done));
       });
     });
+
+    it('should explicitly set res.statusCode if missing (Issue 269)', function (done) {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        handler: function (req, res, next) {
+          delete res.statusCode;
+
+          next();
+        },
+        swaggerRouterOptions: {
+          useStubs: true
+        }
+      }, function (app) {
+        request(app)
+          .get('/api/pet/1')
+          .expect(200)
+          .end(helpers.expectContent(samplePet, done));
+      });
+    });
   });
 });

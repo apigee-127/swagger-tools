@@ -223,6 +223,11 @@ var mockResponse = function (req, res, next, handlerName) {
     } else {
       debug('send mock response: %s', response);
 
+      // Explicitly set the response status to 200 if not present (Issue #269)
+      if (_.isUndefined(req.statusCode)) {
+        res.statusCode = 200;
+      }
+
       // Mock mode only supports JSON right now
       res.setHeader('Content-Type', 'application/json');
 
