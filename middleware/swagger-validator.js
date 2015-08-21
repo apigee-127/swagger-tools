@@ -188,7 +188,7 @@ var wrapEnd = function (req, res, next) {
     // Express removes the Content-Type header from 204/304 responses which makes response validation impossible
     if (_.isUndefined(res.getHeader('content-type')) && [204, 304].indexOf(res.statusCode) > -1) {
       sendData(swaggerVersion, res, data, encoding, true);
-      return next();
+      return; // do NOT call next() here, doing so would execute remaining middleware chain twice
     }
 
     try {
