@@ -1,5 +1,9 @@
 ## Release Notes
 
+### v0.9.5 (2015-08-20)
+
+* Fixed a problem with 304 requests running middleware twice _(PR 270)_
+
 ### v0.9.4 (2015-08-19)
 
 * Fixed a problem with mock support in Hapi.js _(Issue #269)_
