@@ -2688,5 +2688,83 @@ describe('Specification v2.0', function () {
         done();
       });
     });
+
+    it('should reject decimal "integers" as defaults (Issue 279)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.definitions.Pet.properties.fake = {
+        type: 'integer',
+        default: 1.1
+      };
+
+      spec.validate(swaggerObject, function (err, result) {
+        if (err) {
+          return done(err);
+        }
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'INVALID_TYPE',
+            message: 'Not a valid integer: 1.1',
+            path: ['definitions', 'Pet', 'properties', 'fake', 'default']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+
+        done();
+      });
+    });
+
+    it('should reject number+string "numbers" as defaults (Issue 279)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.definitions.Pet.properties.fake = {
+        type: 'number',
+        default: '2something'
+      };
+
+      spec.validate(swaggerObject, function (err, result) {
+        if (err) {
+          return done(err);
+        }
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'INVALID_TYPE',
+            message: 'Not a valid number: 2something',
+            path: ['definitions', 'Pet', 'properties', 'fake', 'default']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+
+        done();
+      });
+    });
+
+    it('should reject number+string "integers" as defaults (Issue 279)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.definitions.Pet.properties.fake = {
+        type: 'integer',
+        default: '2something'
+      };
+
+      spec.validate(swaggerObject, function (err, result) {
+        if (err) {
+          return done(err);
+        }
+
+        assert.deepEqual(result.errors, [
+          {
+            code: 'INVALID_TYPE',
+            message: 'Not a valid integer: 2something',
+            path: ['definitions', 'Pet', 'properties', 'fake', 'default']
+          }
+        ]);
+        assert.equal(result.warnings.length, 0);
+
+        done();
+      });
+    });
   });
 });

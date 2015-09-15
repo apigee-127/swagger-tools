@@ -146,7 +146,7 @@ var convertValue = function (value, schema, type) {
 
   case 'integer':
     if (!_.isNumber(value)) {
-      value = parseInt(value, 10);
+      value = Number(value);
 
       if (isNaN(value)) {
         value = original;
@@ -157,7 +157,7 @@ var convertValue = function (value, schema, type) {
 
   case 'number':
     if (!_.isNumber(value)) {
-      value = parseFloat(value);
+      value = Number(value);
 
       if (isNaN(value)) {
         value = original;
