@@ -146,6 +146,10 @@ var convertValue = function (value, schema, type) {
 
   case 'integer':
     if (!_.isNumber(value)) {
+      if (_.isString(value) && _.trim(value).length === 0) {
+        value = NaN;
+      }
+
       value = Number(value);
 
       if (isNaN(value)) {
@@ -157,6 +161,10 @@ var convertValue = function (value, schema, type) {
 
   case 'number':
     if (!_.isNumber(value)) {
+      if (_.isString(value) && _.trim(value).length === 0) {
+        value = NaN;
+      }
+
       value = Number(value);
 
       if (isNaN(value)) {

@@ -1,5 +1,9 @@
 ## Release Notes
 
+### TBD
+
+* Better integer validation for parameter values *(PR #279)*
+
 ### v0.9.5 (2015-08-20)
 
 * Fixed a problem with 304 requests running middleware twice _(PR 270)_
