@@ -1,6 +1,6 @@
 ## Release Notes
 
-### TBD
+### v0.9.6 (2015-09-30)
 
 * Add support for `allowEmptyValue` for parameters *(Issue #282)*
 * Better integer/number validation for parameter values *(PR #279)*
