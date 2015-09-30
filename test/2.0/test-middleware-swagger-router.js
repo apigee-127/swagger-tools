@@ -30,6 +30,7 @@
 process.env.NODE_ENV = 'test';
 
 var _ = require('lodash-compat');
+var assert = require('assert');
 var async = require('async');
 var path = require('path');
 var request = require('supertest');
@@ -324,6 +325,57 @@ describe('Swagger Router Middleware v2.0', function () {
           .get('/api/pets/1')
           .expect(200)
           .end(helpers.expectContent(samplePet, done));
+      });
+    });
+
+    it('should return mock value for date string (Issue #277)', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      cPetStoreJson.paths['/pets/{id}'].get.responses['200'].schema = {
+        type: 'string',
+        format: 'date'
+      };
+      
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          useStubs: true
+        }
+      }, function (app) {
+        request(app)
+          .get('/api/pets/1')
+          .expect(200)
+          .end(function (err, res) {
+            var dateStr = JSON.parse(res.text);
+
+            assert.ok(dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/));
+
+            done();
+          });
+      });
+    });
+
+    it('should return mock value for date-time string (Issue #277)', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      cPetStoreJson.paths['/pets/{id}'].get.responses['200'].schema = {
+        type: 'string',
+        format: 'date-time'
+      };
+      
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          useStubs: true
+        }
+      }, function (app) {
+        request(app)
+          .get('/api/pets/1')
+          .expect(200)
+          .end(function (err, res) {
+            var dateStr = JSON.parse(res.text);
+            assert.ok(dateStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.(\d{3})Z$/));
+
+            done();
+          });
       });
     });
   });

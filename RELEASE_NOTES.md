@@ -4,6 +4,7 @@
 
 * Add support for `allowEmptyValue` for parameters *(Issue #282)*
 * Better integer/number validation for parameter values *(PR #279)*
+* Fix missing mock support for `date` and `date-time` *(Issue #277)*
 
 ### v0.9.5 (2015-08-20)
 

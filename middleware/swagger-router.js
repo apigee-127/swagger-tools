@@ -203,10 +203,14 @@ var getMockValue = function (version, schema) {
     } else if (_.isArray(schema.enum)) {
       value = schema.enum[0];
     } else {
-      value = 'Sample text';
+      if (schema.format === 'date') {
+        value = new Date().toISOString().split('T')[0];
+      } else if (schema.format === 'date-time') {
+        value = new Date().toISOString();
+      } else {
+        value = 'Sample text';
+      }
     }
-
-    // TODO: Handle constraints and formats
 
     break;
   }
