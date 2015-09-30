@@ -89,6 +89,7 @@ var expressStylePath = function (basePath, apiPath) {
   // Replace Swagger syntax for path parameters with Express' version (All Swagger path parameters are required)
   return (basePath + apiPath).replace(/{/g, ':').replace(/}/g, '');
 };
+
 var convertValue = function (value, schema, type) {
   var original = value;
 
@@ -104,6 +105,11 @@ var convertValue = function (value, schema, type) {
 
   // If there is no value, do not convert it
   if (_.isUndefined(value)) {
+    return value;
+  }
+
+  // If there is an empty value and allowEmptyValue is true, return it
+  if (schema.allowEmptyValue && value === '') {
     return value;
   }
 
@@ -189,6 +195,7 @@ var convertValue = function (value, schema, type) {
 
   return value;
 };
+
 var processOperationParameters = function (version, pathKeys, pathMatch, req, res, next) {
   var swaggerMetadata = req.swagger;
   var parameters = !_.isUndefined(swaggerMetadata) ?

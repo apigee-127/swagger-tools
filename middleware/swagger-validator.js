@@ -113,10 +113,14 @@ var validateValue = function (req, schema, path, val, callback) {
   var isModel = mHelpers.isModelParameter(version, schema);
   var spec = cHelpers.getSpec(version);
 
-  try {
-    validators.validateSchemaConstraints(version, schema, path, val);
-  } catch (err) {
-    return callback(err);
+  if (schema.allowEmptyValue !== true || val !== '') {
+    try {
+      validators.validateSchemaConstraints(version, schema, path, val);
+    } catch (err) {
+      return callback(err);
+    }
+  } else {
+    return callback();
   }
 
   if (isModel) {

@@ -2,7 +2,8 @@
 
 ### TBD
 
-* Better integer validation for parameter values *(PR #279)*
+* Add support for `allowEmptyValue` for parameters *(Issue #282)*
+* Better integer/number validation for parameter values *(PR #279)*
 
 ### v0.9.5 (2015-08-20)
 
