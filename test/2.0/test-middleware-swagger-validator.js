@@ -1263,7 +1263,15 @@ describe('Swagger Validator Middleware v2.0', function () {
           type: 'integer'
         }];
 
-        helpers.createServer([cPetStore], {}, function (app) {
+        helpers.createServer([cPetStore], {
+          swaggerRouterOptions: {
+            controllers: {
+              getPetById: function (req, res) {
+                res.end('OK');
+              }
+            }
+          }
+        }, function (app) {
           request(app)
             .get('/api/pets/1')
             .query({
