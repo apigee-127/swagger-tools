@@ -198,7 +198,7 @@ describe('Specification v1.2', function () {
           assert.deepEqual(result.apiDeclarations[0].errors, [
             {
               code: 'ONE_OF_MISSING',
-              message: 'Data does not match any schemas from \'oneOf\'',
+              message: 'Not a valid parameter definition',
               path: [
                 'apis',
                 '1',

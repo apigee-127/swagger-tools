@@ -1,5 +1,9 @@
 ## Release Notes
 
+### TBD
+
+* Make anyOf/oneOf JSON Schema validation errors more human readable *(Issue #200)*
+
 ### v0.9.6 (2015-09-30)
 
 * Add support for `allowEmptyValue` for parameters *(Issue #282)*

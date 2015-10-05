@@ -2766,5 +2766,119 @@ describe('Specification v2.0', function () {
         done();
       });
     });
+
+    describe('human readable errors for invalid schema', function () {
+      function validateResults (results, defType, done) {
+        assert.equal(results.errors.length, 1);
+        assert.equal(results.warnings.length, 0);
+        assert.equal(results.errors[0].message, 'Not a valid ' + defType + ' definition');
+
+        done();
+      }
+
+      it('should handle parameter definition', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.paths['/pets'].post.parameters[0] = {};
+
+        spec.validate(swaggerObject, function (err, result) {
+          validateResults(result, 'parameter', done);
+        });
+      });
+
+      it('should handle global parameter definition', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.parameters = {
+          broken: {}
+        };
+
+        spec.validate(swaggerObject, function (err, result) {
+          validateResults(result, 'parameter', done);
+        });
+      });
+
+      it('should handle response definition', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.paths['/pets'].post.responses.default = {};
+
+        spec.validate(swaggerObject, function (err, result) {
+          validateResults(result, 'response', done);
+        });
+      });
+
+      it('should handle response schema definition', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.paths['/pets'].post.responses.default = {
+          description: 'A broken response',
+          schema: []
+        };
+
+        spec.validate(swaggerObject, function (err, result) {
+          validateResults(result, 'response', done);
+        });
+      });
+
+      it('should handle schema additionalProperties definition', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.definitions.Broken = {
+          type: 'object',
+          additionalProperties: []
+        };
+
+        spec.validate(swaggerObject, function (err, result) {
+          validateResults(result, 'schema additionalProperties', done);
+        });
+      });
+
+      it('should handle schema items definition', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.definitions.Broken = {
+          type: 'object',
+          properties: {
+            urls: {
+              type: 'array',
+              items: false
+            }
+          }
+        };
+
+        spec.validate(swaggerObject, function (err, result) {
+          validateResults(result, 'schema items', done);
+        });
+      });
+
+      it('should handle securityDefinitions definition', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.securityDefinitions.broken = {};
+
+        spec.validate(swaggerObject, function (err, result) {
+          validateResults(result, 'securityDefinitions', done);
+        });
+      });
+
+      it('should handle schema items definition', function (done) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        swaggerObject.definitions.Broken = {
+          type: 'object',
+          properties: {
+            urls: {
+              type: 'array',
+              items: true
+            }
+          }
+        };
+
+        spec.validate(swaggerObject, function (err, result) {
+          validateResults(result, 'schema items', done);
+        });
+      });
+    });
   });
 });
