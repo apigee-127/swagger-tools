@@ -2,6 +2,8 @@
 
 ### TBD
 
+* Add `ignoreMissingHandler` option to swagger-router middleware to allow the API author to dictate how to handle
+missing handlers *(Issue #274)*
 * Make anyOf/oneOf JSON Schema validation errors more human readable *(Issue #200)*
 
 ### v0.9.6 (2015-09-30)

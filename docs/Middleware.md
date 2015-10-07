@@ -229,6 +229,8 @@ between the two.
 we assume the value is a path to a directory that contain controller modules.  If the value is an array, we assume the
 value is an array of paths to directories that contain controller modules.  If the value is an object, we assume the
 object keys are the handler name _({ControllerName}_{HandlerFunctionName}) and the value is a function.
+* **options.ignoreMissingHandlers:** `[boolean]` When `false` *(default)*, a `500` is returned when a handler cannot be
+found.  When `true`, we will ignore the missing handler and send the request downstream.
 * **options.useStubs:** `[boolean]` Whether or not stub handlers should be used for routes with no defined controller
 or the controller could not be found.
 

@@ -393,8 +393,10 @@ exports = module.exports = function (options) {
 
         req.swagger.useStubs = options.useStubs;
 
-        debug('  Route handler: %s', (_.isUndefined(handler) ? 'false' : handlerName));
-        debug('  Mock mode: %s', options.useStubs);
+        debug('  Route handler: %s', handlerName);
+        debug('    Missing: %s', _.isUndefined(handler) ? 'yes' : 'no');
+        debug('    Ignored: %s', options.ignoreMissingHandlers === true ? 'yes' : 'no');
+        debug('    Using mock: %s', options.useStubs && _.isUndefined(handler) ? 'yes' : 'no');
 
         if (_.isUndefined(handler) && options.useStubs === true) {
           handler = handlerCache[handlerName] = createStubHandler(handlerName);
@@ -408,7 +410,7 @@ exports = module.exports = function (options) {
 
             debug('Handler threw an unexpected error: %s\n%s', err.message, err.stack);
           }
-        } else {
+        } else if (options.ignoreMissingHandlers !== true) {
           rErr = new Error('Cannot resolve the configured swagger-router handler: ' + handlerName);
 
           res.statusCode = 500;

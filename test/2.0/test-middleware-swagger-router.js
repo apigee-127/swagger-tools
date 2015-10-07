@@ -175,6 +175,26 @@ describe('Swagger Router Middleware v2.0', function () {
     });
   });
 
+  it('should return an error when there is no controller and ignoreMissingHandlers is true', function (done) {
+    var cPetStoreJson = _.cloneDeep(petStoreJson);
+    var cOptions = _.cloneDeep(optionsWithControllersDir);
+
+    cOptions.ignoreMissingHandlers = true;
+
+    delete cPetStoreJson.paths['/pets']['x-swagger-router-controller'];
+    delete cPetStoreJson.paths['/pets/{id}'].get['x-swagger-router-controller'];
+    delete cPetStoreJson.paths['/pets/{id}'].delete['x-swagger-router-controller'];
+
+    helpers.createServer([cPetStoreJson], {
+      swaggerRouterOptions: cOptions
+    }, function (app) {
+      request(app)
+        .get('/api/pets/1')
+        .expect(200) // Default test handler will always return 'OK'
+        .end(helpers.expectContent('OK', done));
+    });
+  });
+
   it('should do routing when there is no controller and use of stubs is on', function (done) {
     var cPetStoreJson = _.cloneDeep(petStoreJson);
     var cOptions = _.cloneDeep(optionsWithControllersDir);

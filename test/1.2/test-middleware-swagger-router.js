@@ -145,6 +145,21 @@ describe('Swagger Router Middleware v1.2', function () {
     });
   });
 
+  it('should return an error when there is no controller and ignoreMissingHandlers is true', function (done) {
+    var cOptions = _.cloneDeep(optionsWithControllersDir);
+
+    cOptions.ignoreMissingHandlers = true;
+
+    helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+      swaggerRouterOptions: cOptions
+    }, function (app) {
+      request(app)
+        .get('/api/pet/1')
+        .expect(200) // Default test handler will always return 'OK'
+        .end(helpers.expectContent('OK', done));
+    });
+  });
+
   it('should do routing when there is no controller and use of stubs is on', function (done) {
     var cOptions = _.cloneDeep(optionsWithControllersDir);
 
