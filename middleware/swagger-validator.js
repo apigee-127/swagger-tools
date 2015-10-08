@@ -40,14 +40,14 @@ var sendData = function (swaggerVersion, res, data, encoding, skipped) {
   if (skipped) {
     if (_.isUndefined(res.getHeader('content-type'))) {
       // This scenario only happens for a 204/304 response and there is no Content-Type
-      debug('  Response validation: skipped (Cached response for \'%d\')', res.statusCode);
+      debug('    Validation: skipped (Cached response for \'%d\')', res.statusCode);
     } else if (swaggerVersion === '1.2') {
-      debug('  Response validation: skipped (No responseMessage definition for \'%d\')', res.statusCode);
+      debug('    Validation: skipped (No responseMessage definition)', res.statusCode);
     } else {
-      debug('  Response validation: skipped (No response definition for \'%d\' or \'default\')', res.statusCode);
+      debug('    Validation: skipped (No response definition)', res.statusCode);
     }
   } else {
-    debug('  Response validation: succeeded');
+    debug('    Validation: succeeded');
   }
 
   res.end(data, encoding);
@@ -176,9 +176,12 @@ var wrapEnd = function (req, res, next) {
   res.end = function (data, encoding) {
     var schema = operation;
     var val = data;
+    var responseCode;
 
     // Replace 'res.end' with the original
     res.end = originalEnd;
+
+    debug('  Response validation:');
 
     // If the data is a buffer, convert it to a string so we can parse it prior to validation
     if (val instanceof Buffer) {
@@ -212,6 +215,8 @@ var wrapEnd = function (req, res, next) {
             if (responseMessage.code === res.statusCode) {
               vPath.push('responseMessages', index.toString());
 
+              responseCode = responseMessage.code;
+
               return true;
             }
           });
@@ -224,17 +229,22 @@ var wrapEnd = function (req, res, next) {
             if (code === (res.statusCode || 200).toString()) {
               vPath.push('responses', code);
 
+              responseCode = code;
+
               return true;
             }
           });
 
           if (_.isUndefined(schema) && operation.responses.default) {
+            responseCode = 'default';
             schema = operation.responses.default;
 
             vPath.push('responses', 'default');
           }
         }
       }
+
+      debug('    Response ' + (swaggerVersion === '1.2' ? 'message' : 'code') + ': ' + responseCode);
 
       if (_.isUndefined(schema)) {
         sendData(swaggerVersion, res, data, encoding, true);
@@ -252,7 +262,7 @@ var wrapEnd = function (req, res, next) {
         err.originalResponse = data;
         err.message = 'Response validation failed: ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
         
-        debug('  Response validation: failed');
+        debug('    Validation: failed');
 
         mHelpers.debugError(err, debug);
       }
@@ -293,10 +303,12 @@ exports = module.exports = function (options) {
     debug('  Will process: %s', _.isUndefined(operation) ? 'no' : 'yes');
 
     if (!_.isUndefined(operation)) {
-      // If necessary, override 'res.send'
+      // If necessary, override 'res.end'
       if (options.validateResponse === true) {
         wrapEnd(req, res, next);
       }
+
+      debug('  Request validation:');
 
       // Validate the request
       try {
@@ -333,7 +345,7 @@ exports = module.exports = function (options) {
                     if (err) {
                       throw err;
                     } else {
-                      debug('  Request validation: succeeded');
+                      debug('    Validation: succeeded');
 
                       return next();
                     }
@@ -347,7 +359,7 @@ exports = module.exports = function (options) {
           err.paramName = paramName;
         }
 
-        debug('  Request validation: failed');
+        debug('    Validation: failed');
 
         mHelpers.debugError(err, debug);
 
