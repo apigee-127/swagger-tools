@@ -134,6 +134,30 @@ describe('Swagger Metadata Middleware v1.2', function () {
     });
   });
 
+  it('should handle primitive body parameters', function (done) {
+    var cPetJson = _.cloneDeep(petJson);
+
+    cPetJson.apis[2].operations[0].consumes.push('application/x-www-form-urlencoded');
+    cPetJson.apis[2].operations[0].parameters[0].type = 'integer';
+
+    helpers.createServer([rlJson, [cPetJson, storeJson, userJson]], {
+      swaggerRouterOptions: {
+        controllers: {
+          addPet: function (req, res) {
+            assert.equal(req.body, 1);
+            res.end('OK');
+          }
+        }
+      }
+    }, function (app) {
+      request(app)
+        .post('/api/pet')
+        .send('1')
+        .expect(200)
+        .end(helpers.expectContent('OK', done));
+    });
+  });
+
   describe('non-multipart form parameters', function () {
     it('should handle primitives', function (done) {
       helpers.createServer([rlJson, [petJson, storeJson, userJson]], {

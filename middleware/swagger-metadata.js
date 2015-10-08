@@ -41,6 +41,9 @@ var bodyParserOptions = {
 var multerOptions = {
   inMemory: true
 };
+var textBodyParserOptions = {
+  type: '*/*'
+};
 
 var jsonBodyParser = bp.json();
 var parseQueryString = mHelpers.parseQueryString;
@@ -51,6 +54,7 @@ var queryParser = function (req, res, next) {
 
   return next();
 };
+var textBodyParser = bp.text(textBodyParserOptions);
 var urlEncodedBodyParser = bp.urlencoded(bodyParserOptions);
 var bodyParser = function (req, res, callback) {
   if (_.isUndefined(req.body)) {
@@ -196,8 +200,11 @@ var convertValue = function (value, schema, type) {
   return value;
 };
 
-var processOperationParameters = function (version, pathKeys, pathMatch, req, res, next) {
-  var swaggerMetadata = req.swagger;
+var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch, req, res, next) {
+  var version = swaggerMetadata.swaggerVersion;
+  var spec = cHelpers.getSpec(cHelpers.getSwaggerVersion(version === '1.2' ?
+                                                         swaggerMetadata.resourceListing :
+                                                         swaggerMetadata.swaggerObject), true);
   var parameters = !_.isUndefined(swaggerMetadata) ?
                      (version === '1.2' ? swaggerMetadata.operation.parameters : swaggerMetadata.operationParameters) :
                      undefined;
@@ -212,6 +219,7 @@ var processOperationParameters = function (version, pathKeys, pathMatch, req, re
     var contentType = req.headers['content-type'];
     var paramLocation = version === '1.2' ? parameter.paramType : parameter.schema.in;
     var paramType = mHelpers.getParameterType(version === '1.2' ? parameter : parameter.schema);
+    var parsableBody = mHelpers.isModelType(spec, paramType) || ['array', 'object'].indexOf(paramType) > -1;
     var parser;
 
     switch (paramLocation) {
@@ -220,8 +228,10 @@ var processOperationParameters = function (version, pathKeys, pathMatch, req, re
     case 'formData':
       if (paramType.toLowerCase() === 'file' || (contentType && contentType.split(';')[0] === 'multipart/form-data')) {
         parser = multiPartParser;
-      } else {
+      } else if (paramLocation !== 'body' || parsableBody) {
         parser = bodyParser;
+      } else {
+        parser = textBodyParser;
       }
 
       break;
@@ -493,7 +503,7 @@ exports = module.exports = function (rlOrSO, apiDeclarations) {
 
     if (metadata.operation) {
       // Process the operation parameters
-      return processOperationParameters(swaggerVersion, cacheEntry.keys, match, req, res, next, debug);
+      return processOperationParameters(metadata, cacheEntry.keys, match, req, res, next, debug);
     } else {
       return next();
     }

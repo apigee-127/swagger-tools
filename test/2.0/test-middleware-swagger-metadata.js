@@ -628,6 +628,32 @@ describe('Swagger Metadata Middleware v2.0', function () {
     });
   });
 
+  it('should handle primitive body parameters', function (done) {
+    var cPetStore = _.cloneDeep(petStoreJson);
+
+    cPetStore.paths['/pets'].post.parameters[0].schema = {
+      type: 'integer'
+    };
+
+    helpers.createServer([cPetStore], {
+      swaggerRouterOptions: {
+        controllers: {
+          createPet: function (req, res) {
+            assert.equal(req.body, 1);
+
+            res.end('OK');
+          }
+        }
+      }
+    }, function (app) {
+      request(app)
+        .post('/api/pets')
+        .send('1')
+        .expect(200)
+        .end(helpers.expectContent('OK', done));
+    });
+  });
+
   describe('x-swagger-router-handle-subpaths option', function() {
     var cPetStoreJson;
     var subPathedPet;
