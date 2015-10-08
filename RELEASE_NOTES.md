@@ -6,6 +6,7 @@
 missing handlers *(Issue #274)*
 * Fix bug with handling primitive body parameters
 * Make anyOf/oneOf JSON Schema validation errors more human readable *(Issue #200)*
+* Updated swagger-ui *(Issue #273)*
 
 ### v0.9.6 (2015-09-30)
 
