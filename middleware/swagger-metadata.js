@@ -54,7 +54,14 @@ var queryParser = function (req, res, next) {
 
   return next();
 };
-var textBodyParser = bp.text(textBodyParserOptions);
+var realTextBodyParser = bp.text(textBodyParserOptions);
+var textBodyParser = function (req, res, next) {
+  if (_.isUndefined(req.body)) {
+    realTextBodyParser(req, res, next);
+  } else {
+    next();
+  }
+};
 var urlEncodedBodyParser = bp.urlencoded(bodyParserOptions);
 var bodyParser = function (req, res, callback) {
   if (_.isUndefined(req.body)) {

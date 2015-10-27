@@ -2,6 +2,7 @@
 
 ### TBD
 
+* Make it so you can provide your own text body parser *(Issue 293)*
 * Report all JSON Schema validation errors instead of failing on the first one *(Issue 286)*
 
 ### v0.9.7 (2015-10-07)
