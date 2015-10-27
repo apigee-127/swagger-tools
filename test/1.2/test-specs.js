@@ -236,6 +236,19 @@ describe('Specification v1.2', function () {
                   ]
                 }
               ]
+            },
+            {
+              code: 'ENUM_MISMATCH',
+              message: 'No enum match for: fake',
+              path: [
+                'apis',
+                '1',
+                'operations',
+                '0',
+                'parameters',
+                '1',
+                'paramType'
+              ]
             }
           ]);
           assert.equal(result.apiDeclarations[0].warnings.length, 0);
