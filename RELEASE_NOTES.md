@@ -1,6 +1,6 @@
 ## Release Notes
 
-### TBD
+### v0.9.8 (2015-10-27)
 
 * Make it so you can provide your own text body parser *(Issue 293)*
 * Report all JSON Schema validation errors instead of failing on the first one *(Issue 286)*
