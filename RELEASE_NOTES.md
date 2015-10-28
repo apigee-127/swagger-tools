@@ -1,5 +1,9 @@
 ## Release Notes
 
+### v0.9.9 (2015-10-27)
+
+* Backport body-parser to run on environments without `Uint8Array`
+
 ### v0.9.8 (2015-10-27)
 
 * Make it so you can provide your own text body parser *(Issue 293)*
