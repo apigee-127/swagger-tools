@@ -100,6 +100,7 @@ describe('Swagger UI Middleware v1.2', function () {
         .get('/docs/') // Trailing slash to avoid a 303
         .expect(200)
         .expect('content-type', 'text/html; charset=UTF-8')
+        .expect('swagger-api-docs-url', '/api-docs')
         .end(done);
     });
   });
@@ -114,6 +115,7 @@ describe('Swagger UI Middleware v1.2', function () {
         .get('/docs2/') // Trailing slash to avoid a 303
         .expect(200)
         .expect('content-type', 'text/html; charset=UTF-8')
+        .expect('swagger-api-docs-url', '/api-docs')
         .end(done);
     });
   });

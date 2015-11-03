@@ -402,8 +402,8 @@ where each operation tells you which controller and function will be used based 
 
 If `x-swagger-router-controller` is omitted and only `operationId` is given, the router will try to match directly
 to a method  using the `operationId` as method name. This works only if the `controller` option is passed to the router
-configuration.  _(Note: This limitation, the need to manually create your `controller` option, will go away when issue
-#219 and #221 are completed.)_
+configuration.  _(Note: This limitation, the need to manually create your `controller` option, will go away when
+issues #219 and #221 are completed.)_
 
 A new option (since 0.8.4) is the addition of the `x-swagger-router-handle-subpaths` extension to the Swagger path
 component. By setting this property to `true`, it indicates to Swagger Router that it should match and route all 
@@ -499,6 +499,8 @@ The Swagger UI middleware is used to serve your Swagger document(s) via an API a
 
 * **options:** `object` The middleware options
 * **options.apiDocs:** `string=/api-docs` The path to serve the Swagger documents from
+* **options.apiDocsPrefix:** `string=` The prefix to append to the `options.apiDocs` _(This is required when serving a
+swagger-tools based API behind a reverse proxy.)_
 * **options.swaggerUi:** `string=/docs` The path to serve Swagger UI from
 * **options.swaggerUiDir:** `string` The filesystem path to your custom swagger-ui deployment to serve
 

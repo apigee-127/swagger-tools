@@ -56,7 +56,7 @@ describe('Swagger UI Middleware v2.0', function () {
     }, function (app) {
       request(app)
       .get('/api-docs2')
-      .expect(200)
+        .expect(200)
       .end(helpers.expectContent(swaggerObject, done));
     });
   });
@@ -67,6 +67,7 @@ describe('Swagger UI Middleware v2.0', function () {
         .get('/docs/') // Trailing slash to avoid a 303
         .expect(200)
         .expect('content-type', 'text/html; charset=UTF-8')
+        .expect('swagger-api-docs-url', '/api-docs')
         .end(done);
     });
   });
@@ -81,6 +82,7 @@ describe('Swagger UI Middleware v2.0', function () {
         .get('/docs2/') // Trailing slash to avoid a 303
         .expect(200)
         .expect('content-type', 'text/html; charset=UTF-8')
+        .expect('swagger-api-docs-url', '/api-docs')
         .end(done);
     });
   });
