@@ -123,6 +123,8 @@ var getMockValue = function (version, schema) {
       value = schema.defaultValue;
     } else if (version === '2.0' && !_.isUndefined(schema.default)) {
       value = schema.default;
+    } else if (version === '2.0' && !_.isUndefined(schema.example)) {
+        value = schema.example;
     } else if (_.isArray(schema.enum)) {
       value = schema.enum[0];
     } else {
@@ -145,6 +147,8 @@ var getMockValue = function (version, schema) {
       value = schema.defaultValue;
     } else if (version === '2.0' && !_.isUndefined(schema.default)) {
       value = schema.default;
+    } else if (version === '2.0' && !_.isUndefined(schema.example)) {
+        value = schema.example;
     } else if (_.isArray(schema.enum)) {
       value = schema.enum[0];
     } else {
@@ -180,6 +184,8 @@ var getMockValue = function (version, schema) {
       value = schema.defaultValue;
     } else if (version === '2.0' && !_.isUndefined(schema.default)) {
       value = schema.default;
+    } else if (version === '2.0' && !_.isUndefined(schema.example)) {
+        value = schema.example;
     } else if (_.isArray(schema.enum)) {
       value = schema.enum[0];
     } else {
@@ -200,6 +206,8 @@ var getMockValue = function (version, schema) {
       value = schema.defaultValue;
     } else if (version === '2.0' && !_.isUndefined(schema.default)) {
       value = schema.default;
+    } else if (version === '2.0' && !_.isUndefined(schema.example)) {
+        value = schema.example;
     } else if (_.isArray(schema.enum)) {
       value = schema.enum[0];
     } else {
