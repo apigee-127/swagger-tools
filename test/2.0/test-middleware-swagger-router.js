@@ -461,6 +461,53 @@ describe('Swagger Router Middleware v2.0', function () {
       });
     });
   });
+    
+  describe('mock arrays', function () {
+    it('should return array of specified min length', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+            
+      cPetStoreJson.paths['/pets/{id}'].get.responses['200'].schema = {
+          type: 'array',
+          items: [{type: 'number'}],
+          minItems: 2,
+          maxItems: 3
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          useStubs: true
+        }
+      }, function (app) {
+        request(app)
+        .get('/api/pets/1')
+        .expect(200)
+        .end(helpers.expectContent(JSON.stringify([1,1]), done));
+      });
+    });
+
+    it('should return array of length 1 if not specified', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+            
+      cPetStoreJson.paths['/pets/{id}'].get.responses['200'].schema = {
+          type: 'array',
+          items: [{type: 'number'}],
+          maxItems: 3
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          useStubs: true
+        }
+      }, function (app) {
+        request(app)
+        .get('/api/pets/1')
+        .expect(200)
+        .end(helpers.expectContent(JSON.stringify([1]), done));
+      });
+    });
+
+    
+    });
 
   describe('issues', function () {
     it('should handle uncaught exceptions (Issue 123)', function (done) {

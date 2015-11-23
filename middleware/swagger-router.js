@@ -114,8 +114,11 @@ var getMockValue = function (version, schema) {
 
   switch (type) {
   case 'array':
-    value = [getMockValue(version, _.isArray(schema.items) ? schema.items[0] : schema.items)];
-
+    var minItems = schema.minItems || 1;
+    value = [];
+    for (var i = 0; i < minItems; ++i) {
+        value.push(getMockValue(version, _.isArray(schema.items) ? schema.items[0] : schema.items));
+    }
     break;
 
   case 'boolean':
