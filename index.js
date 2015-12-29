@@ -78,7 +78,9 @@ var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, cal
 
     if (err) {
       if (process.env.NODE_ENV === 'test') {
-        throw err;
+        // This is not an official mechanism and is done this way only to support our tests.  The reason this is
+        // required is because JsonRefs uses Promises and this causes some issues with how our tests were written.
+        return callback(err);
       } else {
         helpers.printValidationResults(spec.version, rlOrSO, resources, results, true);
 

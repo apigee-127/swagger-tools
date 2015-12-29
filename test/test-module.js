@@ -79,13 +79,9 @@ describe('swagger-tools', function () {
 
         cRlJson.apis.push(cRlJson.apis[0]);
 
-        try {
-          swagger.initializeMiddleware(cRlJson, [petJson, storeJson, userJson], function () {
-            assert.fail(null, null, 'Should had thrown an error');
+        swagger.initializeMiddleware(cRlJson, [petJson, storeJson, userJson], function (err) {
+          assert.ok(!_.isUndefined(err));
 
-            done();
-          });
-        } catch (err) {
           assert.deepEqual(err.results.errors, [
             {
               code: 'DUPLICATE_RESOURCE_PATH',
@@ -96,7 +92,7 @@ describe('swagger-tools', function () {
           assert.equal(err.results.warnings.length, 0);
 
           done();
-        }
+        });
       });
 
       it('should not throw error when Swagger document have only warnings', function () {
@@ -143,11 +139,8 @@ describe('swagger-tools', function () {
 
           cRlJson.swaggerVersion = 1.2;
 
-          try {
-            swagger.initializeMiddleware(cRlJson, [petJson, storeJson, userJson], function() {
-              assert.fail(null, null, 'Should had failed');
-            });
-          } catch (err) {
+          swagger.initializeMiddleware(cRlJson, [petJson, storeJson, userJson], function (err) {
+            assert.ok(!_.isUndefined(err));
             assert.equal('Swagger document(s) failed validation so the server cannot start', err.message);
             assert.deepEqual({
               errors: [
@@ -163,7 +156,7 @@ describe('swagger-tools', function () {
             }, err.results);
 
             done();
-          }
+          });
         });
       });
     });
@@ -195,24 +188,19 @@ describe('swagger-tools', function () {
         cPetStoreJson.paths['/pets/{petId}'].parameters[0].name = 'petId';
         cPetStoreJson.paths['/pets/{petId}'].delete.parameters[0].name = 'petId';
 
-        try {
-          swagger.initializeMiddleware(cPetStoreJson, function () {
-            assert.fail(null, null, 'Should had thrown an error');
-
-            done();
-          });
-        } catch (err) {
+        swagger.initializeMiddleware(cPetStoreJson, function (err) {
+          assert.ok(!_.isUndefined(err));
           assert.deepEqual(err.results.errors, [
             {
               code: 'DUPLICATE_API_PATH',
               message: 'API path (or equivalent) already defined: /pets/{petId}',
               path: ['paths', '/pets/{petId}']
             }
-            ]);
-            assert.equal(err.results.warnings.length, 0);
+          ]);
+          assert.equal(err.results.warnings.length, 0);
 
-            done();
-        }
+          done();
+        });
       });
 
       it('should not throw error when Swagger document have only warnings', function () {
@@ -258,11 +246,8 @@ describe('swagger-tools', function () {
 
           cPetStoreJson.swagger = 2.0;
 
-          try {
-            swagger.initializeMiddleware(cPetStoreJson, function() {
-              assert.fail(null, null, 'Should had failed');
-            });
-          } catch (err) {
+          swagger.initializeMiddleware(cPetStoreJson, function (err) {
+            assert.ok(!_.isUndefined(err));
             assert.equal('Swagger document(s) failed validation so the server cannot start', err.message);
             assert.deepEqual({
               errors: [
@@ -287,7 +272,7 @@ describe('swagger-tools', function () {
             }, err.results);
 
             done();
-          }
+          });
         });
       });
     });

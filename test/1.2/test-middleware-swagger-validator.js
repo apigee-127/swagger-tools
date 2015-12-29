@@ -353,24 +353,25 @@ describe('Swagger Validator Middleware v1.2', function () {
       async.map(testScenarios, function (scenario, callback) {
         var clonedP = _.cloneDeep(petJson);
         var expectedMessage = errors[index];
+        var value = values[index];
 
         clonedP.apis[0].operations[0].parameters.push(scenario);
 
         helpers.createServer([rlJson, [clonedP, storeJson, userJson]], {}, function (app) {
           request(app)
-          .get('/api/pet/1')
-          .query({arg0: values[index]})
-          .expect(400)
-          .end(function (err, res) {
-            if (res) {
-              res.expectedMessage = 'Request validation failed: ' + expectedMessage;
-            }
-
+            .get('/api/pet/1')
+            .query({arg0: value})
+            .expect(400)
+            .end(function (err, res) {
+              if (res) {
+                res.expectedMessage = 'Request validation failed: ' + expectedMessage;
+              }
+              
             callback(err, res);
-          });
-
-          index++;
+            });
         });
+
+        index++;
       }, function (err, responses) {
         if (err) {
           throw err;

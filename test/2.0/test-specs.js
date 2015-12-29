@@ -1267,7 +1267,6 @@ describe('Specification v2.0', function () {
                 path: ['paths', '/pets/{id}', 'get', 'parameters', '1', 'name']
               }
             ]);
-            assert.equal(result.warnings.length, 0);
 
             done();
           });
@@ -1286,7 +1285,7 @@ describe('Specification v2.0', function () {
           cPath.parameters.push(cParam);
 
           swaggerObject.paths['/people/{id}'] = {
-            $ref: 'https://rawgit.com/apigee-127/swagger-tools/master/test/browser/people.json#/paths/~1people~1{id}'
+            $ref: 'https://cdn.rawgit.com/apigee-127/swagger-tools/master/test/browser/people.json#/paths/~1people~1{id}'
           };
 
           spec.validate(swaggerObject, function (err, result) {
@@ -2174,6 +2173,29 @@ describe('Specification v2.0', function () {
         done();
       });
     });
+
+    it('should validate array models', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.definitions.Array = {
+        type: 'array',
+        items: {
+          type: 'string'
+        }
+      };
+
+      spec.validateModel(swaggerObject, '#/definitions/Array', [
+        'Jeremy'
+      ], function (err, result) {
+        if (err) {
+          return done(err);
+        }
+
+        assert.ok(_.isUndefined(result));
+
+        done();
+      });
+    });
   });
 
   describe('#resolve', function () {
@@ -2221,7 +2243,7 @@ describe('Specification v2.0', function () {
           return done(err);
         }
 
-        assert.deepEqual(JsonRefs.resolveRefs(petStoreJson, function (err, json) {
+        JsonRefs.resolveRefs(petStoreJson, function (err, json) {
           if (err) {
             return done(err);
           }
@@ -2229,7 +2251,7 @@ describe('Specification v2.0', function () {
           assert.deepEqual(json.definitions.Pet, resolved);
 
           done();
-        }));
+        });
       });
     });
   });
