@@ -397,237 +397,6 @@ describe('Swagger Metadata Middleware v2.0', function () {
     });
   });
 
-  describe('issues', function () {
-    it('should handle non-lowercase header parameteters (Issue 82)', function (done) {
-      var cPetStoreJson = _.cloneDeep(petStoreJson);
-
-      // Add a header parameter
-      cPetStoreJson.paths['/pets'].get.parameters = [
-        {
-          description: 'Authentication token',
-          name: 'Auth-Token',
-          in: 'header',
-          required: true,
-          type: 'string'
-        }
-      ];
-
-      helpers.createServer([cPetStoreJson], {
-        swaggerRouterOptions: {
-          controllers: {
-            getAllPets: function (req, res, next) {
-              try {
-                assert.deepEqual(req.swagger.params['Auth-Token'], {
-                  path: ['paths', '/pets', 'get', 'parameters', '0'],
-                  schema: cPetStoreJson.paths['/pets'].get.parameters[0],
-                  originalValue: 'fake',
-                  value: 'fake'
-                });
-              } catch (err) {
-                return next(err.message);
-              }
-
-              res.end('OK');
-
-              return next();
-            }
-          }
-        }
-      }, function (app) {
-        request(app)
-        .get('/api/pets')
-        .set('Auth-Token', 'fake')
-        .expect(200)
-        .end(helpers.expectContent('OK', done));
-      });
-    });
-
-    it('should convert parameteter values to the proper type (Issue 119)', function (done) {
-      var argName = 'arg0';
-      var queryValues = {
-        boolean: 'true',
-        integer: '1',
-        number: '1.1',
-        string: 'swagger-tools',
-        'string-date': '2014-06-16',
-        'string-date-time': '2014-06-16T18:20:35-06:00'
-      };
-      var paramValues = {
-        boolean: true,
-        integer: 1,
-        number: 1.1,
-        string: 'swagger-tools',
-        'string-date': new Date('2014-06-16'),
-        'string-date-time': new Date('2014-06-16T18:20:35-06:00')
-      };
-
-      async.map(Object.keys(queryValues), function (type, callback) {
-        var queryValue = queryValues[type];
-        var paramValue = paramValues[type];
-        var swaggerObject = _.cloneDeep(petStoreJson);
-        var paramDef = {
-          in: 'query',
-          name: argName
-        };
-        var query = {};
-        var typeParts = type.split('-');
-
-        if (typeParts.length === 1) {
-          paramDef.type = type;
-        } else {
-          paramDef.type = typeParts[0];
-          paramDef.format = typeParts.slice(1).join('-');
-        }
-
-        query[argName] = queryValue;
-
-        swaggerObject.paths['/pets/{id}']['x-swagger-router-controller'] = 'Pets';
-        swaggerObject.paths['/pets/{id}'].get.parameters = [
-          paramDef
-        ];
-
-        helpers.createServer([swaggerObject], {
-          swaggerRouterOptions: {
-            controllers: {
-              'Pets_getPetById': function (req, res) {
-                assert.deepEqual(paramValue, req.swagger.params[argName].value);
-
-                res.end('OK');
-              }
-            }
-          }
-        }, function (app) {
-          request(app)
-            .get('/api/pets/1')
-            .query(query)
-            .expect(200)
-            .end(callback);
-        });
-      }, function (err, responses) {
-        if (err) {
-          return done(err);
-        }
-
-        _.each(responses, function (res) {
-          assert.equal(res.text, 'OK');
-        });
-
-        done();
-      });
-    });
-
-    it('should handle collectionFormat (Issue #167)', function (done) {
-      var values = ['me', 'you', 'us'];
-
-      async.map(['csv', 'multi', 'pipes', 'ssv', 'tsv', undefined], function (format, callback) {
-        var swaggerObject = _.cloneDeep(petStoreJson);
-
-        var param = {
-          in: 'query',
-          name: 'myArr',
-          description: 'Simple array value',
-          required: true,
-          type: 'array',
-          items: {
-            type: 'string'
-          }
-        };
-
-        if(format) {
-          param.collectionFormat = format;
-        }
-
-        swaggerObject.paths['/pets'].get.parameters.push(param);
-
-        helpers.createServer([swaggerObject], {
-          swaggerRouterOptions: {
-            controllers: {
-              getAllPets: function (req, res) {
-                assert.deepEqual(values, req.swagger.params.myArr.value);
-
-                res.end('OK');
-              }
-            }
-          }
-        }, function(app) {
-          var d;
-          var v;
-
-          switch (format) {
-          case 'csv':
-          case 'pipes':
-          case 'ssv':
-          case 'tsv':
-          case undefined:
-            switch (format) {
-            case undefined:
-            case 'csv':
-              d = ',';
-
-              break;
-            case 'pipes':
-              d = '|';
-
-              break;
-            case 'ssv':
-              d = ' ';
-
-              break;
-            case 'tsv':
-              d = '\t';
-
-              break;
-            }
-
-            v = values.join(d);
-
-            break;
-          case 'multi':
-            v = values;
-
-            break;
-          }
-
-          request(app)
-            .get('/api/pets')
-            .query({myArr: v})
-            .expect(200)
-            .end(helpers.expectContent('OK', callback)); // OK is from default handler
-        });
-      }, function (err) {
-        assert.ok(_.isNull(err));
-
-        done();
-      });
-    });
-
-    it('should handle URI encoded path parameters', function (done) {
-      var cPetStoreJson = _.cloneDeep(petStoreJson);
-
-      // Change the type to string so we can send an encoded value
-      cPetStoreJson.paths['/pets/{id}'].parameters[0].type = 'string';
-
-      delete cPetStoreJson.paths['/pets/{id}'].parameters[0].format;
-
-      helpers.createServer([cPetStoreJson], {
-        swaggerRouterOptions: {
-          controllers: {
-            getPetById: function (req, res, next) {
-              assert.equal(req.swagger.params.id.value, 'abc:HZ');
-
-              next();
-            }
-          }
-        }
-      }, function (app) {
-        request(app)
-          .get('/api/pets/abc%3AHZ')
-          .expect(200)
-          .end(helpers.expectContent('OK', done));
-      });
-    });
-  });
-
   it('should handle primitive body parameters', function (done) {
     var cPetStore = _.cloneDeep(petStoreJson);
 
@@ -762,6 +531,273 @@ describe('Swagger Metadata Middleware v2.0', function () {
           .expect(200)
           .end(helpers.expectContent('OK', done)); // OK is from default handler
       });
+    });
+  });
+
+  describe('issues', function () {
+    it('should handle non-lowercase header parameteters (Issue 82)', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      // Add a header parameter
+      cPetStoreJson.paths['/pets'].get.parameters = [
+        {
+          description: 'Authentication token',
+          name: 'Auth-Token',
+            in: 'header',
+          required: true,
+          type: 'string'
+        }
+      ];
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            getAllPets: function (req, res, next) {
+              try {
+                assert.deepEqual(req.swagger.params['Auth-Token'], {
+                  path: ['paths', '/pets', 'get', 'parameters', '0'],
+                  schema: cPetStoreJson.paths['/pets'].get.parameters[0],
+                  originalValue: 'fake',
+                  value: 'fake'
+                });
+              } catch (err) {
+                return next(err.message);
+              }
+
+              res.end('OK');
+
+              return next();
+            }
+          }
+        }
+      }, function (app) {
+        request(app)
+          .get('/api/pets')
+          .set('Auth-Token', 'fake')
+          .expect(200)
+          .end(helpers.expectContent('OK', done));
+      });
+    });
+
+    it('should convert parameteter values to the proper type (Issue 119)', function (done) {
+      var argName = 'arg0';
+      var queryValues = {
+        boolean: 'true',
+        integer: '1',
+        number: '1.1',
+        string: 'swagger-tools',
+        'string-date': '2014-06-16',
+        'string-date-time': '2014-06-16T18:20:35-06:00'
+      };
+      var paramValues = {
+        boolean: true,
+        integer: 1,
+        number: 1.1,
+        string: 'swagger-tools',
+        'string-date': new Date('2014-06-16'),
+        'string-date-time': new Date('2014-06-16T18:20:35-06:00')
+      };
+
+      async.map(Object.keys(queryValues), function (type, callback) {
+        var queryValue = queryValues[type];
+        var paramValue = paramValues[type];
+        var swaggerObject = _.cloneDeep(petStoreJson);
+        var paramDef = {
+            in: 'query',
+          name: argName
+        };
+        var query = {};
+        var typeParts = type.split('-');
+
+        if (typeParts.length === 1) {
+          paramDef.type = type;
+        } else {
+          paramDef.type = typeParts[0];
+          paramDef.format = typeParts.slice(1).join('-');
+        }
+
+        query[argName] = queryValue;
+
+        swaggerObject.paths['/pets/{id}']['x-swagger-router-controller'] = 'Pets';
+        swaggerObject.paths['/pets/{id}'].get.parameters = [
+          paramDef
+        ];
+
+        helpers.createServer([swaggerObject], {
+          swaggerRouterOptions: {
+            controllers: {
+              'Pets_getPetById': function (req, res) {
+                assert.deepEqual(paramValue, req.swagger.params[argName].value);
+
+                res.end('OK');
+              }
+            }
+          }
+        }, function (app) {
+          request(app)
+            .get('/api/pets/1')
+            .query(query)
+            .expect(200)
+            .end(callback);
+        });
+      }, function (err, responses) {
+        if (err) {
+          return done(err);
+        }
+
+        _.each(responses, function (res) {
+          assert.equal(res.text, 'OK');
+        });
+
+        done();
+      });
+    });
+
+    it('should handle collectionFormat (Issue #167)', function (done) {
+      var values = ['me', 'you', 'us'];
+
+      async.map(['csv', 'multi', 'pipes', 'ssv', 'tsv', undefined], function (format, callback) {
+        var swaggerObject = _.cloneDeep(petStoreJson);
+
+        var param = {
+            in: 'query',
+          name: 'myArr',
+          description: 'Simple array value',
+          required: true,
+          type: 'array',
+          items: {
+            type: 'string'
+          }
+        };
+
+        if(format) {
+          param.collectionFormat = format;
+        }
+
+        swaggerObject.paths['/pets'].get.parameters.push(param);
+
+        helpers.createServer([swaggerObject], {
+          swaggerRouterOptions: {
+            controllers: {
+              getAllPets: function (req, res) {
+                assert.deepEqual(values, req.swagger.params.myArr.value);
+
+                res.end('OK');
+              }
+            }
+          }
+        }, function(app) {
+          var d;
+          var v;
+
+          switch (format) {
+          case 'csv':
+          case 'pipes':
+          case 'ssv':
+          case 'tsv':
+          case undefined:
+            switch (format) {
+            case undefined:
+            case 'csv':
+              d = ',';
+
+              break;
+            case 'pipes':
+              d = '|';
+
+              break;
+            case 'ssv':
+              d = ' ';
+
+              break;
+            case 'tsv':
+              d = '\t';
+
+              break;
+            }
+
+            v = values.join(d);
+
+            break;
+          case 'multi':
+            v = values;
+
+            break;
+          }
+
+          request(app)
+            .get('/api/pets')
+            .query({myArr: v})
+            .expect(200)
+            .end(helpers.expectContent('OK', callback)); // OK is from default handler
+        });
+      }, function (err) {
+        assert.ok(_.isNull(err));
+
+        done();
+      });
+    });
+
+    it('should handle URI encoded path parameters', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      // Change the type to string so we can send an encoded value
+      cPetStoreJson.paths['/pets/{id}'].parameters[0].type = 'string';
+
+      delete cPetStoreJson.paths['/pets/{id}'].parameters[0].format;
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            getPetById: function (req, res, next) {
+              assert.equal(req.swagger.params.id.value, 'abc:HZ');
+
+              next();
+            }
+          }
+        }
+      }, function (app) {
+        request(app)
+          .get('/api/pets/abc%3AHZ')
+          .expect(200)
+          .end(helpers.expectContent('OK', done));
+      });
+    });
+
+    it('should handle collectionFormat of multi with a single value (Issue #313)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      var param = {
+          in: 'query',
+        name: 'myArr',
+        description: 'Simple array value',
+        required: true,
+        type: 'array',
+        items: {
+          type: 'string'
+        },
+        collectionFormat: 'multi'
+      };
+
+      swaggerObject.paths['/pets'].get.parameters.push(param);
+
+      helpers.createServer([swaggerObject], {
+        swaggerRouterOptions: {
+          controllers: {
+            getAllPets: function (req, res) {
+              assert.deepEqual(['value'], req.swagger.params.myArr.value);
+
+              res.end('OK');
+            }
+          }
+        }
+      }, function(app) {
+        request(app)
+          .get('/api/pets')
+          .query({myArr: 'value'})
+          .expect(200)
+          .end(helpers.expectContent('OK', done)); // OK is from default handler
+      });      
     });
   });
 });

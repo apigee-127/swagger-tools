@@ -1,5 +1,9 @@
 ## Release Notes
 
+### TBD
+
+* Fixed an issue with `collectionFormat=multi` not working right with singlar values *(Issue 313)*
+
 ### v0.9.9 (2015-10-27)
 
 * Backport body-parser to run on environments without `Uint8Array`
