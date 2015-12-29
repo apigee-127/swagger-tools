@@ -1,6 +1,6 @@
 ## Release Notes
 
-### TBD
+### v0.9.10 (2015-12-29)
 
 * Fixed an issue where `consumes` and `produces` values having a `charset` could break request/response validation *(Issue 295)*
 * Fixed an issue where with Swagger 2.0 documents, you cannot use `#validateModel` with an `Array` object *(Issue 303)*
