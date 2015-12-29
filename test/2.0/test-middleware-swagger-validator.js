@@ -1316,5 +1316,41 @@ describe('Swagger Validator Middleware v2.0', function () {
         });
       });
     });
+
+    it('should handle pattern validation for collectionFormat values (Issue 300)', function (done) {
+      var pattern = 'fake[|d|r]+';
+      var expectedMessage = 'Request validation failed: ' +
+            'Parameter (myArr) value at index 2 does not match required pattern: ' + pattern;
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.paths['/pets'].get.parameters.push({
+          in: 'query',
+        name: 'myArr',
+        description: 'Simple array value',
+        required: true,
+        type: 'array',
+        items: {
+          type: 'string',
+          pattern: pattern
+        },
+        collectionFormat: 'multi'
+      });
+
+      helpers.createServer([swaggerObject], {
+        swaggerRouterOptions: {
+          controllers: {
+            getAllPets: function (req, res) {
+              res.end('NOT OK');
+            }
+          }
+        }
+      }, function(app) {
+        request(app)
+          .get('/api/pets')
+          .query({myArr: ['faker', 'faked', 'fakes']})
+          .expect(400)
+          .end(helpers.expectContent(expectedMessage, done));
+      });
+    });
   });
 });

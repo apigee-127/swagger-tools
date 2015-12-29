@@ -2,6 +2,7 @@
 
 ### TBD
 
+* Fixed an issue where array values were not validated against their validation constraints, on their format/type *(Issue 300)*
 * Fixed an issue with `collectionFormat=multi` not working right with singlar values *(Issue 313)*
 
 ### v0.9.9 (2015-10-27)
