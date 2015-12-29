@@ -1352,5 +1352,41 @@ describe('Swagger Validator Middleware v2.0', function () {
           .end(helpers.expectContent(expectedMessage, done));
       });
     });
+
+    it('should handle consumes/produces with charset (Issue 295)', function (done) {
+      var pet = {
+        id: 1,
+        name: 'Fake Pet'
+      };
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.paths['/pets'].post.consumes = ['application/xml', 'application/json; charset=utf-8'];
+      swaggerObject.paths['/pets'].post.produces = ['application/xml', 'application/json; charset=utf-8'];
+
+      helpers.createServer([swaggerObject], {
+        swaggerRouterOptions: {
+          controllers: {
+            createPet: function (req, res) {
+              res.setHeader('content-type', 'application/json; charset=utf-8');
+              res.end(JSON.stringify(req.swagger.params.pet.value));
+            }
+          }
+        }
+      }, function (app) {
+        request(app)
+          .post('/api/pets')
+          .set('content-type', 'application/json; charset=utf-8')
+          .send(pet)
+          .expect(200)
+          .end(helpers.expectContent(pet));
+
+        request(app)
+          .post('/api/pets')
+          .set('content-type', 'application/json')
+          .send(pet)
+          .expect(200)
+          .end(helpers.expectContent(pet, done));
+      });
+    });
   });
 });
