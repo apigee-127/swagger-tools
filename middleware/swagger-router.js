@@ -71,38 +71,56 @@ var handlerCacheFromDir = function (dirOrDirs) {
 
   debug('  Controllers:');
 
-  _.each(dirs, function (dir) {
-    _.each(fs.readdirSync(dir), function (file) {
-      var controllerName = file.replace(jsFileRegex, '');
-      var controller;
+  _.each(dirs, function (dir) { // iterate for each dir specified
+    var parentDir = dir;
 
-      if (file.match(jsFileRegex)) {
-        controller = require(path.resolve(path.join(dir, controllerName)));
+    _.each(getAllFiles(dir), function (file) { // iterate for each file
+      //Checks to see if it is a js file
+      debug('    %s%s:', file, (file.match(jsFileRegex) ? '' : ' (not a js file, skipped)'));
+      if ( !file.match(jsFileRegex) ) return; // Needs to be a js file
 
-        debug('    %s%s:',
-              path.resolve(path.join(dir, file)),
-              (_.isPlainObject(controller) ? '' : ' (not an object, skipped)'));
+      var controllerName = file.replace(parentDir+'/', '').replace(jsFileRegex, '');
+      var controller     = require(file); 
 
-        if (_.isPlainObject(controller)) {
-          _.each(controller, function (value, name) {
-            var handlerId = controllerName + '_' + name;
+      // Checks to see if it is a plain object
+      debug('    %s%s:', file, (_.isPlainObject(controller) ? '' : ' (not an object, skipped)'));
+      if ( !_.isPlainObject(controller) ) return; 
 
-            debug('      %s%s',
-                  handlerId,
-                  (_.isFunction(value) ? '' : ' (not a function, skipped)'));
 
-            // TODO: Log this situation
+      _.each(controller, function(value, functionName) {
+        var handlerId = controllerName + '_' + functionName;
 
-            if (_.isFunction(value) && !handlerCache[handlerId]) {
-              handlerCache[handlerId] = value;
-            }
-          });
+        debug('    %s%s:', handlerId, (_.isFunction(value) ? '' : ' (not a function, skipped)'));
+        debug('    %s%s:', handlerId, (!handlerCache[handlerId] ? '' : ' (already on handler cache, skipped)'));
+
+        if(_.isFunction(value) && !handlerCache[handlerId]) {
+          handlerCache[handlerId] = value;
         }
-      }
+      });
+
     });
+
   });
 
   return handlerCache;
+};
+var getAllFiles = function(dir, filelist) {
+  var files = fs.readdirSync(dir);
+  filelist = filelist || [];
+
+  _.each(files, function(file) {
+    var filePath = path.resolve(dir, file);
+
+    if (fs.statSync(filePath).isDirectory()) {
+      filelist = getAllFiles(filePath, filelist);
+    }
+    else {
+      filelist.push(filePath);
+    }
+    
+  });
+
+  return filelist;
 };
 var getMockValue = function (version, schema) {
   var type = _.isPlainObject(schema) ? schema.type : schema;
