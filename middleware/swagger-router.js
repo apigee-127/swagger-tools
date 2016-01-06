@@ -58,6 +58,24 @@ var getHandlerName = function (req) {
 
   return handlerName;
 };
+var getAllFiles = function(dir, filelist) {
+  var files = fs.readdirSync(dir);
+  filelist = filelist || [];
+
+  _.each(files, function(file) {
+    var filePath = path.resolve(dir, file);
+
+    if (fs.statSync(filePath).isDirectory()) {
+      filelist = getAllFiles(filePath, filelist);
+    }
+    else {
+      filelist.push(filePath);
+    }
+    
+  });
+
+  return filelist;
+};
 var handlerCacheFromDir = function (dirOrDirs) {
   var handlerCache = {};
   var jsFileRegex = /\.(coffee|js)$/;
@@ -77,14 +95,14 @@ var handlerCacheFromDir = function (dirOrDirs) {
     _.each(getAllFiles(dir), function (file) { // iterate for each file
       //Checks to see if it is a js file
       debug('    %s%s:', file, (file.match(jsFileRegex) ? '' : ' (not a js file, skipped)'));
-      if ( !file.match(jsFileRegex) ) return; // Needs to be a js file
+      if ( !file.match(jsFileRegex) ) { return; }
 
       var controllerName = file.replace(parentDir+'/', '').replace(jsFileRegex, '');
       var controller     = require(file); 
 
       // Checks to see if it is a plain object
       debug('    %s%s:', file, (_.isPlainObject(controller) ? '' : ' (not an object, skipped)'));
-      if ( !_.isPlainObject(controller) ) return; 
+      if ( !_.isPlainObject(controller) ) { return; }
 
 
       _.each(controller, function(value, functionName) {
@@ -103,24 +121,6 @@ var handlerCacheFromDir = function (dirOrDirs) {
   });
 
   return handlerCache;
-};
-var getAllFiles = function(dir, filelist) {
-  var files = fs.readdirSync(dir);
-  filelist = filelist || [];
-
-  _.each(files, function(file) {
-    var filePath = path.resolve(dir, file);
-
-    if (fs.statSync(filePath).isDirectory()) {
-      filelist = getAllFiles(filePath, filelist);
-    }
-    else {
-      filelist.push(filePath);
-    }
-    
-  });
-
-  return filelist;
 };
 var getMockValue = function (version, schema) {
   var type = _.isPlainObject(schema) ? schema.type : schema;
