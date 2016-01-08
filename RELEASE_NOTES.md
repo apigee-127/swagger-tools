@@ -1,5 +1,9 @@
 ## Release Notes
 
+### TBD
+
+* Added support for nested query parameters, as supported by [qs](https://github.com/ljharb/qs) *(Issue #294)*
+
 ### v0.9.10 (2015-12-29)
 
 * Fixed an issue where `consumes` and `produces` values having a `charset` could break request/response validation *(Issue 295)*

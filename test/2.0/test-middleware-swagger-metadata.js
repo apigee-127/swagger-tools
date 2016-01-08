@@ -799,5 +799,44 @@ describe('Swagger Metadata Middleware v2.0', function () {
           .end(helpers.expectContent('OK', done)); // OK is from default handler
       });      
     });
+
+    it('should handle nested query parameters (Issue 294)', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      cPetStoreJson.paths['/pets'].get.parameters.push({
+        name: 'page[limit]',
+          in: 'query',
+        description: 'The maximum number of records to return',
+        type: 'integer'
+      });
+      cPetStoreJson.paths['/pets'].get.parameters.push({
+        name: 'page[nested][offset]',
+          in: 'query',
+        description: 'The page',
+        type: 'integer'
+      });
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            getAllPets: function (req, res, next) {
+              assert.equal(req.swagger.params['page[limit]'].value, 100);
+              assert.equal(req.swagger.params['page[nested][offset]'].value, 1);
+
+              next();
+            }
+          }
+        }
+      }, function (app) {
+        request(app)
+          .get('/api/pets')
+          .query({
+            'page[limit]': '100',
+            'page[nested][offset]': '1'
+          })
+          .expect(200)
+          .end(helpers.expectContent('OK', done));
+      });
+    });
   });
 });

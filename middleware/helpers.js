@@ -101,7 +101,7 @@ module.exports.getParameterValue = function (version, parameter, pathKeys, match
 
     break;
   case 'query':
-    val = req.query[parameter.name];
+    val = _.get(req.query, parameter.name);
 
     break;
   }
