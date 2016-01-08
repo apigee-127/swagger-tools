@@ -135,7 +135,7 @@ exports = module.exports = function (rlOrSO, apiDeclarations, options) {
       swaggerApiDocsURL = parseurl.original(req).pathname;
 
       // Remove the part after the mount point
-      swaggerApiDocsURL = swaggerApiDocsURL.substring(0, swaggerApiDocsURL.indexOf(req.url));
+      swaggerApiDocsURL = swaggerApiDocsURL.substring(0, swaggerApiDocsURL.indexOf(options.swaggerUi));
 
       // Add the API docs path and remove any double dashes
       swaggerApiDocsURL = (swaggerApiDocsURL + options.apiDocs).replace(/\/\//g, '/');
