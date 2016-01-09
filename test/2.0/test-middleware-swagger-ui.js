@@ -146,6 +146,22 @@ describe('Swagger UI Middleware v2.0', function () {
       });
     });
 
+    it('should serve Swagger UI with Swagger UI Prefix setting (issue #297)', function (done) {
+      helpers.createServer([swaggerObject], {
+        swaggerUiOptions: {
+          swaggerUi: '/docs2',
+          swaggerUiPrefix: '/something'
+        }
+      }, function (app) {
+        request(app)
+          .get('/docs2/') // Trailing slash to avoid a 303
+          .expect(200)
+          .expect('content-type', 'text/html; charset=UTF-8')
+          .expect('swagger-api-docs-url', '/something/api-docs')
+          .end(done);
+      });
+    });
+
     it('should serve Swagger document at explicit path (Issue 183)', function (done) {
       helpers.createServer([swaggerObject], {
         swaggerUiOptions: {
