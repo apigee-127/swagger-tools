@@ -1,8 +1,9 @@
 ## Release Notes
 
-### TBD
+### v0.9.11 (2016-01-14)
 
 * Added support for nested query parameters, as supported by [qs](https://github.com/ljharb/qs) *(Issue #294)*
+* Fixed a bug where the generated swagger-ui URL was wrong behind a proxy *(Issue 297, 317)*
 
 ### v0.9.10 (2015-12-29)
 
