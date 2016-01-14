@@ -395,6 +395,144 @@ describe('Swagger Metadata Middleware v2.0', function () {
           .end(done);
       });
     });
+
+    it('should handle multipart/form-data without files but fields only', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+      var operation = _.cloneDeep(cPetStoreJson.paths['/pets']).post;
+
+      delete operation.responses['200'];
+
+      operation.consumes = [
+        'multipart/form-data'
+      ];
+      operation.operationId = 'getPetFiles';
+      operation.parameters = [
+        {
+          name: 'id',
+            in: 'path',
+          required: true,
+          type: 'string'
+        },
+        {
+          name: 'name',
+          in: 'formData',
+          required: false,
+          type: 'string'
+        },
+        {
+          name: 'file',
+          in: 'formData',
+          required: false,
+          type: 'file'
+        }
+      ];
+      operation.responses['201'] = {
+        description: 'Created file response'
+      };
+
+      cPetStoreJson.paths['/pets/{id}/files'] = {
+        post: operation
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            getPetFiles: function (req, res, next) {
+              var file = req.swagger.params.file;
+              var name = req.swagger.params.name;
+
+              assert.ok(_.isPlainObject(file));
+              assert.ok(_.isUndefined(file.value));
+
+              assert.equal(name.value, 'Heisenberg');
+
+              res.statusCode = 201;
+              res.end();
+
+              next();
+            }
+          }
+        }
+      }, function(app) {
+        request(app)
+          .post('/api/pets/1/files')
+          .field('name', 'Heisenberg')
+          .expect(201)
+          .end(done);
+      });
+    });
+
+    it('should handle multiple files', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+      var operation = _.cloneDeep(cPetStoreJson.paths['/pets']).post;
+
+      delete operation.responses['200'];
+
+      operation.consumes = [
+        'multipart/form-data'
+      ];
+      operation.operationId = 'getPetFiles';
+      operation.parameters = [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          type: 'string'
+        },
+        {
+          name: 'file',
+          in: 'formData',
+          required: true,
+          type: 'file'
+        },
+        {
+          name: 'file2',
+          in: 'formData',
+          required: false,
+          type: 'file'
+        }
+      ];
+      operation.responses['201'] = {
+        description: 'Created file response'
+      };
+
+      cPetStoreJson.paths['/pets/{id}/files'] = {
+        post: operation
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            getPetFiles: function (req, res, next) {
+              var file = req.swagger.params.file;
+              var file2 = req.swagger.params.file2;
+
+              assert.ok(_.isPlainObject(file));
+              assert.equal(file.value.originalname, 'package.json');
+              assert.equal(file.value.mimetype, 'application/json');
+              assert.deepEqual(JSON.parse(file.value.buffer), pkg);
+
+              assert.ok(_.isPlainObject(file2));
+              assert.equal(file2.value.originalname, 'package.json');
+              assert.equal(file2.value.mimetype, 'application/json');
+              assert.deepEqual(JSON.parse(file2.value.buffer), pkg);
+
+              res.statusCode = 201;
+              res.end();
+
+              next();
+            }
+          }
+        }
+      }, function(app) {
+        request(app)
+          .post('/api/pets/1/files')
+          .attach('file', path.resolve(path.join(__dirname, '..', '..', 'package.json')), 'package.json')
+          .attach('file2', path.resolve(path.join(__dirname, '..', '..', 'package.json')), 'package.json')
+          .expect(201)
+          .end(done);
+      });
+    });
   });
 
   it('should handle primitive body parameters', function (done) {

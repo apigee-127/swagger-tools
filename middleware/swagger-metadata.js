@@ -39,7 +39,7 @@ var bodyParserOptions = {
   extended: false
 };
 var multerOptions = {
-  inMemory: true
+  storage: multer.memoryStorage()
 };
 var textBodyParserOptions = {
   type: '*/*'
@@ -225,7 +225,7 @@ var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch,
 
   debug('  Processing Parameters');
 
-  async.map(_.reduce(parameters, function (requestParsers, parameter) {
+  var parsers = _.reduce(parameters, function (requestParsers, parameter) {
     var contentType = req.headers['content-type'];
     var paramLocation = version === '1.2' ? parameter.paramType : parameter.schema.in;
     var paramType = mHelpers.getParameterType(version === '1.2' ? parameter : parameter.schema);
@@ -233,23 +233,24 @@ var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch,
     var parser;
 
     switch (paramLocation) {
-    case 'body':
-    case 'form':
-    case 'formData':
-      if (paramType.toLowerCase() === 'file' || (contentType && contentType.split(';')[0] === 'multipart/form-data')) {
-        parser = multiPartParser;
-      } else if (paramLocation !== 'body' || parsableBody) {
-        parser = bodyParser;
-      } else {
-        parser = textBodyParser;
-      }
+      case 'body':
+      case 'form':
+      case 'formData':
+        if (paramType.toLowerCase() === 'file' || (contentType && contentType.split(';')[0] === 'multipart/form-data')) {
+          // Do not add a parser, multipart will be handled after
+          break;
+        } else if (paramLocation !== 'body' || parsableBody) {
+          parser = bodyParser;
+        } else {
+          parser = textBodyParser;
+        }
 
-      break;
+        break;
 
-    case 'query':
-      parser = queryParser;
+      case 'query':
+        parser = queryParser;
 
-      break;
+        break;
     }
 
     if (parser && requestParsers.indexOf(parser) === -1) {
@@ -257,7 +258,38 @@ var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch,
     }
 
     return requestParsers;
-  }, []), function (parser, callback) {
+  }, []);
+
+  // Multipart is handled by multer, which needs an array of {parameterName, maxCount}
+  var multiPartFields = _.reduce(parameters, function (fields, parameter) {
+    var paramLocation = version === '1.2' ? parameter.paramType : parameter.schema.in;
+    var paramType = mHelpers.getParameterType(version === '1.2' ? parameter : parameter.schema);
+    var paramName = version === '1.2' ? parameter.name : parameter.schema.name;
+
+    switch (paramLocation) {
+      case 'body':
+      case 'form':
+      case 'formData':
+        if (paramType.toLowerCase() === 'file') {
+          // Swagger spec does not allow array of files, so maxCount should be 1
+          fields.push({name: paramName, maxCount: 1});
+        }
+        break;
+    }
+
+    return fields;
+  }, []);
+  
+  var contentType = req.headers['content-type'];
+  if (multiPartFields.length) {
+    // If there are files, use multer#fields
+    parsers.push(multiPartParser.fields(multiPartFields));
+  } else if (contentType && contentType.split(';')[0] === 'multipart/form-data') {
+    // If no files but multipart form, use empty multer#array for text fields
+    parsers.push(multiPartParser.array());
+  }
+
+  async.map(parsers, function (parser, callback) {
     parser(req, res, callback);
   }, function (err) {
     if (err) {
