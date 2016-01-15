@@ -205,6 +205,22 @@
               "paramType": "form",
               "required":false,
               "type": "File"
+            },
+            {
+              "allowMultiple":false,
+              "description": "file to upload",
+              "name": "otherFile",
+              "paramType": "form",
+              "required":false,
+              "type": "File"
+            },
+            {
+              "allowMultiple":false,
+              "description": "pet name",
+              "name": "name",
+              "paramType": "form",
+              "required":false,
+              "type": "string"
             }
           ],
           "summary": "uploads an image",

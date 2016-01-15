@@ -277,6 +277,78 @@ describe('Swagger Metadata Middleware v1.2', function () {
           .end(done);
       });
     });
+
+    it('should handle multipart/form-data without files but fields only', function (done) {
+      var cPetJson = _.cloneDeep(petJson);
+
+      cPetJson.apis[1].operations[0].nickname = 'Pets_uploadImage';
+
+      helpers.createServer([rlJson, [cPetJson, storeJson, userJson]], {
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_uploadImage': function (req, res, next) {
+              var file = req.swagger.params.file;
+              var name = req.swagger.params.name;
+
+              assert.ok(_.isPlainObject(file));
+              assert.ok(_.isUndefined(file.value));
+
+              assert.equal(name.value, 'Heisenberg');
+
+              res.statusCode = 201;
+              res.end();
+
+              next();
+            }
+          }
+        }
+      }, function(app) {
+        request(app)
+          .post('/api/pet/uploadImage')
+          .field('name', 'Heisenberg')
+          .expect(201)
+          .end(done);
+      });
+    });
+
+    it('should handle multiple files', function (done) {
+      var cPetJson = _.cloneDeep(petJson);
+
+      cPetJson.apis[1].operations[0].nickname = 'Pets_uploadImage';
+
+      helpers.createServer([rlJson, [cPetJson, storeJson, userJson]], {
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_uploadImage': function (req, res, next) {
+              var file = req.swagger.params.file;
+              var otherFile = req.swagger.params.otherFile;
+
+              assert.ok(_.isPlainObject(file));
+              assert.equal(file.value.originalname, 'package.json');
+              assert.equal(file.value.mimetype, 'application/json');
+              assert.deepEqual(JSON.parse(file.value.buffer), pkg);
+
+              assert.ok(_.isPlainObject(otherFile));
+              assert.equal(otherFile.value.originalname, 'package.json');
+              assert.equal(otherFile.value.mimetype, 'application/json');
+              assert.deepEqual(JSON.parse(otherFile.value.buffer), pkg);
+
+              res.statusCode = 201;
+              res.end();
+
+              next();
+            }
+          }
+        }
+      }, function(app) {
+        request(app)
+          .post('/api/pet/uploadImage')
+          .attach('file', path.resolve(path.join(__dirname, '..', '..', 'package.json')), 'package.json')
+          .attach('otherFile', path.resolve(path.join(__dirname, '..', '..', 'package.json')), 'package.json')
+          .expect(201)
+          .end(done);
+      });
+    });
   });
 
   describe('issues', function () {

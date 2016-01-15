@@ -80,7 +80,7 @@ module.exports.getParameterValue = function (version, parameter, pathKeys, match
   case 'form':
   case 'formData':
     if (paramType.toLowerCase() === 'file') {
-      val = req.files[parameter.name];
+      val = req.files[parameter.name] ? req.files[parameter.name][0] : undefined;
     } else if (isModelParameter(version, parameter)) {
       val = req.body;
     } else {
