@@ -163,7 +163,15 @@ body and query string parsing respectively if you do not provide your own parser
 
 ### Swagger 1.2
 
-#### #swaggerMetadata()
+#### #swaggerMetadata(options)
+
+**Arguments**
+
+* **options:** `[object]` The configuration options
+* **options.multerOptions:** `[object]` The options passed to `multer`, for example `{ dest: 'uploads/' }`
+* **options.bodyParserOptions:** `[object]` The options passed to `bodyParser#urlencoded`
+* **options.jsonBodyParserOptions:** `[object]` The options passed to `bodyParser#json`
+* **options.textBodyParserOptions:** `[object]` The options passed to `bodyParser#text`
 
 **Returns**
 
