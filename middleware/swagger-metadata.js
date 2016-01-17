@@ -466,10 +466,11 @@ var processSwaggerDocuments = function (rlOrSO, apiDeclarations) {
  *
  * @param {object} rlOrSO - The Resource Listing (Swagger 1.2) or Swagger Object (Swagger 2.0)
  * @param {object[]} apiDeclarations - The array of API Declarations (Swagger 1.2)
+ * @param {object} options - The parsers' options, which will override defaults ones
  *
  * @returns the middleware function
  */
-exports = module.exports = function (rlOrSO, apiDeclarations) {
+exports = module.exports = function (rlOrSO, apiDeclarations, options) {
   debug('Initializing swagger-metadata middleware');
 
   var apiCache = processSwaggerDocuments(rlOrSO, apiDeclarations);
@@ -487,6 +488,22 @@ exports = module.exports = function (rlOrSO, apiDeclarations) {
     } else if (!_.isArray(apiDeclarations)) {
       throw new TypeError('apiDeclarations must be an array');
     }
+  } else {
+    options = apiDeclarations;
+  }
+  
+  // Use options if any
+  if (options.jsonBodyParserOptions) {
+    jsonBodyParser = bp.json(options.jsonBodyParserOptions);
+  }
+  if (options.bodyParserOptions) {
+    urlEncodedBodyParser = bp.urlencoded(options.bodyParserOptions);
+  }
+  if (options.multerOptions) {
+    multiPartParser = multer(options.multerOptions);    
+  }
+  if (options.textBodyParserOptions) {
+    realTextBodyParser = bp.text(options.textBodyParserOptions);
   }
 
   return function swaggerMetadata (req, res, next) {
