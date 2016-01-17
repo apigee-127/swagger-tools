@@ -493,16 +493,16 @@ exports = module.exports = function (rlOrSO, apiDeclarations, options) {
   }
   
   // Use options if any
-  if (options.jsonBodyParserOptions) {
+  if (options && options.jsonBodyParserOptions) {
     jsonBodyParser = bp.json(options.jsonBodyParserOptions);
   }
-  if (options.bodyParserOptions) {
+  if (options && options.bodyParserOptions) {
     urlEncodedBodyParser = bp.urlencoded(options.bodyParserOptions);
   }
-  if (options.multerOptions) {
+  if (options && options.multerOptions) {
     multiPartParser = multer(options.multerOptions);    
   }
-  if (options.textBodyParserOptions) {
+  if (options && options.textBodyParserOptions) {
     realTextBodyParser = bp.text(options.textBodyParserOptions);
   }
 
