@@ -45,7 +45,9 @@ var textBodyParserOptions = {
   type: '*/*'
 };
 
-var jsonBodyParser = bp.json();
+var jsonBodyParser = bp.json({
+  type: ['json', 'application/*+json']
+});
 var parseQueryString = mHelpers.parseQueryString;
 var queryParser = function (req, res, next) {
   if (_.isUndefined(req.query)) {
