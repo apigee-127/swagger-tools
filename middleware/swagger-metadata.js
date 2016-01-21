@@ -44,12 +44,13 @@ var multerOptions = {
 var textBodyParserOptions = {
   type: '*/*'
 };
+var qsOptions = {};
 
 var jsonBodyParser = bp.json();
 var parseQueryString = mHelpers.parseQueryString;
 var queryParser = function (req, res, next) {
   if (_.isUndefined(req.query)) {
-    req.query = parseQueryString(req);
+    req.query = parseQueryString(req, qsOptions);
   }
 
   return next();
@@ -504,6 +505,9 @@ exports = module.exports = function (rlOrSO, apiDeclarations, options) {
   }
   if (options && options.textBodyParserOptions) {
     realTextBodyParser = bp.text(options.textBodyParserOptions);
+  }
+  if (options && options.qsOptions) {
+    qsOptions = options.qsOptions;
   }
 
   return function swaggerMetadata (req, res, next) {

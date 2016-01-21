@@ -116,8 +116,8 @@ module.exports.getParameterValue = function (version, parameter, pathKeys, match
   return val;
 };
 
-module.exports.parseQueryString = function(req) {
-  return req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
+module.exports.parseQueryString = function(req, options) {
+  return req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, options || {}) : {};
 };
 
 module.exports.debugError = function (err, debug) {
