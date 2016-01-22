@@ -77,9 +77,10 @@ var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, cal
     debug('  Validation: %s', err ? 'failed' : 'succeeded');
 
     if (err) {
-      if (process.env.NODE_ENV === 'test') {
-        // This is not an official mechanism and is done this way only to support our tests.  The reason this is
-        // required is because JsonRefs uses Promises and this causes some issues with how our tests were written.
+      if (process.env.RUNNING_SWAGGER_TOOLS_TESTS === 'true') {
+        // When running the swagger-tools test suite, we want to return an error instead of exiting the process.  This
+        // does not mean that this function is an error-first callback but due to json-refs using Promises, we have to
+        // return the error to avoid the error being swallowed.
         return callback(err);
       } else {
         helpers.printValidationResults(spec.version, rlOrSO, resources, results, true);

@@ -28,6 +28,8 @@
 
 // Here to quiet down Connect logging errors
 process.env.NODE_ENV = 'test';
+// Indicate to swagger-tools that we're in testing mode
+process.env.RUNNING_SWAGGER_TOOLS_TESTS = 'true';
 
 var _ = require('lodash-compat');
 var assert = require('assert');
@@ -935,7 +937,7 @@ describe('Swagger Metadata Middleware v2.0', function () {
           .query({myArr: 'value'})
           .expect(200)
           .end(helpers.expectContent('OK', done)); // OK is from default handler
-      });      
+      });
     });
 
     it('should handle nested query parameters (Issue 294)', function (done) {

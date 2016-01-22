@@ -28,6 +28,8 @@
 
 // Here to quiet down Connect logging errors
 process.env.NODE_ENV = 'test';
+// Indicate to swagger-tools that we're in testing mode
+process.env.RUNNING_SWAGGER_TOOLS_TESTS = 'true';
 
 var _ = require('lodash-compat');
 var assert = require('assert');
@@ -355,7 +357,7 @@ describe('Swagger Router Middleware v2.0', function () {
         type: 'string',
         format: 'date'
       };
-      
+
       helpers.createServer([cPetStoreJson], {
         swaggerRouterOptions: {
           useStubs: true
@@ -381,7 +383,7 @@ describe('Swagger Router Middleware v2.0', function () {
         type: 'string',
         format: 'date-time'
       };
-      
+
       helpers.createServer([cPetStoreJson], {
         swaggerRouterOptions: {
           useStubs: true

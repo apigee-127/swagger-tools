@@ -28,6 +28,8 @@
 
 // Here to quiet down Connect logging errors
 process.env.NODE_ENV = 'test';
+// Indicate to swagger-tools that we're in testing mode
+process.env.RUNNING_SWAGGER_TOOLS_TESTS = 'true';
 
 var _ = require('lodash-compat');
 var assert = require('assert');
@@ -366,7 +368,7 @@ describe('Swagger Validator Middleware v1.2', function () {
               if (res) {
                 res.expectedMessage = 'Request validation failed: ' + expectedMessage;
               }
-              
+
             callback(err, res);
             });
         });

@@ -63,7 +63,7 @@ module.exports.createServer = function (initArgs, options, callback) {
 
     function register (middleware) {
       if (_.isUndefined(options.mountPoint)) {
-        app.use(middleware); 
+        app.use(middleware);
       } else {
         app.use(options.mountPoint, middleware);
       }
@@ -117,7 +117,7 @@ module.exports.expectContent = function (content, done) {
 
 module.exports.executeCLI = function (args, done) {
   // Add Node args
-  args.unshift('node', path.resolve(path.join(__dirname, '..', 'bin', 'swagger-tools')));
+  args.unshift('RUNNING_SWAGGER_TOOLS_TESTS=true', 'node', path.resolve(path.join(__dirname, '..', 'bin', 'swagger-tools')));
 
   cp.exec(args.join(' '), function (err, stdout, stderr) {
     done(stderr, stdout);

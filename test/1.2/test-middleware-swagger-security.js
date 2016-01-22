@@ -27,6 +27,8 @@
 
 // Here to quiet down Connect logging errors
 process.env.NODE_ENV = 'test';
+// Indicate to swagger-tools that we're in testing mode
+process.env.RUNNING_SWAGGER_TOOLS_TESTS = 'true';
 
 var _ = require('lodash-compat');
 var assert = require('assert');
@@ -211,7 +213,7 @@ _.forEach([
     operation.nickname = name;
 
     // Make parameter optional
-    operation.parameters[0].required = false; 
+    operation.parameters[0].required = false;
 
     // Add the path
     petJson.apis.push(cApiDef);

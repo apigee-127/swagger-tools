@@ -307,15 +307,11 @@ program
         }
 
         if (err) {
-          if (process.env.NODE_ENV === 'test') {
-            throw err;
-          } else {
-            printValidationDetails();
+          printValidationDetails();
 
-            helpers.printValidationResults(version, rlDoc || soDoc, adDocs, results, true);
+          helpers.printValidationResults(version, rlDoc || soDoc, adDocs, results, true);
 
-            process.exit(helpers.getErrorCount(results) > 0 ? 1 : 0);
-          }
+          process.exit(helpers.getErrorCount(results) > 0 ? 1 : 0);
         } else if (verbose) {
           printValidationDetails();
 

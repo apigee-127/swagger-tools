@@ -124,7 +124,7 @@ describe('CLI Global', function () {
           assert.equal(stdout, '');
 
           done();
-        }); 
+        });
       });
 
       it('invalid resourceListing argument (non-existent file)', function (done) {
@@ -255,7 +255,7 @@ describe('CLI Global', function () {
 
           done();
         });
-      });      
+      });
     });
 
     describe('help', function () {
@@ -375,7 +375,7 @@ describe('CLI Global', function () {
           assert.equal(stdout, '');
 
           done();
-        }); 
+        });
       });
 
       it('invalid version argument', function (done) {
@@ -389,7 +389,7 @@ describe('CLI Global', function () {
           assert.equal(stdout, '');
 
           done();
-        }); 
+        });
       });
 
       it('Swagger 1.2', function (done) {
@@ -406,7 +406,7 @@ describe('CLI Global', function () {
           ].join('\n'));
 
           done();
-        }); 
+        });
       });
 
       it('Swagger 2.0', function (done) {
@@ -423,7 +423,7 @@ describe('CLI Global', function () {
           ].join('\n'));
 
           done();
-        }); 
+        });
       });
 
       it('--help', function (done) {
@@ -459,7 +459,7 @@ describe('CLI Global', function () {
           assert.equal(stdout, '');
 
           done();
-        }); 
+        });
       });
 
       it('invalid resourceListing or swaggerObject argument (non-existent file)', function (done) {
@@ -525,7 +525,7 @@ describe('CLI Global', function () {
             assert.equal(stdout, '');
 
             done();
-          });        
+          });
         });
 
         it('invalid (verbose)', function (done) {
@@ -567,7 +567,7 @@ describe('CLI Global', function () {
             assert.equal(stdout, '');
 
             done();
-          });        
+          });
         });
 
         it('valid (verbose)', function (done) {
@@ -607,7 +607,7 @@ describe('CLI Global', function () {
             assert.equal(stdout, '');
 
             done();
-          });        
+          });
         });
 
         it('valid (verbose)', function (done) {
