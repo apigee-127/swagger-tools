@@ -1438,7 +1438,7 @@ describe('Specification v1.2', function () {
         }
 
         _.each(results, function (result, index) {
-          assert.deepEqual(eResults[index], result);
+          assert.deepEqual(result, eResults[index]);
         });
 
         done();

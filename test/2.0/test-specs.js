@@ -2225,15 +2225,13 @@ describe('Specification v2.0', function () {
           return done(err);
         }
 
-        JsonRefs.resolveRefs(petStoreJson, function (err, json) {
-          if (err) {
-            return done(err);
-          }
+        JsonRefs.resolveRefs(petStoreJson)
+          .then(function (results) {
+            assert.deepEqual(results.resolved, resolved);
 
-          assert.deepEqual(json, resolved);
-
-          done();
-        });
+            done();
+          })
+          .catch(done);
       });
     });
 
@@ -2243,15 +2241,13 @@ describe('Specification v2.0', function () {
           return done(err);
         }
 
-        JsonRefs.resolveRefs(petStoreJson, function (err, json) {
-          if (err) {
-            return done(err);
-          }
+        JsonRefs.resolveRefs(petStoreJson)
+          .then(function (results) {
+            assert.deepEqual(results.resolved.definitions.Pet, resolved);
 
-          assert.deepEqual(json.definitions.Pet, resolved);
-
-          done();
-        });
+            done();
+          })
+          .catch(done);
       });
     });
   });
