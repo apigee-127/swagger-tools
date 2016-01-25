@@ -91,10 +91,10 @@ var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, cal
 
     callback({
       // Create a wrapper to avoid having to pass the non-optional arguments back to the swaggerMetadata middleware
-      swaggerMetadata: function () {
+      swaggerMetadata: function (options) {
         var swaggerMetadata = require('./middleware/swagger-metadata');
 
-        return swaggerMetadata.apply(undefined, args.slice(0, args.length - 1));
+        return swaggerMetadata.apply(undefined, args.slice(0, args.length - 1).concat(options));
       },
       swaggerRouter: require('./middleware/swagger-router'),
       swaggerSecurity: require('./middleware/swagger-security'),
