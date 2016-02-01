@@ -30,6 +30,7 @@ var debug = require('debug')('swagger-tools:middleware:router');
 var fs = require('fs');
 var mHelpers = require('./helpers');
 var path = require('path');
+var util = require('util');
 
 var defaultOptions = {
   controllers: {},
@@ -77,27 +78,38 @@ var handlerCacheFromDir = function (dirOrDirs) {
       var controller;
 
       if (file.match(jsFileRegex)) {
-        controller = require(path.resolve(path.join(dir, controllerName)));
+        try {
+					controller = require(path.resolve(path.join(dir, controllerName)));
 
-        debug('    %s%s:',
-              path.resolve(path.join(dir, file)),
-              (_.isPlainObject(controller) ? '' : ' (not an object, skipped)'));
+					debug('    %s%s:',
+								path.resolve(path.join(dir, file)),
+								(_.isPlainObject(controller) ? '' : ' (not an object, skipped)'));
 
-        if (_.isPlainObject(controller)) {
-          _.each(controller, function (value, name) {
-            var handlerId = controllerName + '_' + name;
+					if (_.isPlainObject(controller)) {
+						_.each(controller, function (value, name) {
+							var handlerId = controllerName + '_' + name;
 
-            debug('      %s%s',
-                  handlerId,
-                  (_.isFunction(value) ? '' : ' (not a function, skipped)'));
+							debug('      %s%s',
+										handlerId,
+										(_.isFunction(value) ? '' : ' (not a function, skipped)'));
 
-            // TODO: Log this situation
+							// TODO: Log this situation
 
-            if (_.isFunction(value) && !handlerCache[handlerId]) {
-              handlerCache[handlerId] = value;
-            }
-          });
-        }
+							if (_.isFunction(value) && !handlerCache[handlerId]) {
+								handlerCache[handlerId] = value;
+							}
+						});
+					}
+        } catch (err) {
+					var message = util.format('%s - Module loader error: %s',
+							path.resolve(path.join(dir, file)),
+							err);
+	 				debug('    %s', message);
+					if (console) {
+						console.log(message);
+					}
+					throw err;
+				}
       }
     });
   });
