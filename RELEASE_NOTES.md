@@ -1,5 +1,9 @@
 ## Release Notes
 
+### v0.9.13 (2016-02-02)
+
+* Upgrade json-refs for upstream bug fixes
+
 ### v0.9.12 (2016-02-02)
 
 * Fixed a problem when initializing middleware where some errors could terminate without being logged
