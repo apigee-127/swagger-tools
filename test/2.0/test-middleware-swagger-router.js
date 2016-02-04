@@ -40,7 +40,8 @@ var helpers = require('../helpers');
 
 var petStoreJson = _.cloneDeep(require('../../samples/2.0/petstore.json'));
 var optionsWithControllersDir = {
-  controllers: path.join(__dirname, '..', 'controllers')
+  controllers: path.join(__dirname, '..', 'controllers'),
+  injected: { value: true }
 };
 var samplePet = {
   category: {
@@ -108,7 +109,8 @@ describe('Swagger Router Middleware v2.0', function () {
         controllers: [
           path.join(__dirname, '..', 'controllers'),
           path.join(__dirname, '..', 'controllers2')
-        ]
+        ],
+        injected: { value: true }
       }
     }, function (app) {
       request(app)
@@ -120,7 +122,7 @@ describe('Swagger Router Middleware v2.0', function () {
 
   it('should do routing when options.controllers is a valid controller map', function (done) {
     var cPetStoreJson = _.cloneDeep(petStoreJson);
-    var controller = require('../controllers/Users');
+    var controller = require('../controllers/Users')({ value: true });
 
     // Use Users controller
     cPetStoreJson.paths['/pets/{id}'].get['x-swagger-router-controller'] = 'Users';
@@ -142,7 +144,7 @@ describe('Swagger Router Middleware v2.0', function () {
 
   it('should do routing when only operationId is given', function (done) {
     var cPetStoreJson = _.cloneDeep(petStoreJson);
-    var controller = require('../controllers/Users');
+    var controller = require('../controllers/Users')({ value: true });
 
     // Use Users controller
     delete cPetStoreJson.paths['/pets/{id}'].get['x-swagger-router-controller'];

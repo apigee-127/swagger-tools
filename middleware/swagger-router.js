@@ -58,7 +58,7 @@ var getHandlerName = function (req) {
 
   return handlerName;
 };
-var handlerCacheFromDir = function (dirOrDirs) {
+var handlerCacheFromDir = function (dirOrDirs, injected) {
   var handlerCache = {};
   var jsFileRegex = /\.(coffee|js)$/;
   var dirs = [];
@@ -78,6 +78,14 @@ var handlerCacheFromDir = function (dirOrDirs) {
 
       if (file.match(jsFileRegex)) {
         controller = require(path.resolve(path.join(dir, controllerName)));
+
+        // If controller require()'s as a function, then execute it.
+        // and pass in our options.dependencies
+        if (_.isFunction(controller)) {
+            debug('    %s - resolved as function, executing to obtain instance.:',
+                path.resolve(path.join(dir, file)));
+            controller = controller(injected);
+        }
 
         debug('    %s%s:',
               path.resolve(path.join(dir, file)),
@@ -374,7 +382,7 @@ exports = module.exports = function (options) {
     handlerCache = options.controllers;
   } else {
     // Create the handler cache from the modules in the controllers directory
-    handlerCache = handlerCacheFromDir(options.controllers);
+    handlerCache = handlerCacheFromDir(options.controllers, options.injected);
   }
 
   return function swaggerRouter (req, res, next) {
