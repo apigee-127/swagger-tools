@@ -69,6 +69,11 @@ module.exports.createServer = function (initArgs, options, callback) {
       }
     }
 
+    // For testing only can the callback be called with an Error
+    if (_.isError(middleware)) {
+      throw middleware;
+    }
+
     register(middleware.swaggerMetadata());
 
     // Conditionally enable security (To avoid having to rewrite all Swagger documents or all tests)
