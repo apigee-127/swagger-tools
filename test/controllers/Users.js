@@ -24,8 +24,27 @@
 
 'use strict';
 
-var response = module.exports.response = 'controllers/Users swagger-router OK';
+var response = 'controllers/Users swagger-router OK';
 
-module.exports.getById = module.exports._getById = function getById (req, res) {
+var getById = function getById (req, res) {
   res.end(response);
 };
+
+module.exports = function generator(injected) {
+    if (!injected) {
+        throw new Error('injected should be set.');
+    } else if (!injected.value) {
+        throw new Error('injected should have a sub-value set');
+    }
+
+    return {
+        getById,
+        _getById: getById,
+        getInjected(req, res) {
+            res.end(injected.value);
+        },
+        response,
+    };
+};
+
+module.exports.response = response;

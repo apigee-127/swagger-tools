@@ -233,6 +233,9 @@ object keys are the handler name _({ControllerName}_{HandlerFunctionName}) and t
 found.  When `true`, we will ignore the missing handler and send the request downstream.
 * **options.useStubs:** `[boolean]` Whether or not stub handlers should be used for routes with no defined controller
 or the controller could not be found.
+* **options.injected:** `[object]` If the require() result of loading a module is a function itself, it is assumed
+this function is a generator/construction helper and the options.injected property will be passed. This allows for
+application level IoC to facilitate unit testing.
 
 **Returns**
 
