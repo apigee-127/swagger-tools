@@ -1,5 +1,13 @@
 ## Release Notes
 
+### v0.9.13 (2016-02-02)
+
+* Upgrade json-refs for upstream bug fixes
+
+### v0.9.12 (2016-02-02)
+
+* Fixed a problem when initializing middleware where some errors could terminate without being logged
+
 ### v0.9.11 (2016-01-14)
 
 * Added support for nested query parameters, as supported by [qs](https://github.com/ljharb/qs) *(Issue #294)*

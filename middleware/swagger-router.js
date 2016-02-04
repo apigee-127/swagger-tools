@@ -30,7 +30,6 @@ var debug = require('debug')('swagger-tools:middleware:router');
 var fs = require('fs');
 var mHelpers = require('./helpers');
 var path = require('path');
-var util = require('util');
 
 var defaultOptions = {
   controllers: {},
@@ -59,7 +58,7 @@ var getHandlerName = function (req) {
 
   return handlerName;
 };
-var handlerCacheFromDir = function (dirOrDirs) {
+var handlerCacheFromDir = function (dirOrDirs, injected) {
   var handlerCache = {};
   var jsFileRegex = /\.(coffee|js)$/;
   var dirs = [];
@@ -78,39 +77,34 @@ var handlerCacheFromDir = function (dirOrDirs) {
       var controller;
 
       if (file.match(jsFileRegex)) {
-        try {
-          controller = require(path.resolve(path.join(dir, controllerName)));
+        controller = require(path.resolve(path.join(dir, controllerName)));
 
-          debug('    %s%s:',
-                path.resolve(path.join(dir, file)),
-                (_.isPlainObject(controller) ? '' : ' (not an object, skipped)'));
+        // If controller require()'s as a function, then execute it.
+        // and pass in our options.dependencies
+        if (_.isFunction(controller)) {
+            debug('    %s - resolved as function, executing to obtain instance.:',
+                path.resolve(path.join(dir, file)));
+            controller = controller(injected);
+        }
 
-          if (_.isPlainObject(controller)) {
-            _.each(controller, function (value, name) {
-              var handlerId = controllerName + '_' + name;
-
-              debug('      %s%s',
-                    handlerId,
-                    (_.isFunction(value) ? '' : ' (not a function, skipped)'));
-
-              // TODO: Log this situation
-
-              if (_.isFunction(value) && !handlerCache[handlerId]) {
-                handlerCache[handlerId] = value;
-              }
-            });
-          }
-        } catch (err) {
-          // TODO: Change this logging to match the above when the overall
-          // logging piece is done.
-          var message = util.format('%s - Module loader error: %s',
+        debug('    %s%s:',
               path.resolve(path.join(dir, file)),
-              err);
-          debug('    %s', message);
-          if (console) {
-            console.log(message);
-          }
-          throw err;
+              (_.isPlainObject(controller) ? '' : ' (not an object, skipped)'));
+
+        if (_.isPlainObject(controller)) {
+          _.each(controller, function (value, name) {
+            var handlerId = controllerName + '_' + name;
+
+            debug('      %s%s',
+                  handlerId,
+                  (_.isFunction(value) ? '' : ' (not a function, skipped)'));
+
+            // TODO: Log this situation
+
+            if (_.isFunction(value) && !handlerCache[handlerId]) {
+              handlerCache[handlerId] = value;
+            }
+          });
         }
       }
     });
@@ -388,7 +382,7 @@ exports = module.exports = function (options) {
     handlerCache = options.controllers;
   } else {
     // Create the handler cache from the modules in the controllers directory
-    handlerCache = handlerCacheFromDir(options.controllers);
+    handlerCache = handlerCacheFromDir(options.controllers, options.injected);
   }
 
   return function swaggerRouter (req, res, next) {
