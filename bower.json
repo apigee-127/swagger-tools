@@ -1,7 +1,7 @@
 {
   "name": "swagger-tools",
   "main": "browser/swagger-tools.js",
-  "version": "0.9.11",
+  "version": "0.9.13",
   "homepage": "https://github.com/apigee-127/swagger-tools",
   "authors": [
     "Jeremy Whitlock <jwhitlock@apache.org>"
@@ -31,7 +31,7 @@
   ],
   "dependencies": {
     "async": "~1.3.0",
-    "json-refs": "~1.2.1",
+    "json-refs": "~2.1.5",
     "js-yaml": "~3.3.1",
     "lodash-compat": "~3.10.0",
     "spark-md5": "~1.0.0",
