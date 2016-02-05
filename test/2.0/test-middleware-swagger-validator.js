@@ -1437,7 +1437,34 @@ describe('Swagger Validator Middleware v2.0', function () {
         } catch (err) {
           done();
         }
-      });      
+      });
+    });
+
+    it('should not mark self references as missing (Issue 336)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.definitions.Pet.properties.friends = {
+        type: 'array',
+        items: {
+          $ref: '#/definitions/Pet'
+        }
+      };
+
+      helpers.createServer([swaggerObject], {
+        swaggerRouterOptions: {
+          controllers: {
+            createPet: function (req, res) {
+              res.end('OK');
+            }
+          }
+        }
+      }, function (app) {
+        request(app)
+          .post('/api/pets')
+          .send(samplePet)
+          .expect(200)
+          .end(helpers.expectContent('OK', done));
+      });
     });
   });
 });
