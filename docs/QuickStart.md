@@ -386,7 +386,11 @@ var serverPort = 3000;
 // swaggerRouter configuration
 var options = {
   controllers: './controllers',
-  useStubs: process.env.NODE_ENV === 'development' ? true : false // Conditionally turn on stubs (mock mode)
+  useStubs: process.env.NODE_ENV === 'development' ? true : false, // Conditionally turn on stubs (mock mode)
+  injected: {
+      // Optional - Set any values here that get passed 
+      // to controllers that return a function from require().
+  }
 };
 
 // The Swagger document (require it, build it programmatically, fetch it from a URL, ...)

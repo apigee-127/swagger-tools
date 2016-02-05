@@ -42,7 +42,8 @@ var petJson = _.cloneDeep(require('../../samples/1.2/pet.json'));
 var storeJson = _.cloneDeep(require('../../samples/1.2/store.json'));
 var userJson = _.cloneDeep(require('../../samples/1.2/user.json'));
 var optionsWithControllersDir = {
-  controllers: path.join(__dirname, '..', 'controllers')
+  controllers: path.join(__dirname, '..', 'controllers'),
+  injected: { value: true }
 };
 var samplePet = {
   category: {
@@ -109,7 +110,8 @@ describe('Swagger Router Middleware v1.2', function () {
         controllers: [
           path.join(__dirname, '..', 'controllers'),
           path.join(__dirname, '..', 'controllers2')
-        ]
+        ],
+        injected: { value: true }
       }
     }, function (app) {
       request(app)
@@ -120,7 +122,7 @@ describe('Swagger Router Middleware v1.2', function () {
   });
 
   it('should do routing when options.controllers is a valid controller map', function (done) {
-    var controller = require('../controllers/Users');
+    var controller = require('../controllers/Users')({ value: true });
 
     helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
       swaggerRouterOptions: {

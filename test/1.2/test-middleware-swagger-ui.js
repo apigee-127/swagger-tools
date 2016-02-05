@@ -53,7 +53,7 @@ describe('Swagger UI Middleware v1.2', function () {
     }, {});
 
     async.map(Object.keys(pathMap), function (path, callback) {
-      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {}, function (app) {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], { injected: { value: true }}, function (app) {
         request(app)
           .get(path)
           .expect(200)
@@ -97,7 +97,7 @@ describe('Swagger UI Middleware v1.2', function () {
   });
 
   it('should serve Swagger UI at /docs by default', function (done) {
-    helpers.createServer([rlJson, [petJson, storeJson, userJson]], {}, function (app) {
+    helpers.createServer([rlJson, [petJson, storeJson, userJson]], { injected: { value: true }}, function (app) {
       request(app)
         .get('/docs/') // Trailing slash to avoid a 303
         .expect(200)
