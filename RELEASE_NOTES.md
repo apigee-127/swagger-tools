@@ -1,6 +1,6 @@
 ## Release Notes
 
-### TBD
+### v0.9.14 (2016-02-05)
 
 * Fix a bug where string an `Array` passed as a `String` wasn't handled properly *(PR 341)*
 
