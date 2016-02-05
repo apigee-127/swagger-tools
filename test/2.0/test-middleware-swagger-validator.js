@@ -1312,7 +1312,6 @@ describe('Swagger Validator Middleware v2.0', function () {
               .expect(200)
               .end(helpers.expectContent('OK', done));
           } catch (err) {
-            console.log(err.stack);
             done();
           }
         });
@@ -1389,6 +1388,56 @@ describe('Swagger Validator Middleware v2.0', function () {
           .expect(200)
           .end(helpers.expectContent(pet, done));
       });
+    });
+
+    it('should handle string values for arrays (PR #341)', function (done) {
+      var cPetStore = _.cloneDeep(petStoreJson);
+      var responseValue = [['abc', 'abbbc', 'abbbbbbbc']];
+
+      cPetStore.paths['/tags'] = {
+        get: {
+          summary: 'Get All Tags',
+          description: 'Retrieves a list of all available tags.',
+          operationId: 'getAllTags',
+          responses: {
+            '200': {
+              description: 'OK',
+              schema: {
+                type: 'array',
+                items: {
+                  type: 'array',
+                  items: {
+                    type: 'string',
+                    pattern: 'ab+c'
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      helpers.createServer([cPetStore], {
+        swaggerRouterOptions: {
+          controllers: {
+            getAllTags: function (req, res) {
+              res.end(JSON.stringify(responseValue));
+            }
+          }
+        },
+        swaggerValidatorOptions: {
+          validateResponse: true
+        }
+      }, function (app) {
+        try {
+          request(app)
+            .get('/api/tags')
+            .expect(200)
+            .end(helpers.expectContent(responseValue, done));
+        } catch (err) {
+          done();
+        }
+      });      
     });
   });
 });

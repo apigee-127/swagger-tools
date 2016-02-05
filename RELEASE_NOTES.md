@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 0.10.0 (2016-02-22)
+
+* Bring back `84b3e83` which was reverted in `0.9.16`
+
 ### 0.9.16 (2016-02-22)
 
 * Fix a bug where file parameters could produce a runtime error if `req.files` was empty, which can happen if you do
