@@ -1,5 +1,9 @@
 ## Release Notes
 
+### TBD
+
+* Fix a bug where string an `Array` passed as a `String` wasn't handled properly *(PR 341)*
+
 ### v0.9.13 (2016-02-02)
 
 * Upgrade json-refs for upstream bug fixes
