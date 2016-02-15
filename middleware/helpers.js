@@ -80,7 +80,18 @@ module.exports.getParameterValue = function (version, parameter, pathKeys, match
   case 'form':
   case 'formData':
     if (paramType.toLowerCase() === 'file') {
-      val = req.files[parameter.name] ? req.files[parameter.name][0] : undefined;
+      if (_.isArray(req.files)) {
+        val = _.find(req.files, function (file) {
+          return file.fieldname === parameter.name;
+        });
+      } else {
+        val = req.files[parameter.name] ? req.files[parameter.name] : undefined;
+      }
+
+      // Swagger does not allow an array of files
+      if (_.isArray(val)) {
+        val = val[0];
+      }
     } else if (isModelParameter(version, parameter)) {
       val = req.body;
     } else {

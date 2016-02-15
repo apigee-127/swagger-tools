@@ -1,8 +1,12 @@
 ## Release Notes
 
+### TBD
+
+* Fixed an issue where `multer.any()` resulted in file parameters not being found properly *(Issue 348)*
+
 ### v0.9.14 (2016-02-05)
 
-* Fix a bug where string an `Array` passed as a `String` wasn't handled properly *(PR 341)*
+* Fixed an issue where string an `Array` passed as a `String` wasn't handled properly *(PR 341)*
 
 ### v0.9.13 (2016-02-02)
 

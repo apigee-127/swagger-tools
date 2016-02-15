@@ -74,6 +74,12 @@ module.exports.createServer = function (initArgs, options, callback) {
       throw middleware;
     }
 
+    if (options.middlewares) {
+      options.middlewares.forEach(function (middleware) {
+        register(middleware);
+      });
+    }
+
     register(middleware.swaggerMetadata());
 
     // Conditionally enable security (To avoid having to rewrite all Swagger documents or all tests)

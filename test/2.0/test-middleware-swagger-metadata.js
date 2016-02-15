@@ -35,6 +35,7 @@ var _ = require('lodash-compat');
 var assert = require('assert');
 var async = require('async');
 var helpers = require('../helpers');
+var multer = require('multer');
 var path = require('path');
 var petStoreJson = _.cloneDeep(require('../../samples/2.0/petstore.json'));
 var pkg = require('../../package.json');
@@ -976,6 +977,75 @@ describe('Swagger Metadata Middleware v2.0', function () {
           })
           .expect(200)
           .end(helpers.expectContent('OK', done));
+      });
+    });
+
+    it('should handle custom multer (Issue 348)', function (done) {
+      var upload = multer({
+        limits: {
+          fileSize: 2 * 1024 * 1024
+        },
+        storage : multer.memoryStorage()
+      }).any();
+
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+      var operation = _.cloneDeep(cPetStoreJson.paths['/pets']).post;
+
+      delete operation.responses['200'];
+
+      operation.consumes = [
+        'multipart/form-data'
+      ];
+      operation.operationId = 'getPetFiles';
+      operation.parameters = [
+        {
+          name: 'id',
+            in: 'path',
+          required: true,
+          type: 'string'
+        },
+        {
+          name: 'file',
+            in: 'formData',
+          required: true,
+          type: 'file'
+        }
+      ];
+      operation.responses['201'] = {
+        description: 'Created file response'
+      };
+
+      cPetStoreJson.paths['/pets/{id}/files'] = {
+        post: operation
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        middlewares: [
+          upload
+        ],
+        swaggerRouterOptions: {
+          controllers: {
+            getPetFiles: function (req, res, next) {
+              var file = req.swagger.params.file;
+
+              assert.ok(_.isPlainObject(file));
+              assert.equal(file.value.originalname, 'package.json');
+              assert.equal(file.value.mimetype, 'application/json');
+              assert.deepEqual(JSON.parse(file.value.buffer), pkg);
+
+              res.statusCode = 201;
+              res.end();
+
+              next();
+            }
+          }
+        }
+      }, function(app) {
+        request(app)
+          .post('/api/pets/1/files')
+          .attach('file', path.resolve(path.join(__dirname, '..', '..', 'package.json')), 'package.json')
+          .expect(201)
+          .end(done);
       });
     });
   });

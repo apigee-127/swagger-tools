@@ -63,20 +63,29 @@ var textBodyParser = function (req, res, next) {
   }
 };
 var urlEncodedBodyParser = bp.urlencoded(bodyParserOptions);
-var bodyParser = function (req, res, callback) {
+var bodyParser = function (req, res, next) {
   if (_.isUndefined(req.body)) {
     urlEncodedBodyParser(req, res, function (err) {
       if (err) {
-        callback(err);
+        next(err);
       } else {
-        jsonBodyParser(req, res, callback);
+        jsonBodyParser(req, res, next);
       }
     });
   } else {
-    callback();
+    next();
   }
 };
-var multiPartParser = multer(multerOptions);
+var realMultiPartParser = multer(multerOptions);
+var makeMultiPartParser = function (parser) {
+  return function (req, res, next) {
+    if (_.isUndefined(req.files)) {
+      parser(req, res, next);
+    } else {
+      next();
+    }
+  };
+};
 
 // Helper functions
 var expressStylePath = function (basePath, apiPath) {
@@ -174,10 +183,10 @@ var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch,
   var contentType = req.headers['content-type'];
   if (multiPartFields.length) {
     // If there are files, use multer#fields
-    parsers.push(multiPartParser.fields(multiPartFields));
+    parsers.push(makeMultiPartParser(realMultiPartParser.fields(multiPartFields)));
   } else if (contentType && contentType.split(';')[0] === 'multipart/form-data') {
     // If no files but multipart form, use empty multer#array for text fields
-    parsers.push(multiPartParser.array());
+    parsers.push(makeMultiPartParser(realMultiPartParser.array()));
   }
 
   async.map(parsers, function (parser, callback) {
