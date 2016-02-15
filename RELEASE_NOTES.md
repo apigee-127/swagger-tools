@@ -3,6 +3,7 @@
 ### TBD
 
 * Fixed an issue where `multer.any()` resulted in file parameters not being found properly *(Issue 348)*
+* Updated swagger-ui *(Issue #349)*
 
 ### v0.9.14 (2016-02-05)
 
