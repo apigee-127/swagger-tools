@@ -1,6 +1,6 @@
 ## Release Notes
 
-### TBD
+### 0.9.15 (2016-02-15)
 
 * Fixed an issue where `multer.any()` resulted in file parameters not being found properly *(Issue 348)*
 * Updated swagger-ui *(Issue #349)*
