@@ -71,7 +71,7 @@ All Swagger Middleware uses the [debug](debug) module to allow you to have a bet
 middleware initialization and processing lifecycle.  To enable debugging globally, just set the `DEBUG` environment
 variable to be `swagger-tools:middleware:*`.  If you want to only see debugging output for a specific middleware, you
 can do that too.  To do so, you sould set `DEBUG` to a value like this:
-`swagger-tools:middleware:{middlware-short-name}` where the `middleware-short-name` is one of the following: `metadata`,
+`swagger-tools:middleware:{middleware-short-name}` where the `middleware-short-name` is one of the following: `metadata`,
 `router`, `security`, `ui` or `validator`.  So if I wanted to see only swagger-validator debugging information, I would
 set `DEBUG` to `swagger-tools:middleware:validator`.  Here is an example of starting a Node.js server with debugging
 enabled for all Swagger middlewares:
