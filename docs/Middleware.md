@@ -50,7 +50,7 @@ initializeSwagger(rlJson, [petJson, storeJson, userJson], function (swaggerMiddl
 });
 ```
 
-`initializeMiddlware` will halt server startup upon any unrecoverable Swagger document(s) validation error, printing out
+`initializeMiddleware` will halt server startup upon any unrecoverable Swagger document(s) validation error, printing out
 the errors/warnings in that case.  The argument passed to the callback has the following properties, each corresponding
 to a middleware function documented below.  The order in the following list is the suggested `app.use` order:
 
