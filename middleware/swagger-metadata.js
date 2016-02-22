@@ -110,6 +110,115 @@ var expressStylePath = function (basePath, apiPath) {
   return (basePath + apiPath).replace(/{/g, ':').replace(/}/g, '');
 };
 
+var convertValue = function (value, schema, type) {
+  var original = value;
+
+  // Default to {}
+  if (_.isUndefined(schema)) {
+    schema = {};
+  }
+
+  // Try to find the type or default to 'object'
+  if (_.isUndefined(type)) {
+    type = mHelpers.getParameterType(schema);
+  }
+
+  // If there is no value, do not convert it
+  if (_.isUndefined(value)) {
+    return value;
+  }
+
+  // If there is an empty value and allowEmptyValue is true, return it
+  if (schema.allowEmptyValue && value === '') {
+    return value;
+  }
+
+  switch (type) {
+  case 'array':
+    if (_.isString(value)) {
+      switch (schema.collectionFormat) {
+      case 'csv':
+      case undefined:
+        value = value.split(',');
+        break;
+      case 'multi':
+        value = [value];
+        break;
+      case 'pipes':
+        value = value.split('|');
+        break;
+      case 'ssv':
+        value = value.split(' ');
+        break;
+      case 'tsv':
+        value = value.split('\t');
+        break;
+      }
+    }
+
+    value = _.map(value, function (item, index) {
+      return convertValue(item, _.isArray(schema.items) ? schema.items[index] : schema.items);
+    });
+
+    break;
+
+  case 'boolean':
+    if (!_.isBoolean(value)) {
+      if (['false', 'true'].indexOf(value) === -1) {
+        value = original;
+      } else {
+        value = value === 'true' || value === true ? true : false;
+      }
+    }
+
+    break;
+
+  case 'integer':
+    if (!_.isNumber(value)) {
+      if (_.isString(value) && _.trim(value).length === 0) {
+        value = NaN;
+      }
+
+      value = Number(value);
+
+      if (isNaN(value)) {
+        value = original;
+      }
+    }
+
+    break;
+
+  case 'number':
+    if (!_.isNumber(value)) {
+      if (_.isString(value) && _.trim(value).length === 0) {
+        value = NaN;
+      }
+
+      value = Number(value);
+
+      if (isNaN(value)) {
+        value = original;
+      }
+    }
+
+    break;
+
+  case 'string':
+    if (['date', 'date-time'].indexOf(schema.format) > -1 && !_.isDate(value)) {
+      value = new Date(value);
+
+      if (!_.isDate(value) || value.toString() === 'Invalid Date') {
+        value = original;
+      }
+    }
+
+    break;
+
+  }
+
+  return value;
+};
+
 var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch, req, res, next) {
   var version = swaggerMetadata.swaggerVersion;
   var spec = cHelpers.getSpec(cHelpers.getSwaggerVersion(version === '1.2' ?
@@ -207,7 +316,7 @@ var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch,
 
       // Located here to make the debug output pretty
       oVal = mHelpers.getParameterValue(version, parameter, pathKeys, pathMatch, req, debug);
-      value = mHelpers.convertValue(oVal, _.isUndefined(parameter.schema) ? parameter : parameter.schema, pType);
+      value = convertValue(oVal, _.isUndefined(parameter.schema) ? parameter : parameter.schema, pType);
 
       debug('      Value: %s', value);
 

@@ -1,5 +1,12 @@
 ## Release Notes
 
+### 0.9.16 (2016-02-22)
+
+* Revert `v0.9.14` release *(We will be adding it back for `0.10.0`.  Long story short, forces that I do not control
+require that I remove this fix and put it into a minor release instead to avoid upstream projects we do not maintain
+all the sudden reporting errors in response validation that didn't previously report them.  I am sorry for having to
+do this, it was not my idea and I was against it completely.)*
+
 ### 0.9.15 (2016-02-15)
 
 * Fixed an issue where `multer.any()` resulted in file parameters not being found properly *(Issue 348)*
