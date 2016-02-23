@@ -1048,5 +1048,45 @@ describe('Swagger Metadata Middleware v2.0', function () {
           .end(done);
       });
     });
+
+    it('should not error with file parameter not being provided (Issue #350)', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+      var operation = _.cloneDeep(cPetStoreJson.paths['/pets']).post;
+
+      delete operation.responses['200'];
+
+      operation.consumes = [
+        'application/octet-stream'
+      ];
+      operation.operationId = 'getPetFiles';
+      operation.parameters = [
+        {
+          name: 'id',
+            in: 'path',
+          required: true,
+          type: 'string'
+        },
+        {
+          name: 'file',
+            in: 'formData',
+          required: true,
+          type: 'file'
+        }
+      ];
+      operation.responses['201'] = {
+        description: 'Created file response'
+      };
+
+      cPetStoreJson.paths['/pets/{id}/files'] = {
+        post: operation
+      };
+
+      helpers.createServer([cPetStoreJson], {}, function(app) {
+        request(app)
+          .post('/api/pets/1/files')
+          .expect(400)
+          .end(helpers.expectContent('Request validation failed: Parameter (file) is required', done));
+      });
+    });
   });
 });

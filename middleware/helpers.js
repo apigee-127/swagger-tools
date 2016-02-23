@@ -84,7 +84,7 @@ module.exports.getParameterValue = function (version, parameter, pathKeys, match
         val = _.find(req.files, function (file) {
           return file.fieldname === parameter.name;
         });
-      } else {
+      } else if (!_.isUndefined(req.files)) {
         val = req.files[parameter.name] ? req.files[parameter.name] : undefined;
       }
 

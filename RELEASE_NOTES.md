@@ -2,6 +2,8 @@
 
 ### 0.9.16 (2016-02-22)
 
+* Fix a bug where file parameters could produce a runtime error if `req.files` was empty, which can happen if you do
+not provide the parameter *(Issue #350)*
 * Revert `v0.9.14` release *(We will be adding it back for `0.10.0`.  Long story short, forces that I do not control
 require that I remove this fix and put it into a minor release instead to avoid upstream projects we do not maintain
 all the sudden reporting errors in response validation that didn't previously report them.  I am sorry for having to
