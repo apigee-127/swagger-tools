@@ -70,7 +70,8 @@ var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, cal
       return count += (apiDeclaration ? apiDeclaration.errors.length : 0);
     }, 0) > 0) {
       err = new Error('Swagger document(s) failed validation so the server cannot start');
-			err.failedValidation = true;
+
+      err.failedValidation = true;
       err.results = results;
     }
 

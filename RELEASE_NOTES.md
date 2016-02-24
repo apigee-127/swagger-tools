@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 0.10.1 (2016-02-24)
+
+* Fix issue with initializing middleware with an invalid Swagger document *(Issue 355)*
+
 ### 0.10.0 (2016-02-22)
 
 * Bring back `84b3e83` which was reverted in `0.9.16`
