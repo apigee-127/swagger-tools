@@ -175,24 +175,52 @@ var wrapEnd = function (req, res, next) {
   var vPath = _.cloneDeep(req.swagger.operationPath);
   var swaggerVersion = req.swagger.swaggerVersion;
 
+  var writtenData = [];
+
+  var originalWrite = res.write;
+  res.write = function(data) {
+    writtenData.push(data);
+    // Don't call the originalWrite. We want to validate the data before writing
+    // it to our response.
+  };
+
   res.end = function (data, encoding) {
     var schema = operation;
-    var val = data;
+    var val;
+    if(data)
+    {
+      if(data instanceof Buffer) {
+        writtenData.push(data);
+        val = Buffer.concat(writtenData);
+      }
+      else if(data instanceof String) {
+        writtenData.push(new Buffer(data));
+        val = Buffer.concat(writtenData);
+      }
+      else {
+        val = data;
+      }
+    }
+    else if(writtenData) {
+      val = Buffer.concat(writtenData);
+    }
+    
     var responseCode;
 
-    // Replace 'res.end' with the original
+    // Replace 'res.end' and 'res.write' with the originals
+    res.write = originalWrite;
     res.end = originalEnd;
 
     debug('  Response validation:');
 
     // If the data is a buffer, convert it to a string so we can parse it prior to validation
     if (val instanceof Buffer) {
-      val = data.toString(encoding);
+      val = val.toString(encoding);
     }
 
     // Express removes the Content-Type header from 204/304 responses which makes response validation impossible
     if (_.isUndefined(res.getHeader('content-type')) && [204, 304].indexOf(res.statusCode) > -1) {
-      sendData(swaggerVersion, res, data, encoding, true);
+      sendData(swaggerVersion, res, val, encoding, true);
       return; // do NOT call next() here, doing so would execute remaining middleware chain twice
     }
 
@@ -249,14 +277,13 @@ var wrapEnd = function (req, res, next) {
       debug('    Response ' + (swaggerVersion === '1.2' ? 'message' : 'code') + ': ' + responseCode);
 
       if (_.isUndefined(schema)) {
-        sendData(swaggerVersion, res, data, encoding, true);
+        sendData(swaggerVersion, res, val, encoding, true);
       } else {
         validateValue(req, schema, vPath, val, function (err) {
           if (err) {
             throw err;
           }
-          
-          sendData(swaggerVersion, res, data, encoding, false);
+          sendData(swaggerVersion, res, val, encoding, true);
         });
       }
     } catch (err) {
