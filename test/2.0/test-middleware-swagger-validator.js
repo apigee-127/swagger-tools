@@ -36,11 +36,17 @@ var assert = require('assert');
 var async = require('async');
 var helpers = require('../helpers');
 var request = require('supertest');
+var stream = require('stream');
 
 var petStoreJson = _.cloneDeep(require('../../samples/2.0/petstore.json'));
 
 var samplePet = {
   id: 1,
+  name: 'Test Pet'
+};
+
+var sampleInvalidPet = {
+  identifier: 1,
   name: 'Test Pet'
 };
 
@@ -1055,6 +1061,64 @@ describe('Swagger Validator Middleware v2.0', function () {
             cSamplePet,
             cSamplePet
           ], done));
+      });
+    });
+    
+    
+    
+    it('should validate a valid piped response', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      cPetStoreJson.paths['/pets/{id}'].get['x-swagger-router-controller'] = 'Pets';
+      cPetStoreJson.paths['/pets/{id}'].get.operationId = 'getPetById';
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_getPetById': function (req, res) {
+              var s = new stream.Readable();
+              s.push(new Buffer(JSON.stringify(samplePet)));
+              s.push(null);
+              s.pipe(res);
+            }
+          }
+        },
+        swaggerValidatorOptions: {
+          validateResponse: true
+        }
+      }, function (app) {
+        request(app)
+          .get('/api/pets/1')
+          .expect(200)
+          .end(helpers.expectContent(samplePet, done));
+      });
+    });
+    
+    it('should validate an invalid piped response', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      cPetStoreJson.paths['/pets/{id}'].get['x-swagger-router-controller'] = 'Pets';
+      cPetStoreJson.paths['/pets/{id}'].get.operationId = 'getPetById';
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_getPetById': function (req, res) {
+              var s = new stream.Readable();
+              s.push(new Buffer(JSON.stringify(sampleInvalidPet)));
+              s.push(null);
+              s.pipe(res);
+            }
+          }
+        },
+        swaggerValidatorOptions: {
+          validateResponse: true
+        }
+      }, function (app) {
+        request(app)
+          .get('/api/pets/1')
+          .expect(500)
+          .end(helpers.expectContent('Response validation failed: failed schema validation', done));
       });
     });
   });
