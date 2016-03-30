@@ -28,6 +28,7 @@
 
 var _ = require('lodash-compat');
 var helpers = require('../lib/helpers');
+var validators = require('../lib/validators');
 var parseurl = require('parseurl');
 var qs = require('qs');
 
@@ -283,11 +284,15 @@ var convertValue = module.exports.convertValue = function (value, schema, type) 
     break;
 
   case 'string':
-    if (['date', 'date-time'].indexOf(schema.format) > -1 && !_.isDate(value)) {
-      value = new Date(value);
-
-      if (!_.isDate(value) || value.toString() === 'Invalid Date') {
-        value = original;
+    if(!_.isDate(value)) {
+      var isDate = schema.format === 'date' && validators.isValidDate(value);
+      var isDateTime = schema.format === 'date-time' && validators.isValidDateTime(value);
+      if (isDate || isDateTime) {
+        value = new Date(value);
+    
+        if (!_.isDate(value) || value.toString() === 'Invalid Date') {
+          value = original;
+        }
       }
     }
 
