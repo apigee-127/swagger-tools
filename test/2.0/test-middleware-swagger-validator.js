@@ -208,7 +208,7 @@ describe('Swagger Validator Middleware v2.0', function () {
       });
     });
 
-    it('should return an error for invalid parameter values based on type/format', function () {
+    it('should return an error for invalid parameter values based on type/format', function (done) {
       var argName = 'arg0';
       var badValue = 'fake';
       var testScenarios = [
@@ -243,13 +243,80 @@ describe('Swagger Validator Middleware v2.0', function () {
             .query(content)
             .expect(400)
             .end(function (err, res) {
-              if (res) {
-                res.expectedMessage = 'Request validation failed: ' + expectedMessage;
+              if (err) {
+                return callback(err);
               }
-
-              callback(err, res);
+              helpers.expectContent('Request validation failed: ' + expectedMessage)(undefined, res);
+              callback();
             });
         });
+      }, function (err) {
+        if (err) {
+          return done(err);
+        }
+
+        done();
+      });
+    });
+      
+    it('should return an error for invalid parameter values based on type/format', function (done) {
+      var argName = 'arg0';
+      var testScenarios = [
+        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '0'},
+        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '12345'},
+        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '"2016-02-04T20:16:26+00:00"'},
+        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '2016-99-04T20:16:26+00:00'},
+        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '2016-02-99T20:16:26+00:00'},
+        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '2016-02-04T99:16:26+00:00'},
+        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '2016-02-04T20:99:26+00:00'},
+        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '2016-02-04T20:16:99+00:00'},
+        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '2016-02-04T20:16:26+99:00'},
+        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '2016-02-04T20:16:26-99:00'},
+        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '2016-02-04T20:16:26-00:23'},
+      ];
+
+      async.map(testScenarios, function (scenario, callback) {
+        var cPetStore = _.cloneDeep(petStoreJson);
+        var cScenario = _.cloneDeep(scenario.json);
+        var badValue = _.cloneDeep(scenario.value);
+        var content = {arg0: badValue};
+        var expectedMessage = 'Parameter (' + cScenario.name + ') is not a valid ' +
+                            (_.isUndefined(cScenario.format) ?
+                               '' :
+                               cScenario.format + ' ') + cScenario.type + ': ' + badValue;
+
+        cPetStore.paths['/pets/{id}'].get.parameters = [cScenario];
+
+        helpers.createServer([cPetStore], 
+          {
+            swaggerRouterOptions: {
+              controllers: {
+                getPetById: function (req, res) {
+                  res.end('OK');
+                }
+              }
+            }
+          }, 
+          function (app) {
+            request(app)
+              .get('/api/pets/1')
+              .query(content)
+              .expect(400)
+              .end(function (err, res) {
+                if (err) {
+                  return callback(err + '\n\tInvalid value that should have been rejected: ' + badValue);
+                }
+                helpers.expectContent('Request validation failed: ' + expectedMessage)(undefined, res);
+                callback();
+              });
+            }
+          );
+      }, function (err) {
+        if (err) {
+          return done(err);
+        }
+
+        done();
       });
     });
 
