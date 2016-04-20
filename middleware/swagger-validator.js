@@ -105,7 +105,7 @@ var send400 = function (req, res, next, err) {
     err.stack = err.stack.replace(currentMessage, validationMessage);
   }
 
-  return next(err);
+  return res.status(400).send(err);
 };
 var validateValue = function (req, schema, path, val, callback) {
   var document = req.swagger.apiDeclaration || req.swagger.swaggerObject;
