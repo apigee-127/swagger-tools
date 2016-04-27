@@ -61,13 +61,7 @@ var getHandlerName = function (req) {
 var handlerCacheFromDir = function (dirOrDirs) {
   var handlerCache = {};
   var jsFileRegex = /\.(coffee|js)$/;
-  var dirs = [];
-
-  if (_.isArray(dirOrDirs)) {
-    dirs = dirOrDirs;
-  } else {
-    dirs.push(dirOrDirs);
-  }
+  var dirs = _.isArray(dirOrDirs)? dirOrDirs : [dirOrDirs];
 
   debug('  Controllers:');
 
@@ -403,6 +397,10 @@ exports = module.exports = function (options) {
         }
 
         if (!_.isUndefined(handler)) {
+          _.forEach(req.swagger.params, function(param, key) {
+            if (param.schema.in === 'path')
+              req.params[key] = param.value;
+          });
           try {
             return handler(req, res, next);
           } catch (err) {
