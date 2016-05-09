@@ -248,7 +248,7 @@ var convertValue = module.exports.convertValue = function (value, schema, type) 
         value = NaN;
       }
 
-      value = Number(value);
+      value = Number(JSON.parse(value));
 
       if (isNaN(value)) {
         value = original;
@@ -263,7 +263,7 @@ var convertValue = module.exports.convertValue = function (value, schema, type) 
         value = NaN;
       }
 
-      value = Number(value);
+      value = Number(JSON.parse(value));
 
       if (isNaN(value)) {
         value = original;
