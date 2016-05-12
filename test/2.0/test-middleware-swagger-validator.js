@@ -325,6 +325,8 @@ describe('Swagger Validator Middleware v2.0', function () {
       var testScenarios = [
         {in: 'query', name: argName, type: 'boolean'},
         {in: 'query', name: argName, type: 'integer'},
+        {in: 'query', name: argName, type: 'integer'},
+        {in: 'query', name: argName, type: 'number'},
         {in: 'query', name: argName, type: 'number'},
         {in: 'query', name: argName, type: 'string', format: 'date'},
         {in: 'query', name: argName, type: 'string', format: 'date-time'},
@@ -333,7 +335,9 @@ describe('Swagger Validator Middleware v2.0', function () {
       var values = [
         true,
         1,
+        '1',
         1.1,
+        '1.1',
         '1981-03-12',
         '1981-03-12T08:16:00-04:00',
         [1, 2]

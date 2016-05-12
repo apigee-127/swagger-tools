@@ -399,12 +399,16 @@ describe('Swagger Validator Middleware v1.2', function () {
         {paramType: 'query', name: argName, enum: ['1', '2', '3'], type: 'string'},
         {paramType: 'query', name: argName, minimum: '1.0', type: 'integer'},
         {paramType: 'query', name: argName, maximum: '1.0', type: 'integer'},
+        {paramType: 'query', name: argName, type: 'integer'},
+        {paramType: 'query', name: argName, type: 'number'},
         {paramType: 'query', name: argName, type: 'array', items: {type: 'string'}, uniqueItems: true}
       ];
       var values = [
         '1',
         '2',
         '1',
+        '"1"',
+        '"1.1"',
         ['fake', 'fake1']
       ];
       var index = 0;
