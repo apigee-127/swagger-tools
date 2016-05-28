@@ -113,7 +113,7 @@ var validateValue = function (req, schema, path, val, callback) {
   var isModel = mHelpers.isModelParameter(version, schema);
   var spec = cHelpers.getSpec(version);
 
-  val = mHelpers.convertValue(val, schema, mHelpers.getParameterType(schema));
+  val = mHelpers.convertValue(val, schema.schema ? schema.schema : schema, mHelpers.getParameterType(schema));
 
   try {
     validators.validateSchemaConstraints(version, schema, path, val);

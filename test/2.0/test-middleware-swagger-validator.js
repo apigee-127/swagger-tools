@@ -1570,5 +1570,62 @@ describe('Swagger Validator Middleware v2.0', function () {
         }
       });      
     });
+
+    it('should consume/return array of strings if they are numeric (Issue 380)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.paths['/tags'] = {
+        post: {
+          consumes: ['application/json; charset=utf-8'],
+          produces: ['application/json; charset=utf-8'],
+          summary: 'Save Tags',
+          description: 'save a list of tags.',
+          operationId: 'saveStringTags',
+          parameters: [
+            {
+              name: 'tags',
+              in: 'body',
+              description: 'tags',
+              required: true,
+              schema: {
+                type: 'array',
+                items: {
+                  type: 'string'
+                }
+              }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'OK',
+              schema: {
+                type: 'array',
+                items: {
+                  type: 'string'
+                }
+              }
+            }
+          }
+        }
+      };
+      var tags = ['somephotourl', '123'];
+      helpers.createServer([swaggerObject], {
+        swaggerRouterOptions: {
+          controllers: {
+            saveStringTags: function (req, res) {
+              res.end(JSON.stringify(req.swagger.params.tags.value));
+            }
+          }
+        }
+      }, function (app) {
+        //
+        request(app)
+          .post('/api/tags')
+          .set('content-type', 'application/json; charset=utf-8')
+          .send(tags)
+          .expect(200)
+          .end(helpers.expectContent(tags, done));
+      });
+    });
   });
 });
