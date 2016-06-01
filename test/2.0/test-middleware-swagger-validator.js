@@ -1616,6 +1616,9 @@ describe('Swagger Validator Middleware v2.0', function () {
               res.end(JSON.stringify(req.swagger.params.tags.value));
             }
           }
+        },
+        swaggerValidatorOptions: {
+          validateResponse: true
         }
       }, function (app) {
         //
