@@ -212,7 +212,7 @@ function initOAuth(opts) {
     return;
   }
 
-  //$('pre code').each(function(i, e) {hljs.highlightBlock(e)});
+  $('pre code').each(function(i, e) {hljs.highlightBlock(e)});
   $('.api-ic').unbind();
   $('.api-ic').click(function(s) {
     if($(s.target).hasClass('ic-off'))
@@ -331,7 +331,8 @@ window.onOAuthComplete = function onOAuthComplete(token,OAuthSchemeKey) {
             }
           }
         });
-        window.swaggerUi.api.clientAuthorizations.add(OAuthSchemeKey, new SwaggerClient.ApiKeyAuthorization('Authorization', 'Bearer ' + b, 'header'));
+        window.swaggerUi.api.clientAuthorizations.add(window.OAuthSchemeKey, new SwaggerClient.ApiKeyAuthorization('Authorization', 'Bearer ' + b, 'header'));
+        window.swaggerUi.load();
       }
     }
   }
