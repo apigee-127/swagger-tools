@@ -58,6 +58,11 @@ var getHandlerName = function (req) {
 
   return handlerName;
 };
+
+function isObjectClass(obj) {
+  return Object.prototype.toString.call(obj) === '[object Object]';
+}
+
 var handlerCacheFromDir = function (dirOrDirs) {
   var handlerCache = {};
   var jsFileRegex = /\.(coffee|js)$/;
@@ -81,9 +86,9 @@ var handlerCacheFromDir = function (dirOrDirs) {
 
         debug('    %s%s:',
               path.resolve(path.join(dir, file)),
-              (_.isPlainObject(controller) ? '' : ' (not an object, skipped)'));
+              (isObjectClass(controller) ? '' : ' (not an object, skipped)'));
 
-        if (_.isPlainObject(controller)) {
+        if (isObjectClass(controller)) {
           _.each(controller, function (value, name) {
             var handlerId = controllerName + '_' + name;
 
