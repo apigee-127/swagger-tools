@@ -1,3 +1,6 @@
+/*
+Thanks to and havily inspired by https://github.com/Medium/phantomjs
+*/
 'use strict';
 
 var requestProgress = require('request-progress');
