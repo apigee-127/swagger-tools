@@ -258,7 +258,7 @@ describe('Swagger Validator Middleware v2.0', function () {
         done();
       });
     });
-      
+
     it('should return an error for invalid parameter values based on type/format', function (done) {
       var argName = 'arg0';
       var testScenarios = [
@@ -287,7 +287,7 @@ describe('Swagger Validator Middleware v2.0', function () {
 
         cPetStore.paths['/pets/{id}'].get.parameters = [cScenario];
 
-        helpers.createServer([cPetStore], 
+        helpers.createServer([cPetStore],
           {
             swaggerRouterOptions: {
               controllers: {
@@ -296,7 +296,7 @@ describe('Swagger Validator Middleware v2.0', function () {
                 }
               }
             }
-          }, 
+          },
           function (app) {
             request(app)
               .get('/api/pets/1')
@@ -1130,9 +1130,9 @@ describe('Swagger Validator Middleware v2.0', function () {
           ], done));
       });
     });
-    
-    
-    
+
+
+
     it('should validate a valid piped response', function (done) {
       var cPetStoreJson = _.cloneDeep(petStoreJson);
 
@@ -1160,7 +1160,7 @@ describe('Swagger Validator Middleware v2.0', function () {
           .end(helpers.expectContent(samplePet, done));
       });
     });
-    
+
     it('should validate an invalid piped response', function (done) {
       var cPetStoreJson = _.cloneDeep(petStoreJson);
 
@@ -1568,7 +1568,81 @@ describe('Swagger Validator Middleware v2.0', function () {
         } catch (err) {
           done();
         }
-      });      
+      });
     });
+
+    it('should not throw an error for empty responses that validate void (new issue)', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      cPetStoreJson.paths['/pets/categories/count'] = {
+        get: {
+          'x-swagger-router-controller': 'Pets',
+          operationId: 'getCategoryCount',
+          responses: {
+            '200': {
+              description: 'empty response'
+            }
+          }
+        }
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_getCategoryCount': function (req, res) {
+              return res.end();
+            }
+          }
+        },
+        swaggerValidatorOptions: {
+          validateResponse: true
+        }
+      }, function (app) {
+        request(app)
+          .get('/api/pets/categories/count')
+          .expect(200)
+          .end(helpers.expectContent('', done));
+      });
+    });
+
+
+    it('should not throw an error for empty responses that validate void even with empty res.write (new issue)', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      cPetStoreJson.paths['/pets/categories/count'] = {
+        get: {
+          'x-swagger-router-controller': 'Pets',
+          operationId: 'getCategoryCount',
+          responses: {
+            '200': {
+              description: 'empty response'
+            }
+          }
+        }
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            'Pets_getCategoryCount': function (req, res) {
+              res.write();
+              return res.end();
+            }
+          }
+        },
+        swaggerValidatorOptions: {
+          validateResponse: true
+        }
+      }, function (app) {
+        request(app)
+          .get('/api/pets/categories/count')
+          .expect(200)
+          .end(helpers.expectContent('', done));
+      });
+    });
+
+
+
+
   });
 });
