@@ -134,7 +134,8 @@ function downloadArchive(requestOptions, filePath, cb) {
 }
 
 function download(cb) {
-  var downloadUrl = "https://github.com/swagger-api/swagger-ui/archive/v2.1.4.zip";
+  var downloadUrl = "https://github.com/swagger-api/swagger-ui/archive/v2.2.0.zip";
+
   var checksum = "";
   var tmpPath = getTempDirectory();
   var fileName = downloadUrl.split('/').pop();
