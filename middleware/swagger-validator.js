@@ -179,7 +179,9 @@ var wrapEnd = function (req, res, next) {
 
   var originalWrite = res.write;
   res.write = function(data) {
-    writtenData.push(data);
+    if(typeof data !== 'undefined') {
+      writtenData.push(data);
+    }
     // Don't call the originalWrite. We want to validate the data before writing
     // it to our response.
   };
@@ -201,10 +203,10 @@ var wrapEnd = function (req, res, next) {
         val = data;
       }
     }
-    else if(writtenData) {
+    else if(writtenData.length !== 0) {
       val = Buffer.concat(writtenData);
     }
-    
+
     var responseCode;
 
     // Replace 'res.end' and 'res.write' with the originals
@@ -290,7 +292,7 @@ var wrapEnd = function (req, res, next) {
       if (err.failedValidation) {
         err.originalResponse = data;
         err.message = 'Response validation failed: ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
-        
+
         debug('    Validation: failed');
 
         mHelpers.debugError(err, debug);
