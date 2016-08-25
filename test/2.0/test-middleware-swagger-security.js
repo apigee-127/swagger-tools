@@ -120,8 +120,7 @@ _.forEach([
     case 'securedAnd':
       security = [
         {
-          local: ['read']
-        }, {
+          local: ['read'],
           local2: ['read']
         }
       ];
@@ -171,7 +170,8 @@ _.forEach([
 // Delete global security
 delete petStoreJson.security;
 
-describe('Swagger Security Middleware v2.0', function () {
+// TODO: Remove this .only before merging
+describe.only('Swagger Security Middleware v2.0', function () {
   it('should call middleware when secured', function(done) {
     var localDef = new SecurityDef();
 
