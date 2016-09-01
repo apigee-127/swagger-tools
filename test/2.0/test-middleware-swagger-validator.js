@@ -74,7 +74,7 @@ describe('Swagger Validator Middleware v2.0', function () {
             name: 'Fake Pet'
           })
           .expect(400)
-          .end(helpers.expectContent('Invalid content type (application/json).  These are valid: ' +
+          .end(helpers.expectContent('Request validation failed: Invalid content type (application/json).  These are valid: ' +
                                        'application/xml', done));
       });
     });

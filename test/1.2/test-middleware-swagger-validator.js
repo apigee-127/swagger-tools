@@ -69,7 +69,7 @@ describe('Swagger Validator Middleware v1.2', function () {
         request(app)
           .post('/api/pet/1')
           .expect(400)
-          .end(helpers.expectContent('Invalid content type (application/octet-stream).  These are valid: ' +
+          .end(helpers.expectContent('Request validation failed: Invalid content type (application/octet-stream).  These are valid: ' +
                                     'application/x-www-form-urlencoded', done));
       });
     });
@@ -1114,7 +1114,7 @@ describe('Swagger Validator Middleware v1.2', function () {
           ], done));
       });
     });
-    
+
     it('should validate a valid piped response', function (done) {
       var cPetJson = _.cloneDeep(petJson);
 
@@ -1141,7 +1141,7 @@ describe('Swagger Validator Middleware v1.2', function () {
           .end(helpers.expectContent(samplePet, done));
       });
     });
-    
+
     it('should validate an invalid piped response', function (done) {
       var cPetJson = _.cloneDeep(petJson);
 
