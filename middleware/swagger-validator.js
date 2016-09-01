@@ -62,47 +62,53 @@ var send400 = function (req, res, next, err) {
   // Format the errors to include the parameter information
   if (err.failedValidation === true) {
     currentMessage = err.message;
-    validationMessage = 'Parameter (' + err.paramName + ') ';
 
-    switch (err.code) {
-    case 'ENUM_MISMATCH':
-    case 'MAXIMUM':
-    case 'MAXIMUM_EXCLUSIVE':
-    case 'MINIMUM':
-    case 'MINIMUM_EXCLUSIVE':
-    case 'MULTIPLE_OF':
-    case 'INVALID_TYPE':
-      if (err.code === 'INVALID_TYPE' && err.message.split(' ')[0] === 'Value') {
+    if(err.paramName) {
+      validationMessage = 'Parameter (' + err.paramName + ') ';
+
+      switch (err.code) {
+      case 'ENUM_MISMATCH':
+      case 'MAXIMUM':
+      case 'MAXIMUM_EXCLUSIVE':
+      case 'MINIMUM':
+      case 'MINIMUM_EXCLUSIVE':
+      case 'MULTIPLE_OF':
+      case 'INVALID_TYPE':
+        if (err.code === 'INVALID_TYPE' && err.message.split(' ')[0] === 'Value') {
+          validationMessage += err.message.split(' ').slice(1).join(' ');
+        } else {
+          validationMessage += 'is ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
+        }
+
+        break;
+
+      case 'ARRAY_LENGTH_LONG':
+      case 'ARRAY_LENGTH_SHORT':
+      case 'MAX_LENGTH':
+      case 'MIN_LENGTH':
         validationMessage += err.message.split(' ').slice(1).join(' ');
-      } else {
-        validationMessage += 'is ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
+
+        break;
+
+      case 'MAX_PROPERTIES':
+      case 'MIN_PROPERTIES':
+        validationMessage += 'properties are ' + err.message.split(' ').slice(4).join(' ');
+
+        break;
+
+      default:
+        validationMessage += err.message.charAt(0).toLowerCase() + err.message.substring(1);
       }
 
-      break;
+      // Replace the stack message
+      err.stack = err.stack.replace(currentMessage, validationMessage);
 
-    case 'ARRAY_LENGTH_LONG':
-    case 'ARRAY_LENGTH_SHORT':
-    case 'MAX_LENGTH':
-    case 'MIN_LENGTH':
-      validationMessage += err.message.split(' ').slice(1).join(' ');
-
-      break;
-
-    case 'MAX_PROPERTIES':
-    case 'MIN_PROPERTIES':
-      validationMessage += 'properties are ' + err.message.split(' ').slice(4).join(' ');
-
-      break;
-
-    default:
-      validationMessage += err.message.charAt(0).toLowerCase() + err.message.substring(1);
+    } else {
+        validationMessage = currentMessage;
     }
 
     // Replace the message
     err.message = 'Request validation failed: ' + validationMessage;
-
-    // Replace the stack message
-    err.stack = err.stack.replace(currentMessage, validationMessage);
   }
 
   return next(err);
