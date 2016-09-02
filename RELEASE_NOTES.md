@@ -1,5 +1,9 @@
 ## Release Notes
 
+### TBD
+
+* Fix issue where the `failedValidation` property was not set for `Content-Type` request validation errors _(PR 420)_
+
 ### 0.10.1 (2016-02-24)
 
 * Fix issue with initializing middleware with an invalid Swagger document *(Issue 355)*

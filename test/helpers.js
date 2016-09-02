@@ -32,6 +32,8 @@ var swagger = require('../');
 
 var errorHandler = module.exports.errorHandler = function () {
   return function (err, req, res, next) {
+    var resp = {};
+
     if (err) {
       if (res.statusCode < 400) {
         res.statusCode = 500;
@@ -45,7 +47,21 @@ var errorHandler = module.exports.errorHandler = function () {
       //   console.log(JSON.stringify(err.results, null, 2));
       // }
 
-      res.end(err.message);
+      if (req.headers.accept && req.headers.accept.indexOf('application/json') > -1) {
+        res.setHeader('Content-Type', 'application-json');
+
+        _.each(err, function (val, key) {
+          resp[key] = val;
+        });
+
+        resp.message = err.message;
+
+        resp = JSON.stringify(resp);
+      } else {
+        resp = err.message;
+      }
+
+      res.end(resp)
 
       return next();
     } else {
@@ -93,7 +109,7 @@ module.exports.createServer = function (initArgs, options, callback) {
 
     register(handler);
 
-    // Error handler middleware to pass errors downstream as JSON
+    // Error handler middleware to pass errors downstream
     app.use(errorHandler());
 
     callback(app);

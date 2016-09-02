@@ -1202,5 +1202,18 @@ describe('Swagger Validator Middleware v1.2', function () {
                                        'are valid: application/json, application/xml, text/plain, text/html', done));
       });
     });
+
+    it('should set failedValidation for Content-Type validation errors (PR 420)', function (done) {
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {}, function (app) {
+        request(app)
+          .post('/api/pet/1')
+          .set('Accept', 'application/json')
+          .expect(400)
+          .end(helpers.expectContent({
+            failedValidation: true,
+            message: 'Invalid content type (application/octet-stream).  These are valid: application/x-www-form-urlencoded'
+          }, done));
+      });
+    });
   });
 });

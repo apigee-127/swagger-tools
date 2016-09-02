@@ -60,7 +60,7 @@ var send400 = function (req, res, next, err) {
   res.statusCode = 400;
 
   // Format the errors to include the parameter information
-  if (err.failedValidation === true) {
+  if (err.failedValidation === true && err.paramName) {
     currentMessage = err.message;
     validationMessage = 'Parameter (' + err.paramName + ') ';
 
@@ -344,10 +344,16 @@ exports = module.exports = function (options) {
       // Validate the request
       try {
         // Validate the content type
-        validators.validateContentType(req.swagger.swaggerVersion === '1.2' ?
+        try {
+          validators.validateContentType(req.swagger.swaggerVersion === '1.2' ?
                                          req.swagger.api.consumes :
                                          req.swagger.swaggerObject.consumes,
-                                       operation.consumes, req);
+                                         operation.consumes, req);
+        } catch (err) {
+          err.failedValidation = true;
+
+          throw err;
+        }
 
         async.map(swaggerVersion === '1.2' ?
                   operation.parameters :
@@ -387,7 +393,9 @@ exports = module.exports = function (options) {
             err.path = paramPath;
           }
 
-          err.paramName = paramName;
+          if (paramName) {
+            err.paramName = paramName;
+          }
         }
 
         debug('    Validation: failed');

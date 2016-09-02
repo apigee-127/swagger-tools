@@ -1641,8 +1641,25 @@ describe('Swagger Validator Middleware v2.0', function () {
       });
     });
 
+    it('should set failedValidation for Content-Type validation errors (PR 420)', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
 
+      swaggerObject.paths['/pets'].post.consumes = ['application/xml'];
 
-
+      helpers.createServer([swaggerObject], {}, function (app) {
+        request(app)
+          .post('/api/pets')
+          .set('Accept', 'application/json')
+          .send({
+            id: 1,
+            name: 'Fake Pet'
+          })
+          .expect(400)
+          .end(helpers.expectContent({
+            failedValidation: true,
+            message: 'Invalid content type (application/json).  These are valid: application/xml'
+          }, done));
+      });
+    });
   });
 });
