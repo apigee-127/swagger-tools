@@ -61,7 +61,7 @@ var errorHandler = module.exports.errorHandler = function () {
         resp = err.message;
       }
 
-      res.end(resp)
+      res.end(resp);
 
       return next();
     } else {
