@@ -118,6 +118,22 @@ describe('Swagger Router Middleware v2.0', function () {
     });
   });
 
+  it('should do routing when options.controllers is a valid array of directory paths with nested paths', function (done) {
+    helpers.createServer([petStoreJson], {
+      swaggerRouterOptions: {
+        controllers: [
+          path.join(__dirname, '..', 'controllers'),
+          path.join(__dirname, '..', 'controllers2')
+        ]
+      }
+    }, function (app) {
+      request(app)
+        .get('/api/pets/1/custom')
+        .expect(200)
+        .end(helpers.expectContent(require('../controllers/nested-controllers/CustomPets').response, done));
+    });
+  });
+
   it('should do routing when options.controllers is a valid controller map', function (done) {
     var cPetStoreJson = _.cloneDeep(petStoreJson);
     var controller = require('../controllers/Users');

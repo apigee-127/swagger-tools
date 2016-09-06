@@ -58,10 +58,14 @@ var getHandlerName = function (req) {
 
   return handlerName;
 };
+var getFullQualifiedHandlerId = function(controller, handler) {
+  return controller + '_' + handler;
+};
 var handlerCacheFromDir = function (dirOrDirs) {
   var handlerCache = {};
   var jsFileRegex = /\.(coffee|js)$/;
   var dirs = [];
+
 
   if (_.isArray(dirOrDirs)) {
     dirs = dirOrDirs;
@@ -69,39 +73,53 @@ var handlerCacheFromDir = function (dirOrDirs) {
     dirs.push(dirOrDirs);
   }
 
-  debug('  Controllers:');
+  var recursiveFileList = function(parent) {
+    _.each(fs.readdirSync(parent), function(file) {
+      var child = path.join(parent, file);
+      if (fs.statSync(child).isDirectory()) {
+        recursiveFileList(child);
+      } else {
 
-  _.each(dirs, function (dir) {
-    _.each(fs.readdirSync(dir), function (file) {
-      var controllerName = file.replace(jsFileRegex, '');
-      var controller;
+        file = child;
 
-      if (file.match(jsFileRegex)) {
-        controller = require(path.resolve(path.join(dir, controllerName)));
+        var controllerName = file.replace(jsFileRegex, '');
+        var controller;
 
-        debug('    %s%s:',
-              path.resolve(path.join(dir, file)),
-              (_.isPlainObject(controller) ? '' : ' (not an object, skipped)'));
+        if (file.match(jsFileRegex)) {
+          controller = require(file);
 
-        if (_.isPlainObject(controller)) {
-          _.each(controller, function (value, name) {
-            var handlerId = controllerName + '_' + name;
+          debug('    %s%s:', file, (_.isPlainObject(controller) ? '' : ' (not an object, skipped)'));
 
-            debug('      %s%s',
-                  handlerId,
-                  (_.isFunction(value) ? '' : ' (not a function, skipped)'));
+          if (_.isPlainObject(controller)) {
+            _.each(controller, function (value, name) {
+              var handlerId = getFullQualifiedHandlerId(controllerName, name);
 
-            // TODO: Log this situation
+              debug('      %s%s', handlerId, (_.isFunction(value) ? '' : ' (not a function, skipped)'));
 
-            if (_.isFunction(value) && !handlerCache[handlerId]) {
-              handlerCache[handlerId] = value;
-            }
-          });
+              // TODO: Log this situation
+              if (_.isFunction(value) && !handlerCache[handlerId]) {
+                var handlerExists = false;
+
+                _.each(dirs, function(topLevel) {
+                  if(controllerName.indexOf(topLevel) === 0) {
+                    var relativeController = controllerName.substr(topLevel.length + 1);
+                    handlerId = getFullQualifiedHandlerId(relativeController, name);
+                    handlerExists = handlerCache[handlerId] !== undefined;
+                  }
+                });
+
+                if (!handlerExists) {
+                  handlerCache[handlerId] = value;
+                }
+              }
+            });
+          }
         }
       }
     });
-  });
+  };
 
+  _.each(dirs, recursiveFileList);
   return handlerCache;
 };
 var getMockValue = function (version, schema) {
