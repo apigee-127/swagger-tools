@@ -291,6 +291,7 @@ var wrapEnd = function (req, res, next) {
     } catch (err) {
       if (err.failedValidation) {
         err.originalResponse = data;
+        err.responseValidation = true;
         err.message = 'Response validation failed: ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
 
         debug('    Validation: failed');
