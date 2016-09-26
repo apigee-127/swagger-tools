@@ -328,6 +328,8 @@ describe('Swagger Validator Middleware v2.0', function () {
         {in: 'query', name: argName, type: 'number'},
         {in: 'query', name: argName, type: 'string', format: 'date'},
         {in: 'query', name: argName, type: 'string', format: 'date-time'},
+        {in: 'query', name: argName, type: 'string', format: 'date-time'},
+        {in: 'query', name: argName, type: 'string', format: 'date-time'},
         {in: 'query', name: argName, type: 'array', items: {type: 'integer'}}
       ];
       var values = [
@@ -336,6 +338,8 @@ describe('Swagger Validator Middleware v2.0', function () {
         1.1,
         '1981-03-12',
         '1981-03-12T08:16:00-04:00',
+        '2016-09-22T23:19:08Z',
+        '2015-12-15T21:51:20.860Z',
         [1, 2]
       ];
       var index = 0;
