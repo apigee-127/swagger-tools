@@ -1,4 +1,4 @@
-When validating Swagger document(s), the Swagger Specification document for the Swagger version in quesion is the
+When validating Swagger document(s), the Swagger Specification document for the Swagger version in question is the
 single source of truth for validation.  To help aid in Swagger document validation, the Swagger project provides
 [JSON Schema][json-schema] file(s) but in the end, the Swagger Specification document is the real source of truth and
 the document swagger-tools tries to adhere to.  swagger-tools uses the provided JSON Schema file(s) to do the initial
