@@ -86,6 +86,8 @@ var handlerCacheFromDir = function (dirOrDirs) {
         var controller;
 
         if (file.match(jsFileRegex)) {
+
+          file = path.resolve(file);
           controller = require(file);
 
           debug('    %s%s:', file, (_.isPlainObject(controller) ? '' : ' (not an object, skipped)'));
@@ -101,6 +103,9 @@ var handlerCacheFromDir = function (dirOrDirs) {
                 var handlerExists = false;
 
                 _.each(dirs, function(topLevel) {
+                  controllerName = path.resolve(controllerName);
+                  topLevel = path.resolve(topLevel);
+
                   if(controllerName.indexOf(topLevel) === 0) {
                     var relativeController = controllerName.substr(topLevel.length + 1);
                     handlerId = getFullQualifiedHandlerId(relativeController, name);
@@ -368,6 +373,7 @@ var send405 = function (req, res, next) {
  * @returns the middleware function
  */
 exports = module.exports = function (options) {
+
   var handlerCache = {};
 
   debug('Initializing swagger-router middleware');
