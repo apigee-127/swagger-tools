@@ -119,6 +119,22 @@ describe('Swagger Router Middleware v1.2', function () {
     });
   });
 
+  it('should do routing when options.controllers is a valid array of relative directory paths', function (done) {
+    helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+      swaggerRouterOptions: {
+        controllers: [
+          './test/controllers',
+          './test/controllers2'
+        ]
+      }
+    }, function (app) {
+      request(app)
+      .get('/api/user/1')
+      .expect(200)
+      .end(helpers.expectContent(require('../controllers/Users').response, done));
+    });
+  });
+
   it('should do routing when options.controllers is a valid controller map', function (done) {
     var controller = require('../controllers/Users');
 
