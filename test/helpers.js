@@ -96,7 +96,7 @@ module.exports.createServer = function (initArgs, options, callback) {
       });
     }
 
-    register(middleware.swaggerMetadata());
+    register(middleware.swaggerMetadata(options.swaggerMetadataOptions));
 
     // Conditionally enable security (To avoid having to rewrite all Swagger documents or all tests)
     if (Object.keys(options.swaggerSecurityOptions || {}).length > 0) {

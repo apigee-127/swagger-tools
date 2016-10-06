@@ -136,6 +136,51 @@ describe('Swagger Metadata Middleware v1.2', function () {
     });
   });
 
+  it('should apply JSON parser configuration', function (done) {
+    var cPetJson = _.cloneDeep(petJson);
+    // Negate the validation as we don't care about that right now
+    cPetJson.models.Pet = {
+      id: 'Pet',
+      properties: {}
+    };
+
+    var body = {name: 'Top Dog'};
+    var verifyCalled = false;
+
+    helpers.createServer([rlJson, [cPetJson, storeJson, userJson]], {
+      swaggerRouterOptions: {
+        controllers: {
+          addPet: function (req, res, next) {
+            assert.deepEqual(req.swagger.params.body.value, {name: 'Top Dog'});
+
+            res.statusCode = 201;
+            res.end();
+
+            return next();
+          }
+        }
+      },
+      swaggerMetadataOptions: {
+        bodyParser: {
+          json: {
+            verify: function(){
+              verifyCalled = true;
+            }
+          }
+        }
+      }
+    }, function (app) {
+      request(app)
+        .post('/api/pet')
+        .send(body)
+        .expect(201)
+        .end(function(){
+          assert.equal(verifyCalled, true);
+          done();
+        });
+    });
+  });
+
   it('should handle primitive body parameters', function (done) {
     var cPetJson = _.cloneDeep(petJson);
 
