@@ -252,6 +252,52 @@ describe('Swagger Metadata Middleware v2.0', function () {
     });
   });
 
+  it('should apply JSON parser configuration', function (done) {
+    var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+    // Negate the validation as we don't care about that right now
+    cPetStoreJson.paths['/pets'].post.parameters[0].schema = {};
+
+    var body = {name: 'Top Dog'};
+    var verifyCalled = false;
+
+    helpers.createServer([cPetStoreJson], {
+      swaggerRouterOptions: {
+        controllers: {
+          createPet: function (req, res, next) {
+            var newPet = req.swagger.params.pet.value;
+
+            assert.deepEqual(newPet, {name: 'Top Dog'});
+
+            newPet.id = 1;
+
+            res.end(JSON.stringify(newPet));
+
+            return next();
+          }
+        }
+      },
+      swaggerMetadataOptions: {
+        bodyParser: {
+          json: {
+            verify: function(){
+              verifyCalled = true;
+            }
+          }
+        }
+      }
+    }, function (app) {
+      request(app)
+        .post('/api/pets')
+        .send(body)
+        .expect(200)
+        .end(helpers.expectContent({id: 1, name: 'Top Dog'}, function(){
+          assert.equal(verifyCalled, true);
+          done();
+        }));
+    });
+  });
+
   describe('non-multipart form parameters', function () {
     it('should handle primitives', function (done) {
       var cPetStoreJson = _.cloneDeep(petStoreJson);
