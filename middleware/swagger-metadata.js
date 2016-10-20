@@ -207,7 +207,7 @@ var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch,
 
       // Located here to make the debug output pretty
       oVal = mHelpers.getParameterValue(version, parameter, pathKeys, pathMatch, req, debug);
-      value = mHelpers.convertValue(oVal, _.isUndefined(parameter.schema) ? parameter : parameter.schema, pType);
+      value = mHelpers.convertValue(oVal, _.isUndefined(parameter.schema) ? parameter : parameter.schema, pType, parameter.in === 'body');
 
       debug('      Value: %s', value);
 
