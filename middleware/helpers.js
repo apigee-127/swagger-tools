@@ -164,7 +164,7 @@ module.exports.debugError = function (err, debug) {
   }
 };
 
-var convertValue = module.exports.convertValue = function (value, schema, type, body) {
+var convertValue = module.exports.convertValue = function (value, schema, type) {
   var original = value;
 
   // Default to {}
@@ -219,7 +219,7 @@ var convertValue = module.exports.convertValue = function (value, schema, type, 
     }
 
     // Handle situation where the expected type is array but only one value was provided
-    if (!_.isArray(value) && (body === undefined || body === false)) {
+    if (!_.isArray(value)) {
       value = [value];
     }
 
