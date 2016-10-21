@@ -207,6 +207,16 @@ var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch,
 
       // Located here to make the debug output pretty
       oVal = mHelpers.getParameterValue(version, parameter, pathKeys, pathMatch, req, debug);
+
+      if (!_.isArray(oVal) && parameter.in === 'body' && parameter.schema && parameter.schema.type === 'array') {
+        var err = new Error('Failed schema validation - expected an array but received an object');
+
+        err.code = 'SCHEMA_VALIDATION_FAILED';
+        err.failedValidation = true;
+
+        return next(err);
+      }
+
       value = mHelpers.convertValue(oVal, _.isUndefined(parameter.schema) ? parameter : parameter.schema, pType);
 
       debug('      Value: %s', value);
