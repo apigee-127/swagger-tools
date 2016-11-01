@@ -107,13 +107,13 @@ var send400 = function (req, res, next, err) {
 
   return next(err);
 };
-var validateValue = function (req, schema, path, val, callback) {
+var validateValue = function (req, schema, path, val, location, callback) {
   var document = req.swagger.apiDeclaration || req.swagger.swaggerObject;
   var version = req.swagger.apiDeclaration ? '1.2' : '2.0';
   var isModel = mHelpers.isModelParameter(version, schema);
   var spec = cHelpers.getSpec(version);
 
-  val = mHelpers.convertValue(val, schema, mHelpers.getParameterType(schema));
+  val = mHelpers.convertValue(val, schema, mHelpers.getParameterType(schema), location);
 
   try {
     validators.validateSchemaConstraints(version, schema, path, val);
@@ -281,7 +281,7 @@ var wrapEnd = function (req, res, next) {
       if (_.isUndefined(schema)) {
         sendData(swaggerVersion, res, val, encoding, true);
       } else {
-        validateValue(req, schema, vPath, val, function (err) {
+        validateValue(req, schema, vPath, val, 'body', function (err) {
           if (err) {
             throw err;
           }
@@ -359,6 +359,7 @@ exports = module.exports = function (options) {
                   operation.parameters :
                   req.swagger.operationParameters, function (parameter, oCallback) {
                     var schema = swaggerVersion === '1.2' ? parameter : parameter.schema;
+                    var pLocation = swaggerVersion === '1.2' ? schema.paramType : schema.in;
                     var val;
 
                     paramName = schema.name;
@@ -375,7 +376,7 @@ exports = module.exports = function (options) {
                       return oCallback();
                     }
 
-                    validateValue(req, schema, paramPath, val, oCallback);
+                    validateValue(req, schema, paramPath, val, pLocation, oCallback);
 
                     paramIndex++;
                   }, function (err) {

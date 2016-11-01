@@ -164,7 +164,7 @@ module.exports.debugError = function (err, debug) {
   }
 };
 
-var convertValue = module.exports.convertValue = function (value, schema, type) {
+var convertValue = module.exports.convertValue = function (value, schema, type, location) {
   var original = value;
 
   // Default to {}
@@ -220,14 +220,19 @@ var convertValue = module.exports.convertValue = function (value, schema, type) 
 
     // Handle situation where the expected type is array but only one value was provided
     if (!_.isArray(value)) {
-      value = [value];
+      // Do not convert non-Array items to single item arrays if the location is 'body' (Issue #438)
+      if (location !== 'body') {
+        value = [value];
+      }
     }
 
-    value = _.map(value, function (item, index) {
-      var iSchema = _.isArray(schema.items) ? schema.items[index] : schema.items;
+    if (_.isArray(value)) {
+      value = _.map(value, function (item, index) {
+        var iSchema = _.isArray(schema.items) ? schema.items[index] : schema.items;
 
-      return convertValue(item, iSchema, iSchema ? iSchema.type : undefined);
-    });
+        return convertValue(item, iSchema, iSchema ? iSchema.type : undefined, location);
+      });
+    }
 
     break;
 

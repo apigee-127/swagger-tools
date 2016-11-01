@@ -468,7 +468,7 @@ describe('Swagger Metadata Middleware v1.2', function () {
       });
     });
 
-    it('should handle URI encoded path parameters', function (done) {
+    it('should handle URI encoded path parameters (Issue 230)', function (done) {
       var cPetJson = _.cloneDeep(petJson);
 
       // Change the type to string so we can send an encoded value

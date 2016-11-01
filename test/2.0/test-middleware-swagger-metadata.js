@@ -1049,7 +1049,54 @@ describe('Swagger Metadata Middleware v2.0', function () {
       });
     });
 
-    it('should not error with file parameter not being provided (Issue #350)', function (done) {
+    it('should not wrap a non-array body in an array for array body type (Issue 438)', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      cPetStoreJson.paths['/pets'].post.parameters[0].schema = {
+        type: 'array',
+        items: {
+          $ref: '#/definitions/newPet'
+        }
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            createPet: function (req, res, next) {
+              return next(new Error('This code should not be run'));
+            }
+          }
+        }
+      }, function(app) {
+        request(app)
+          .post('/api/pets')
+          .set('Accept', 'application/json')
+          .send({
+            id: 1,
+            name: 'New Pet'
+          })
+          .expect(400)
+          .end(helpers.expectContent({
+            code: 'SCHEMA_VALIDATION_FAILED',
+            failedValidation: true,
+            results: {
+              errors: [
+                {
+                  code: 'INVALID_TYPE',
+                  message: 'Expected type array but found type object',
+                  path:[]
+                }
+              ],
+              warnings: []
+            },
+            path: ['paths','/pets','post','parameters','0'],
+            paramName: 'pet',
+            message:'Request validation failed: Parameter (pet) failed schema validation'
+          }, done));
+      });
+    });
+
+    it('should not error with file parameter not being provided (Issue 350)', function (done) {
       var cPetStoreJson = _.cloneDeep(petStoreJson);
       var operation = _.cloneDeep(cPetStoreJson.paths['/pets']).post;
 
