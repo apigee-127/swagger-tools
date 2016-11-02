@@ -4,7 +4,7 @@
   "description": "Various tools for using and integrating with Swagger.",
   "main": "index.js",
   "scripts": {
-    "test": "./node_modules/gulp/bin/gulp.js"
+    "test": "gulp"
   },
   "author": {
     "name": "Jeremy Whitlock",
