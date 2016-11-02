@@ -530,6 +530,7 @@ suppose to return `application/x-yaml` but it returns `application/json`, it wil
 
 * **options:** `object` The middleware options
 * **options.validateResponse:** `[boolean=false]` Whether or not to validate responses
+* **options.invalidResponseHook:** `[function(err, req, res, next) {...}]` Optional callback function for response validation errors. Chain to `next(err)` to propogate the error or call `next()` to ignore the error.
 
 **Returns**
 
