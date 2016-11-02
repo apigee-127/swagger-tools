@@ -31,6 +31,8 @@ var fs = require('fs');
 var mHelpers = require('./helpers');
 var path = require('path');
 
+var PATH_SEP_REGEX = new RegExp('\\' + path.sep, 'g');
+
 var defaultOptions = {
   controllers: {},
   useStubs: false // Should we set this automatically based on process.env.NODE_ENV?
@@ -59,7 +61,7 @@ var getHandlerName = function (req) {
   return handlerName;
 };
 var getFullQualifiedHandlerId = function(controller, handler) {
-  return controller + '_' + handler;
+  return controller.replace(PATH_SEP_REGEX, '/') + '_' + handler;
 };
 var handlerCacheFromDir = function (dirOrDirs) {
   var handlerCache = {};
