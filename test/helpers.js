@@ -28,7 +28,6 @@ var _ = require('lodash-compat');
 var assert = require('assert');
 var cp = require('child_process');
 var path = require('path');
-var process = require('process');
 var swagger = require('../');
 
 var errorHandler = module.exports.errorHandler = function () {
