@@ -144,9 +144,13 @@ module.exports.expectContent = function (content, done) {
 
 module.exports.executeCLI = function (args, done) {
   // Add Node args
-  args.unshift('RUNNING_SWAGGER_TOOLS_TESTS=true', 'node', path.resolve(path.join(__dirname, '..', 'bin', 'swagger-tools')));
-
-  cp.exec(args.join(' '), function (err, stdout, stderr) {
+  args.unshift('node', path.resolve(path.join(__dirname, '..', 'bin', 'swagger-tools')));
+  var options = {
+    env: _.assign({}, process.env, {
+      RUNNING_SWAGGER_TOOLS_TESTS: true
+    })
+  };
+  cp.exec(args.join(' '),  options, function (err, stdout, stderr) {
     done(stderr, stdout);
   });
 };
