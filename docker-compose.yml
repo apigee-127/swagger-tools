@@ -1,0 +1,16 @@
+version: '2'
+services:
+  node:
+    image: docker.io/smoebody/dev-nodejs:6
+    volumes:
+      - ./:/app:z
+      - npm-cache:/home/dev/.npm:z
+    ports:
+      - 127.0.0.1:5858:5858
+    environment:
+      - NODE_ENV=development
+    command: 
+      - npm test
+
+volumes:
+  npm-cache: {}
