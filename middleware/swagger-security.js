@@ -131,7 +131,7 @@ exports = module.exports = function (options) {
       req.swagger.operation.security || req.swagger.swaggerObject.security;
 
       if (securityReqs && securityReqs.length > 0) {
-        async.map(securityReqs, function (secReq, cb) { // logical OR - any one can allow
+        async.mapSeries(securityReqs, function (secReq, cb) { // logical OR - any one can allow
           var secName;
 
           async.map(Object.keys(secReq), function (name, cb) { // logical AND - all must allow
