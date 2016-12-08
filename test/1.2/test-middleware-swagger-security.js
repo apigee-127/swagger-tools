@@ -40,11 +40,15 @@ var rlJson = _.cloneDeep(require('../../samples/1.2/resource-listing.json'));
 var storeJson = _.cloneDeep(require('../../samples/1.2/store.json'));
 var userJson = _.cloneDeep(require('../../samples/1.2/user.json'));
 
-var SecurityDef = function (allow) {
+var SecurityDef = function (allow, delay) {
   var self = this;
 
   if (allow === undefined) {
     allow = true;
+  }
+
+  if (delay === undefined) {
+    delay = 0;
   }
 
   this.called = false;
@@ -54,7 +58,9 @@ var SecurityDef = function (allow) {
 
     self.called = true;
 
-    cb(allow ? null : new Error('disallowed'));
+    setTimeout(function() {
+      cb(allow ? null : new Error('disallowed'));
+    }, delay);
   };
 };
 var ApiKeySecurityDef = function() {
@@ -529,6 +535,30 @@ describe('Swagger Security Middleware v1.2', function () {
           .get('/api/securedOr')
           .expect(200)
           .end(helpers.expectContent('OK', done));
+      });
+    });
+
+    it('should authorize first if both are true', function(done) {
+      var local = new SecurityDef(true, 400);
+      var local2 = new SecurityDef(true);
+
+      helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
+        swaggerRouterOptions: swaggerRouterOptions,
+        swaggerSecurityOptions: {
+          local: local.func,
+          local2: local2.func
+        }
+      }, function (app) {
+        request(app)
+          .get('/api/securedOr')
+          .expect(200)
+          .end(function(err, res) {
+            helpers.expectContent('OK')(err, res);
+
+            assert(!local2.called);
+
+            done();
+          });
       });
     });
 
