@@ -505,6 +505,7 @@ swagger-tools based API behind a reverse proxy.)_
 * **options.swaggerUiDir:** `string` The filesystem path to your custom swagger-ui deployment to serve
 * **options.swaggerUiPrefix:** `string` The prefix to prepend to the `options.swaggerUi` _(This is required when serving a
 swagger-tools UI behind a reverse proxy.)_
+* **options.validatorUrl** `string=http(s)://online.swagger.io/validator` By default, Swagger-UI attempts to validate specs against swagger.io's online validator. You can use this parameter to set a different validator URL, for example for locally deployed validator ([Validator Badge](https://github.com/swagger-api/validator-badge)). Validation is disabled on `localhost` and `127.0.0.1` domains, and setting it to `null` will also disable validation. _(This parameter is relevant for Swagger 2.0 specs only.)_
 
 **Returns**
 
@@ -570,7 +571,9 @@ swagger.initializeMiddleware(swaggerObject, function (middleware) {
   // Serve the Swagger documents and Swagger UI
   //   http://localhost:3000/docs => Swagger UI
   //   http://localhost:3000/api-docs => Swagger document
-  app.use(middleware.swaggerUi());
+  app.use(middleware.swaggerUi({
+      validatorUrl: null // Force disable the validation badge.
+  }));
 
   // Start the server
   http.createServer(app).listen(3000);
