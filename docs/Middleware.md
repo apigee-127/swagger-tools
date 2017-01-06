@@ -406,10 +406,10 @@ configuration.  _(Note: This limitation, the need to manually create your `contr
 issues #219 and #221 are completed.)_
 
 A new option (since 0.8.4) is the addition of the `x-swagger-router-handle-subpaths` extension to the Swagger path
-component. By setting this property to `true`, it indicates to Swagger Router that it should match and route all 
-requests to not only the specified path, but also any undeclared subpaths requested that do not match an explicitly 
+component. By setting this property to `true`, it indicates to Swagger Router that it should match and route all
+requests to not only the specified path, but also any undeclared subpaths requested that do not match an explicitly
 defined path in the Swagger. While you cannot specify wildcards in Swagger, this would be the spiritual equivalent
-of wildcarding the end of the path something like `/pets/**`. For example, the following Swagger would cause 
+of wildcarding the end of the path something like `/pets/**`. For example, the following Swagger would cause
 Swagger Router to match and route `/pets`, `/pets/1`, or even `/pets/this/is/an/arbitrary/route` to the `Pets`
 controller:
 
@@ -530,8 +530,40 @@ suppose to return `application/x-yaml` but it returns `application/json`, it wil
 
 * **options:** `object` The middleware options
 * **options.validateResponse:** `[boolean=false]` Whether or not to validate responses
+* **options.schemaValidator**: `[Object]` A custom validator to use instead of the built in validator. See below for details
 
 **Returns**
+
+### Custom JSON Schema Validator
+The Swagger Validator Middleware provides built-in validation using [z-schema](https://github.com/zaggino/z-schema).  This should
+be sufficient for all cases using the official Swagger specification.
+
+If you want to use a [Vendor Extension](http://swagger.io/specification/#vendorExtensions) in the validation of
+[Schema Objects](http://swagger.io/specification/#schema-object-80), you can supply your own schema validator
+to the swagger validator middleware in `options.schemaValidator`.
+
+**WARNING:** This ONLY applies to **_schema objects_** in the body of a request or response.  All other validation
+continues to be handled by the _internal_ validators, including validation of the swagger definition itself,
+the validation of path and query parameters.
+
+A custom validator _MUST_ provide the following 2 functions in a compatible manner to z-schema's implementation:
+- `validate(json, schema)`
+- - Arguments:
+- - - **json**: `String` The JSON to be validated
+- - - **schema**: `String|Object` The JSON schema to validate against
+- - Returns:
+- - - `boolean`  returns true on successful validation, false on error
+- `getLastErrors()`
+- - Returns:
+- - - `[object[]]` An array of objects describing the error or `undefined` if no errors.
+
+A custom validator _SHOULD_ include custom format functions to support the `format`s specified in the
+[Swagger Specification](http://swagger.io/specification/#data-types-12) (i.e. `int32`, `int64`, etc.)
+as these are not included in JSON Schema and are thus not in most validators by default.
+
+Any custom `vendor extension`s (or `custom keywords`) added to the the validators MUST start with `"x-"`
+to comply with the swagger specification.  So `"x-example-keyword"` is accceptable, but `"exampleKeyword"`
+is not.  This does not apply to custom `format`s which DO NOT need to start with `"x-"`.
 
 ## Complete Example
 

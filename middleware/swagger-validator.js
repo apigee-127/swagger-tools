@@ -64,38 +64,40 @@ var send400 = function (req, res, next, err) {
     currentMessage = err.message;
     validationMessage = 'Parameter (' + err.paramName + ') ';
 
-    switch (err.code) {
-    case 'ENUM_MISMATCH':
-    case 'MAXIMUM':
-    case 'MAXIMUM_EXCLUSIVE':
-    case 'MINIMUM':
-    case 'MINIMUM_EXCLUSIVE':
-    case 'MULTIPLE_OF':
-    case 'INVALID_TYPE':
-      if (err.code === 'INVALID_TYPE' && err.message.split(' ')[0] === 'Value') {
-        validationMessage += err.message.split(' ').slice(1).join(' ');
-      } else {
-        validationMessage += 'is ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
+    if (!_.isUndefined(err.code)) {
+      switch (err.code) {
+        case 'ENUM_MISMATCH':
+        case 'MAXIMUM':
+        case 'MAXIMUM_EXCLUSIVE':
+        case 'MINIMUM':
+        case 'MINIMUM_EXCLUSIVE':
+        case 'MULTIPLE_OF':
+        case 'INVALID_TYPE':
+          if (err.code === 'INVALID_TYPE' && err.message.split(' ')[0] === 'Value') {
+            validationMessage += err.message.split(' ').slice(1).join(' ');
+          } else {
+            validationMessage += 'is ' + err.message.charAt(0).toLowerCase() + err.message.substring(1);
+          }
+
+          break;
+
+        case 'ARRAY_LENGTH_LONG':
+        case 'ARRAY_LENGTH_SHORT':
+        case 'MAX_LENGTH':
+        case 'MIN_LENGTH':
+          validationMessage += err.message.split(' ').slice(1).join(' ');
+
+          break;
+
+        case 'MAX_PROPERTIES':
+        case 'MIN_PROPERTIES':
+          validationMessage += 'properties are ' + err.message.split(' ').slice(4).join(' ');
+
+          break;
+
+        default:
+          validationMessage += err.message.charAt(0).toLowerCase() + err.message.substring(1);
       }
-
-      break;
-
-    case 'ARRAY_LENGTH_LONG':
-    case 'ARRAY_LENGTH_SHORT':
-    case 'MAX_LENGTH':
-    case 'MIN_LENGTH':
-      validationMessage += err.message.split(' ').slice(1).join(' ');
-
-      break;
-
-    case 'MAX_PROPERTIES':
-    case 'MIN_PROPERTIES':
-      validationMessage += 'properties are ' + err.message.split(' ').slice(4).join(' ');
-
-      break;
-
-    default:
-      validationMessage += err.message.charAt(0).toLowerCase() + err.message.substring(1);
     }
 
     // Replace the message
@@ -107,7 +109,7 @@ var send400 = function (req, res, next, err) {
 
   return next(err);
 };
-var validateValue = function (req, schema, path, val, location, callback) {
+var validateValue = function (req, schema, path, val, location, schemaValidator, callback) {
   var document = req.swagger.apiDeclaration || req.swagger.swaggerObject;
   var version = req.swagger.apiDeclaration ? '1.2' : '2.0';
   var isModel = mHelpers.isModelParameter(version, schema);
@@ -140,7 +142,7 @@ var validateValue = function (req, schema, path, val, location, callback) {
                                                     schema.type), aVal, oCallback);
       } else {
         try {
-          validators.validateAgainstSchema(schema.schema ? schema.schema : schema, val);
+          validators.validateAgainstSchema(schema.schema ? schema.schema : schema, val, schemaValidator);
 
           oCallback();
         } catch (err) {
@@ -169,7 +171,16 @@ var validateValue = function (req, schema, path, val, location, callback) {
     callback();
   }
 };
-var wrapEnd = function (req, res, next) {
+
+/**
+ * Wraps res.end() so we can validate responses body etc.
+ *
+ * @param {object} options    - the validator middleware options
+ * @param {object} req        - the request
+ * @param {object} res        - the response
+ * @param {callback} next     - the callback
+ */
+var wrapEnd = function(options, req, res, next) {
   var operation = req.swagger.operation;
   var originalEnd = res.end;
   var vPath = _.cloneDeep(req.swagger.operationPath);
@@ -281,7 +292,7 @@ var wrapEnd = function (req, res, next) {
       if (_.isUndefined(schema)) {
         sendData(swaggerVersion, res, val, encoding, true);
       } else {
-        validateValue(req, schema, vPath, val, 'body', function (err) {
+        validateValue(req, schema, vPath, val, 'body', options.schemaValidator, function (err) {
           if (err) {
             throw err;
           }
@@ -311,8 +322,9 @@ var wrapEnd = function (req, res, next) {
  *
  * @param {object} [options] - The middleware options
  * @param {boolean} [options.validateResponse=false] - Whether or not to validate responses
+ * @param {object} [options.schemaValidator] - Provide a custom JSON Schema Validator to override the built-in one
  *
- * @returns the middleware function
+ * @returns {function} the middleware function
  */
 exports = module.exports = function (options) {
   debug('Initializing swagger-validator middleware');
@@ -321,7 +333,21 @@ exports = module.exports = function (options) {
     options = {};
   }
 
+  /**
+   * Check that any provided validator has the correct API.
+   * If it doesn't just throw an exception so the developer can catch it quickly.
+   */
+  if (!_.isUndefined(options.schemaValidator)) {
+    if (
+      !_.isFunction(options.schemaValidator.validate) ||
+      !_.isFunction(options.schemaValidator.getLastErrors)
+    ) {
+      throw new Error('Custom validator must provide z-schema compatible validate() and getLastErrors() functions');
+    }
+  }
+
   debug('  Response validation: %s', options.validateResponse === true ? 'enabled' : 'disabled');
+  debug('  Customer validator: %s', _.isUndefined(options.schemaValidator) ? 'no' : 'yes');
 
   return function swaggerValidator (req, res, next) {
     var operation = req.swagger ? req.swagger.operation : undefined;
@@ -336,7 +362,7 @@ exports = module.exports = function (options) {
     if (!_.isUndefined(operation)) {
       // If necessary, override 'res.end'
       if (options.validateResponse === true) {
-        wrapEnd(req, res, next);
+        wrapEnd(options, req, res, next);
       }
 
       debug('  Request validation:');
@@ -376,7 +402,7 @@ exports = module.exports = function (options) {
                       return oCallback();
                     }
 
-                    validateValue(req, schema, paramPath, val, pLocation, oCallback);
+                    validateValue(req, schema, paramPath, val, pLocation, options.schemaValidator, oCallback);
 
                     paramIndex++;
                   }, function (err) {
