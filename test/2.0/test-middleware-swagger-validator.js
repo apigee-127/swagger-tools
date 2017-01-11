@@ -1137,7 +1137,45 @@ describe('Swagger Validator Middleware v2.0', function () {
       });
     });
 
+    it('should not return an error with a null schema on an empty response', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
 
+      cPetStoreJson.paths['/redirect'] = {
+        'get': {
+          'x-swagger-router-controller': 'Test',
+          'operationId': 'redirectTest',
+          'responses': {
+            '302': {
+              'description': 'Redirect'
+            }
+          }
+        }
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            'Test_redirectTest': function (req, res) {
+              res.statusCode = 302;
+              res.end();
+            }
+          }
+        },
+        swaggerValidatorOptions: {
+          validateResponse: true
+        }
+      }, function (app) {
+        request(app)
+          .get('/api/redirect')
+          .expect(302)
+          .end(function (err, res) {
+            if (err) {
+              throw err + '\n' + res.error.text;
+            }
+            done();
+          });
+      });
+    });
 
     it('should validate a valid piped response', function (done) {
       var cPetStoreJson = _.cloneDeep(petStoreJson);
