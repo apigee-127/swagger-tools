@@ -268,7 +268,7 @@ would have a value of `Pet_getById`.
 Since Swagger 2.0 has a new feature called **Vendor Extensions** which allows you to add additional properties
 throughout your Swagger documents as long as they start with `x-`.  Swagger Router uses a vendor extension named
 `x-swagger-router-controller` to help with the routing.  Basically, `x-swagger-router-controller` can be defined at the
-path level and/or the operation level and it tells the controller name to use.  To define the controller to use for an
+path level and/or the operation level and it tells the controller name to use. The value of `x-swagger-router-controller` can be a file or a folder. To define the controller to use for an
 operation, just define the `x-swagger-router-controller` property at the operation level.  What if you want to reuse the
 same controller for multiple/all operations in a path?  Just define the `x-swagger-router-controller` property at the
 path level.  Of course if you've defined `x-swagger-router-controller` at the path level and you want to use a different
@@ -277,7 +277,7 @@ controller for any operation below that path, you can override the path controll
 
 When it comes to finding the controller function to call, there are two options.  The default is to use the operation
 name for the operation, which corresponds to the HTTP verb being used.  If you want to override this default and use a
-different name, just define the `operationId` property on your operation.  Here is an example Swagger document snippet
+different name, just define the `operationId` property on your operation. In any case, if the value of `x-swagger-router-controller` is a directory, the files in that folder will be used as the individual operation functions and should be named accordingly. Here is an example Swagger document snippet
 where each operation tells you which controller and function will be used based on its definition:
 
 ```json
