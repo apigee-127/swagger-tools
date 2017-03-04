@@ -34,12 +34,15 @@ var multer = require('multer');
 var parseurl = require('parseurl');
 var pathToRegexp = require('path-to-regexp');
 
+var defaultOptions = {
+  multer: {
+    storage: multer.memoryStorage()
+  }
+};
+
 // Upstream middlewares
 var bodyParserOptions = {
   extended: false
-};
-var multerOptions = {
-  storage: multer.memoryStorage()
 };
 var textBodyParserOptions = {
   type: '*/*'
@@ -76,7 +79,7 @@ var bodyParser = function (req, res, next) {
     next();
   }
 };
-var realMultiPartParser = multer(multerOptions);
+var realMultiPartParser = multer(defaultOptions.multer);
 var makeMultiPartParser = function (parser) {
   return function (req, res, next) {
     if (_.isUndefined(req.files)) {
@@ -113,11 +116,11 @@ var expressStylePath = function (basePath, apiPath) {
 var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch, req, res, next) {
   var version = swaggerMetadata.swaggerVersion;
   var spec = cHelpers.getSpec(cHelpers.getSwaggerVersion(version === '1.2' ?
-                                                         swaggerMetadata.resourceListing :
-                                                         swaggerMetadata.swaggerObject), true);
+    swaggerMetadata.resourceListing :
+    swaggerMetadata.swaggerObject), true);
   var parameters = !_.isUndefined(swaggerMetadata) ?
-                     (version === '1.2' ? swaggerMetadata.operation.parameters : swaggerMetadata.operationParameters) :
-                     undefined;
+    (version === '1.2' ? swaggerMetadata.operation.parameters : swaggerMetadata.operationParameters) :
+    undefined;
 
   if (!parameters) {
     return next();
@@ -179,14 +182,16 @@ var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch,
 
     return fields;
   }, []);
-  
+
   var contentType = req.headers['content-type'];
-  if (multiPartFields.length) {
-    // If there are files, use multer#fields
-    parsers.push(makeMultiPartParser(realMultiPartParser.fields(multiPartFields)));
-  } else if (contentType && contentType.split(';')[0] === 'multipart/form-data') {
-    // If no files but multipart form, use empty multer#array for text fields
-    parsers.push(makeMultiPartParser(realMultiPartParser.array()));
+  if (realMultiPartParser) {
+    if (multiPartFields.length) {
+      // If there are files, use multer#fields
+      parsers.push(makeMultiPartParser(realMultiPartParser.fields(multiPartFields)));
+    } else if (contentType && contentType.split(';')[0] === 'multipart/form-data') {
+      // If no files but multipart form, use empty multer#array for text fields
+      parsers.push(makeMultiPartParser(realMultiPartParser.array()));
+    }
   }
 
   async.map(parsers, function (parser, callback) {
@@ -367,10 +372,13 @@ var processSwaggerDocuments = function (rlOrSO, apiDeclarations) {
  *
  * @param {object} rlOrSO - The Resource Listing (Swagger 1.2) or Swagger Object (Swagger 2.0)
  * @param {object[]} apiDeclarations - The array of API Declarations (Swagger 1.2)
+ * @param {object} module options. Optional.
+ *                 multer: multipart/form-data middleware options (see https://github.com/expressjs/multer).
+ *                         Defaults to memoryStorage
  *
  * @returns the middleware function
  */
-exports = module.exports = function (rlOrSO, apiDeclarations) {
+exports = module.exports = function (rlOrSO, apiDeclarations, options) {
   debug('Initializing swagger-metadata middleware');
 
   var apiCache = processSwaggerDocuments(rlOrSO, apiDeclarations);
@@ -389,6 +397,9 @@ exports = module.exports = function (rlOrSO, apiDeclarations) {
       throw new TypeError('apiDeclarations must be an array');
     }
   }
+
+  options = _.defaults(options || {}, defaultOptions);
+  realMultiPartParser = options.multer? multer(options.multer) : null;
 
   return function swaggerMetadata (req, res, next) {
     var method = req.method.toLowerCase();
