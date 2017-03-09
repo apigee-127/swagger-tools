@@ -17,6 +17,11 @@
   "schemes": [
     "http"
   ],
+  "tags": [
+    {
+      "name": "Pet Operations"
+    }
+  ],
   "paths": {
     "/pets": {
       "get": {
