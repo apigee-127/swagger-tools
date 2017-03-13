@@ -121,6 +121,7 @@ var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, cal
           helpers.printValidationResults(spec.version, rlOrSO, resources, results, true);
         } else {
           console.error('Error initializing middleware');
+          console.error(err);
           console.error(err.stack);
         }
 

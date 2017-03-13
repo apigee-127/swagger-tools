@@ -51,8 +51,11 @@ var getHandlerName = function (req) {
         req.swagger.operation['x-swagger-router-controller'] :
         req.swagger.path['x-swagger-router-controller']) + '_' +
         (req.swagger.operation.operationId ? req.swagger.operation.operationId : req.method.toLowerCase());
-    } else {
+    } else if (req.swagger.operation.operationId) {
       handlerName = req.swagger.operation.operationId;
+    } else {
+      handlerName = req.swagger.apiPath.substring(1).replace(/\/\{.+\}/,'').replace('/','_') + '_' +
+        (req.swagger.operation.operationId ? req.swagger.operation.operationId : req.method.toLowerCase());
     }
 
     break;
