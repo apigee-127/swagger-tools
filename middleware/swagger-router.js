@@ -65,7 +65,7 @@ var getFullQualifiedHandlerId = function(controller, handler) {
 };
 var handlerCacheFromDir = function (dirOrDirs) {
   var handlerCache = {};
-  var jsFileRegex = /\.(coffee|js)$/;
+  var jsFileRegex = /\.(coffee|js|ts)$/;
   var dirs = [];
 
 
