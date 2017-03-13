@@ -210,6 +210,28 @@ describe('Swagger Router Middleware v2.0', function () {
     });
   });
 
+  it('should do routing when nothing is given', function (done) {
+    var cPetStoreJson = _.cloneDeep(petStoreJson);
+    var controller = require('../controllers/Users');
+
+    // Use Users controller
+    delete cPetStoreJson.paths['/pets/{id}'].get['x-swagger-router-controller'];
+    delete cPetStoreJson.paths['/pets/{id}'].get.operationId;
+
+    helpers.createServer([cPetStoreJson], {
+      swaggerRouterOptions: {
+        controllers: {
+          'pets_get' : controller.getById
+        }
+      }
+    }, function (app) {
+      request(app)
+        .get('/api/pets/1')
+        .expect(200)
+        .end(helpers.expectContent(controller.response, done));
+    });
+  });
+
   it('should return an error when there is no controller and use of stubs is off', function (done) {
     var cOptions = _.cloneDeep(optionsWithControllersDir);
 
