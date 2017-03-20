@@ -1526,7 +1526,8 @@
         "ssv",
         "tsv",
         "pipes",
-        "multi"
+        "multi",
+        "brackets"
       ],
       "default": "csv"
     },
