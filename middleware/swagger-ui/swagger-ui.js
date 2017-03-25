@@ -5005,7 +5005,7 @@ Operation.prototype.encodeQueryParam = function (arg) {
  * TODO revisit, might not want to leave '/'
  **/
 Operation.prototype.encodePathParam = function (pathParam) {
-  return encodeURIComponent(pathParam);
+  return pathParam.toString().replace('%', '%25').replace('/', '%2F').replace('?', '%3F').replace('#', '%23');
 };
 
 },{"../helpers":4,"../http":5,"./model":9,"lodash-compat/lang/cloneDeep":142,"lodash-compat/lang/isEmpty":145,"lodash-compat/lang/isObject":148,"lodash-compat/lang/isUndefined":152,"q":161}],11:[function(require,module,exports){
