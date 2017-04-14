@@ -1096,6 +1096,38 @@ describe('Swagger Metadata Middleware v2.0', function () {
       });
     });
 
+    it('should not coerce strings in array body responses (Issue 486)', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+      var petNames = ['0', 'just a string', '{"notreallyjson":true}'];
+
+      cPetStoreJson.paths['/pets'].post.parameters[0].schema = {
+        type: 'array',
+        items: {
+          type: 'string'
+        }
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            createPet: function (req, res, next) {
+              var newPetNames = req.swagger.params.pet.value;
+
+              res.end(JSON.stringify(newPetNames));
+
+              return next();            }
+          }
+        }
+      }, function(app) {
+        request(app)
+          .post('/api/pets')
+          .set('Accept', 'application/json')
+          .send(petNames)
+          .expect(200)
+          .end(helpers.expectContent(petNames, done));
+      });
+    });
+
     it('should not error with file parameter not being provided (Issue 350)', function (done) {
       var cPetStoreJson = _.cloneDeep(petStoreJson);
       var operation = _.cloneDeep(cPetStoreJson.paths['/pets']).post;
