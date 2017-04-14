@@ -114,7 +114,7 @@ var validateValue = function (req, schema, path, val, location, callback) {
   var spec = cHelpers.getSpec(version);
 
   // In swagger 2, a parameter in body will have a .schema, rather than be a schema: http://swagger.io/specification/#parameterObject
-  // etParameterType is already savvy to this, so we do what it does for the schema.
+  // getParameterType() is already savvy to this, so we do what it does for the schema.
   val = mHelpers.convertValue(val, _.isUndefined(schema.schema) ? schema : schema.schema, mHelpers.getParameterType(schema), location);
 
   try {
