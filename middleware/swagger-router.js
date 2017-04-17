@@ -367,9 +367,12 @@ var send405 = function (req, res, next) {
  * @param {object} [options] - The middleware options
  * @param {(string|object|string[]} [options.controllers=./controllers] - If this is a string or string array, this is
  *                                                                        the path, or paths, to find the controllers
- *                                                                        in.  If it's an object, the keys are the
- *                                                                        controller "name" (as described above) and the
- *                                                                        value is a function.
+ *                                                                        in.
+ *                                                                        If it's an object, the keys could be either:
+ *                                                                        handler name (format: controllerName_funcName)
+ *                                                                        and controller function
+ *                                                                        or
+ *                                                                        controller name and an object containing all the controller's functions.
  * @param {boolean} [options.useStubs=false] - Whether or not to stub missing controllers and methods
  *
  * @returns the middleware function
@@ -389,15 +392,22 @@ exports = module.exports = function (options) {
     debug('  Controllers:');
 
     // Create the handler cache from the passed in controllers object
-    _.each(options.controllers, function (func, handlerName) {
+    _.each(options.controllers, function (value, handlerName) {
       debug('    %s', handlerName);
-
-      if (!_.isFunction(func)) {
-        throw new Error('options.controllers values must be functions');
+      if (_.isFunction(value)) {
+          handlerCache[handlerName] = value;
+      } else if (_.isObject(value)){
+        _.each(value, function (func, funcName) {
+          if (!_.isFunction(func)) {
+            throw new Error('options.controllers. values must be functions');
+          }
+          var handlerId = handlerName + '_' + funcName;
+          handlerCache[handlerId] = func;
+        });
+      } else {
+        throw new Error('options.controllers values must be functions or object');
       }
     });
-
-    handlerCache = options.controllers;
   } else {
     // Create the handler cache from the modules in the controllers directory
     handlerCache = handlerCacheFromDir(options.controllers);
