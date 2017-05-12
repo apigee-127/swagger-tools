@@ -5002,10 +5002,10 @@ Operation.prototype.encodeQueryParam = function (arg) {
 };
 
 /**
- * TODO revisit, might not want to leave '/'
+ * URL encode path parameter, skipping whitelisted characters per pchar definition in RFC 3986, see https://tools.ietf.org/html/rfc3986#page-50
  **/
 Operation.prototype.encodePathParam = function (pathParam) {
-  return pathParam.toString().replace('%', '%25').replace('/', '%2F').replace('?', '%3F').replace('#', '%23');
+  return pathParam.toString().replace(/[^-A-Za-z0-9:@._~!$&'()*+,;=]+/g, function (match) { return encodeURIComponent(match); });
 };
 
 },{"../helpers":4,"../http":5,"./model":9,"lodash-compat/lang/cloneDeep":142,"lodash-compat/lang/isEmpty":145,"lodash-compat/lang/isObject":148,"lodash-compat/lang/isUndefined":152,"q":161}],11:[function(require,module,exports){
