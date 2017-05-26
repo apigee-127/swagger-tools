@@ -5,6 +5,7 @@
 * Added support for nested controllers _(PR #422, Issue #283)_
 * Fix issue where the `failedValidation` property was not set for `Content-Type` request validation errors _(PR #420)_
 * Fix issue where `array` `body` parameters would coerce non-array types into an array _(Issue #438)
+* Fix issue where swagger-ui shows an error icon trying to validate a swagger doc for an internal API *(Issue 323, 370)*
 
 ### 0.10.1 (2016-02-24)
 
