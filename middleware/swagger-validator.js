@@ -169,7 +169,7 @@ var validateValue = function (req, schema, path, val, location, callback) {
     callback();
   }
 };
-var wrapEnd = function (req, res, next) {
+var wrapEnd = function (req, res, next, invalidResponseHook) {
   var operation = req.swagger.operation;
   var originalEnd = res.end;
   var vPath = _.cloneDeep(req.swagger.operationPath);
@@ -298,7 +298,11 @@ var wrapEnd = function (req, res, next) {
         mHelpers.debugError(err, debug);
       }
 
-      return next(err);
+      if (invalidResponseHook) {
+        return invalidResponseHook(err, req, res, function(e) { next(e); });
+      } else {
+        return next(err);
+      }
     }
   };
 };
@@ -336,7 +340,7 @@ exports = module.exports = function (options) {
     if (!_.isUndefined(operation)) {
       // If necessary, override 'res.end'
       if (options.validateResponse === true) {
-        wrapEnd(req, res, next);
+        wrapEnd(req, res, next, options.invalidResponseHook);
       }
 
       debug('  Request validation:');

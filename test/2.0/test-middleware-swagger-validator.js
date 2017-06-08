@@ -1192,6 +1192,75 @@ describe('Swagger Validator Middleware v2.0', function () {
           .end(helpers.expectContent('Response validation failed: failed schema validation', done));
       });
     });
+
+    describe('hook', function() {
+
+      it('can observe an invalid response', function(done) {
+        var cPetStoreJson = _.cloneDeep(petStoreJson);
+        var hookErr;
+
+        cPetStoreJson.paths['/pets/{id}'].get['x-swagger-router-controller'] = 'Pets';
+        cPetStoreJson.paths['/pets/{id}'].get.operationId = 'getPetById';
+
+        helpers.createServer([cPetStoreJson], {
+          swaggerRouterOptions: {
+            controllers: {
+              'Pets_getPetById': function (req, res) {
+                return res.end({});
+              }
+            }
+          },
+          swaggerValidatorOptions: {
+            validateResponse: true,
+            invalidResponseHook: function(err, req, res, next) {
+              hookErr = err;
+              next(err);
+            }
+          }
+        }, function (app) {
+          request(app)
+            .get('/api/pets/1')
+            .expect(500)
+            .expect(function() {
+              if (hookErr.code !== 'SCHEMA_VALIDATION_FAILED') { throw new Error('Validation hook did not see error.'); }
+            })
+            .end(helpers.expectContent('Response validation failed: failed schema validation', done));
+        });
+      });
+
+      it('can quash an invalid response', function(done) {
+        var cPetStoreJson = _.cloneDeep(petStoreJson);
+        var hookErr;
+
+        cPetStoreJson.paths['/pets/{id}'].get['x-swagger-router-controller'] = 'Pets';
+        cPetStoreJson.paths['/pets/{id}'].get.operationId = 'getPetById';
+
+        helpers.createServer([cPetStoreJson], {
+          swaggerRouterOptions: {
+            controllers: {
+              'Pets_getPetById': function (req, res) {
+                return res.end({});
+              }
+            }
+          },
+          swaggerValidatorOptions: {
+            validateResponse: true,
+            invalidResponseHook: function(err, req, res, next) {
+              hookErr = err;
+              next();
+            }
+          }
+        }, function (app) {
+          request(app)
+            .get('/api/pets/1')
+            .expect(200)
+            .expect(function() {
+              if (hookErr.code !== 'SCHEMA_VALIDATION_FAILED') { throw new Error('Validation hook did not see error.'); }
+            })
+            .end(helpers.expectContent('OK', done));
+        });
+      });
+    });
   });
 
   describe('issues', function () {
