@@ -26,7 +26,7 @@
 
 'use strict';
 
-var _ = require('lodash-compat');
+var _ = require('lodash');
 var assert = require('assert');
 var async = require('async');
 var JsonRefs = require('json-refs');

@@ -24,7 +24,7 @@
 
 'use strict';
 
-var _ = require('lodash-compat');
+var _ = require('lodash');
 var async = require('async');
 var bp = require('body-parser');
 var cHelpers = require('../lib/helpers');
