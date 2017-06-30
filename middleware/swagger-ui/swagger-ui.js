@@ -985,10 +985,10 @@ var helpers = require('./helpers');
 var btoa = require('btoa'); // jshint ignore:line
 var CookieJar = require('cookiejar').CookieJar;
 var _ = {
-  each: require('lodash-compat/collection/each'),
-  includes: require('lodash-compat/collection/includes'),
-  isObject: require('lodash-compat/lang/isObject'),
-  isArray: require('lodash-compat/lang/isArray')
+  each: require('lodash/each'),
+  includes: require('lodash/includes'),
+  isObject: require('lodash/isObject'),
+  isArray: require('lodash/isArray')
 };
 
 /**
@@ -1126,20 +1126,20 @@ PasswordAuthorization.prototype.apply = function (obj) {
   return true;
 };
 
-},{"./helpers":4,"btoa":14,"cookiejar":19,"lodash-compat/collection/each":56,"lodash-compat/collection/includes":59,"lodash-compat/lang/isArray":144,"lodash-compat/lang/isObject":148}],3:[function(require,module,exports){
+},{"./helpers":4,"btoa":14,"cookiejar":19,"lodash/each":56,"lodash-compat/collection/includes":59,"lodash-compat/lang/isArray":144,"lodash-compat/lang/isObject":148}],3:[function(require,module,exports){
 'use strict';
 
 var _ = {
-  bind: require('lodash-compat/function/bind'),
-  cloneDeep: require('lodash-compat/lang/cloneDeep'),
-  find: require('lodash-compat/collection/find'),
-  forEach: require('lodash-compat/collection/forEach'),
-  indexOf: require('lodash-compat/array/indexOf'),
-  isArray: require('lodash-compat/lang/isArray'),
-  isObject: require('lodash-compat/lang/isObject'),
-  isFunction: require('lodash-compat/lang/isFunction'),
-  isPlainObject: require('lodash-compat/lang/isPlainObject'),
-  isUndefined: require('lodash-compat/lang/isUndefined')
+  bind: require('lodash/bind'),
+  cloneDeep: require('lodash/cloneDeep'),
+  find: require('lodash/find'),
+  forEach: require('lodash/forEach'),
+  indexOf: require('lodash/indexOf'),
+  isArray: require('lodash/isArray'),
+  isObject: require('lodash/isObject'),
+  isFunction: require('lodash/isFunction'),
+  isPlainObject: require('lodash/isPlainObject'),
+  isUndefined: require('lodash/isUndefined')
 };
 var auth = require('./auth');
 var helpers = require('./helpers');
@@ -1694,13 +1694,13 @@ SwaggerClient.prototype.fail = function (message) {
   }
 };
 
-},{"./auth":2,"./helpers":4,"./http":5,"./resolver":6,"./spec-converter":8,"./types/model":9,"./types/operation":10,"./types/operationGroup":11,"lodash-compat/array/indexOf":53,"lodash-compat/collection/find":57,"lodash-compat/collection/forEach":58,"lodash-compat/function/bind":62,"lodash-compat/lang/cloneDeep":142,"lodash-compat/lang/isArray":144,"lodash-compat/lang/isFunction":146,"lodash-compat/lang/isObject":148,"lodash-compat/lang/isPlainObject":149,"lodash-compat/lang/isUndefined":152,"q":161}],4:[function(require,module,exports){
+},{"./auth":2,"./helpers":4,"./http":5,"./resolver":6,"./spec-converter":8,"./types/model":9,"./types/operation":10,"./types/operationGroup":11,"lodash/indexOf":53,"lodash-compat/collection/find":57,"lodash-compat/collection/forEach":58,"lodash-compat/function/bind":62,"lodash-compat/lang/cloneDeep":142,"lodash-compat/lang/isArray":144,"lodash-compat/lang/isFunction":146,"lodash-compat/lang/isObject":148,"lodash-compat/lang/isPlainObject":149,"lodash-compat/lang/isUndefined":152,"q":161}],4:[function(require,module,exports){
 (function (process){
 'use strict';
 
 var _ = {
-  isPlainObject: require('lodash-compat/lang/isPlainObject'),
-  indexOf: require('lodash-compat/array/indexOf')
+  isPlainObject: require('lodash/isPlainObject'),
+  indexOf: require('lodash/indexOf')
 };
 
 module.exports.__bind = function (fn, me) {
@@ -1747,14 +1747,14 @@ var simpleRef = module.exports.simpleRef = function (name) {
 
 }).call(this,require('_process'))
 //# sourceMappingURL=data:application/json;charset:utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImxpYi9oZWxwZXJzLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7QUFBQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQSIsImZpbGUiOiJnZW5lcmF0ZWQuanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlc0NvbnRlbnQiOlsiJ3VzZSBzdHJpY3QnO1xuXG52YXIgXyA9IHtcbiAgaXNQbGFpbk9iamVjdDogcmVxdWlyZSgnbG9kYXNoLWNvbXBhdC9sYW5nL2lzUGxhaW5PYmplY3QnKSxcbiAgaW5kZXhPZjogcmVxdWlyZSgnbG9kYXNoLWNvbXBhdC9hcnJheS9pbmRleE9mJylcbn07XG5cbm1vZHVsZS5leHBvcnRzLl9fYmluZCA9IGZ1bmN0aW9uIChmbiwgbWUpIHtcbiAgcmV0dXJuIGZ1bmN0aW9uKCl7XG4gICAgcmV0dXJuIGZuLmFwcGx5KG1lLCBhcmd1bWVudHMpO1xuICB9O1xufTtcblxudmFyIGxvZyA9IG1vZHVsZS5leHBvcnRzLmxvZyA9IGZ1bmN0aW9uKCkge1xuICAvLyBPbmx5IGxvZyBpZiBhdmFpbGFibGUgYW5kIHdlJ3JlIG5vdCB0ZXN0aW5nXG4gIGlmIChjb25zb2xlICYmIHByb2Nlc3MuZW52Lk5PREVfRU5WICE9PSAndGVzdCcpIHtcbiAgICBjb25zb2xlLmxvZyhBcnJheS5wcm90b3R5cGUuc2xpY2UuY2FsbChhcmd1bWVudHMpWzBdKTtcbiAgfVxufTtcblxubW9kdWxlLmV4cG9ydHMuZmFpbCA9IGZ1bmN0aW9uIChtZXNzYWdlKSB7XG4gIGxvZyhtZXNzYWdlKTtcbn07XG5cbnZhciBvcHRpb25IdG1sID0gbW9kdWxlLmV4cG9ydHMub3B0aW9uSHRtbCA9IGZ1bmN0aW9uIChsYWJlbCwgdmFsdWUpIHtcbiAgcmV0dXJuICc8dHI+PHRkIGNsYXNzPVwib3B0aW9uTmFtZVwiPicgKyBsYWJlbCArICc6PC90ZD48dGQ+JyArIHZhbHVlICsgJzwvdGQ+PC90cj4nO1xufTtcblxudmFyIHJlc29sdmVTY2hlbWEgPSBtb2R1bGUuZXhwb3J0cy5yZXNvbHZlU2NoZW1hID0gZnVuY3Rpb24gKHNjaGVtYSkge1xuICBpZiAoXy5pc1BsYWluT2JqZWN0KHNjaGVtYS5zY2hlbWEpKSB7XG4gICAgc2NoZW1hID0gcmVzb2x2ZVNjaGVtYShzY2hlbWEuc2NoZW1hKTtcbiAgfVxuXG4gIHJldHVybiBzY2hlbWE7XG59O1xuXG52YXIgc2ltcGxlUmVmID0gbW9kdWxlLmV4cG9ydHMuc2ltcGxlUmVmID0gZnVuY3Rpb24gKG5hbWUpIHtcbiAgaWYgKHR5cGVvZiBuYW1lID09PSAndW5kZWZpbmVkJykge1xuICAgIHJldHVybiBudWxsO1xuICB9XG5cbiAgaWYgKG5hbWUuaW5kZXhPZignIy9kZWZpbml0aW9ucy8nKSA9PT0gMCkge1xuICAgIHJldHVybiBuYW1lLnN1YnN0cmluZygnIy9kZWZpbml0aW9ucy8nLmxlbmd0aCk7XG4gIH0gZWxzZSB7XG4gICAgcmV0dXJuIG5hbWU7XG4gIH1cbn07XG5cbiJdfQ==
-},{"_process":13,"lodash-compat/array/indexOf":53,"lodash-compat/lang/isPlainObject":149}],5:[function(require,module,exports){
+},{"_process":13,"lodash/indexOf":53,"lodash-compat/lang/isPlainObject":149}],5:[function(require,module,exports){
 'use strict';
 
 var helpers = require('./helpers');
 var request = require('superagent');
 var jsyaml = require('js-yaml');
 var _ = {
-  isObject: require('lodash-compat/lang/isObject')
+  isObject: require('lodash/isObject')
 };
 
 /*
@@ -2044,14 +2044,14 @@ SuperagentHttpClient.prototype.execute = function (obj) {
   });
 };
 
-},{"./helpers":4,"js-yaml":20,"lodash-compat/lang/isObject":148,"superagent":162}],6:[function(require,module,exports){
+},{"./helpers":4,"js-yaml":20,"lodash/isObject":148,"superagent":162}],6:[function(require,module,exports){
 'use strict';
 
 var SwaggerHttp = require('./http');
 var _ = {
-  isObject: require('lodash-compat/lang/isObject'),
-  cloneDeep: require('lodash-compat/lang/cloneDeep'),
-  isArray: require('lodash-compat/lang/isArray')
+  isObject: require('lodash/isObject'),
+  cloneDeep: require('lodash/cloneDeep'),
+  isArray: require('lodash/isArray')
 };
 
 
@@ -2788,22 +2788,22 @@ Resolver.prototype.resolveAllOf = function(spec, obj, depth) {
   }
 };
 
-},{"./http":5,"lodash-compat/lang/cloneDeep":142,"lodash-compat/lang/isArray":144,"lodash-compat/lang/isObject":148}],7:[function(require,module,exports){
+},{"./http":5,"lodash/cloneDeep":142,"lodash-compat/lang/isArray":144,"lodash-compat/lang/isObject":148}],7:[function(require,module,exports){
 'use strict';
 
 var Helpers = require('./helpers');
 
 var _ = {
-  isPlainObject: require('lodash-compat/lang/isPlainObject'),
-  isUndefined: require('lodash-compat/lang/isUndefined'),
-  isArray: require('lodash-compat/lang/isArray'),
-  isObject: require('lodash-compat/lang/isObject'),
-  isEmpty: require('lodash-compat/lang/isEmpty'),
-  map: require('lodash-compat/collection/map'),
-  indexOf: require('lodash-compat/array/indexOf'),
-  cloneDeep: require('lodash-compat/lang/cloneDeep'),
-  keys: require('lodash-compat/object/keys'),
-  forEach: require('lodash-compat/collection/forEach')
+  isPlainObject: require('lodash/isPlainObject'),
+  isUndefined: require('lodash/isUndefined'),
+  isArray: require('lodash/isArray'),
+  isObject: require('lodash/isObject'),
+  isEmpty: require('lodash/isEmpty'),
+  map: require('lodash/map'),
+  indexOf: require('lodash/indexOf'),
+  cloneDeep: require('lodash/cloneDeep'),
+  keys: require('lodash/keys'),
+  forEach: require('lodash/forEach')
 };
 
 module.exports.optionHtml = optionHtml;
@@ -3323,12 +3323,12 @@ function schemaToHTML(name, schema, models, modelPropertyMacro) {
   }
 }
 
-},{"./helpers":4,"lodash-compat/array/indexOf":53,"lodash-compat/collection/forEach":58,"lodash-compat/collection/map":60,"lodash-compat/lang/cloneDeep":142,"lodash-compat/lang/isArray":144,"lodash-compat/lang/isEmpty":145,"lodash-compat/lang/isObject":148,"lodash-compat/lang/isPlainObject":149,"lodash-compat/lang/isUndefined":152,"lodash-compat/object/keys":153}],8:[function(require,module,exports){
+},{"./helpers":4,"lodash/indexOf":53,"lodash-compat/collection/forEach":58,"lodash-compat/collection/map":60,"lodash-compat/lang/cloneDeep":142,"lodash-compat/lang/isArray":144,"lodash-compat/lang/isEmpty":145,"lodash-compat/lang/isObject":148,"lodash-compat/lang/isPlainObject":149,"lodash-compat/lang/isUndefined":152,"lodash-compat/object/keys":153}],8:[function(require,module,exports){
 'use strict';
 
 var SwaggerHttp = require('./http');
 var _ = {
-  isObject: require('lodash-compat/lang/isObject')
+  isObject: require('lodash/isObject')
 };
 
 var SwaggerSpecConverter = module.exports = function () {
@@ -3967,13 +3967,13 @@ SwaggerSpecConverter.prototype.finish = function (callback, obj) {
   callback(obj);
 };
 
-},{"./http":5,"lodash-compat/lang/isObject":148}],9:[function(require,module,exports){
+},{"./http":5,"lodash/isObject":148}],9:[function(require,module,exports){
 'use strict';
 
 var log = require('../helpers').log;
 var _ = {
-  isPlainObject: require('lodash-compat/lang/isPlainObject'),
-  isString: require('lodash-compat/lang/isString'),
+  isPlainObject: require('lodash/isPlainObject'),
+  isString: require('lodash/isString'),
 };
 
 var SchemaMarkup = require('../schema-markup.js');
@@ -4015,14 +4015,14 @@ Model.prototype.getMockSignature = function () {
   return SchemaMarkup.schemaToHTML(this.name, this.definition, this.models, this.modelPropertyMacro);
 };
 
-},{"../helpers":4,"../schema-markup.js":7,"js-yaml":20,"lodash-compat/lang/isPlainObject":149,"lodash-compat/lang/isString":150}],10:[function(require,module,exports){
+},{"../helpers":4,"../schema-markup.js":7,"js-yaml":20,"lodash/isPlainObject":149,"lodash-compat/lang/isString":150}],10:[function(require,module,exports){
 'use strict';
 
 var _ = {
-  cloneDeep: require('lodash-compat/lang/cloneDeep'),
-  isUndefined: require('lodash-compat/lang/isUndefined'),
-  isEmpty: require('lodash-compat/lang/isEmpty'),
-  isObject: require('lodash-compat/lang/isObject')
+  cloneDeep: require('lodash/cloneDeep'),
+  isUndefined: require('lodash/isUndefined'),
+  isEmpty: require('lodash/isEmpty'),
+  isObject: require('lodash/isObject')
 };
 var helpers = require('../helpers');
 var Model = require('./model');
@@ -5008,7 +5008,7 @@ Operation.prototype.encodePathParam = function (pathParam) {
   return encodeURIComponent(pathParam);
 };
 
-},{"../helpers":4,"../http":5,"./model":9,"lodash-compat/lang/cloneDeep":142,"lodash-compat/lang/isEmpty":145,"lodash-compat/lang/isObject":148,"lodash-compat/lang/isUndefined":152,"q":161}],11:[function(require,module,exports){
+},{"../helpers":4,"../http":5,"./model":9,"lodash/cloneDeep":142,"lodash-compat/lang/isEmpty":145,"lodash-compat/lang/isObject":148,"lodash-compat/lang/isUndefined":152,"q":161}],11:[function(require,module,exports){
 'use strict';
 
 var OperationGroup = module.exports = function (tag, description, externalDocs, operation) {
