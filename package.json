@@ -82,6 +82,7 @@
     "superagent": "^2.0.0",
     "swagger-converter": "^0.1.7",
     "traverse": "^0.6.6",
+    "validator": "^8.1.0",
     "z-schema": "^3.15.4"
   }
 }
