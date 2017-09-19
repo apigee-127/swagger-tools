@@ -45,18 +45,18 @@ var globalHelp = [
   '  Usage: swagger-tools [options] [command]',
   '',
   '',
+  '  Options:',
+  '',
+  '    -V, --version  output the version number',
+  '    -h, --help     output usage information',
+  '',
+  '',
   '  Commands:',
   '',
   '    convert [options] <resourceListing> [apiDeclarations...]               Converts Swagger 1.2 documents to a Swagger 2.0 document',
   '    help [command]                                                         Display help information',
   '    info <version>                                                         Display information about the Swagger version requested',
   '    validate [options] <resourceListingOrSwaggerDoc> [apiDeclarations...]  Display validation results for the Swagger document(s)',
-  '',
-  '  Options:',
-  '',
-  '    -V, --version  output the version number',
-  '    -h, --help     output usage information',
-  '',
   ''
 ].join('\n');
 
@@ -244,12 +244,12 @@ describe('CLI Global', function () {
             '',
             '  Converts Swagger 1.2 documents to a Swagger 2.0 document',
             '',
+            '',
             '  Options:',
             '',
-            '    -h, --help           output usage information',
             '    -n, --no-validation  disable pre-conversion validation of the Swagger document(s)',
             '    -y, --yaml           output as YAML instead of JSON',
-            '',
+            '    -h, --help           output usage information',
             ''
           ].join('\n'));
 
@@ -268,12 +268,12 @@ describe('CLI Global', function () {
             '',
             '  Converts Swagger 1.2 documents to a Swagger 2.0 document',
             '',
+            '',
             '  Options:',
             '',
-            '    -h, --help           output usage information',
             '    -n, --no-validation  disable pre-conversion validation of the Swagger document(s)',
             '    -y, --yaml           output as YAML instead of JSON',
-            '',
+            '    -h, --help           output usage information',
             ''
           ].join('\n'));
 
@@ -290,10 +290,10 @@ describe('CLI Global', function () {
             '',
             '  Display help information',
             '',
+            '',
             '  Options:',
             '',
             '    -h, --help  output usage information',
-            '',
             ''
           ].join('\n'));
 
@@ -310,10 +310,10 @@ describe('CLI Global', function () {
             '',
             '  Display information about the Swagger version requested',
             '',
+            '',
             '  Options:',
             '',
             '    -h, --help  output usage information',
-            '',
             ''
           ].join('\n'));
 
@@ -330,11 +330,11 @@ describe('CLI Global', function () {
             '',
             '  Display validation results for the Swagger document(s)',
             '',
+            '',
             '  Options:',
             '',
-            '    -h, --help     output usage information',
             '    -v, --verbose  display verbose output',
-            '',
+            '    -h, --help     output usage information',
             ''
           ].join('\n'));
 
@@ -351,10 +351,10 @@ describe('CLI Global', function () {
             '',
             '  Display help information',
             '',
+            '',
             '  Options:',
             '',
             '    -h, --help  output usage information',
-            '',
             ''
           ].join('\n'));
 
@@ -435,10 +435,10 @@ describe('CLI Global', function () {
             '',
             '  Display information about the Swagger version requested',
             '',
+            '',
             '  Options:',
             '',
             '    -h, --help  output usage information',
-            '',
             ''
           ].join('\n'));
 
@@ -639,11 +639,11 @@ describe('CLI Global', function () {
             '',
             '  Display validation results for the Swagger document(s)',
             '',
+            '',
             '  Options:',
             '',
-            '    -h, --help     output usage information',
             '    -v, --verbose  display verbose output',
-            '',
+            '    -h, --help     output usage information',
             ''
           ].join('\n'));
 
