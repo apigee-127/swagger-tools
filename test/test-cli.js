@@ -54,8 +54,8 @@ var globalHelp = [
   '',
   '  Options:',
   '',
-  '    -h, --help     output usage information',
   '    -V, --version  output the version number',
+  '    -h, --help     output usage information',
   '',
   ''
 ].join('\n');
