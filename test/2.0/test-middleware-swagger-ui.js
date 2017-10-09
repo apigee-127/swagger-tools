@@ -134,7 +134,7 @@ describe('Swagger UI Middleware v2.0', function () {
           request(app)
             .get('/docs/package.json')
             .expect(200)
-            .expect('content-type', 'application/json')
+            .expect('content-type', /application\/json/)
             .end(function (err, res) {
               if (err) {
                 return done(err);
