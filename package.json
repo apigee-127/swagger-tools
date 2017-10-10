@@ -39,6 +39,7 @@
     "schemas"
   ],
   "devDependencies": {
+    "ajv": "^4.10.3",
     "browserify": "^13.0.0",
     "connect": "^3.4.0",
     "del": "^2.2.0",
