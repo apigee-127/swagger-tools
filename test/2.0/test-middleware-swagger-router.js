@@ -188,6 +188,19 @@ describe('Swagger Router Middleware v2.0', function () {
     });
   });
 
+  it('should do routing when `x-swagger-router-controller` is a directory', function (done) {
+    helpers.createServer([petStoreJson], {
+      swaggerRouterOptions: {
+        controllers: path.join(__dirname, '..', 'controllerFolders')
+      }
+    }, function (app) {
+      request(app)
+        .get('/api/pets/1')
+        .expect(200)
+        .end(helpers.expectContent('controllerFolders/pets/getPetById.js swagger-router OK', done));
+    });
+  });
+
   it('should do routing when only operationId is given', function (done) {
     var cPetStoreJson = _.cloneDeep(petStoreJson);
     var controller = require('../controllers/Users');

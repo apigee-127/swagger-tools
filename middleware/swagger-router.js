@@ -92,12 +92,12 @@ var handlerCacheFromDir = function (dirOrDirs) {
           file = path.resolve(file);
           controller = require(file);
 
-          debug('    %s%s:', file, (_.isPlainObject(controller) ? '' : ' (not an object, skipped)'));
+          debug('    %s%s:', file, (_.isPlainObject(controller) || typeof controller === 'function' ? '' : ' (not an object or function, skipped)'));
 
+          var handlerId;
           if (_.isPlainObject(controller)) {
             _.each(controller, function (value, name) {
-              var handlerId = getFullQualifiedHandlerId(controllerName, name);
-
+              handlerId = getFullQualifiedHandlerId(controllerName, name);
               debug('      %s%s', handlerId, (_.isFunction(value) ? '' : ' (not a function, skipped)'));
 
               // TODO: Log this situation
@@ -120,6 +120,11 @@ var handlerCacheFromDir = function (dirOrDirs) {
                 }
               }
             });
+          } else if (typeof controller === 'function') {
+            handlerId = getFullQualifiedHandlerId(parent.split(path.sep).pop(), controllerName.split(path.sep).pop());
+            if (handlerCache[handlerId] === undefined) {
+              handlerCache[handlerId] = require(file);
+            }
           }
         }
       }
