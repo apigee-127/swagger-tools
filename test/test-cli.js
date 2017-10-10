@@ -363,7 +363,7 @@ describe('CLI Global', function () {
       });
     });
 
-    describe('info', function () {
+    describe.only('info', function () {
       it('missing version argument', function (done) {
         executeCLI(['info'], function (stderr, stdout) {
           assert.equal(stderr, [
