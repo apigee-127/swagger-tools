@@ -23,7 +23,7 @@
  */
 'use strict';
 
-var _ = require('lodash-compat');
+var _ = require('lodash');
 var async = require('async');
 var debug = require('debug')('swagger-tools:middleware:security');
 var helpers = require('./helpers');

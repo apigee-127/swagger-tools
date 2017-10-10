@@ -60,7 +60,7 @@ gulp.task('browserify', function () {
             'debug': 'debug',
             'json-refs': 'JsonRefs',
             'js-yaml': 'jsyaml',
-            'lodash-compat': '_',
+            'lodash': '_',
             'spark-md5': 'SparkMD5',
             'swagger-converter': 'SwaggerConverter.convert',
             'traverse': 'traverse',
