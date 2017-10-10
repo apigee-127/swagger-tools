@@ -1,6 +1,6 @@
 ## Release Notes
 
-### TBD
+### 0.10.2 (2017-10-10)
 
 * Added support for nested controllers _(PR #422, Issue #283)_
 * Fix issue where async controllers were not identified properly _(Issue #443)_
