@@ -110,6 +110,12 @@ gulp.task('lint', function () {
     .pipe($.jshint.reporter('fail'));
 });
 
+gulp.task('nsp', function (cb) {
+  $.nsp({
+    package: path.join(__dirname, 'package.json')
+  }, cb);
+});
+
 gulp.task('test-node', function () {
   return new Promise(function (resolve, reject) {
     gulp.src([
@@ -226,4 +232,4 @@ gulp.task('test', function (cb) {
   runSequence('test-node', 'test-browser', cb);
 });
 
-gulp.task('default', ['lint', 'test']);
+gulp.task('default', ['lint', 'nsp', 'test']);
