@@ -35,7 +35,6 @@ var path = require('path');
 var pkg = require('../package.json');
 var program = require('commander');
 var request = require('superagent');
-var S = require('string');
 var YAML = require('js-yaml');
 
 var exitWithError = function (msg) {
@@ -44,6 +43,14 @@ var exitWithError = function (msg) {
   console.error(); // Here only to match the output of commander.js
 
   process.exit(1);
+};
+var padLine = function (left, paddingAmount, right) {
+  if (paddingAmount < left.length) {
+    paddingAmount = 1;
+  } else {
+    paddingAmount -= left.length;
+  }
+  return left + (' '.repeat(paddingAmount)) + right;
 };
 var getDocument = function (pathOrUrl, callback) {
   var parseContent = function (content) {
@@ -222,8 +229,8 @@ program
     console.log('Swagger ' + version + ' Information:');
     console.log();
 
-    console.log('  ' + S('documentation url').padRight(paddingAmount).s + spec.docsUrl);
-    console.log('  ' + S('schema(s) url').padRight(paddingAmount).s + spec.schemasUrl);
+    console.log('  ' + padLine('documentation url', paddingAmount, spec.docsUrl));
+    console.log('  ' + padLine('schema(s) url', paddingAmount, spec.schemasUrl));
     console.log();
   });
 
