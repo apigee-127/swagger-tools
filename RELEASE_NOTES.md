@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 0.10.3 (2017-10-13)
+
+* Remove support for nested controllers _(Issue #537, #540)_
+
 ### 0.10.2 (2017-10-10)
 
 * Added support for nested controllers _(PR #422, Issue #283)_
