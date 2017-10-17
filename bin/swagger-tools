@@ -35,8 +35,12 @@ var path = require('path');
 var pkg = require('../package.json');
 var program = require('commander');
 var request = require('superagent');
-var S = require('string');
 var YAML = require('js-yaml');
+
+String.prototype.padRight = function (length) {
+  var pad = Array(256).join(' ');
+  return (this + pad).substring(0, length);
+};
 
 var exitWithError = function (msg) {
   console.error();
@@ -222,8 +226,8 @@ program
     console.log('Swagger ' + version + ' Information:');
     console.log();
 
-    console.log('  ' + S('documentation url').padRight(paddingAmount).s + spec.docsUrl);
-    console.log('  ' + S('schema(s) url').padRight(paddingAmount).s + spec.schemasUrl);
+    console.log('  ' + 'documentation url'.padRight(paddingAmount) + spec.docsUrl);
+    console.log('  ' + 'schema(s) url'.padRight(paddingAmount) + spec.schemasUrl);
     console.log();
   });
 
