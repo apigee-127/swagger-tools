@@ -1,5 +1,9 @@
 ## Release Notes
 
+### TBD
+
+* Remove `string` dependency _(PR #542)_
+
 ### 0.10.3 (2017-10-13)
 
 * Remove support for nested controllers _(Issue #537, #540)_
