@@ -35,8 +35,17 @@ var path = require('path');
 var pkg = require('../package.json');
 var program = require('commander');
 var request = require('superagent');
-var S = require('string');
 var YAML = require('js-yaml');
+
+var padRight = function (s, len, ch) {
+  if (!ch) {
+    ch = ' ';
+  }
+  if (s.length >= len) {
+    return s;
+  }
+  return s + Array(len - s.length + 1).join(ch);
+};
 
 var exitWithError = function (msg) {
   console.error();
@@ -222,8 +231,8 @@ program
     console.log('Swagger ' + version + ' Information:');
     console.log();
 
-    console.log('  ' + S('documentation url').padRight(paddingAmount).s + spec.docsUrl);
-    console.log('  ' + S('schema(s) url').padRight(paddingAmount).s + spec.schemasUrl);
+    console.log('  ' + padRight('documentation url', paddingAmount) + spec.docsUrl);
+    console.log('  ' + padRight('schema(s) url', paddingAmount) + spec.schemasUrl);
     console.log();
   });
 
