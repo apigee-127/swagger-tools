@@ -333,7 +333,7 @@ exports = module.exports = function (options) {
     debug('%s %s', req.method, req.url);
     debug('  Will process: %s', _.isUndefined(operation) ? 'no' : 'yes');
 
-    if (!_.isUndefined(operation)) {
+    if (!_.isUndefined(operation) && _.get(operation, 'responses[200].schema.type') !== 'file') {
       // If necessary, override 'res.end'
       if (options.validateResponse === true) {
         wrapEnd(req, res, next);
