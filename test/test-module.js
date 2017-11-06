@@ -148,10 +148,13 @@ describe('swagger-tools', function () {
               errors: [
                 {
                   code: 'ENUM_MISMATCH',
-                  message: 'No enum match for: 1.2',
+                  dataPath: '.swaggerVersion',
+                  keyword: 'enum',
+                  message: 'should be equal to one of the allowed values: 1.2',
                   path: [
                     'swaggerVersion'
-                  ]
+                  ],
+                  schemaPath: '#/properties/swaggerVersion/enum'
                 }
               ],
               warnings: []
@@ -255,19 +258,23 @@ describe('swagger-tools', function () {
               errors: [
                 {
                   code: 'INVALID_TYPE',
-                  message: 'Expected type string but found type integer',
+                  message: 'should be string: 2',
                   path: [
                     'swagger'
                   ],
-                  description: 'The Swagger version of this document.'
+                  dataPath: '.swagger',
+                  keyword: 'type',
+                  schemaPath: '#/properties/swagger/type'
                 },
                 {
                   code: 'ENUM_MISMATCH',
-                  message: 'No enum match for: 2',
+                  message: 'should be equal to one of the allowed values: 2',
                   path: [
                     'swagger'
                   ],
-                  description: 'The Swagger version of this document.'
+                  keyword: 'enum',
+                  dataPath: '.swagger',
+                  schemaPath: '#/properties/swagger/enum'
                 }
               ],
               warnings: []
