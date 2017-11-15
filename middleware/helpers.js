@@ -191,10 +191,6 @@ var convertValue = module.exports.convertValue = function(value, schema, type, l
 
     switch (type) {
         case 'array':
-            if (schema.items.format == 'binary') {
-                value = 'files[' + value.length + ']';
-                break;
-            }
             if (_.isString(value)) {
                 switch (schema.collectionFormat) {
                     case 'csv':
