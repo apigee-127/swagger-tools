@@ -169,10 +169,21 @@ var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch,
     switch (paramLocation) {
       case 'body':
       case 'form':
-      case 'formData':
-        if (paramType.toLowerCase() === 'file') {
-          // Swagger spec does not allow array of files, so maxCount should be 1
-          fields.push({name: paramName, maxCount: 1});
+      case 'formData':        
+        switch (paramType.toLowerCase()) {
+            case 'file':
+                // Swagger spec does not allow array of files, so maxCount should be 1
+                fields.push({ name: paramName, maxCount: 1 });
+                break;
+            case 'array':
+                if (version === '2.0' && parameter.schema.items.format == 'binary') {
+                    // Swagger 2.0 spec allows array of files in this form, so maxCount is not necessary
+                    // https://swagger.io/docs/specification/2-0/file-upload/
+                    fields.push({ name: paramName });
+                }
+                break;
+            default:
+                break;
         }
         break;
     }
