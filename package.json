@@ -68,7 +68,7 @@
   "dependencies": {
     "async": "^2.5.0",
     "body-parser": "1.18.2",
-    "commander": "^2.11.0",
+    "commander": "~2.11.0",
     "debug": "^3.1.0",
     "js-yaml": "^3.3.1",
     "json-refs": "^3.0.1",
