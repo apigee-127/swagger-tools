@@ -2785,6 +2785,26 @@ describe('Specification v2.0', function () {
       });
     });
 
+    it('should properly traverse objects with a length property', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+      var definitionWithLengthPropertyInExample = {
+        properties: {
+          length: {type: 'integer'},
+          name: {type: 'string'}
+        },
+        example: {
+          name: 'joe',
+          length: 20000000
+        }
+      };
+
+      swaggerObject.definitions.Pet = definitionWithLengthPropertyInExample;
+
+      spec.validate(swaggerObject, function () {
+          done();
+      });
+    });
+
     describe('human readable errors for invalid schema', function () {
       function validateResults (results, defType, done) {
         assert.equal(results.errors.length, 1);
