@@ -32,6 +32,8 @@ var mHelpers = require('./helpers');
 var path = require('path');
 
 var defaultOptions = {
+  include: [],
+  exclude: [],
   controllers: {},
   useStubs: false // Should we set this automatically based on process.env.NODE_ENV?
 };
@@ -59,7 +61,48 @@ var getHandlerName = function (req) {
   return handlerName;
 };
 
-var handlerCacheFromDir = function (dirOrDirs) {
+
+var includeFile = function (str, options) {
+
+  const exclude = options.exclude
+  const include = options.include
+
+  if(include) {
+    if (_.isArray(include)) {
+      if (include.length > 0) {
+        var match = _.some(include, function(regex) {
+          return regex.test(str)
+        })
+        if (!match) {
+          return false
+        }
+      }
+    }
+    else {
+      if (!include.test(str)) return false
+    }
+  }
+  if(exclude) {
+    if (_.isArray(exclude)) {
+      if (exclude.length > 0) {
+        var match = _.some(exclude, function (regex) {
+          return regex.test(str)
+        })
+        if (match) {
+          return false
+        }
+      }
+    }
+    else {
+      if (exclude.test(str)) return false
+    }
+  }
+  return true;
+}
+
+var handlerCacheFromDir = exports.handlerCacheFromDir = function (options) {
+  const dirOrDirs = options.controllers
+
   var handlerCache = {};
   var jsFileRegex = /\.(coffee|js|ts)$/;
   var dirs = [];
@@ -77,7 +120,7 @@ var handlerCacheFromDir = function (dirOrDirs) {
       var controllerName = file.replace(jsFileRegex, '');
       var controller;
 
-      if (file.match(jsFileRegex)) {
+      if (file.match(jsFileRegex) && includeFile(path.resolve(dir, file), options)) {
         controller = require(path.resolve(path.join(dir, controllerName)));
 
         debug('    %s%s:',
@@ -375,7 +418,7 @@ exports = module.exports = function (options) {
     handlerCache = options.controllers;
   } else {
     // Create the handler cache from the modules in the controllers directory
-    handlerCache = handlerCacheFromDir(options.controllers);
+    handlerCache = handlerCacheFromDir(options);
   }
 
   return function swaggerRouter (req, res, next) {
@@ -398,6 +441,7 @@ exports = module.exports = function (options) {
         debug('    Missing: %s', _.isUndefined(handler) ? 'yes' : 'no');
         debug('    Ignored: %s', options.ignoreMissingHandlers === true ? 'yes' : 'no');
         debug('    Using mock: %s', options.useStubs && _.isUndefined(handler) ? 'yes' : 'no');
+
 
         if (_.isUndefined(handler) && options.useStubs === true) {
           handler = handlerCache[handlerName] = createStubHandler(handlerName);

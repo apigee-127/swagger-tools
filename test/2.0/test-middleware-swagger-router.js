@@ -177,6 +177,21 @@ describe('Swagger Router Middleware v2.0', function () {
     });
   });
 
+  it('should return an error when exclude is match and use of stubs is off', function (done) {
+    var cOptions = _.cloneDeep(optionsWithControllersDir);
+
+    cOptions.exclude = [/controllers/];
+
+    helpers.createServer([petStoreJson], {
+      swaggerRouterOptions: cOptions
+    }, function (app) {
+      request(app)
+        .get('/api/pets/1')
+        .expect(500)
+        .end(helpers.expectContent('Cannot resolve the configured swagger-router handler: Pets_getPetById', done));
+    });
+  });
+
   it('should return an error when there is no controller and ignoreMissingHandlers is true', function (done) {
     var cPetStoreJson = _.cloneDeep(petStoreJson);
     var cOptions = _.cloneDeep(optionsWithControllersDir);
