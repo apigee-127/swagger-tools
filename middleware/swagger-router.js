@@ -64,44 +64,46 @@ var getHandlerName = function (req) {
 
 var includeFile = function (str, options) {
 
-  const exclude = options.exclude
-  const include = options.include
+  var exclude = options.exclude;
+  var include = options.include;
 
   if(include) {
     if (_.isArray(include)) {
       if (include.length > 0) {
-        var match = _.some(include, function(regex) {
-          return regex.test(str)
-        })
-        if (!match) {
-          return false
+        if (!_.some(include, function(regex) {
+            return regex.test(str);
+          })) {
+          return false;
         }
       }
     }
     else {
-      if (!include.test(str)) return false
+      if (!include.test(str)) {
+        return false;
+      }
     }
   }
   if(exclude) {
     if (_.isArray(exclude)) {
       if (exclude.length > 0) {
-        var match = _.some(exclude, function (regex) {
-          return regex.test(str)
-        })
-        if (match) {
-          return false
+        if (_.some(exclude, function (regex) {
+            return regex.test(str);
+          })) {
+          return false;
         }
       }
     }
     else {
-      if (exclude.test(str)) return false
+      if (exclude.test(str)) {
+        return false;
+      }
     }
   }
   return true;
-}
+};
 
 var handlerCacheFromDir = exports.handlerCacheFromDir = function (options) {
-  const dirOrDirs = options.controllers
+  const dirOrDirs = options.controllers;
 
   var handlerCache = {};
   var jsFileRegex = /\.(coffee|js|ts)$/;
