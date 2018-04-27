@@ -31,7 +31,7 @@ process.env.NODE_ENV = 'test';
 // Indicate to swagger-tools that we're in testing mode
 process.env.RUNNING_SWAGGER_TOOLS_TESTS = 'true';
 
-var _ = require('lodash-compat');
+var _ = require('lodash');
 var async = require('async');
 var path = require('path');
 var request = require('supertest');
@@ -116,22 +116,6 @@ describe('Swagger Router Middleware v1.2', function () {
         .get('/api/user/1')
         .expect(200)
         .end(helpers.expectContent(require('../controllers/Users').response, done));
-    });
-  });
-
-  it('should do routing when options.controllers is a valid array of relative directory paths', function (done) {
-    helpers.createServer([rlJson, [petJson, storeJson, userJson]], {
-      swaggerRouterOptions: {
-        controllers: [
-          './test/controllers',
-          './test/controllers2'
-        ]
-      }
-    }, function (app) {
-      request(app)
-      .get('/api/user/1')
-      .expect(200)
-      .end(helpers.expectContent(require('../controllers/Users').response, done));
     });
   });
 

@@ -31,7 +31,7 @@ process.env.NODE_ENV = 'test';
 // Indicate to swagger-tools that we're in testing mode
 process.env.RUNNING_SWAGGER_TOOLS_TESTS = 'true';
 
-var _ = require('lodash-compat');
+var _ = require('lodash');
 var assert = require('assert');
 var async = require('async');
 var helpers = require('../helpers');
@@ -167,7 +167,7 @@ describe('Swagger UI Middleware v1.2', function () {
           request(app)
             .get('/docs/package.json')
             .expect(200)
-            .expect('content-type', 'application/json')
+            .expect('content-type', /application\/json/)
             .end(function (err, res) {
               if (err) {
                 return done(err);

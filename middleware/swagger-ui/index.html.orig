@@ -71,40 +71,23 @@
 <script src="./swagger-ui-standalone-preset.js"> </script>
 <script>
 window.onload = function() {
-  function initSwaggerUi (url) {
-    window.ui = SwaggerUIBundle({
-      url: url,
-      dom_id: '#swagger-ui',
-      deepLinking: true,
-      presets: [
-        SwaggerUIBundle.presets.apis,
-        SwaggerUIStandalonePreset
-      ],
-      plugins: [
-        SwaggerUIBundle.plugins.DownloadUrl
-      ],
-      layout: "StandaloneLayout",
-      validatorUrl: null
-    });
-  }
+  
+  // Build a system
+  const ui = SwaggerUIBundle({
+    url: "http://petstore.swagger.io/v2/swagger.json",
+    dom_id: '#swagger-ui',
+    deepLinking: true,
+    presets: [
+      SwaggerUIBundle.presets.apis,
+      SwaggerUIStandalonePreset
+    ],
+    plugins: [
+      SwaggerUIBundle.plugins.DownloadUrl
+    ],
+    layout: "StandaloneLayout"
+  })
 
-  var xhr = new XMLHttpRequest();
-
-  xhr.open('HEAD', document.location.href);
-
-  xhr.onreadystatechange = function () {
-    var url = 'http://petstore.swagger.io/v2/swagger.json';
-
-    if (xhr.readyState === XMLHttpRequest.DONE) {
-      url = xhr.getResponseHeader('Swagger-API-Docs-URL');
-    } else {
-      console.log('Unable to get the Swagger UI URL from the server (%s): %s', xhr.status, xhr.responseText);
-    }
-
-    initSwaggerUi(url);
-  };
-
-  xhr.send(null);
+  window.ui = ui
 }
 </script>
 </body>

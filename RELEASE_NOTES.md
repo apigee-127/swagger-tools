@@ -2,9 +2,20 @@
 
 ### TBD
 
+* Remove `string` dependency _(PR #542)_
+
+### 0.10.3 (2017-10-13)
+
+* Remove support for nested controllers _(Issue #537, #540)_
+
+### 0.10.2 (2017-10-10)
+
 * Added support for nested controllers _(PR #422, Issue #283)_
+* Fix issue where async controllers were not identified properly _(Issue #443)_
 * Fix issue where the `failedValidation` property was not set for `Content-Type` request validation errors _(PR #420)_
 * Fix issue where `array` `body` parameters would coerce non-array types into an array _(Issue #438)
+* Fix issue where swagger-ui shows an error icon trying to validate a swagger doc for an internal API *(Issue #323, #370, #526)*
+* Updated dependencies for security vulnerabilities _(Issue #384, #535)_
 
 ### 0.10.1 (2016-02-24)
 

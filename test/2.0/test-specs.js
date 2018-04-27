@@ -26,7 +26,7 @@
 
 'use strict';
 
-var _ = require('lodash-compat');
+var _ = require('lodash');
 var assert = require('assert');
 var async = require('async');
 var JsonRefs = require('json-refs');
@@ -2782,6 +2782,26 @@ describe('Specification v2.0', function () {
         assert.equal(result.warnings.length, 0);
 
         done();
+      });
+    });
+
+    it('should properly traverse objects with a length property', function (done) {
+      var swaggerObject = _.cloneDeep(petStoreJson);
+      var definitionWithLengthPropertyInExample = {
+        properties: {
+          length: {type: 'integer'},
+          name: {type: 'string'}
+        },
+        example: {
+          name: 'joe',
+          length: 20000000
+        }
+      };
+
+      swaggerObject.definitions.Pet = definitionWithLengthPropertyInExample;
+
+      spec.validate(swaggerObject, function () {
+          done();
       });
     });
 

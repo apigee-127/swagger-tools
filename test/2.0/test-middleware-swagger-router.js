@@ -31,7 +31,7 @@ process.env.NODE_ENV = 'test';
 // Indicate to swagger-tools that we're in testing mode
 process.env.RUNNING_SWAGGER_TOOLS_TESTS = 'true';
 
-var _ = require('lodash-compat');
+var _ = require('lodash');
 var assert = require('assert');
 var async = require('async');
 var path = require('path');
@@ -115,54 +115,6 @@ describe('Swagger Router Middleware v2.0', function () {
         .get('/api/pets/1')
         .expect(200)
         .end(helpers.expectContent(require('../controllers/Pets').response, done));
-    });
-  });
-
-  it('should do routing when options.controllers is a valid array of directory paths with nested paths', function (done) {
-    helpers.createServer([petStoreJson], {
-      swaggerRouterOptions: {
-        controllers: [
-          path.join(__dirname, '..', 'controllers'),
-          path.join(__dirname, '..', 'controllers2')
-        ]
-      }
-    }, function (app) {
-      request(app)
-        .get('/api/pets/1/custom')
-        .expect(200)
-        .end(helpers.expectContent(require('../controllers/nested-controllers/CustomPets').response, done));
-    });
-  });
-
-  it('should do routing when options.controllers is a valid array of relative directory paths', function (done) {
-    helpers.createServer([petStoreJson], {
-      swaggerRouterOptions: {
-        controllers: [
-          './test/controllers',
-          './test/controllers2'
-        ]
-      }
-    }, function (app) {
-      request(app)
-      .get('/api/pets/1')
-      .expect(200)
-      .end(helpers.expectContent(require('../controllers/Pets').response, done));
-    });
-  });
-
-  it('should do routing when options.controllers is a valid array of relative directory paths with nested paths', function (done) {
-    helpers.createServer([petStoreJson], {
-      swaggerRouterOptions: {
-        controllers: [
-          './test/controllers',
-          './test/controllers2'
-        ]
-      }
-    }, function (app) {
-      request(app)
-      .get('/api/pets/1/custom')
-      .expect(200)
-      .end(helpers.expectContent(require('../controllers/nested-controllers/CustomPets').response, done));
     });
   });
 

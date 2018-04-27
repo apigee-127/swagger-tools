@@ -24,14 +24,12 @@
 
 'use strict';
 
-var _ = require('lodash-compat');
+var _ = require('lodash');
 var cHelpers = require('../lib/helpers');
 var debug = require('debug')('swagger-tools:middleware:router');
 var fs = require('fs');
 var mHelpers = require('./helpers');
 var path = require('path');
-
-var PATH_SEP_REGEX = new RegExp('\\' + path.sep, 'g');
 
 var defaultOptions = {
   controllers: {},
@@ -60,14 +58,11 @@ var getHandlerName = function (req) {
 
   return handlerName;
 };
-var getFullQualifiedHandlerId = function(controller, handler) {
-  return controller.replace(PATH_SEP_REGEX, '/') + '_' + handler;
-};
+
 var handlerCacheFromDir = function (dirOrDirs) {
   var handlerCache = {};
   var jsFileRegex = /\.(coffee|js|ts)$/;
   var dirs = [];
-
 
   if (_.isArray(dirOrDirs)) {
     dirs = dirOrDirs;
@@ -75,58 +70,39 @@ var handlerCacheFromDir = function (dirOrDirs) {
     dirs.push(dirOrDirs);
   }
 
-  var recursiveFileList = function(parent) {
-    _.each(fs.readdirSync(parent), function(file) {
-      var child = path.join(parent, file);
-      if (fs.statSync(child).isDirectory()) {
-        recursiveFileList(child);
-      } else {
+  debug('  Controllers:');
 
-        file = child;
+  _.each(dirs, function (dir) {
+    _.each(fs.readdirSync(dir), function (file) {
+      var controllerName = file.replace(jsFileRegex, '');
+      var controller;
 
-        var controllerName = file.replace(jsFileRegex, '');
-        var controller;
+      if (file.match(jsFileRegex)) {
+        controller = require(path.resolve(path.join(dir, controllerName)));
 
-        if (file.match(jsFileRegex)) {
+        debug('    %s%s:',
+              path.resolve(path.join(dir, file)),
+              (_.isPlainObject(controller) ? '' : ' (not an object, skipped)'));
 
-          file = path.resolve(file);
-          controller = require(file);
+        if (_.isPlainObject(controller)) {
+          _.each(controller, function (value, name) {
+            var handlerId = controllerName + '_' + name;
 
-          debug('    %s%s:', file, (_.isPlainObject(controller) ? '' : ' (not an object, skipped)'));
+            debug('      %s%s',
+                  handlerId,
+                  (_.isFunction(value) ? '' : ' (not a function, skipped)'));
 
-          if (_.isPlainObject(controller)) {
-            _.each(controller, function (value, name) {
-              var handlerId = getFullQualifiedHandlerId(controllerName, name);
+            // TODO: Log this situation
 
-              debug('      %s%s', handlerId, (_.isFunction(value) ? '' : ' (not a function, skipped)'));
-
-              // TODO: Log this situation
-              if (_.isFunction(value) && !handlerCache[handlerId]) {
-                var handlerExists = false;
-
-                _.each(dirs, function(topLevel) {
-                  controllerName = path.resolve(controllerName);
-                  topLevel = path.resolve(topLevel);
-
-                  if(controllerName.indexOf(topLevel) === 0) {
-                    var relativeController = controllerName.substr(topLevel.length + 1);
-                    handlerId = getFullQualifiedHandlerId(relativeController, name);
-                    handlerExists = handlerCache[handlerId] !== undefined;
-                  }
-                });
-
-                if (!handlerExists) {
-                  handlerCache[handlerId] = value;
-                }
-              }
-            });
-          }
+            if (_.isFunction(value) && !handlerCache[handlerId]) {
+              handlerCache[handlerId] = value;
+            }
+          });
         }
       }
     });
-  };
+  });
 
-  _.each(dirs, recursiveFileList);
   return handlerCache;
 };
 var getMockValue = function (version, schema) {
@@ -375,7 +351,6 @@ var send405 = function (req, res, next) {
  * @returns the middleware function
  */
 exports = module.exports = function (options) {
-
   var handlerCache = {};
 
   debug('Initializing swagger-router middleware');

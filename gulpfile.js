@@ -60,7 +60,7 @@ gulp.task('browserify', function () {
             'debug': 'debug',
             'json-refs': 'JsonRefs',
             'js-yaml': 'jsyaml',
-            'lodash-compat': '_',
+            'lodash': '_',
             'spark-md5': 'SparkMD5',
             'swagger-converter': 'SwaggerConverter.convert',
             'traverse': 'traverse',
@@ -108,6 +108,12 @@ gulp.task('lint', function () {
     .pipe($.jshint())
     .pipe($.jshint.reporter('jshint-stylish'))
     .pipe($.jshint.reporter('fail'));
+});
+
+gulp.task('nsp', function (cb) {
+  $.nsp({
+    package: path.join(__dirname, 'package.json')
+  }, cb);
 });
 
 gulp.task('test-node', function () {
@@ -226,4 +232,4 @@ gulp.task('test', function (cb) {
   runSequence('test-node', 'test-browser', cb);
 });
 
-gulp.task('default', ['lint', 'test']);
+gulp.task('default', ['lint', 'nsp', 'test']);
