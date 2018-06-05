@@ -94,7 +94,7 @@ module.exports.getParameterValue = function(version, parameter, pathKeys, match,
                     val = val[0];
                 }
             } else if (paramType.toLowerCase() === 'array' && version === '2.0' && parameter.items.format == 'binary') {
-                val = req.files[parameter.name];
+                val = req.files ? req.files[parameter.name] : undefined;
             } else if (isModelParameter(version, parameter)) {
                 val = req.body;
             } else {
