@@ -2,8 +2,8 @@ When validating Swagger document(s), the Swagger Specification document for the 
 single source of truth for validation.  To help aid in Swagger document validation, the Swagger project provides
 [JSON Schema][json-schema] file(s) but in the end, the Swagger Specification document is the real source of truth and
 the document swagger-tools tries to adhere to.  swagger-tools uses the provided JSON Schema file(s) to do the initial
-structural validation of the Swagger document(s) but that is just the beginnging.  There are some situations where the
-JSON Schema does not fullfil the complete contract as described in the Swagger specification documentation.  This is
+structural validation of the Swagger document(s) but that is just the beginning.  There are some situations where the
+JSON Schema does not fulfill the complete contract as described in the Swagger specification documentation. This is
 where swagger-tools has stepped in to help pave the way for doing full Swagger document validation.  swagger-tools
 starts all Swagger document validation using the JSON Schema file(s) and only once that validation passes will
 swagger-tools go through each pertinent _semantic_ validation in its catalog to do the rest of the validation.
