@@ -1,7 +1,8 @@
 ## Release Notes
 
-### TBD
+### 0.10.4 (2018-07-20)
 
+* Fix issue where an `object` with a `length` property was incorrectly traversed _(Issue #557)_
 * Remove `string` dependency _(PR #542)_
 
 ### 0.10.3 (2017-10-13)
