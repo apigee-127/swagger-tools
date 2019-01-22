@@ -93,15 +93,14 @@ window.onload = function() {
   xhr.open('HEAD', document.location.href);
 
   xhr.onreadystatechange = function () {
-    var url = 'http://petstore.swagger.io/v2/swagger.json';
-
     if (xhr.readyState === XMLHttpRequest.DONE) {
-      url = xhr.getResponseHeader('Swagger-API-Docs-URL');
-    } else {
-      console.log('Unable to get the Swagger UI URL from the server (%s): %s', xhr.status, xhr.responseText);
+      if(xhr.status === 200){
+        var url = xhr.getResponseHeader('Swagger-API-Docs-URL');
+        initSwaggerUi(url);
+      } else {
+        console.log('Unable to get the Swagger UI URL from the server (%s): %s', xhr.status, xhr.responseText);
+      }
     }
-
-    initSwaggerUi(url);
   };
 
   xhr.send(null);
