@@ -1,28 +1,28 @@
-Swagger Tools provides a few [Connect][connect] middlewares to help you utilize your Swagger documents. Each middleware
+Swagger Tools provides a few [Connect][connect] middlewares to help you utilize your Swagger documents.  Each middleware
 is documented below.
 
 **Note:** All middlewares for the different Swagger versions function the same but due to the differences between the
-Swagger versions, some function arguments are different and so is the `swagger` object attached to the `req` object. In
+Swagger versions, some function arguments are different and so is the `swagger` object attached to the `req` object.  In
 the cases where this applies, notation will be made below.
 
 ## Swagger Middleware Initialization
 
-The Swagger middleware requires validated Swagger document(s). To ensure that this is the case, Swagger Tools ships
+The Swagger middleware requires validated Swagger document(s).  To ensure that this is the case, Swagger Tools ships
 with an `initializeMiddleware` method that will validate your Swagger document(s) and then pass the Swagger version
-specific middleware functions to you. Here is an example:
+specific middleware functions to you.  Here is an example:
 
 **Swagger 2.0**
 
 ```javascript
-var initializeSwagger = require("swagger-tools").initializeMiddleware;
-var app = require("connect")();
+var initializeSwagger = require('swagger-tools').initializeMiddleware;
+var app = require('connect')();
 
 // This assumes you're in the root of the swagger-tools
-var swaggerObject = require("./samples/2.0/petstore.json");
+var swaggerObject = require('./samples/2.0/petstore.json');
 
 // Configure non-Swagger related middleware and server components prior to Swagger middleware
 
-initializeSwagger(swaggerObject, function(swaggerMiddleware) {
+initializeSwagger(swaggerObject, function (swaggerMiddleware) {
   // Initialize the Swagger middleware (Examples below)
   // Initialize the remaining server components
   // Start server
@@ -32,20 +32,18 @@ initializeSwagger(swaggerObject, function(swaggerMiddleware) {
 **Swagger 1.2**
 
 ```javascript
-var initializeSwagger = require("swagger-tools").initializeMiddleware;
-var app = require("connect")();
+var initializeSwagger = require('swagger-tools').initializeMiddleware;
+var app = require('connect')();
 
 // This assumes you're in the root of the swagger-tools
-var petJson = require("./samples/1.2/pet.json");
-var rlJson = require("./samples/1.2/resource-listing.json");
-var storeJson = require("./samples/1.2/store.json");
-var userJson = require("./samples/1.2/user.json");
+var petJson = require('./samples/1.2/pet.json');
+var rlJson = require('./samples/1.2/resource-listing.json');
+var storeJson = require('./samples/1.2/store.json');
+var userJson = require('./samples/1.2/user.json');
 
 // Configure non-Swagger related middleware and server components prior to Swagger middleware
 
-initializeSwagger(rlJson, [petJson, storeJson, userJson], function(
-  swaggerMiddleware
-) {
+initializeSwagger(rlJson, [petJson, storeJson, userJson], function (swaggerMiddleware) {
   // Initialize the Swagger middleware (Examples below)
   // Initialize the remaining server components
   // Start server
@@ -53,29 +51,29 @@ initializeSwagger(rlJson, [petJson, storeJson, userJson], function(
 ```
 
 `initializeMiddleware` will halt server startup upon any unrecoverable Swagger document(s) validation error, printing out
-the errors/warnings in that case. The argument passed to the callback has the following properties, each corresponding
-to a middleware function documented below. The order in the following list is the suggested `app.use` order:
+the errors/warnings in that case.  The argument passed to the callback has the following properties, each corresponding
+to a middleware function documented below.  The order in the following list is the suggested `app.use` order:
 
-- **swaggerMetadata:** This is the base middleware that will analyze a request route, match it to an API in your
-  Swagger document(s) and then annotate the request, using `req.swagger`, with the pertinent details.
-- **swaggerSecurity:** This middleware allows you to wire up authentication/authorization handlers based on the
-  definitions in your Swagger document(s).
-- **swaggerValidator:** This middleware will validate your request/responses based on the operations in your Swagger
-  document(s).
-- **swaggerRouter:** This middleware allows you to wire up request handlers based on the operation definitions in your
-  Swagger document(s).
-- **swaggerUi:** This middleware will serve your Swagger document(s) for public consumption and will also serve a local
-  [Swagger UI][swagger-ui] instance.
+* **swaggerMetadata:** This is the base middleware that will analyze a request route, match it to an API in your
+Swagger document(s) and then annotate the request, using `req.swagger`, with the pertinent details.
+* **swaggerSecurity:** This middleware allows you to wire up authentication/authorization handlers based on the
+definitions in your Swagger document(s).
+* **swaggerValidator:** This middleware will validate your request/responses based on the operations in your Swagger
+document(s).
+* **swaggerRouter:** This middleware allows you to wire up request handlers based on the operation definitions in your
+Swagger document(s).
+* **swaggerUi:** This middleware will serve your Swagger document(s) for public consumption and will also serve a local
+[Swagger UI][swagger-ui] instance.
 
 ## Swagger Middleware Debugging
 
 All Swagger Middleware uses the [debug](debug) module to allow you to have a better idea of what is going on during the
-middleware initialization and processing lifecycle. To enable debugging globally, just set the `DEBUG` environment
-variable to be `swagger-tools:middleware:*`. If you want to only see debugging output for a specific middleware, you
-can do that too. To do so, you sould set `DEBUG` to a value like this:
+middleware initialization and processing lifecycle.  To enable debugging globally, just set the `DEBUG` environment
+variable to be `swagger-tools:middleware:*`.  If you want to only see debugging output for a specific middleware, you
+can do that too.  To do so, you sould set `DEBUG` to a value like this:
 `swagger-tools:middleware:{middleware-short-name}` where the `middleware-short-name` is one of the following: `metadata`,
-`router`, `security`, `ui` or `validator`. So if I wanted to see only swagger-validator debugging information, I would
-set `DEBUG` to `swagger-tools:middleware:validator`. Here is an example of starting a Node.js server with debugging
+`router`, `security`, `ui` or `validator`.  So if I wanted to see only swagger-validator debugging information, I would
+set `DEBUG` to `swagger-tools:middleware:validator`.  Here is an example of starting a Node.js server with debugging
 enabled for all Swagger middlewares:
 
 ```
@@ -123,8 +121,8 @@ documentation.
 
 ## Swagger Middleware Errors
 
-All Swagger Middleware errors are sent downstream per Connect middleware standards. This means that no Swagger
-Middleware will handle errors for you nor will they attempt to render your errors on your behalf. That being said, the
+All Swagger Middleware errors are sent downstream per Connect middleware standards.  This means that no Swagger
+Middleware will handle errors for you nor will they attempt to render your errors on your behalf.  That being said, the
 Swagger Middleware does annotate validation errors before sending them downstream so that the downstream consumer can
 identify these errors and get the pertinent information out of them.
 
@@ -132,34 +130,34 @@ identify these errors and get the pertinent information out of them.
 
 Anytime a Swagger validation error occurs, the following `Error` properties will be available if available:
 
-- **apiDeclarations:** {object[]} - The API Declaration errors _(Swagger 1.2)_
-- **errors:** {object[]} - The validation errors
-- **failedValidation:** {boolean} - Indicating the error is a validation error
-- **originalResponse:** {\*} - The original response payload sent via `res.end` that triggered the response
-  validation failure _(All other response related fields like headers, status code, etc. are already avaliable on the
-  `res` available to all downstream middlewares like the error handlers.)_
-- **warnings:** {object[]} - The validation warnings
+* **apiDeclarations:** {object[]} - The API Declaration errors _(Swagger 1.2)_
+* **errors:** {object[]} - The validation errors
+* **failedValidation:** {boolean} - Indicating the error is a validation error
+* **originalResponse:** {\*} - The original response payload sent via `res.end` that triggered the response
+validation failure _(All other response related fields like headers, status code, etc. are already avaliable on the
+`res` available to all downstream middlewares like the error handlers.)_
+* **warnings:** {object[]} - The validation warnings
 
 Use these pieces of information to properly render your errors.
 
 ## Swagger Metadata
 
 The Swagger Metadata middleware is the base for all other Swagger Tools middleware and it attaches Swagger information
-to the request (`req.swagger`) when a request matches a route define in your Swagger document(s). For requests where
-the route does not match a route defined in your Swagger document(s), this middleware does nothing. Since Swagger 1.2
+to the request (`req.swagger`) when a request matches a route define in your Swagger document(s).  For requests where
+the route does not match a route defined in your Swagger document(s), this middleware does nothing.  Since Swagger 1.2
 and Swagger 2.0 differ both in Swagger document structure and terminology, this middleware takes different parameters
 based on Swagger version and it uses different property names on the `req.swagger` object.
 
 The Swagger Metadata middleware is useful because it allows you to easily get access to the pertinent Swagger document
-information for your request in your request handler. This does not require you to use any other Swagger Tools
-metadata. Why might you want to do this? Imagine you wanted to annotate your Swagger 2.0 documents using vendor
-extensions in a way that is useful to your implementation, like cache information or quota information. By attaching
+information for your request in your request handler.  This does not require you to use any other Swagger Tools
+metadata.  Why might you want to do this?  Imagine you wanted to annotate your Swagger 2.0 documents using vendor
+extensions in a way that is useful to your implementation, like cache information or quota information.  By attaching
 the request path and the request operation to the `req` object, you can easily get access to your vendor extension
 annotations to make life easier.
 
-Swagger Metadata also processes your request parameters for you. So no matter how the parameters are provided (body,
+Swagger Metadata also processes your request parameters for you.  So no matter how the parameters are provided (body,
 header, form data, query string, ...), as described in your Swagger document(s), the processing is handled for you to
-get the parameter values. _(No validation of the parameter values happens in the Swagger Metadata middleware.)_ During
+get the parameter values. _(No validation of the parameter values happens in the Swagger Metadata middleware.)_  During
 this process, Swagger Metadata will use [body-parser][body-parser], [multer][multer] and [qs][qs] for body, multi-part
 body and query string parsing respectively if you do not provide your own parsers.
 
@@ -178,18 +176,18 @@ Swagger Tools middleware.
 
 The structure of `req.swagger` is as follows:
 
-- **api:** `object` The corresponding API in the API Declaration that the request maps to
-- **apiDeclaration:** `object` The corresponding API Declaration that the request maps to
-- **apiIndex:** `number` The index of the API Declaration as it was passed to `initializeMetadata`
-- **authorizations:** `object` The computed authorizations for this request
-- **operation:** `object` The corresponding operation in the API Declaration that the request maps to
-- **operationPath:** `string[]` The path to the operation
-- **params:** `object` For each of the request parameters defined in your Swagger document, its `path`, its `schema`,
-  its `originalValue` and its processed `value`. The value is converted to the proper JavaScript type based on the
-  Swagger document. _(In the event the value needs coercion and it cannot be converted, the `value` property will be
-  the original value provided.)_ If the parameter defined in your Swagger document includes a default value and the
-  request does not include the value, the default value is assigned to the parameter value in `req.swagger.params`.
-- **resourceListing:** `object` The Resource Listing for the API
+* **api:** `object` The corresponding API in the API Declaration that the request maps to
+* **apiDeclaration:** `object` The corresponding API Declaration that the request maps to
+* **apiIndex:** `number` The index of the API Declaration as it was passed to `initializeMetadata`
+* **authorizations:** `object` The computed authorizations for this request
+* **operation:** `object` The corresponding operation in the API Declaration that the request maps to
+* **operationPath:** `string[]` The path to the operation
+* **params:** `object` For each of the request parameters defined in your Swagger document, its `path`, its `schema`,
+its `originalValue` and its processed `value`.  The value is converted to the proper JavaScript type based on the
+Swagger document.  *(In the event the value needs coercion and it cannot be converted, the `value` property will be
+the original value provided.)*  If the parameter defined in your Swagger document includes a default value and the
+request does not include the value, the default value is assigned to the parameter value in `req.swagger.params`.
+* **resourceListing:** `object` The Resource Listing for the API
 
 ### Swagger 2.0
 
@@ -201,21 +199,21 @@ The Connect middleware function.
 
 The structure of `req.swagger` is as follows:
 
-- **apiPath:** `string` The API's path (The key used in the `paths` object for the corresponding API)
-- **path:** `object` The corresponding path in the Swagger object that the request maps to
-- **operation:** `object` The corresponding operation in the API Declaration that the request maps to
-- **operationParameters:** `object[]` The computed parameters for this operation
-- **operationPath:** `string[]` The path to the operation
-- **params:** `object` For each of the request parameters defined in your Swagger document, its `path`, its `schema`
-  and its processed `value`. _(In the event the value needs coercion and it cannot be converted, the `value` property
-  will be the original value provided.)_
-- **security:** `object[]` The computed security for this request
-- **swaggerObject:** `object` The Swagger object
+* **apiPath:** `string` The API's path (The key used in the `paths` object for the corresponding API)
+* **path:** `object` The corresponding path in the Swagger object that the request maps to
+* **operation:** `object` The corresponding operation in the API Declaration that the request maps to
+* **operationParameters:** `object[]` The computed parameters for this operation
+* **operationPath:** `string[]` The path to the operation
+* **params:** `object` For each of the request parameters defined in your Swagger document, its `path`, its `schema`
+and its processed `value`.  *(In the event the value needs coercion and it cannot be converted, the `value` property
+will be the original value provided.)*
+* **security:** `object[]` The computed security for this request
+* **swaggerObject:** `object` The Swagger object
 
 ## Swagger Router
 
 The Swagger Router middleware provides facilities for wiring up request handlers, as defined in your Swagger
-document(s). Since your Swagger document(s) already define your API routes, Swagger Router provides a lightweight
+document(s).  Since your Swagger document(s) already define your API routes, Swagger Router provides a lightweight
 approach to wiring up the router handler implementation function to the proper route based on the information in your
 Swagger document(s).
 
@@ -226,15 +224,15 @@ between the two.
 
 **Arguments**
 
-- **options:** `[object]` The configuration options
-- **options.controllers:** `[string|string[]|object]` The controllers to look for or use. If the value is a string,
-  we assume the value is a path to a directory that contain controller modules. If the value is an array, we assume the
-  value is an array of paths to directories that contain controller modules. If the value is an object, we assume the
-  object keys are the handler name _({ControllerName}_{HandlerFunctionName}) and the value is a function.
-- **options.ignoreMissingHandlers:** `[boolean]` When `false` _(default)_, a `500` is returned when a handler cannot be
-  found. When `true`, we will ignore the missing handler and send the request downstream.
-- **options.useStubs:** `[boolean]` Whether or not stub handlers should be used for routes with no defined controller
-  or the controller could not be found.
+* **options:** `[object]` The configuration options
+* **options.controllers:** `[string|string[]|object]` The controllers to look for or use.  If the value is a string,
+we assume the value is a path to a directory that contain controller modules.  If the value is an array, we assume the
+value is an array of paths to directories that contain controller modules.  If the value is an object, we assume the
+object keys are the handler name _({ControllerName}_{HandlerFunctionName}) and the value is a function.
+* **options.ignoreMissingHandlers:** `[boolean]` When `false` *(default)*, a `500` is returned when a handler cannot be
+found.  When `true`, we will ignore the missing handler and send the request downstream.
+* **options.useStubs:** `[boolean]` Whether or not stub handlers should be used for routes with no defined controller
+or the controller could not be found.
 
 **Returns**
 
@@ -247,39 +245,39 @@ chain as possible.
 
 The structure of `req.swagger` is updated to include the following:
 
-- **useStubs:** `boolean` The value of `options.useStubs`
+* **useStubs:** `boolean` The value of `options.useStubs`
 
 ### How to Use
 
 For Swagger Router to work, your Swagger document(s) need to be updated to indicate how to find the controller (by name)
-and the controller function. Due to the differences between Swagger 1.2 and Swagger 2.0, the requirements are different
+and the controller function.  Due to the differences between Swagger 1.2 and Swagger 2.0, the requirements are different
 and are documented below.
 
 #### Swagger 1.2
 
 Since Swagger 1.2 does not allow you to add additional properties to your Swagger documents, Swagger Router has to use
-an existing Swagger document property to handle the routing. Since Swagger 1.2 requires all operation objects to have a
+an existing Swagger document property to handle the routing.  Since Swagger 1.2 requires all operation objects to have a
 `nickname` property, we use it by overloading its value to give Swagger Router what it needs.
 
-The value of the operation's `nickname` property is in the format of `{ControllerName}_{HandlerFunction}`. So if you
+The value of the operation's `nickname` property is in the format of `{ControllerName}_{HandlerFunction}`.  So if you
 have a `Pet` controller and want your operation to map to its `getById` function, your operation's `nickname` property
 would have a value of `Pet_getById`.
 
 #### Swagger 2.0
 
 Since Swagger 2.0 has a new feature called **Vendor Extensions** which allows you to add additional properties
-throughout your Swagger documents as long as they start with `x-`. Swagger Router uses a vendor extension named
-`x-swagger-router-controller` to help with the routing. Basically, `x-swagger-router-controller` can be defined at the
-path level and/or the operation level and it tells the controller name to use. To define the controller to use for an
-operation, just define the `x-swagger-router-controller` property at the operation level. What if you want to reuse the
-same controller for multiple/all operations in a path? Just define the `x-swagger-router-controller` property at the
-path level. Of course if you've defined `x-swagger-router-controller` at the path level and you want to use a different
+throughout your Swagger documents as long as they start with `x-`.  Swagger Router uses a vendor extension named
+`x-swagger-router-controller` to help with the routing.  Basically, `x-swagger-router-controller` can be defined at the
+path level and/or the operation level and it tells the controller name to use.  To define the controller to use for an
+operation, just define the `x-swagger-router-controller` property at the operation level.  What if you want to reuse the
+same controller for multiple/all operations in a path?  Just define the `x-swagger-router-controller` property at the
+path level.  Of course if you've defined `x-swagger-router-controller` at the path level and you want to use a different
 controller for any operation below that path, you can override the path controller by defining the
 `x-swagger-router-controller` at the operation level.
 
-When it comes to finding the controller function to call, there are two options. The default is to use the operation
-name for the operation, which corresponds to the HTTP verb being used. If you want to override this default and use a
-different name, just define the `operationId` property on your operation. Here is an example Swagger document snippet
+When it comes to finding the controller function to call, there are two options.  The default is to use the operation
+name for the operation, which corresponds to the HTTP verb being used.  If you want to override this default and use a
+different name, just define the `operationId` property on your operation.  Here is an example Swagger document snippet
 where each operation tells you which controller and function will be used based on its definition:
 
 ```json
@@ -378,10 +376,16 @@ where each operation tells you which controller and function will be used based 
           "type": "string"
         }
       },
-      "required": ["id", "name"]
+      "required": [
+        "id",
+        "name"
+      ]
     },
     "Error": {
-      "required": ["code", "message"],
+      "required": [
+        "code",
+        "message"
+      ],
       "properties": {
         "code": {
           "type": "integer",
@@ -397,15 +401,15 @@ where each operation tells you which controller and function will be used based 
 ```
 
 If `x-swagger-router-controller` is omitted and only `operationId` is given, the router will try to match directly
-to a method using the `operationId` as method name. This works only if the `controller` option is passed to the router
-configuration. _(Note: This limitation, the need to manually create your `controller` option, will go away when
+to a method  using the `operationId` as method name. This works only if the `controller` option is passed to the router
+configuration.  _(Note: This limitation, the need to manually create your `controller` option, will go away when
 issues #219 and #221 are completed.)_
 
 A new option (since 0.8.4) is the addition of the `x-swagger-router-handle-subpaths` extension to the Swagger path
-component. By setting this property to `true`, it indicates to Swagger Router that it should match and route all
-requests to not only the specified path, but also any undeclared subpaths requested that do not match an explicitly
+component. By setting this property to `true`, it indicates to Swagger Router that it should match and route all 
+requests to not only the specified path, but also any undeclared subpaths requested that do not match an explicitly 
 defined path in the Swagger. While you cannot specify wildcards in Swagger, this would be the spiritual equivalent
-of wildcarding the end of the path something like `/pets/**`. For example, the following Swagger would cause
+of wildcarding the end of the path something like `/pets/**`. For example, the following Swagger would cause 
 Swagger Router to match and route `/pets`, `/pets/1`, or even `/pets/this/is/an/arbitrary/route` to the `Pets`
 controller:
 
@@ -436,13 +440,14 @@ controller:
 }
 ```
 
+
 ### Mock Mode
 
-Swagger Router also comes with a feature that can be useful during testing and/or design time. This feature will
+Swagger Router also comes with a feature that can be useful during testing and/or design time.  This feature will
 automatically handle routes that are defined in your Swagger document(s) as having route handlers but their configured
-controller and/or handler function is missing. The response content is inferred from your Swagger document(s). So if
-your operation says that the requested API will return an integer, mock mode will return an integer. If your operation
-says that the requested API will return a model, mock mode will return a JSON representation of that model. For the
+controller and/or handler function is missing.  The response content is inferred from your Swagger document(s).  So if
+your operation says that the requested API will return an integer, mock mode will return an integer.  If your operation
+says that the requested API will return a model, mock mode will return a JSON representation of that model.  For the
 example `Pet` above, mock mode would return the following:
 
 ```json
@@ -452,16 +457,16 @@ example `Pet` above, mock mode would return the following:
 }
 ```
 
-To enable mock mode, just pass the `useStubs` option as `true` to the `swaggerRouter` middleware. Both of the complete
+To enable mock mode, just pass the `useStubs` option as `true` to the `swaggerRouter` middleware.  Both of the complete
 examples below demonstrate how to do this.
 
 This feature is nice to see how your API should respond based on what you've configured prior to implementing the actual
-route handler in code. This is obviously something that should be disabled in production.
+route handler in code.  This is obviously something that should be disabled in production.
 
 #### Caveats
 
 Mock mode is a relatively new feature to Swagger Router and while it's cool as-is, there are a few things that need to
-be done to make it better. This is currently being tracked in [Issue #30][issue-30].
+be done to make it better.  This is currently being tracked in [Issue #30][issue-30].
 
 ## Swagger Security
 
@@ -472,10 +477,14 @@ definitions and references in your Swagger document(s).
 
 **Arguments**
 
-- **options:** `object` The middleware options
-- **options[name]:** `object` For the authorization/security name, the value is a function that will be used to
-  perform the authentication/authorization. The function signature for the callback is:
-  `function (req, authOrSecDef, scopesOrApiKey, callback, res)`.
+* **options:** `object` The middleware options
+* **options[name]:** `object` For the authorization/security name, the value is a function that will be used to
+perform the authentication/authorization.  The function signature for the callback is:
+`function (req, authOrSecDef, scopesOrApiKey, callback, res)`.
+
+**Returns**
+
+The Connect middleware function.
 
 **Usage**
 
@@ -489,10 +498,6 @@ To return a 401 status code the following example can be used:
 
 More information can be seen found on the [server response here](https://nodejs.org/api/http.html#http_class_http_serverresponse).
 
-**Returns**
-
-The Connect middleware function.
-
 ## Swagger UI
 
 The Swagger UI middleware is used to serve your Swagger document(s) via an API and also to serve
@@ -504,14 +509,14 @@ The Swagger UI middleware is used to serve your Swagger document(s) via an API a
 
 **Arguments**
 
-- **options:** `object` The middleware options
-- **options.apiDocs:** `string=/api-docs` The path to serve the Swagger documents from
-- **options.apiDocsPrefix:** `string=` The prefix to prepend to the `options.apiDocs` _(This is required when serving a
-  swagger-tools based API behind a reverse proxy.)_
-- **options.swaggerUi:** `string=/docs` The path to serve Swagger UI from
-- **options.swaggerUiDir:** `string` The filesystem path to your custom swagger-ui deployment to serve
-- **options.swaggerUiPrefix:** `string` The prefix to prepend to the `options.swaggerUi` _(This is required when serving a
-  swagger-tools UI behind a reverse proxy.)_
+* **options:** `object` The middleware options
+* **options.apiDocs:** `string=/api-docs` The path to serve the Swagger documents from
+* **options.apiDocsPrefix:** `string=` The prefix to prepend to the `options.apiDocs` _(This is required when serving a
+swagger-tools based API behind a reverse proxy.)_
+* **options.swaggerUi:** `string=/docs` The path to serve Swagger UI from
+* **options.swaggerUiDir:** `string` The filesystem path to your custom swagger-ui deployment to serve
+* **options.swaggerUiPrefix:** `string` The prefix to prepend to the `options.swaggerUi` _(This is required when serving a
+swagger-tools UI behind a reverse proxy.)_
 
 **Returns**
 
@@ -519,24 +524,24 @@ The Connect middleware function.
 
 ### Swagger Documents
 
-For Swagger 2.0, there is only one Swagger document and it is served at the path configured by `options.apiDocs`. For
+For Swagger 2.0, there is only one Swagger document and it is served at the path configured by `options.apiDocs`.  For
 Swagger 1.2, there is a Resource Listing document and one document per API Declaration (resource) your API ships with.
 The Resource Listing document is served at the path configured by `options.apiDocs` and the API Declaration documents
-are served at their respective subpath below the path configured by `options.apiDocs`. To see an example of this, view
+are served at their respective subpath below the path configured by `options.apiDocs`.  To see an example of this, view
 the [complete example](#complete-example) below for your Swagger version to see the paths exposed by the `swaggerUi`
 middleware.
 
 ## Swagger Validator
 
 The Swagger Validator middleware is used to validate your requests/responses based on the constraints defined in the
-operation parameters of your Swagger document(s). So if your operation has a required parameter and your request does
-not provide it, the Swagger Validator will send an error downstream in typical Connect fashion. Or if your operation is
+operation parameters of your Swagger document(s).  So if your operation has a required parameter and your request does
+not provide it, the Swagger Validator will send an error downstream in typical Connect fashion.  Or if your operation is
 suppose to return `application/x-yaml` but it returns `application/json`, it will do the same.
 
 **Arguments**
 
-- **options:** `object` The middleware options
-- **options.validateResponse:** `[boolean=false]` Whether or not to validate responses
+* **options:** `object` The middleware options
+* **options.validateResponse:** `[boolean=false]` Whether or not to validate responses
 
 **Returns**
 
@@ -547,38 +552,32 @@ Here is a complete example for using all middlewares documented above:
 **Swagger 2.0**
 
 ```javascript
-var swagger = require("swagger-tools");
-var swaggerObject = require("./samples/2.0/petstore.json"); // This assumes you're in the root of the swagger-tools
+var swagger = require('swagger-tools');
+var swaggerObject = require('./samples/2.0/petstore.json'); // This assumes you're in the root of the swagger-tools
 
-var connect = require("connect");
-var http = require("http");
+var connect = require('connect');
+var http = require('http');
 var app = connect();
 
 // Initialize the Swagger Middleware
-swagger.initializeMiddleware(swaggerObject, function(middleware) {
+swagger.initializeMiddleware(swaggerObject, function (middleware) {
   // Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
   app.use(middleware.swaggerMetadata());
 
   // Provide the security handlers
-  app.use(
-    middleware.swaggerSecurity({
-      oauth2: function(req, def, scopes, callback) {
-        // Do real stuff here
-      }
-    })
-  );
+  app.use(middleware.swaggerSecurity({
+    oauth2: function (req, def, scopes, callback) {
+      // Do real stuff here
+    }
+  }));
 
   // Validate Swagger requests
-  app.use(
-    middleware.swaggerValidator({
-      validateResponse: true
-    })
-  );
+  app.use(middleware.swaggerValidator({
+    validateResponse: true
+  }));
 
   // Route validated requests to appropriate controller
-  app.use(
-    middleware.swaggerRouter({ useStubs: true, controllers: "./controllers" })
-  );
+  app.use(middleware.swaggerRouter({useStubs: true, controllers: './controllers'}));
 
   // Serve the Swagger documents and Swagger UI
   //   http://localhost:3000/docs => Swagger UI
@@ -593,41 +592,37 @@ swagger.initializeMiddleware(swaggerObject, function(middleware) {
 **Swagger 1.2**
 
 ```javascript
-var swagger = require("swagger-tools");
-var resourceListing = require("./samples/1.2/resourceListing.json"); // This assumes you're in the root of the swagger-tools
+var swagger = require('swagger-tools');
+var resourceListing = require('./samples/1.2/resourceListing.json'); // This assumes you're in the root of the swagger-tools
 var apiDeclarations = [
-  require("./samples/1.2/pet.json"), // This assumes you're in the root of the swagger-tools
-  require("./samples/1.2/store.json"), // This assumes you're in the root of the swagger-tools
-  require("./samples/1.2/user.json") // This assumes you're in the root of the swagger-tools
+  require('./samples/1.2/pet.json'), // This assumes you're in the root of the swagger-tools
+  require('./samples/1.2/store.json'), // This assumes you're in the root of the swagger-tools
+  require('./samples/1.2/user.json') // This assumes you're in the root of the swagger-tools
 ];
 
-var connect = require("connect");
-var http = require("http");
+var connect = require('connect');
+var http = require('http');
 var app = connect();
 
 // Initialize the Swagger Middleware
-swagger.initializeMiddleware(swaggerObject, function(middleware) {
+swagger.initializeMiddleware(swaggerObject, function (middleware) {
   // Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
   app.use(middleware.swaggerMetadata());
 
   // Provide the security handlers
-  app.use(
-    middleware.swaggerSecurity({
-      oauth2: function(req, def, scopes, callback) {
-        // Do real stuff here
-      }
-    })
-  );
+  app.use(middleware.swaggerSecurity({
+    oauth2: function (req, def, scopes, callback) {
+      // Do real stuff here
+    }
+  }));
 
   // Validate Swagger requests
-  app.use(
-    swaggerValidator({
-      validateResponse: true
-    })
-  );
+  app.use(swaggerValidator({
+    validateResponse: true
+  }));
 
   // Route validated requests to appropriate controller
-  app.use(swaggerRouter({ useStubs: true, controllers: "./controllers" }));
+  app.use(swaggerRouter({useStubs: true, controllers: './controllers'}));
 
   // Serve the Swagger documents and Swagger UI
   //   http://localhost:3000/docs => Swagger UI
@@ -635,13 +630,11 @@ swagger.initializeMiddleware(swaggerObject, function(middleware) {
   //   http://localhost:3000/api-docs/pet => Pet JSON
   //   http://localhost:3000/api-docs/store => Store JSON
   //   http://localhost:3000/api-docs/user => User JSON
-  app.use(
-    swaggerUi(rlJson, {
-      "/pet": apiDeclarations[0],
-      "/store": apiDeclarations[1],
-      "/user": apiDeclarations[2]
-    })
-  );
+  app.use(swaggerUi(rlJson, {
+    '/pet': apiDeclarations[0],
+    '/store': apiDeclarations[1],
+    '/user': apiDeclarations[2]
+  }));
 
   // Start the server
   http.createServer(app).listen(3000);
