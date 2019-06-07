@@ -398,8 +398,8 @@ exports = module.exports = function (rlOrSO, apiDeclarations) {
     var metadata;
 
     cacheEntry = apiCache[path] || _.find(apiCache, function (metadata) {
-      match = metadata.re.exec(path);
-      return _.isArray(match);
+      var isFound = metadata.re.exec(path);
+      return _.isArray(isFound);
     });
 
     debug('%s %s', req.method, req.url);
@@ -409,6 +409,7 @@ exports = module.exports = function (rlOrSO, apiDeclarations) {
     if (!cacheEntry) {
       return next();
     }
+    match = cacheEntry.re.exec(path);
 
     metadata = swaggerVersion === '1.2' ?
       {
