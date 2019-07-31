@@ -38,9 +38,6 @@ var pathToRegexp = require('path-to-regexp');
 var bodyParserOptions = {
   extended: false
 };
-var multerOptions = {
-  storage: multer.memoryStorage()
-};
 var textBodyParserOptions = {
   type: '*/*'
 };
@@ -76,7 +73,8 @@ var bodyParser = function (req, res, next) {
     next();
   }
 };
-var realMultiPartParser = multer(multerOptions);
+var realMultiPartParser;
+
 var makeMultiPartParser = function (parser) {
   return function (req, res, next) {
     if (_.isUndefined(req.files)) {
@@ -370,7 +368,14 @@ var processSwaggerDocuments = function (rlOrSO, apiDeclarations) {
  *
  * @returns the middleware function
  */
-exports = module.exports = function (rlOrSO, apiDeclarations) {
+exports = module.exports = function (rlOrSO, options) {
+  options = options || {};
+  let apiDeclarations = undefined;
+  let multerOptions = options.multer || {
+    storage: multer.memoryStorage()
+  };
+  realMultiPartParser = multer(multerOptions);
+  
   debug('Initializing swagger-metadata middleware');
 
   var apiCache = processSwaggerDocuments(rlOrSO, apiDeclarations);
