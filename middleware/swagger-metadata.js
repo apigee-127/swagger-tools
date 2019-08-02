@@ -74,6 +74,7 @@ var bodyParser = function (req, res, next) {
   }
 };
 var realMultiPartParser;
+var handleFileUpload;
 
 var makeMultiPartParser = function (parser) {
   return function (req, res, next) {
@@ -179,12 +180,15 @@ var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch,
   }, []);
   
   var contentType = req.headers['content-type'];
-  if (multiPartFields.length) {
-    // If there are files, use multer#fields
-    parsers.push(makeMultiPartParser(realMultiPartParser.fields(multiPartFields)));
-  } else if (contentType && contentType.split(';')[0] === 'multipart/form-data') {
-    // If no files but multipart form, use empty multer#array for text fields
-    parsers.push(makeMultiPartParser(realMultiPartParser.array()));
+
+  if (handleFileUpload) {
+    if (multiPartFields.length) {
+      // If there are files, use multer#fields
+      parsers.push(makeMultiPartParser(realMultiPartParser.fields(multiPartFields)));
+    } else if (contentType && contentType.split(';')[0] === 'multipart/form-data') {
+      // If no files but multipart form, use empty multer#array for text fields
+      parsers.push(makeMultiPartParser(realMultiPartParser.array()));
+    }
   }
 
   async.map(parsers, function (parser, callback) {
@@ -370,11 +374,15 @@ var processSwaggerDocuments = function (rlOrSO, apiDeclarations) {
  */
 exports = module.exports = function (rlOrSO, options) {
   options = options || {};
+  handleFileUpload = options.handleFileUpload !== false;
   let apiDeclarations = undefined;
-  let multerOptions = options.multer || {
-    storage: multer.memoryStorage()
-  };
-  realMultiPartParser = multer(multerOptions);
+  
+  if(handleFileUpload) {
+    let multerOptions = options.multer || {
+      storage: multer.memoryStorage()
+    };
+    realMultiPartParser = multer(multerOptions);
+  }
   
   debug('Initializing swagger-metadata middleware');
 
