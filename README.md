@@ -1,3 +1,19 @@
+This is a fork from https://github.com/apigee-127/swagger-tools
+
+I have added support in swagger-validator to plugin custom formats
+
+## Usage
+```
+ const formatValidators = {
+     uuid: function(value) {
+         let valid = /*do some validation*/
+         return valid;
+     }
+ }; 
+ const swaggerValidator = middleware.swaggerValidator({formatValidators});
+```
+
+
 The project provides various tools for integrating and interacting with Swagger.  This project is in its infancy but
 what is within the repository should be fully tested and reusable.  Please visit the [issue tracker][project-issues] to
 see what issues we are aware of and what features/enhancements we are working on.  Otherwise, feel free to review the
