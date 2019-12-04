@@ -87,7 +87,7 @@ var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, cal
         swaggerMetadata: function () {
           var swaggerMetadata = require('./middleware/swagger-metadata');
 
-          return swaggerMetadata.apply(undefined, args.slice(0, args.length - 1));
+          return swaggerMetadata.apply(undefined, args.slice(0, args.length - 1).concat(Array.from(arguments)));
         },
         swaggerRouter: require('./middleware/swagger-router'),
         swaggerSecurity: require('./middleware/swagger-security'),
