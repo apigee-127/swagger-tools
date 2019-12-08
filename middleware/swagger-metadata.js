@@ -73,7 +73,19 @@ var bodyParser = function (req, res, next) {
     next();
   }
 };
+
+function imageFilter(req, file, cb){
+  // accept only image files.
+  if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+    return cb(new Error('Only image files are allowed'), false);
+  } else if (!file.mimetype.match(/image\/.*/)) {
+    return cb(new Error('Only image files are allowed'), false);
+  }
+  cb(null, true);
+};
+
 var realMultiPartParser;
+var imageMultiPartParser;
 var handleFileUpload;
 
 var makeMultiPartParser = function (parser) {
@@ -171,7 +183,7 @@ var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch,
       case 'formData':
         if (paramType.toLowerCase() === 'file') {
           // Swagger spec does not allow array of files, so maxCount should be 1
-          fields.push({name: paramName, maxCount: 1});
+          fields.push({name: paramName, maxCount: 1, format: parameter.schema.format});
         }
         break;
     }
@@ -180,11 +192,27 @@ var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch,
   }, []);
   
   var contentType = req.headers['content-type'];
-
+  
   if (handleFileUpload) {
+    
     if (multiPartFields.length) {
       // If there are files, use multer#fields
-      parsers.push(makeMultiPartParser(realMultiPartParser.fields(multiPartFields)));
+      
+      let imageFiles = multiPartFields.filter(field => field.format === 'image');
+
+      if (imageFiles.length === 0) {
+        parsers.push(makeMultiPartParser(realMultiPartParser.fields(multiPartFields)));
+      } else if (imageFiles.length === multiPartFields.length) {
+        parsers.push(makeMultiPartParser(imageMultiPartParser.fields(multiPartFields)));
+      } else {
+        multiPartFields.forEach(field => {
+          if (field.format === 'image') {
+            parsers.push(makeMultiPartParser(imageMultiPartParser.fields([field])));
+          } else {
+          } parsers.push(makeMultiPartParser(realMultiPartParser.fields([field])));
+        });
+      }
+    
     } else if (contentType && contentType.split(';')[0] === 'multipart/form-data') {
       // If no files but multipart form, use empty multer#array for text fields
       parsers.push(makeMultiPartParser(realMultiPartParser.array()));
@@ -382,6 +410,7 @@ exports = module.exports = function (rlOrSO, options) {
       storage: multer.memoryStorage()
     };
     realMultiPartParser = multer(multerOptions);
+    imageMultiPartParser = multer(Object.assign({}, multerOptions, {imageFilter}));
   }
   
   debug('Initializing swagger-metadata middleware');
