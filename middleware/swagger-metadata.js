@@ -388,6 +388,8 @@ var processSwaggerDocuments = function (rlOrSO, apiDeclarations) {
   return apiCache;
 };
 
+let apiCache;
+
 /**
  * Middleware for providing Swagger information to downstream middleware and request handlers.  For all requests that
  * match a Swagger path, 'req.swagger' will be provided with pertinent Swagger details.  Since Swagger 1.2 and 2.0
@@ -415,7 +417,7 @@ exports = module.exports = function (rlOrSO, options) {
   
   debug('Initializing swagger-metadata middleware');
 
-  var apiCache = processSwaggerDocuments(rlOrSO, apiDeclarations);
+  apiCache = processSwaggerDocuments(rlOrSO, apiDeclarations);
   var swaggerVersion = cHelpers.getSwaggerVersion(rlOrSO);
 
   if (_.isUndefined(rlOrSO)) {
@@ -432,21 +434,6 @@ exports = module.exports = function (rlOrSO, options) {
     }
   }
   
-  function getCacheEntry(path) {
-    let match;
-
-    let cacheEntry = apiCache[path] || _.find(apiCache, function (metadata) {
-      match = metadata.re.exec(path);
-      return _.isArray(match);
-    });
-    return {
-      match,
-      cacheEntry
-    }
-  }
-  
-  this.getCacheEntry = getCacheEntry;
-
   return function swaggerMetadata(req, res, next) {
     var method = req.method.toLowerCase();
     var path = parseurl(req).pathname;
@@ -504,3 +491,18 @@ exports = module.exports = function (rlOrSO, options) {
     }
   };
 };
+
+exports.getCacheEntry = getCacheEntry;
+
+function getCacheEntry(path) {
+  let match;
+
+  let cacheEntry = apiCache[path] || _.find(apiCache, function (metadata) {
+    match = metadata.re.exec(path);
+    return _.isArray(match);
+  });
+  return {
+    match,
+    cacheEntry
+  }
+}
