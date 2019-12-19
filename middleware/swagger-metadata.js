@@ -444,6 +444,8 @@ exports = module.exports = function (rlOrSO, options) {
       cacheEntry
     }
   }
+  
+  this.getCacheEntry = getCacheEntry;
 
   return function swaggerMetadata(req, res, next) {
     var method = req.method.toLowerCase();
