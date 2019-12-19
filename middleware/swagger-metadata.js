@@ -431,18 +431,26 @@ exports = module.exports = function (rlOrSO, options) {
       throw new TypeError('apiDeclarations must be an array');
     }
   }
+  
+  function getCacheEntry(path) {
+    let match;
 
-  return function swaggerMetadata (req, res, next) {
-    var method = req.method.toLowerCase();
-    var path = parseurl(req).pathname;
-    var cacheEntry;
-    var match;
-    var metadata;
-
-    cacheEntry = apiCache[path] || _.find(apiCache, function (metadata) {
+    let cacheEntry = apiCache[path] || _.find(apiCache, function (metadata) {
       match = metadata.re.exec(path);
       return _.isArray(match);
     });
+    return {
+      match,
+      cacheEntry
+    }
+  }
+
+  return function swaggerMetadata(req, res, next) {
+    var method = req.method.toLowerCase();
+    var path = parseurl(req).pathname;
+    var metadata;
+
+    let {cacheEntry, match} = getCacheEntry(path);
 
     debug('%s %s', req.method, req.url);
     debug('  Is a Swagger path: %s', !_.isUndefined(cacheEntry));
