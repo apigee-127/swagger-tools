@@ -140,7 +140,7 @@ var validateValue = function (req, schema, path, val, location, callback, format
                                                     schema.type), aVal, oCallback);
       } else {
         try {
-          validators.validateAgainstSchema(schema.schema ? schema.schema : schema, val);
+          validators.validateAgainstSchema(schema.schema ? schema.schema : schema, val, undefined, formatValidators);
 
           oCallback();
         } catch (err) {
