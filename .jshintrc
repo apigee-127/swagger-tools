@@ -1,10 +1,11 @@
 {
+  "esversion": 8,
   "bitwise": true,
   "browser": true,
   "camelcase": true,
   "curly": true,
   "eqeqeq": true,
-  "esnext": true,
+  "esnext": false,
   "immed": true,
   "indent": 2,
   "latedef": true,
