@@ -79,7 +79,6 @@ gulp.task('browserify', function () {
             )
           )
           .pipe($.if(!useDebug, buffer()))
-          .pipe(gulp.dest('./tmp/dist'))
           .pipe($.if(!useDebug, $.uglify()))
           .pipe(gulp.dest('browser/'))
           .on('error', reject)
@@ -238,6 +237,7 @@ gulp.task('test', function (cb) {
 
   // Done this way to ensure that test-node runs prior to test-browser.  Since both of those tasks are independent,
   // doing this 'The Gulp Way' isn't feasible.
+
   runSequence('test-node', 'test-browser', cb);
 });
 
