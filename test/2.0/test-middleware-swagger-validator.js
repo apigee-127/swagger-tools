@@ -55,9 +55,9 @@ describe('Swagger Validator Middleware v2.0', function () {
     it('should not validate request when there are no operations', function (done) {
       helpers.createServer([petStoreJson], {}, function (app) {
         request(app)
-        .get('/api/foo')
-        .expect(200)
-        .end(helpers.expectContent('OK', done));
+          .get('/api/foo')
+          .expect(200)
+          .end(helpers.expectContent('OK', done));
       });
     });
 
@@ -75,7 +75,7 @@ describe('Swagger Validator Middleware v2.0', function () {
           })
           .expect(400)
           .end(helpers.expectContent('Invalid content type (application/json).  These are valid: ' +
-                                       'application/xml', done));
+            'application/xml', done));
       });
     });
 
@@ -115,13 +115,13 @@ describe('Swagger Validator Middleware v2.0', function () {
         }
       }, function (app) {
         request(app)
-        .post('/api/pets')
-        .send({
-          id: 1,
-          name: 'Fake Pet'
-        })
-        .expect(200)
-        .end(helpers.expectContent('OK', done));
+          .post('/api/pets')
+          .send({
+            id: 1,
+            name: 'Fake Pet'
+          })
+          .expect(200)
+          .end(helpers.expectContent('OK', done));
       });
     });
 
@@ -140,14 +140,14 @@ describe('Swagger Validator Middleware v2.0', function () {
         }
       }, function (app) {
         request(app)
-        .post('/api/pets')
-        .send({
-          id: 1,
-          name: 'Fake Pet'
-        })
-        .set('Content-Type', 'application/json; charset=utf-8')
-        .expect(200)
-        .end(helpers.expectContent('OK', done));
+          .post('/api/pets')
+          .send({
+            id: 1,
+            name: 'Fake Pet'
+          })
+          .set('Content-Type', 'application/json; charset=utf-8')
+          .expect(200)
+          .end(helpers.expectContent('OK', done));
       });
     });
 
@@ -201,10 +201,10 @@ describe('Swagger Validator Middleware v2.0', function () {
         }
       }, function (app) {
         request(app)
-        .get('/api/pets')
-        .query({status: 'waiting'})
-        .expect(200)
-        .end(helpers.expectContent('OK', done));
+          .get('/api/pets')
+          .query({ status: 'waiting' })
+          .expect(200)
+          .end(helpers.expectContent('OK', done));
       });
     });
 
@@ -212,18 +212,18 @@ describe('Swagger Validator Middleware v2.0', function () {
       var argName = 'arg0';
       var badValue = 'fake';
       var testScenarios = [
-        {in: 'query', name: argName, type: 'boolean'},
-        {in: 'query', name: argName, type: 'integer'},
-        {in: 'query', name: argName, type: 'number'},
-        {in: 'query', name: argName, type: 'string', format: 'date'},
-        {in: 'query', name: argName, type: 'string', format: 'date-time'},
-        {in: 'query', name: argName, type: 'array', items: {type: 'integer'}}
+        { in: 'query', name: argName, type: 'boolean' },
+        { in: 'query', name: argName, type: 'integer' },
+        { in: 'query', name: argName, type: 'number' },
+        { in: 'query', name: argName, type: 'string', format: 'date' },
+        { in: 'query', name: argName, type: 'string', format: 'date-time' },
+        { in: 'query', name: argName, type: 'array', items: { type: 'integer' } }
       ];
 
       async.map(testScenarios, function (scenario, callback) {
         var cPetStore = _.cloneDeep(petStoreJson);
         var cScenario = _.cloneDeep(scenario);
-        var content = {arg0: scenario.type === 'array' ? [1, 'fake'] : badValue};
+        var content = { arg0: scenario.type === 'array' ? [1, 'fake'] : badValue };
         var expectedMessage;
 
         cPetStore.paths['/pets/{id}'].get.parameters = [cScenario];
@@ -232,9 +232,9 @@ describe('Swagger Validator Middleware v2.0', function () {
           expectedMessage = 'Parameter (' + argName + ') at index 1 is not a valid integer: fake';
         } else {
           expectedMessage = 'Parameter (' + scenario.name + ') is not a valid ' +
-                              (_.isUndefined(scenario.format) ?
-                                 '' :
-                                 scenario.format + ' ') + scenario.type + ': ' + badValue;
+            (_.isUndefined(scenario.format) ?
+              '' :
+              scenario.format + ' ') + scenario.type + ': ' + badValue;
         }
 
         helpers.createServer([cPetStore], {}, function (app) {
@@ -262,28 +262,28 @@ describe('Swagger Validator Middleware v2.0', function () {
     it('should return an error for invalid parameter values based on type/format', function (done) {
       var argName = 'arg0';
       var testScenarios = [
-        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '0'},
-        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '12345'},
-        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '"2016-02-04T20:16:26+00:00"'},
-        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '2016-99-04T20:16:26+00:00'},
-        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '2016-02-99T20:16:26+00:00'},
-        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '2016-02-04T99:16:26+00:00'},
-        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '2016-02-04T20:99:26+00:00'},
-        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '2016-02-04T20:16:99+00:00'},
-        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '2016-02-04T20:16:26+99:00'},
-        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '2016-02-04T20:16:26-99:00'},
-        {json: {in: 'query', name: argName, type: 'string', format: 'date-time'}, value: '2016-02-04T20:16:26-00:23'},
+        { json: { in: 'query', name: argName, type: 'string', format: 'date-time' }, value: '0' },
+        { json: { in: 'query', name: argName, type: 'string', format: 'date-time' }, value: '12345' },
+        { json: { in: 'query', name: argName, type: 'string', format: 'date-time' }, value: '"2016-02-04T20:16:26+00:00"' },
+        { json: { in: 'query', name: argName, type: 'string', format: 'date-time' }, value: '2016-99-04T20:16:26+00:00' },
+        { json: { in: 'query', name: argName, type: 'string', format: 'date-time' }, value: '2016-02-99T20:16:26+00:00' },
+        { json: { in: 'query', name: argName, type: 'string', format: 'date-time' }, value: '2016-02-04T99:16:26+00:00' },
+        { json: { in: 'query', name: argName, type: 'string', format: 'date-time' }, value: '2016-02-04T20:99:26+00:00' },
+        { json: { in: 'query', name: argName, type: 'string', format: 'date-time' }, value: '2016-02-04T20:16:99+00:00' },
+        { json: { in: 'query', name: argName, type: 'string', format: 'date-time' }, value: '2016-02-04T20:16:26+99:00' },
+        { json: { in: 'query', name: argName, type: 'string', format: 'date-time' }, value: '2016-02-04T20:16:26-99:00' },
+        { json: { in: 'query', name: argName, type: 'string', format: 'date-time' }, value: '2016-02-04T20:16:26-00:23' },
       ];
 
       async.map(testScenarios, function (scenario, callback) {
         var cPetStore = _.cloneDeep(petStoreJson);
         var cScenario = _.cloneDeep(scenario.json);
         var badValue = _.cloneDeep(scenario.value);
-        var content = {arg0: badValue};
+        var content = { arg0: badValue };
         var expectedMessage = 'Parameter (' + cScenario.name + ') is not a valid ' +
-                            (_.isUndefined(cScenario.format) ?
-                               '' :
-                               cScenario.format + ' ') + cScenario.type + ': ' + badValue;
+          (_.isUndefined(cScenario.format) ?
+            '' :
+            cScenario.format + ' ') + cScenario.type + ': ' + badValue;
 
         cPetStore.paths['/pets/{id}'].get.parameters = [cScenario];
 
@@ -309,8 +309,8 @@ describe('Swagger Validator Middleware v2.0', function () {
                 helpers.expectContent('Request validation failed: ' + expectedMessage)(undefined, res);
                 callback();
               });
-            }
-          );
+          }
+        );
       }, function (err) {
         if (err) {
           return done(err);
@@ -323,14 +323,14 @@ describe('Swagger Validator Middleware v2.0', function () {
     it('should not return an error for valid parameter values based on type/format', function (done) {
       var argName = 'arg0';
       var testScenarios = [
-        {in: 'query', name: argName, type: 'boolean'},
-        {in: 'query', name: argName, type: 'integer'},
-        {in: 'query', name: argName, type: 'number'},
-        {in: 'query', name: argName, type: 'string', format: 'date'},
-        {in: 'query', name: argName, type: 'string', format: 'date-time'},
-        {in: 'query', name: argName, type: 'string', format: 'date-time'},
-        {in: 'query', name: argName, type: 'string', format: 'date-time'},
-        {in: 'query', name: argName, type: 'array', items: {type: 'integer'}}
+        { in: 'query', name: argName, type: 'boolean' },
+        { in: 'query', name: argName, type: 'integer' },
+        { in: 'query', name: argName, type: 'number' },
+        { in: 'query', name: argName, type: 'string', format: 'date' },
+        { in: 'query', name: argName, type: 'string', format: 'date-time' },
+        { in: 'query', name: argName, type: 'string', format: 'date-time' },
+        { in: 'query', name: argName, type: 'string', format: 'date-time' },
+        { in: 'query', name: argName, type: 'array', items: { type: 'integer' } }
       ];
       var values = [
         true,
@@ -361,7 +361,7 @@ describe('Swagger Validator Middleware v2.0', function () {
         }, function (app) {
           request(app)
             .get('/api/pets/1')
-            .query({arg0: values[index]})
+            .query({ arg0: values[index] })
             .expect(200)
             .end(function (err, res) {
               if (err) {
@@ -387,18 +387,18 @@ describe('Swagger Validator Middleware v2.0', function () {
     it('should return an error for invalid parameter values not based on type/format', function (done) {
       var argName = 'arg0';
       var testScenarios = [
-        {name: argName, in: 'query', enum: ['1', '2', '3'], type: 'string'},
-        {name: argName, in: 'query', maximum: 1, type: 'integer'},
-        {name: argName, in: 'query', maximum: 1, exclusiveMaximum: true, type: 'integer'},
-        {name: argName, in: 'query', maxItems: 1, type: 'array', items: {type: 'string'}},
-        {name: argName, in: 'query', maxLength: 1, type: 'string'},
-        {name: argName, in: 'query', minimum: 1, type: 'integer'},
-        {name: argName, in: 'query', minimum: 1, exclusiveMinimum: true, type: 'integer'},
-        {name: argName, in: 'query', minItems: 2, type: 'array', items: {type: 'string'}},
-        {name: argName, in: 'query', minLength: 2, type: 'string'},
-        {name: argName, in: 'query', multipleOf: 3, type: 'integer'},
-        {name: argName, in: 'query', pattern: '[bc]+', type: 'string'},
-        {name: argName, in: 'query', type: 'array', items: {type: 'string'}, uniqueItems: true}
+        { name: argName, in: 'query', enum: ['1', '2', '3'], type: 'string' },
+        { name: argName, in: 'query', maximum: 1, type: 'integer' },
+        { name: argName, in: 'query', maximum: 1, exclusiveMaximum: true, type: 'integer' },
+        { name: argName, in: 'query', maxItems: 1, type: 'array', items: { type: 'string' } },
+        { name: argName, in: 'query', maxLength: 1, type: 'string' },
+        { name: argName, in: 'query', minimum: 1, type: 'integer' },
+        { name: argName, in: 'query', minimum: 1, exclusiveMinimum: true, type: 'integer' },
+        { name: argName, in: 'query', minItems: 2, type: 'array', items: { type: 'string' } },
+        { name: argName, in: 'query', minLength: 2, type: 'string' },
+        { name: argName, in: 'query', multipleOf: 3, type: 'integer' },
+        { name: argName, in: 'query', pattern: '[bc]+', type: 'string' },
+        { name: argName, in: 'query', type: 'array', items: { type: 'string' }, uniqueItems: true }
       ];
       var values = [
         'fake',
@@ -470,18 +470,18 @@ describe('Swagger Validator Middleware v2.0', function () {
     it('should not return an error for valid parameter values not based on type/format', function (done) {
       var argName = 'arg0';
       var testScenarios = [
-        {name: argName, in: 'query', enum: ['1', '2', '3'], type: 'string'},
-        {name: argName, in: 'query', maximum: 1, type: 'integer'},
-        {name: argName, in: 'query', maximum: 1, exclusiveMaximum: true, type: 'integer'},
-        {name: argName, in: 'query', maxItems: 1, type: 'array', items: {type: 'string'}},
-        {name: argName, in: 'query', maxLength: 5, type: 'string'},
-        {name: argName, in: 'query', minimum: 1, type: 'integer'},
-        {name: argName, in: 'query', minimum: 0, exclusiveMinimum: true, type: 'integer'},
-        {name: argName, in: 'query', minItems: 2, type: 'array', items: {type: 'string'}},
-        {name: argName, in: 'query', minLength: 2, type: 'string'},
-        {name: argName, in: 'query', multipleOf: 3, type: 'integer'},
-        {name: argName, in: 'query', pattern: '[abc]+', type: 'string'},
-        {name: argName, in: 'query', type: 'array', items: {type: 'string'}, uniqueItems: true}
+        { name: argName, in: 'query', enum: ['1', '2', '3'], type: 'string' },
+        { name: argName, in: 'query', maximum: 1, type: 'integer' },
+        { name: argName, in: 'query', maximum: 1, exclusiveMaximum: true, type: 'integer' },
+        { name: argName, in: 'query', maxItems: 1, type: 'array', items: { type: 'string' } },
+        { name: argName, in: 'query', maxLength: 5, type: 'string' },
+        { name: argName, in: 'query', minimum: 1, type: 'integer' },
+        { name: argName, in: 'query', minimum: 0, exclusiveMinimum: true, type: 'integer' },
+        { name: argName, in: 'query', minItems: 2, type: 'array', items: { type: 'string' } },
+        { name: argName, in: 'query', minLength: 2, type: 'string' },
+        { name: argName, in: 'query', multipleOf: 3, type: 'integer' },
+        { name: argName, in: 'query', pattern: '[abc]+', type: 'string' },
+        { name: argName, in: 'query', type: 'array', items: { type: 'string' }, uniqueItems: true }
       ];
       var values = [
         '2',
@@ -515,12 +515,12 @@ describe('Swagger Validator Middleware v2.0', function () {
           }
         }, function (app) {
           request(app)
-          .get('/api/pets/1')
-          .query({
-            arg0: testValue
-          })
-          .expect(200)
-          .end(helpers.expectContent('OK', callback));
+            .get('/api/pets/1')
+            .query({
+              arg0: testValue
+            })
+            .expect(200)
+            .end(helpers.expectContent('OK', callback));
         });
 
         index++;
@@ -627,7 +627,7 @@ describe('Swagger Validator Middleware v2.0', function () {
           .get('/api/pets/1')
           .expect(500)
           .end(helpers.expectContent('Response validation failed: invalid content type (application/x-yaml).  These ' +
-                                       'are valid: application/json, application/xml, text/plain, text/html', done));
+            'are valid: application/json, application/xml, text/plain, text/html', done));
       });
     });
 
@@ -679,7 +679,7 @@ describe('Swagger Validator Middleware v2.0', function () {
           .get('/api/pets/1')
           .expect(500)
           .end(helpers.expectContent('Response validation failed: value expected to be an array/object but is not',
-                                     done));
+            done));
       });
     });
 
@@ -830,7 +830,7 @@ describe('Swagger Validator Middleware v2.0', function () {
           .get('/api/pets/categories/count')
           .expect(500)
           .end(helpers.expectContent('Response validation failed: value at index 1 is not a valid integer: Some value',
-                                     done));
+            done));
       });
     });
 
@@ -873,7 +873,7 @@ describe('Swagger Validator Middleware v2.0', function () {
         request(app)
           .get('/api/pets/categories/count')
           .expect(200)
-          .end(helpers.expectContent([1, 2, 3],done));
+          .end(helpers.expectContent([1, 2, 3], done));
       });
     });
 
@@ -938,9 +938,9 @@ describe('Swagger Validator Middleware v2.0', function () {
       cPetStoreJson.definitions.Tag.required = ['name'];
 
       cSamplePet.tags = [
-        {id: 1, name: 'Tag 1'},
-        {id: 2},
-        {id: 3, name: 'Tag 3'},
+        { id: 1, name: 'Tag 1' },
+        { id: 2 },
+        { id: 3, name: 'Tag 3' },
       ];
 
       helpers.createServer([cPetStoreJson], {
@@ -970,9 +970,9 @@ describe('Swagger Validator Middleware v2.0', function () {
       cPetStoreJson.paths['/pets/{id}'].get.operationId = 'getPetById';
 
       cSamplePet.tags = [
-        {id: 1, name: 'Tag 1'},
-        {id: 2},
-        {id: 3, name: 'Tag 3'},
+        { id: 1, name: 'Tag 1' },
+        { id: 2 },
+        { id: 3, name: 'Tag 3' },
       ];
 
       helpers.createServer([cPetStoreJson], {
@@ -1018,9 +1018,9 @@ describe('Swagger Validator Middleware v2.0', function () {
       }, function (app) {
         request(app)
           .get('/api/pets')
-            .query({status: 'available'})
-            .expect(500)
-            .end(helpers.expectContent('Response validation failed: failed schema validation', done));
+          .query({ status: 'available' })
+          .expect(500)
+          .end(helpers.expectContent('Response validation failed: failed schema validation', done));
       });
     });
 
@@ -1048,7 +1048,7 @@ describe('Swagger Validator Middleware v2.0', function () {
       }, function (app) {
         request(app)
           .get('/api/pets')
-          .query({status: 'available'})
+          .query({ status: 'available' })
           .expect(200)
           .end(helpers.expectContent([samplePet, samplePet, samplePet], done));
       });
@@ -1065,9 +1065,9 @@ describe('Swagger Validator Middleware v2.0', function () {
       cPetStoreJson.definitions.Tag.required = ['name'];
 
       cSamplePet.tags = [
-        {id: 1, name: 'Tag 1'},
-        {id: 2},
-        {id: 3, name: 'Tag 3'},
+        { id: 1, name: 'Tag 1' },
+        { id: 2 },
+        { id: 3, name: 'Tag 3' },
       ];
 
       helpers.createServer([cPetStoreJson], {
@@ -1088,7 +1088,7 @@ describe('Swagger Validator Middleware v2.0', function () {
       }, function (app) {
         request(app)
           .get('/api/pets')
-          .query({status: 'available'})
+          .query({ status: 'available' })
           .expect(500)
           .end(helpers.expectContent('Response validation failed: failed schema validation', done));
       });
@@ -1102,9 +1102,9 @@ describe('Swagger Validator Middleware v2.0', function () {
       cPetStoreJson.paths['/pets'].get.operationId = 'getPets';
 
       cSamplePet.tags = [
-        {id: 1, name: 'Tag 1'},
-        {id: 2},
-        {id: 3, name: 'Tag 3'},
+        { id: 1, name: 'Tag 1' },
+        { id: 2 },
+        { id: 3, name: 'Tag 3' },
       ];
 
       helpers.createServer([cPetStoreJson], {
@@ -1125,7 +1125,7 @@ describe('Swagger Validator Middleware v2.0', function () {
       }, function (app) {
         request(app)
           .get('/api/pets')
-          .query({status: 'available'})
+          .query({ status: 'available' })
           .expect(200)
           .end(helpers.expectContent([
             cSamplePet,
@@ -1224,7 +1224,7 @@ describe('Swagger Validator Middleware v2.0', function () {
           .get('/api/pets/1')
           .expect(500)
           .end(helpers.expectContent('Response validation failed: invalid content type (application/x-yaml).  These ' +
-                                       'are valid: application/json, application/xml, text/plain, text/html', done));
+            'are valid: application/json, application/xml, text/plain, text/html', done));
       });
     });
 
@@ -1267,7 +1267,7 @@ describe('Swagger Validator Middleware v2.0', function () {
       var expectedValue = [1, 2, 3];
 
       swaggerObject.paths['/pets'].get.parameters.push({
-          in: 'query',
+        in: 'query',
         name: 'myArr',
         description: 'Simple array value',
         required: true,
@@ -1288,10 +1288,10 @@ describe('Swagger Validator Middleware v2.0', function () {
             }
           }
         }
-      }, function(app) {
+      }, function (app) {
         request(app)
           .get('/api/pets')
-          .query({myArr: expectedValue.join('|')})
+          .query({ myArr: expectedValue.join('|') })
           .expect(200)
           .end(helpers.expectContent('OK', done));
       });
@@ -1395,7 +1395,7 @@ describe('Swagger Validator Middleware v2.0', function () {
         var expectedMessage = 'Request validation failed: Parameter (arg0) is not a valid integer: ';
 
         cPetStore.paths['/pets/{id}'].get.parameters = [{
-            in: 'query',
+          in: 'query',
           name: 'arg0',
           type: 'integer'
         }];
@@ -1423,7 +1423,7 @@ describe('Swagger Validator Middleware v2.0', function () {
         var cPetStore = _.cloneDeep(petStoreJson);
 
         cPetStore.paths['/pets/{id}'].get.parameters = [{
-            in: 'query',
+          in: 'query',
           name: 'arg0',
           type: 'integer',
           allowEmptyValue: true
@@ -1456,11 +1456,11 @@ describe('Swagger Validator Middleware v2.0', function () {
     it('should handle pattern validation for collectionFormat values (Issue 300)', function (done) {
       var pattern = 'fake[|d|r]+';
       var expectedMessage = 'Request validation failed: ' +
-            'Parameter (myArr) value at index 2 does not match required pattern: ' + pattern;
+        'Parameter (myArr) value at index 2 does not match required pattern: ' + pattern;
       var swaggerObject = _.cloneDeep(petStoreJson);
 
       swaggerObject.paths['/pets'].get.parameters.push({
-          in: 'query',
+        in: 'query',
         name: 'myArr',
         description: 'Simple array value',
         required: true,
@@ -1480,10 +1480,10 @@ describe('Swagger Validator Middleware v2.0', function () {
             }
           }
         }
-      }, function(app) {
+      }, function (app) {
         request(app)
           .get('/api/pets')
-          .query({myArr: ['faker', 'faked', 'fakes']})
+          .query({ myArr: ['faker', 'faked', 'fakes'] })
           .expect(400)
           .end(helpers.expectContent(expectedMessage, done));
       });
