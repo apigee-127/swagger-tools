@@ -183,13 +183,10 @@ describe('Specification v2.0', function () {
             return done(err);
           }
 
-          assert.deepEqual(result.errors, [
-            {
-              code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
-              message: 'Missing required property: paths',
-              path: []
-            }
-          ]);
+          assert.equal(result.errors.length, 1);
+          assert.equal(result.errors[0].code, 'OBJECT_MISSING_REQUIRED_PROPERTY');
+          assert.equal(result.errors[0].message, 'Missing required property: paths');
+
           assert.equal(result.warnings.length, 0);
 
           done();
@@ -2145,13 +2142,9 @@ describe('Specification v2.0', function () {
           return done(err);
         }
 
-        assert.deepEqual(result.errors, [
-          {
-            code: 'OBJECT_MISSING_REQUIRED_PROPERTY',
-            message: 'Missing required property: name',
-            path: []
-          }
-        ]);
+        assert.equal(result.errors.length, 1);
+        assert.equal(result.errors[0].code, 'OBJECT_MISSING_REQUIRED_PROPERTY');
+        assert.equal(result.errors[0].message, 'Missing required property: name');
 
         done();
       });
