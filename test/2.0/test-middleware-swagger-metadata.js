@@ -40,7 +40,7 @@ var path = require('path');
 var petStoreJson = _.cloneDeep(require('../../samples/2.0/petstore.json'));
 var pkg = require('../../package.json');
 var request = require('supertest');
-var spec = require('../../lib/helpers').getSpec('2.0');
+var spec = require('../../src/lib/helpers').getSpec('2.0');
 
 describe('Swagger Metadata Middleware v2.0', function () {
   it('should not add Swagger middleware to the request when there is no route match', function (done) {

@@ -27,10 +27,11 @@
 var _ = require('lodash');
 var debug = require('debug')('swagger-tools:middleware:ui');
 var fs = require('fs');
-var helpers = require('../lib/helpers');
 var parseurl = require('parseurl');
 var path = require('path');
 var serveStatic = require('serve-static');
+
+var helpers = require('../lib/helpers');
 
 var defaultOptions = {
   apiDocs: '/api-docs',

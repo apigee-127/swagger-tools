@@ -30,7 +30,7 @@ var _ = require('lodash');
 var assert = require('assert');
 var async = require('async');
 var JsonRefs = require('json-refs');
-var spec = (typeof window === 'undefined' ? require('../../lib/specs') : SwaggerTools.specs).v2_0; // jshint ignore:line
+var spec = (typeof window === 'undefined' ? require('../../src/lib/specs') : SwaggerTools.specs).v2_0; // jshint ignore:line
 var petStoreJson = _.cloneDeep(require('../../samples/2.0/petstore.json'));
 
 describe('Specification v2.0', function () {

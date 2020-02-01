@@ -24,18 +24,19 @@
 
 'use strict';
 
-var $ = require('gulp-load-plugins')();
-var browserify = require('browserify');
-var buffer = require('vinyl-buffer');
-var del = require('del');
-var exposify = require('exposify');
-var fs = require('fs');
-var gulp = require('gulp');
-var KarmaServer = require('karma').Server;
-var path = require('path');
-var runSequence = require('run-sequence');
-var source = require('vinyl-source-stream');
-var runningAllTests = false;
+const $ = require('gulp-load-plugins')();
+const browserify = require('browserify');
+const buffer = require('vinyl-buffer');
+const del = require('del');
+const exposify = require('exposify');
+const fs = require('fs');
+const gulp = require('gulp');
+const { Server: KarmaServer } = require('karma');
+const path = require('path');
+const runSequence = require('run-sequence');
+const source = require('vinyl-source-stream');
+
+let runningAllTests = false;
 
 function displayCoverageReport(display) {
   if (display) {
@@ -47,7 +48,7 @@ gulp.task('browserify', function () {
   function browserifyBuild(isStandalone, useDebug) {
     return function () {
       return new Promise(function (resolve, reject) {
-        var b = browserify('./lib/specs.js', {
+        var b = browserify('./src/lib/specs.js', {
           debug: useDebug,
           standalone: 'SwaggerTools.specs',
         });
@@ -105,12 +106,12 @@ gulp.task('lint', function () {
     .src([
       './bin/swagger-tools',
       './index.js',
-      './lib/**/*.js',
-      './middleware/helpers.js',
-      './middleware/swagger-*.js',
+      './src/lib/**/*.js',
+      './src/middleware/helpers.js',
+      './src/middleware/swagger-*.js',
       './test/**/*.js',
       './gulpfile.js',
-      '!./middleware/swagger-ui/**/*.js',
+      '!./src/middleware/swagger-ui/**/*.js',
       '!./test/**/test-specs-browser.js',
       '!./test/browser/vendor/*.js',
     ])
@@ -119,15 +120,35 @@ gulp.task('lint', function () {
     .pipe($.jshint.reporter('fail'));
 });
 
+gulp.task('eslint', function () {
+  return gulp
+    .src([
+      './bin/swagger-tools',
+      './index.js',
+      './src/lib/**/*.js',
+      './src/middleware/helpers.js',
+      './src/middleware/swagger-*.js',
+      './test/**/*.js',
+      './gulpfile.js',
+      '!./src/middleware/swagger-ui/**/*.js',
+      '!./test/**/test-specs-browser.js',
+      '!./test/browser/vendor/*.js',
+    ])
+    .pipe($.prettierPlugin())
+    .pipe($.eslint())
+    .pipe($.eslint.format())
+    .pipe($.eslint.failAfterError());
+});
+
 gulp.task('test-node', function () {
   return new Promise(function (resolve, reject) {
     gulp
       .src([
         './index.js',
-        './lib/**/*.js',
-        './middleware/helpers.js',
-        './middleware/swagger-*.js',
-        '!./middleware/swagger-ui/**/*.js',
+        './src/lib/**/*.js',
+        './src/middleware/helpers.js',
+        './src/middleware/swagger-*.js',
+        '!./src/middleware/swagger-ui/**/*.js',
         '!./test/**/test-specs-browser.js',
       ])
       .pipe($.istanbul())
@@ -148,88 +169,90 @@ gulp.task('test-node', function () {
   });
 });
 
-gulp.task('test-browser', ['browserify'], function () {
-  function cleanUpEach() {
-    del(['./test/browser/test-browser.js']);
-  }
+gulp.task('test-browser', ['browserify'], async () => {
+  const cleanUpEach = () => del(['./test/browser/test-browser.js']);
 
-  function cleanUpAll() {
-    cleanUpEach();
-
-    del([
+  const cleanUpAll = async () => {
+    await cleanUpEach();
+    return del([
       './test/browser/swagger-tools.js',
       './test/browser/swagger-tools-standalone.js',
     ]);
-  }
+  };
 
-  function finisher(err) {
-    cleanUpAll();
-
+  const finisher = async err => {
+    await cleanUpAll();
     displayCoverageReport(runningAllTests);
-
-    console.log(err);
-
+    if (err) {
+      console.log('Finisher error:', err);
+    }
     return err;
+  };
+
+  const bundle = version => new Promise((resolve, reject) => {
+    const b = browserify([`./test/${version}/test-specs.js`], {
+      debug: true,
+    });
+
+    return b.bundle()
+      .pipe(source('test-browser.js'))
+      .pipe(gulp.dest('./test/browser'))
+      .on('error', reject)
+      .on('end', resolve);
+  });
+
+  const copyFile = (source, dest) => {
+    return new Promise((resolve, reject) => {
+      return fs.copyFile(source, dest, (err) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve();
+      });
+    });
+  };
+
+  const karmaTest = configFile => {
+    return new Promise((resolve, reject) =>
+      new KarmaServer(
+        {
+          configFile,
+          singleRun: true,
+        },
+        err => {
+          if (err) {
+            return reject(err);
+          }
+          return resolve();
+        }
+      ).start());
+  };
+
+  const makeTest = async (version, standalone) => {
+    await cleanUpEach();
+    await bundle(version);
+
+    const configFile = path.join(
+      __dirname,
+      'test/browser/karma-' +
+      (standalone ? 'standalone' : 'bower') +
+      '.conf.js'
+    );
+    return karmaTest(configFile);
+  };
+  
+  try {
+    await cleanUpAll();
+    await copyFile('./browser/swagger-tools.js', './test/browser/swagger-tools.js');
+    await copyFile('./browser/swagger-tools-standalone.js', './test/browser/swagger-tools-standalone.js');
+    await makeTest('1.2', false);
+    await makeTest('1.2', true);
+    await makeTest('2.0', false);
+    await makeTest('2.0', true);
+    await finisher();
+  } catch (err) {
+    await finisher(err);
   }
-
-  function makeTest(version, standalone) {
-    return function () {
-      return Promise.resolve()
-        .then(cleanUpEach)
-        .then(function () {
-          return new Promise(function (resolve, reject) {
-            var b = browserify(['./test/' + version + '/test-specs.js'], {
-              debug: true,
-            });
-
-            b.bundle()
-              .pipe(source('test-browser.js'))
-              .pipe(gulp.dest('./test/browser'))
-              .on('error', reject)
-              .on('end', resolve);
-          });
-        })
-        .then(function () {
-          return new Promise(function (resolve, reject) {
-            new KarmaServer(
-              {
-                configFile: path.join(
-                  __dirname,
-                  'test/browser/karma-' +
-                  (standalone ? 'standalone' : 'bower') +
-                  '.conf.js'
-                ),
-                singleRun: true,
-              },
-              function (err) {
-                if (err) {
-                  reject(err);
-                } else {
-                  resolve();
-                }
-              }
-            ).start();
-          });
-        });
-    };
-  }
-
-  return Promise.resolve()
-    .then(cleanUpAll)
-    .then(function () {
-      // Copy the Swagger Tools browser builds to the per-version test container
-      fs.createReadStream('./browser/swagger-tools.js').pipe(
-        fs.createWriteStream('test/browser/swagger-tools.js')
-      );
-      fs.createReadStream('./browser/swagger-tools-standalone.js').pipe(
-        fs.createWriteStream('./test/browser/swagger-tools-standalone.js')
-      );
-    })
-    .then(makeTest('1.2', false))
-    .then(makeTest('1.2', true))
-    .then(makeTest('2.0', false))
-    .then(makeTest('2.0', true))
-    .then(finisher, finisher);
 });
 
 gulp.task('test', function (cb) {
@@ -241,4 +264,5 @@ gulp.task('test', function (cb) {
   runSequence('test-node', 'test-browser', cb);
 });
 
+// gulp.task('default', ['eslint', 'test']);
 gulp.task('default', ['lint', 'test']);

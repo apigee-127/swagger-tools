@@ -25,17 +25,18 @@
 'use strict';
 
 var _ = require('lodash');
-var cHelpers = require('../lib/helpers');
-var debug = require('debug')('swagger-tools:middleware:router');
 var fs = require('fs');
-var mHelpers = require('./helpers');
 var path = require('path');
+var debug = require('debug')('swagger-tools:middleware:router');
+
+var cHelpers = require('../lib/helpers');
+var mHelpers = require('./helpers');
 
 var defaultOptions = {
   controllers: {},
   useStubs: false // Should we set this automatically based on process.env.NODE_ENV?
 };
-var getHandlerName = function (req) {
+const getHandlerName = (req) => {
   var handlerName;
 
   switch (req.swagger.swaggerVersion) {

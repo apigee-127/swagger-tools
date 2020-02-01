@@ -146,12 +146,12 @@ module.exports.getSpec = function (version, throwError) {
   if (_.isUndefined(spec)) {
     switch (version) {
     case '1.2':
-      spec = require('../lib/specs').v1_2; // jshint ignore:line
+      spec = require('./specs').v1_2; // jshint ignore:line
 
       break;
 
     case '2.0':
-      spec = require('../lib/specs').v2_0; // jshint ignore:line
+      spec = require('./specs').v2_0; // jshint ignore:line
 
       break;
 

@@ -24,9 +24,9 @@ module.exports = function (config) {
     plugins: [
       'karma-mocha',
       'karma-mocha-reporter',
-      'karma-phantomjs-launcher'
+      'karma-chrome-launcher'
     ],
-    browsers: ['PhantomJS'],
+    browsers: ['Chrome'],
     reporters: ['mocha'],
     colors: true,
     autoWatch: false,

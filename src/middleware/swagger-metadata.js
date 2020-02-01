@@ -27,12 +27,13 @@
 var _ = require('lodash');
 var async = require('async');
 var bp = require('body-parser');
-var cHelpers = require('../lib/helpers');
 var debug = require('debug')('swagger-tools:middleware:metadata');
-var mHelpers = require('./helpers');
 var multer = require('multer');
 var parseurl = require('parseurl');
 var pathToRegexp = require('path-to-regexp');
+
+var mHelpers = require('./helpers');
+var cHelpers = require('../lib/helpers');
 
 // Upstream middlewares
 var bodyParserOptions = {

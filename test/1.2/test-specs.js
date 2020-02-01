@@ -29,7 +29,7 @@
 var _ = require('lodash');
 var assert = require('assert');
 var async = require('async');
-var spec = (typeof window === 'undefined' ? require('../../lib/specs') : SwaggerTools.specs).v1_2; // jshint ignore:line
+var spec = (typeof window === 'undefined' ? require('../../src/lib/specs') : SwaggerTools.specs).v1_2; // jshint ignore:line
 
 var petJson = _.cloneDeep(require('../../samples/1.2/pet.json'));
 var rlJson = _.cloneDeep(require('../../samples/1.2/resource-listing.json'));

@@ -28,7 +28,7 @@ var _ = require('lodash');
 var assert = require('assert');
 var cp = require('child_process');
 var path = require('path');
-var swagger = require('../');
+var swagger = require('../src');
 
 var errorHandler = module.exports.errorHandler = function () {
   return function (err, req, res, next) {

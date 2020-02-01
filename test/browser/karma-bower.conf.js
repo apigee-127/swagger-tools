@@ -12,7 +12,7 @@ module.exports = function (config) {
     frameworks: ['mocha'],
     files: [
       {pattern: 'vendor/async.min.js', watch: false, included: true},
-      {pattern: 'vendor/debug.js', watch: false, included: true},
+      // {pattern: 'vendor/debug.js', watch: false, included: true},
       {pattern: 'vendor/js-yaml.min.js', watch: false, included: true},
       {pattern: 'vendor/lodash.min.js', watch: false, included: true},
       {pattern: 'vendor/spark-md5.min.js', watch: false, included: true},
@@ -34,9 +34,9 @@ module.exports = function (config) {
     plugins: [
       'karma-mocha',
       'karma-mocha-reporter',
-      'karma-phantomjs-launcher'
+      'karma-chrome-launcher'
     ],
-    browsers: ['PhantomJS'],
+    browsers: ['Chrome'],
     reporters: ['mocha'],
     colors: true,
     autoWatch: false,
