@@ -1,6 +1,5 @@
 .nyc_output
 bin
-browser
 coverage
 docs
 examples
@@ -10,5 +9,5 @@ node_modules
 samples
 schemas
 test
-gulpfile.js
 index.js
+dist

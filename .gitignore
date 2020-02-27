@@ -1,7 +1,6 @@
 *.iml
 **/node_modules/
 **/npm-debug.log
-bower_components/
 coverage/
 .idea/
 test/1.2/test-specs-browser.js
@@ -9,9 +8,9 @@ test/2.0/test-specs-browser.js
 test/*/browser
 .tern-project
 .nyc_output
-browser/swagger-tools*.js
 dist
 .DS_Store
+.cache/
 test/browser/swagger-tools-standalone.js
 test/browser/swagger-tools.js
-test/browser/test-browser.js
+test/browser/test-browser*.js

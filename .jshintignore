@@ -1,0 +1,3 @@
+./src/middleware/swagger-ui/**/*.js
+./test/**/test-specs-browser.js
+./test/browser/vendor/*.js

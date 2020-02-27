@@ -7,6 +7,8 @@
 - swagger-tools-standalone.min.js
 */
 const path = require('path');
+// eslint-disable-next-line import/no-extraneous-dependencies
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
 const { NODE_ENV } = process.env;
 
@@ -16,10 +18,15 @@ module.exports = {
     minimize: NODE_ENV === 'production',
   },
   devtool: NODE_ENV === 'production' ? false : 'inline-source-map',
+  entry: {
+    'swagger-tools': './src/index.js',
+  },
   output: {
     filename: '[name].js',
-    chunkFilename: '[name].bundle.js',
-    path: path.resolve(path.join(__dirname, '..', 'dist'))
+    path: path.resolve(path.join(__dirname, '..', 'dist')),
+    library: ['SwaggerTools', 'specs'],
+    libraryTarget: 'umd',
+    libraryExport: 'specs',
   },
   module: {
     rules: [
@@ -35,4 +42,7 @@ module.exports = {
   node: {
     fs: 'empty',
   },
+  plugins: [
+    new BundleAnalyzerPlugin({ openAnalyzer: false, analyzerMode: 'static' }),
+  ],
 };

@@ -97,3 +97,57 @@ project root will lint check the source code and run the unit tests.
 [swagger-docs-v1_2]: https://github.com/swagger-api/swagger-spec/blob/master/versions/1.2.md
 [swagger-docs-v2_0]: https://github.com/swagger-api/swagger-spec/blob/master/versions/2.0.md
 [swagger-ui]: https://github.com/swagger-api/swagger-ui
+
+# Improvements
+## Replacing gulp
+
+Gulp struggles with some of the nicer new parts of Node.js (linting in particular), and introduces quite a few extra dependencies. By replacing it with npm scripts we can reduce overall project size.
+
+What Gulp is doing for us (in the form of tasks):
+
+1. lint
+   1. jshint with jshint-stylish as the reporter
+2. test
+   1. test-node
+      1. istanbul coverage
+      2. mocha test-*.js
+      3. display coverage report
+   2. test-browser
+      1. browserify ./src/lib/specs.js (isStandalone, useDebug)
+         1. true true `swagger-tools-standalone-min.js`
+         2. true false `swagger-tools-standalone.js`
+         3. false true `swagger-tools.min.js`
+         4. false false `swagger-tools.js`
+         5. * standalone excludes all the third party libs
+      2. copies `swagger-tools.js` to the test dir
+      3. copies `swagger-tools-standalone.js` to the test dir
+      4. makeTest (version, standalone)
+         1. 1.2 false bundle(`./test/1.2/test-specs.js`) `karma-bower.conf.js` 
+         2. 1.2 true bundle(`./test/1.2/test-specs.js`) `karma-standalone.conf.js` 
+         3. 2.0 false bundle(`./test/2.0/test-specs.js`) `karma-bower.conf.js` 
+         4. 2.0 true bundle(`./test/2.0/test-specs.js`) `karma-standalone.conf.js`
+      5. tidies up files
+
+## Replacing jshint
+
+This is a more of a personal choice, but I find integration of eslint with VSCode a nice touch, and helps keep on top of linting during development.
+
+## Replacing Browserify
+
+Webpack is where it is at. Struggling to make a non-standalone version of it with webpack though... maybe not the end of the world... TODO.
+
+## Using the very latest in JavaScript features
+
+We want to code with the latest syntax, but publish an es5 version to NPM.
+
+## Use latest swagger-ui from NPM
+
+We should be using https://github.com/swagger-api/swagger-ui but currently store a version in this repo which means it can drift out of date.
+
+## CI via Github actions
+
+PRs should trigger the previously gulpfile tasks and ensure tests are passing. Once merged the pipeline should create a release and publish it to Bower and NPM.
+
+## OpenAPI 3.0 compatibility
+
+This is the biggie. Currently the project only supports 1.2 and 2.0, but we need full 3.0 compatibility.
