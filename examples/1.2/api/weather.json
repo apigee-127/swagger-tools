@@ -1,11 +1,17 @@
 {
+  "swaggerVersion": "1.2",
   "apiVersion": "1.0",
+  "basePath": "http://localhost:3000/api",
+  "resourcePath": "/weather",
   "apis": [
     {
+      "path": "/weather",
       "operations": [
         {
-          "authorizations": {},
           "method": "GET",
+          "notes": "Returns the current weather for the requested location using the requested unit.",
+          "type": "Weather",
+          "authorizations": {},
           "nickname": "Weather_getWeather",
           "parameters": [
             {
@@ -36,15 +42,11 @@
               "message": "Successful request.",
               "responseModel": "Weather"
             }
-          ],
-          "notes": "Returns the current weather for the requested location using the requested unit.",
-          "type": "Weather"
+          ]
         }
-      ],
-      "path": "/weather"
+      ]
     }
   ],
-  "basePath": "http://localhost:3000/api",
   "models": {
     "CurrentWeather": {
       "id": "CurrentWeather",
@@ -181,7 +183,5 @@
       "required": ["current", "location", "forecast"]
     }
   },
-  "produces": ["application/json"],
-  "resourcePath": "/weather",
-  "swaggerVersion": "1.2"
+  "produces": ["application/json"]
 }

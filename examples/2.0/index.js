@@ -1,22 +1,20 @@
-'use strict';
+const app = require('connect')();
+const http = require('http');
+const swaggerTools = require('swagger-tools');
 
-var app = require('connect')();
-var http = require('http');
-var swaggerTools = require('swagger-tools');
-
-var serverPort = 3000;
+const PORT = 3000;
 
 // swaggerRouter configuration
-var options = {
+const options = {
   controllers: './controllers',
-  useStubs: process.env.NODE_ENV === 'development' ? true : false // Conditionally turn on stubs (mock mode)
+  useStubs: process.env.NODE_ENV === 'development', // Conditionally turn on stubs (mock mode)
 };
 
 // The Swagger document (require it, build it programmatically, fetch it from a URL, ...)
-var swaggerDoc = require('./api/swagger.json');
+const swaggerDoc = require('./api/swagger.json');
 
 // Initialize the Swagger middleware
-swaggerTools.initializeMiddleware(swaggerDoc, function (middleware) {
+swaggerTools.initializeMiddleware(swaggerDoc, middleware => {
   // Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
   app.use(middleware.swaggerMetadata());
 
@@ -30,7 +28,9 @@ swaggerTools.initializeMiddleware(swaggerDoc, function (middleware) {
   app.use(middleware.swaggerUi());
 
   // Start the server
-  http.createServer(app).listen(serverPort, function () {
-    console.log('Your server is listening on port %d (http://localhost:%d)', serverPort, serverPort);
+  http.createServer(app).listen(PORT, () => {
+    console.log(
+      `Server is listening on port ${PORT} --> Swagger docs: http://localhost:${PORT}/docs/`,
+    );
   });
 });

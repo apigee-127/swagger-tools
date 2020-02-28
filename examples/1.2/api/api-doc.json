@@ -1,4 +1,5 @@
 {
+  "swaggerVersion": "1.2",
   "apiVersion": "1.0",
   "apis": [
     {
@@ -6,10 +7,9 @@
       "path": "/weather"
     }
   ],
-  "authorizations": {},
   "info": {
     "description": "API for getting the current weather information.",
     "title": "Simple Weather API"
   },
-  "swaggerVersion": "1.2"
+  "authorizations": {}
 }

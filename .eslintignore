@@ -2,12 +2,12 @@
 bin
 coverage
 docs
-examples
 lib
 middleware
 node_modules
 samples
 schemas
 test
-index.js
+src/index.js
 dist
+src/middleware/swagger-ui/**/*.js

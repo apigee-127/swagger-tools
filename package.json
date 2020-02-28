@@ -14,7 +14,9 @@
     "build": "run-s clean:dist build:test build:dev-standalone build:prod-standalone",
     "jshint": "jshint --reporter=node_modules/jshint-stylish ./test/**/*.js ./src/**/*.js ./bin/swagger-tools",
     "test:karma": "node ./test/karma",
-    "runner": "run-s jshint test:unit:coverage build test:karma"
+    "runner": "run-s jshint style test:unit:coverage build test:karma",
+    "style": "eslint .",
+    "style:fix": "npm run style -- --fix"
   },
   "author": {
     "name": "Jeremy Whitlock",
