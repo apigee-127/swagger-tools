@@ -22,22 +22,20 @@
  * THE SOFTWARE.
  */
 
-'use strict';
+const _ = require('lodash');
+const debug = require('debug')('swagger-tools:middleware:ui');
+const fs = require('fs');
+const parseurl = require('parseurl');
+const path = require('path');
+const serveStatic = require('serve-static');
 
-var _ = require('lodash');
-var debug = require('debug')('swagger-tools:middleware:ui');
-var fs = require('fs');
-var parseurl = require('parseurl');
-var path = require('path');
-var serveStatic = require('serve-static');
+const helpers = require('../lib/helpers');
 
-var helpers = require('../lib/helpers');
-
-var defaultOptions = {
+const defaultOptions = {
   apiDocs: '/api-docs',
-  swaggerUi: '/docs'
+  swaggerUi: '/docs',
 };
-var staticOptions = {};
+const staticOptions = {};
 
 /**
  * Middleware for serving the Swagger documents and Swagger UI.
@@ -51,15 +49,16 @@ var staticOptions = {};
  *
  * @returns the middleware function
  */
-exports = module.exports = function (rlOrSO, apiDeclarations, options) {
+module.exports = (rlOrSO, _apiDeclarations, _options) => {
   debug('Initializing swagger-ui middleware');
 
-  var swaggerVersion = helpers.getSwaggerVersion(rlOrSO);
-  var apiDocsCache = {}; // Swagger document endpoints cache
-  var apiDocsPaths = [];
-  var staticMiddleware;
-  var swaggerApiDocsURL;
-  var swaggerUiPath;
+  let apiDeclarations = _apiDeclarations;
+  let options = _options;
+
+  const swaggerVersion = helpers.getSwaggerVersion(rlOrSO);
+  const apiDocsCache = {}; // Swagger document endpoints cache
+  let apiDocsPaths = [];
+  let swaggerApiDocsURL;
 
   if (swaggerVersion !== '1.2') {
     options = apiDeclarations;
@@ -83,38 +82,48 @@ exports = module.exports = function (rlOrSO, apiDeclarations, options) {
     }
   }
 
-  swaggerUiPath = options.swaggerUiDir ?
-    path.resolve(options.swaggerUiDir) :
-    path.join(__dirname, 'swagger-ui');
+  const swaggerUiPath = options.swaggerUiDir
+    ? path.resolve(options.swaggerUiDir)
+    : path.join(__dirname, 'swagger-ui');
 
   if (options.swaggerUiDir) {
     if (!fs.existsSync(swaggerUiPath)) {
-      throw new Error('options.swaggerUiDir path does not exist: ' + swaggerUiPath);
+      throw new Error(
+        `options.swaggerUiDir path does not exist: ${swaggerUiPath}`,
+      );
     } else if (!fs.statSync(swaggerUiPath).isDirectory()) {
-      throw new Error('options.swaggerUiDir path is not a directory: ' + swaggerUiPath);
+      throw new Error(
+        `options.swaggerUiDir path is not a directory: ${swaggerUiPath}`,
+      );
     }
   }
 
-  staticMiddleware = serveStatic(swaggerUiPath, staticOptions);
+  const staticMiddleware = serveStatic(swaggerUiPath, staticOptions);
 
   // Sanitize values
-  if (options.apiDocs.charAt(options.apiDocs.length -1) === '/') {
+  if (options.apiDocs.charAt(options.apiDocs.length - 1) === '/') {
     options.apiDocs = options.apiDocs.substring(0, options.apiDocs.length - 1);
   }
 
-  if (options.swaggerUi.charAt(options.swaggerUi.length -1) === '/') {
-    options.swaggerUi = options.swaggerUi.substring(0, options.swaggerUi.length - 1);
+  if (options.swaggerUi.charAt(options.swaggerUi.length - 1) === '/') {
+    options.swaggerUi = options.swaggerUi.substring(
+      0,
+      options.swaggerUi.length - 1,
+    );
   }
 
-  debug('  Using swagger-ui from: %s', options.swaggerUiDir ? swaggerUiPath : 'internal');
+  debug(
+    '  Using swagger-ui from: %s',
+    options.swaggerUiDir ? swaggerUiPath : 'internal',
+  );
   debug('  API Docs path: %s', options.apiDocs);
 
   // Add the Resource Listing or SwaggerObject to the response cache
   apiDocsCache[options.apiDocs] = JSON.stringify(rlOrSO, null, 2);
 
   // Add API Declarations to the response cache
-  _.each(apiDeclarations, function (resource, resourcePath) {
-    var adPath = options.apiDocs + resourcePath;
+  _.each(apiDeclarations, (resource, resourcePath) => {
+    const adPath = options.apiDocs + resourcePath;
 
     // Respond with pretty JSON (Configurable?)
     apiDocsCache[adPath] = JSON.stringify(resource, null, 2);
@@ -126,37 +135,56 @@ exports = module.exports = function (rlOrSO, apiDeclarations, options) {
 
   debug('  swagger-ui path: %s', options.swaggerUi);
 
-  return function swaggerUI (req, res, next) {
-    var path = parseurl(req).pathname;
-    var isApiDocsPath = apiDocsPaths.indexOf(path) > -1 || (swaggerVersion !== '1.2' && path === options.apiDocsPath);
-    var isSwaggerUiPath = path === options.swaggerUi || path.indexOf(options.swaggerUi + '/') === 0;
+  return function swaggerUI(req, res, next) {
+    const { pathname: urlPath } = parseurl(req);
+    const isApiDocsPath =
+      apiDocsPaths.indexOf(urlPath) > -1 ||
+      (swaggerVersion !== '1.2' && urlPath === options.apiDocsPath);
+    const isSwaggerUiPath =
+      urlPath === options.swaggerUi ||
+      urlPath.indexOf(`${options.swaggerUi}/`) === 0;
 
     if (_.isUndefined(swaggerApiDocsURL)) {
       // Start with the original path
       swaggerApiDocsURL = parseurl.original(req).pathname;
 
       // Remove the part after the mount point
-      swaggerApiDocsURL = swaggerApiDocsURL.substring(0, swaggerApiDocsURL.indexOf(req.url));
-      
+      swaggerApiDocsURL = swaggerApiDocsURL.substring(
+        0,
+        swaggerApiDocsURL.indexOf(req.url),
+      );
+
       // Add the API docs path and remove any double dashes
-      swaggerApiDocsURL = ((options.swaggerUiPrefix ? options.swaggerUiPrefix : '') + swaggerApiDocsURL + options.apiDocs).replace(/\/\//g, '/'); 
+      const prefix = options.swaggerUiPrefix ? options.swaggerUiPrefix : '';
+      swaggerApiDocsURL = `${prefix}${swaggerApiDocsURL}${options.apiDocs}`.replace(
+        /\/\//g,
+        '/',
+      );
     }
 
     debug('%s %s', req.method, req.url);
-    debug('  Will process: %s', isApiDocsPath || isSwaggerUiPath ? 'yes' : 'no');
+    debug(
+      '  Will process: %s',
+      isApiDocsPath || isSwaggerUiPath ? 'yes' : 'no',
+    );
 
     if (isApiDocsPath) {
       debug('  Serving API Docs');
 
       res.setHeader('Content-Type', 'application/json');
 
-      return res.end(apiDocsCache[path]);
-    } else if (isSwaggerUiPath) {
+      return res.end(apiDocsCache[urlPath]);
+    }
+
+    if (isSwaggerUiPath) {
       debug('  Serving swagger-ui');
 
       res.setHeader('Swagger-API-Docs-URL', swaggerApiDocsURL);
 
-      if (path === options.swaggerUi || path === options.swaggerUi + '/') {
+      if (
+        urlPath === options.swaggerUi ||
+        urlPath === `${options.swaggerUi}/`
+      ) {
         req.url = '/';
       } else {
         req.url = req.url.substring(options.swaggerUi.length);
@@ -168,3 +196,5 @@ exports = module.exports = function (rlOrSO, apiDeclarations, options) {
     return next();
   };
 };
+
+exports = module.exports;

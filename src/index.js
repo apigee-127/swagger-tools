@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+/* eslint-disable prefer-rest-params */
 /*
  * The MIT License (MIT)
  *
@@ -22,15 +24,22 @@
  * THE SOFTWARE.
  */
 
-'use strict';
+const _ = require('lodash');
+const debug = require('debug')('swagger-tools:middleware');
+const helpers = require('./lib/helpers');
+const specs = require('./lib/specs');
+const swaggerMetadata = require('./middleware/swagger-metadata');
+const swaggerRouter = require('./middleware/swagger-router');
+const swaggerSecurity = require('./middleware/swagger-security');
+const swaggerUi = require('./middleware/swagger-ui');
+const swaggerValidator = require('./middleware/swagger-validator');
 
-var _ = require('lodash');
-var debug = require('debug')('swagger-tools:middleware');
-var helpers = require('./lib/helpers');
-
-var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, callback) {
-  var args;
-  var spec;
+const initializeMiddleware = function initializeMiddleware(
+  rlOrSO,
+  resources,
+  origCallback,
+) {
+  let callback = origCallback;
 
   debug('Initializing middleware');
 
@@ -40,8 +49,8 @@ var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, cal
     throw new TypeError('rlOrSO must be an object');
   }
 
-  args = [rlOrSO];
-  spec = helpers.getSpec(helpers.getSwaggerVersion(rlOrSO), true);
+  const args = [rlOrSO];
+  const spec = helpers.getSpec(helpers.getSwaggerVersion(rlOrSO), true);
 
   debug('  Identified Swagger version: %s', spec.version);
 
@@ -56,7 +65,7 @@ var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, cal
 
     args.push(resources);
   } else {
-    callback = arguments[1];
+    [, callback] = arguments;
   }
 
   if (_.isUndefined(callback)) {
@@ -65,11 +74,25 @@ var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, cal
     throw new TypeError('callback must be a function');
   }
 
-  args.push(function (err, results) {
-    if (results && results.errors.length + _.reduce(results.apiDeclarations || [], function (count, apiDeclaration) {
-      return count += (apiDeclaration ? apiDeclaration.errors.length : 0);
-    }, 0) > 0) {
-      err = new Error('Swagger document(s) failed validation so the server cannot start');
+  args.push((origErr, results) => {
+    let err = origErr;
+    if (
+      results &&
+      results.errors.length +
+        _.reduce(
+          results.apiDeclarations || [],
+          (count, apiDeclaration) => {
+            const newCount =
+              count + (apiDeclaration ? apiDeclaration.errors.length : 0);
+            return newCount;
+          },
+          0,
+        ) >
+        0
+    ) {
+      err = new Error(
+        'Swagger document(s) failed validation so the server cannot start',
+      );
 
       err.failedValidation = true;
       err.results = results;
@@ -84,44 +107,51 @@ var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, cal
 
       callback({
         // Create a wrapper to avoid having to pass the non-optional arguments back to the swaggerMetadata middleware
-        swaggerMetadata: function () {
-          var swaggerMetadata = require('./middleware/swagger-metadata');
-
-          return swaggerMetadata.apply(undefined, args.slice(0, args.length - 1));
+        swaggerMetadata() {
+          return swaggerMetadata(...args.slice(0, args.length - 1));
         },
-        swaggerRouter: require('./middleware/swagger-router'),
-        swaggerSecurity: require('./middleware/swagger-security'),
+        swaggerRouter,
+        swaggerSecurity,
         // Create a wrapper to avoid having to pass the non-optional arguments back to the swaggerUi middleware
-        swaggerUi: function (options) {
-          var swaggerUi = require('./middleware/swagger-ui');
-          var suArgs = [rlOrSO];
+        swaggerUi(options) {
+          const suArgs = [rlOrSO];
 
           if (spec.version === '1.2') {
-            suArgs.push(_.reduce(resources, function (map, resource) {
-              map[resource.resourcePath] = resource;
-
-              return map;
-            }, {}));
+            suArgs.push(
+              resources.reduce(
+                (map, resource) => ({
+                  ...map,
+                  [resource.resourcePath]: resource,
+                }),
+                {},
+              ),
+            );
           }
 
           suArgs.push(options || {});
 
-          return swaggerUi.apply(undefined, suArgs);
+          return swaggerUi(...suArgs);
         },
-        swaggerValidator: require('./middleware/swagger-validator')
+        swaggerValidator,
       });
-    } catch (err) {
+    } catch (error) {
       if (process.env.RUNNING_SWAGGER_TOOLS_TESTS === 'true') {
         // When running the swagger-tools test suite, we want to return an error instead of exiting the process.  This
         // does not mean that this function is an error-first callback but due to json-refs using Promises, we have to
         // return the error to avoid the error being swallowed.
-        callback(err);
+        callback(error);
       } else {
-        if (err.failedValidation === true) {
-          helpers.printValidationResults(spec.version, rlOrSO, resources, results, true);
+        if (error.failedValidation === true) {
+          helpers.printValidationResults(
+            spec.version,
+            rlOrSO,
+            resources,
+            results,
+            true,
+          );
         } else {
           console.error('Error initializing middleware');
-          console.error(err.stack);
+          console.error(error.stack);
         }
 
         process.exit(1);
@@ -129,10 +159,10 @@ var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, cal
     }
   });
 
-  spec.validate.apply(spec, args);
+  spec.validate(...args);
 };
 
 module.exports = {
-  initializeMiddleware: initializeMiddleware,
-  specs: require('./lib/specs')
+  initializeMiddleware,
+  specs,
 };

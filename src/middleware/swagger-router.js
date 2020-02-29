@@ -22,48 +22,57 @@
  * THE SOFTWARE.
  */
 
-'use strict';
+const _ = require('lodash');
+const debug = require('debug')('swagger-tools:middleware:router');
+const fs = require('fs');
+const path = require('path');
 
-var _ = require('lodash');
-var fs = require('fs');
-var path = require('path');
-var debug = require('debug')('swagger-tools:middleware:router');
+const cHelpers = require('../lib/helpers');
+const mHelpers = require('./helpers');
 
-var cHelpers = require('../lib/helpers');
-var mHelpers = require('./helpers');
-
-var defaultOptions = {
+const defaultOptions = {
   controllers: {},
-  useStubs: false // Should we set this automatically based on process.env.NODE_ENV?
+  useStubs: false, // Should we set this automatically based on process.env.NODE_ENV?
 };
-const getHandlerName = (req) => {
-  var handlerName;
+const getHandlerName = req => {
+  let handlerName;
 
   switch (req.swagger.swaggerVersion) {
-  case '1.2':
-    handlerName = req.swagger.operation.nickname;
-    break;
+    case '1.2':
+      handlerName = req.swagger.operation.nickname;
+      break;
 
-  case '2.0':
-    if (req.swagger.operation['x-swagger-router-controller'] || req.swagger.path['x-swagger-router-controller']) {
-      handlerName = (req.swagger.operation['x-swagger-router-controller'] ?
-        req.swagger.operation['x-swagger-router-controller'] :
-        req.swagger.path['x-swagger-router-controller']) + '_' +
-        (req.swagger.operation.operationId ? req.swagger.operation.operationId : req.method.toLowerCase());
-    } else {
-      handlerName = req.swagger.operation.operationId;
-    }
+    case '2.0':
+      if (
+        req.swagger.operation['x-swagger-router-controller'] ||
+        req.swagger.path['x-swagger-router-controller']
+      ) {
+        const routerController = req.swagger.operation[
+          'x-swagger-router-controller'
+        ]
+          ? req.swagger.operation['x-swagger-router-controller']
+          : req.swagger.path['x-swagger-router-controller'];
+        const routerOperationId = req.swagger.operation.operationId
+          ? req.swagger.operation.operationId
+          : req.method.toLowerCase();
+        handlerName = `${routerController}_${routerOperationId}`;
+      } else {
+        handlerName = req.swagger.operation.operationId;
+      }
 
-    break;
+      break;
+
+    default:
+      break;
   }
 
   return handlerName;
 };
 
-var handlerCacheFromDir = function (dirOrDirs) {
-  var handlerCache = {};
-  var jsFileRegex = /\.(coffee|js|ts)$/;
-  var dirs = [];
+const handlerCacheFromDir = dirOrDirs => {
+  const handlerCache = {};
+  const jsFileRegex = /\.(coffee|js|ts)$/;
+  let dirs = [];
 
   if (_.isArray(dirOrDirs)) {
     dirs = dirOrDirs;
@@ -73,25 +82,32 @@ var handlerCacheFromDir = function (dirOrDirs) {
 
   debug('  Controllers:');
 
-  _.each(dirs, function (dir) {
-    _.each(fs.readdirSync(dir), function (file) {
-      var controllerName = file.replace(jsFileRegex, '');
-      var controller;
+  _.each(dirs, dir => {
+    _.each(fs.readdirSync(dir), file => {
+      const controllerName = file.replace(jsFileRegex, '');
+      let controller;
 
       if (file.match(jsFileRegex)) {
-        controller = require(path.resolve(path.join(dir, controllerName)));
+        const controllerPath = path.join(dir, controllerName);
+        const resolvedControllerPath = path.resolve(controllerPath);
+        // eslint-disable-next-line import/no-dynamic-require, global-require
+        controller = require(resolvedControllerPath);
 
-        debug('    %s%s:',
-              path.resolve(path.join(dir, file)),
-              (_.isPlainObject(controller) ? '' : ' (not an object, skipped)'));
+        debug(
+          '    %s%s:',
+          path.resolve(path.join(dir, file)),
+          _.isPlainObject(controller) ? '' : ' (not an object, skipped)',
+        );
 
         if (_.isPlainObject(controller)) {
-          _.each(controller, function (value, name) {
-            var handlerId = controllerName + '_' + name;
+          _.each(controller, (value, name) => {
+            const handlerId = `${controllerName}_${name}`;
 
-            debug('      %s%s',
-                  handlerId,
-                  (_.isFunction(value) ? '' : ' (not a function, skipped)'));
+            debug(
+              '      %s%s',
+              handlerId,
+              _.isFunction(value) ? '' : ' (not a function, skipped)',
+            );
 
             // TODO: Log this situation
 
@@ -106,217 +122,250 @@ var handlerCacheFromDir = function (dirOrDirs) {
 
   return handlerCache;
 };
-var getMockValue = function (version, schema) {
-  var type = _.isPlainObject(schema) ? schema.type : schema;
-  var value;
+
+const getMockValue = (version, schema) => {
+  let type = _.isPlainObject(schema) ? schema.type : schema;
+  let value;
 
   if (!type) {
     type = 'object';
   }
 
   switch (type) {
-  case 'array':
-    value = [getMockValue(version, _.isArray(schema.items) ? schema.items[0] : schema.items)];
+    case 'array':
+      value = [
+        getMockValue(
+          version,
+          _.isArray(schema.items) ? schema.items[0] : schema.items,
+        ),
+      ];
 
-    break;
+      break;
 
-  case 'boolean':
-    if (version === '1.2' && !_.isUndefined(schema.defaultValue)) {
-      value = schema.defaultValue;
-    } else if (version === '2.0' && !_.isUndefined(schema.default)) {
-      value = schema.default;
-    } else if (_.isArray(schema.enum)) {
-      value = schema.enum[0];
-    } else {
-      value = 'true';
-    }
+    case 'boolean':
+      if (version === '1.2' && !_.isUndefined(schema.defaultValue)) {
+        value = schema.defaultValue;
+      } else if (version === '2.0' && !_.isUndefined(schema.default)) {
+        value = schema.default;
+      } else if (_.isArray(schema.enum)) {
+        [value] = schema.enum;
+      } else {
+        value = 'true';
+      }
 
-    // Convert value if necessary
-    value = value === 'true' || value === true ? true : false;
+      // Convert value if necessary
+      value = !!(value === 'true' || value === true);
 
-    break;
+      break;
 
-  case 'file':
-  case 'File':
-    value = 'Pretend this is some file content';
+    case 'file':
+    case 'File':
+      value = 'Pretend this is some file content';
 
-    break;
+      break;
 
-  case 'integer':
-    if (version === '1.2' && !_.isUndefined(schema.defaultValue)) {
-      value = schema.defaultValue;
-    } else if (version === '2.0' && !_.isUndefined(schema.default)) {
-      value = schema.default;
-    } else if (_.isArray(schema.enum)) {
-      value = schema.enum[0];
-    } else {
-      value = 1;
-    }
+    case 'integer':
+      if (version === '1.2' && !_.isUndefined(schema.defaultValue)) {
+        value = schema.defaultValue;
+      } else if (version === '2.0' && !_.isUndefined(schema.default)) {
+        value = schema.default;
+      } else if (_.isArray(schema.enum)) {
+        [value] = schema.enum;
+      } else {
+        value = 1;
+      }
 
-    // Convert value if necessary
-    if (!_.isNumber(value)) {
-      value = parseInt(value, 10);
-    }
+      // Convert value if necessary
+      if (!_.isNumber(value)) {
+        value = parseInt(value, 10);
+      }
 
-    // TODO: Handle constraints and formats
+      // TODO: Handle constraints and formats
 
-    break;
+      break;
 
-  case 'object':
-    value = {};
+    case 'object':
+      value = {};
 
-    _.each(schema.allOf, function (parentSchema) {
-      _.each(parentSchema.properties, function (property, propName) {
+      _.each(schema.allOf, parentSchema => {
+        _.each(parentSchema.properties, (property, propName) => {
+          value[propName] = getMockValue(version, property);
+        });
+      });
+
+      _.each(schema.properties, (property, propName) => {
         value[propName] = getMockValue(version, property);
       });
-    });
 
-    _.each(schema.properties, function (property, propName) {
-      value[propName] = getMockValue(version, property);
-    });
+      break;
 
-    break;
+    case 'number':
+      if (version === '1.2' && !_.isUndefined(schema.defaultValue)) {
+        value = schema.defaultValue;
+      } else if (version === '2.0' && !_.isUndefined(schema.default)) {
+        value = schema.default;
+      } else if (_.isArray(schema.enum)) {
+        [value] = schema.enum;
+      } else {
+        value = 1.0;
+      }
 
-  case 'number':
-    if (version === '1.2' && !_.isUndefined(schema.defaultValue)) {
-      value = schema.defaultValue;
-    } else if (version === '2.0' && !_.isUndefined(schema.default)) {
-      value = schema.default;
-    } else if (_.isArray(schema.enum)) {
-      value = schema.enum[0];
-    } else {
-      value = 1.0;
-    }
+      // Convert value if necessary
+      if (!_.isNumber(value)) {
+        value = parseFloat(value);
+      }
 
-    // Convert value if necessary
-    if (!_.isNumber(value)) {
-      value = parseFloat(value);
-    }
+      // TODO: Handle constraints and formats
 
-    // TODO: Handle constraints and formats
+      break;
 
-    break;
-
-  case 'string':
-    if (version === '1.2' && !_.isUndefined(schema.defaultValue)) {
-      value = schema.defaultValue;
-    } else if (version === '2.0' && !_.isUndefined(schema.default)) {
-      value = schema.default;
-    } else if (_.isArray(schema.enum)) {
-      value = schema.enum[0];
-    } else {
-      if (schema.format === 'date') {
-        value = new Date().toISOString().split('T')[0];
+    case 'string':
+      if (version === '1.2' && !_.isUndefined(schema.defaultValue)) {
+        value = schema.defaultValue;
+      } else if (version === '2.0' && !_.isUndefined(schema.default)) {
+        value = schema.default;
+      } else if (_.isArray(schema.enum)) {
+        [value] = schema.enum;
+      } else if (schema.format === 'date') {
+        [value] = new Date().toISOString().split('T');
       } else if (schema.format === 'date-time') {
         value = new Date().toISOString();
       } else {
         value = 'Sample text';
       }
-    }
 
-    break;
+      break;
+    default:
+      break;
   }
 
   return value;
 };
-var mockResponse = function (req, res, next, handlerName) {
-  var method = req.method.toLowerCase();
-  var operation = req.swagger.operation;
-  var sendResponse = function (err, response) {
+// eslint-disable-next-line consistent-return
+const mockResponse = (req, res, next, handlerName) => {
+  const method = req.method.toLowerCase();
+  const { operation } = req.swagger;
+  const sendResponse = (err, response) => {
     if (err) {
       debug('next with error: %j', err);
       return next(err);
-    } else {
-      debug('send mock response: %s', response);
-
-      // Explicitly set the response status to 200 if not present (Issue #269)
-      if (_.isUndefined(req.statusCode)) {
-        res.statusCode = 200;
-      }
-
-      // Mock mode only supports JSON right now
-      res.setHeader('Content-Type', 'application/json');
-
-      return res.end(response);
     }
+    debug('send mock response: %s', response);
+
+    // Explicitly set the response status to 200 if not present (Issue #269)
+    if (_.isUndefined(req.statusCode)) {
+      res.statusCode = 200;
+    }
+
+    // Mock mode only supports JSON right now
+    res.setHeader('Content-Type', 'application/json');
+
+    return res.end(response);
   };
-  var spec = cHelpers.getSpec(req.swagger.swaggerVersion);
-  var stubResponse = 'Stubbed response for ' + handlerName;
-  var apiDOrSO;
-  var responseType;
+  const spec = cHelpers.getSpec(req.swagger.swaggerVersion);
+  const stubResponse = `Stubbed response for ${handlerName}`;
+  let apiDOrSO;
+  let responseType;
 
   switch (req.swagger.swaggerVersion) {
-  case '1.2':
-    apiDOrSO = req.swagger.apiDeclaration;
-    responseType = operation.type;
+    case '1.2':
+      apiDOrSO = req.swagger.apiDeclaration;
+      responseType = operation.type;
 
-    break;
+      break;
 
-  case '2.0':
-    apiDOrSO = req.swagger.swaggerObject;
+    case '2.0':
+      apiDOrSO = req.swagger.swaggerObject;
 
-    if (method === 'post' && operation.responses['201']) {
-      responseType = operation.responses['201'];
+      if (method === 'post' && operation.responses['201']) {
+        responseType = operation.responses['201'];
 
-      res.statusCode = 201;
-    } else if (method === 'delete' && operation.responses['204']) {
-      responseType = operation.responses['204'];
+        res.statusCode = 201;
+      } else if (method === 'delete' && operation.responses['204']) {
+        responseType = operation.responses['204'];
 
-      res.statusCode = 204;
-    } else if (operation.responses['200']) {
-      responseType = operation.responses['200'];
-    } else if (operation.responses['default']) {
-      responseType = operation.responses['default'];
-    } else {
-      responseType = 'void';
-    }
+        res.statusCode = 204;
+      } else if (operation.responses['200']) {
+        responseType = operation.responses['200'];
+      } else if (operation.responses.default) {
+        responseType = operation.responses.default;
+      } else {
+        responseType = 'void';
+      }
 
-    break;
+      break;
+    default:
+      break;
   }
 
-  if (_.isPlainObject(responseType) || mHelpers.isModelType(spec, responseType)) {
+  if (
+    _.isPlainObject(responseType) ||
+    mHelpers.isModelType(spec, responseType)
+  ) {
     if (req.swagger.swaggerVersion === '1.2') {
-      spec.composeModel(apiDOrSO, responseType, function (err, result) {
+      spec.composeModel(apiDOrSO, responseType, (err, result) => {
         if (err) {
           return sendResponse(undefined, err);
-        } else {
-          // Should we handle this differently as undefined typically means the model doesn't exist
-          return sendResponse(undefined, _.isUndefined(result) ?
-                                           stubResponse :
-                                           JSON.stringify(getMockValue(req.swagger.swaggerVersion, result)));
         }
+        // Should we handle this differently as undefined typically means the model doesn't exist
+        return sendResponse(
+          undefined,
+          _.isUndefined(result)
+            ? stubResponse
+            : JSON.stringify(getMockValue(req.swagger.swaggerVersion, result)),
+        );
       });
     } else {
-      return sendResponse(undefined, JSON.stringify(getMockValue(req.swagger.swaggerVersion, responseType.schema || responseType)));
+      return sendResponse(
+        undefined,
+        JSON.stringify(
+          getMockValue(
+            req.swagger.swaggerVersion,
+            responseType.schema || responseType,
+          ),
+        ),
+      );
     }
   } else {
-    return sendResponse(undefined, getMockValue(req.swagger.swaggerVersion, responseType));
+    return sendResponse(
+      undefined,
+      getMockValue(req.swagger.swaggerVersion, responseType),
+    );
   }
 };
-var createStubHandler = function (req, res, next, handlerName) {
+const createStubHandler = (_req, _res, _next, handlerName) => {
   // TODO: Handle headers for 2.0
   // TODO: Handle examples (per mime-type) for 2.0
   // TODO: Handle non-JSON response types
 
-  return function stubHandler (req, res, next) {
+  return function stubHandler(req, res, next) {
     mockResponse(req, res, next, handlerName);
   };
 };
 
-var send405 = function (req, res, next) {
-  var allowedMethods = [];
-  var err = new Error('Route defined in Swagger specification (' +
-                        (_.isUndefined(req.swagger.api) ? req.swagger.apiPath : req.swagger.api.path) +
-                        ') but there is no defined ' +
-                      (req.swagger.swaggerVersion === '1.2' ? req.method.toUpperCase() : req.method.toLowerCase()) + ' operation.');
+const send405 = (req, res, next) => {
+  const allowedMethods = [];
+  const err = new Error(
+    `Route defined in Swagger specification (${
+      _.isUndefined(req.swagger.api)
+        ? req.swagger.apiPath
+        : req.swagger.api.path
+    }) but there is no defined ${
+      req.swagger.swaggerVersion === '1.2'
+        ? req.method.toUpperCase()
+        : req.method.toLowerCase()
+    } operation.`,
+  );
 
   if (!_.isUndefined(req.swagger.api)) {
-    _.each(req.swagger.api.operations, function (operation) {
+    _.each(req.swagger.api.operations, operation => {
       allowedMethods.push(operation.method.toUpperCase());
     });
   } else {
-    _.each(req.swagger.path, function (operation, method) {
-      if (cHelpers.swaggerOperationMethods.indexOf(method.toUpperCase()) !== -1) {
+    _.each(req.swagger.path, (operation, method) => {
+      if (
+        cHelpers.swaggerOperationMethods.indexOf(method.toUpperCase()) !== -1
+      ) {
         allowedMethods.push(method.toUpperCase());
       }
     });
@@ -351,8 +400,9 @@ var send405 = function (req, res, next) {
  *
  * @returns the middleware function
  */
-exports = module.exports = function (options) {
-  var handlerCache = {};
+module.exports = _options => {
+  let handlerCache = {};
+  let options = _options;
 
   debug('Initializing swagger-router middleware');
 
@@ -365,7 +415,7 @@ exports = module.exports = function (options) {
     debug('  Controllers:');
 
     // Create the handler cache from the passed in controllers object
-    _.each(options.controllers, function (func, handlerName) {
+    _.each(options.controllers, (func, handlerName) => {
       debug('    %s', handlerName);
 
       if (!_.isFunction(func)) {
@@ -379,11 +429,11 @@ exports = module.exports = function (options) {
     handlerCache = handlerCacheFromDir(options.controllers);
   }
 
-  return function swaggerRouter (req, res, next) {
-    var operation = req.swagger ? req.swagger.operation : undefined;
-    var handler;
-    var handlerName;
-    var rErr;
+  return function swaggerRouter(req, res, next) {
+    const operation = req.swagger ? req.swagger.operation : undefined;
+    let handler;
+    let handlerName;
+    let rErr;
 
     debug('%s %s', req.method, req.url);
     debug('  Will process: %s', _.isUndefined(operation) ? 'no' : 'yes');
@@ -397,11 +447,18 @@ exports = module.exports = function (options) {
 
         debug('  Route handler: %s', handlerName);
         debug('    Missing: %s', _.isUndefined(handler) ? 'yes' : 'no');
-        debug('    Ignored: %s', options.ignoreMissingHandlers === true ? 'yes' : 'no');
-        debug('    Using mock: %s', options.useStubs && _.isUndefined(handler) ? 'yes' : 'no');
+        debug(
+          '    Ignored: %s',
+          options.ignoreMissingHandlers === true ? 'yes' : 'no',
+        );
+        debug(
+          '    Using mock: %s',
+          options.useStubs && _.isUndefined(handler) ? 'yes' : 'no',
+        );
 
         if (_.isUndefined(handler) && options.useStubs === true) {
-          handler = handlerCache[handlerName] = createStubHandler(handlerName);
+          handlerCache[handlerName] = createStubHandler(handlerName);
+          handler = handlerCache[handlerName];
         }
 
         if (!_.isUndefined(handler)) {
@@ -410,10 +467,16 @@ exports = module.exports = function (options) {
           } catch (err) {
             rErr = err;
 
-            debug('Handler threw an unexpected error: %s\n%s', err.message, err.stack);
+            debug(
+              'Handler threw an unexpected error: %s\n%s',
+              err.message,
+              err.stack,
+            );
           }
         } else if (options.ignoreMissingHandlers !== true) {
-          rErr = new Error('Cannot resolve the configured swagger-router handler: ' + handlerName);
+          rErr = new Error(
+            `Cannot resolve the configured swagger-router handler: ${handlerName}`,
+          );
 
           res.statusCode = 500;
         }
@@ -431,3 +494,5 @@ exports = module.exports = function (options) {
     return next(rErr);
   };
 };
+
+exports = module.exports;

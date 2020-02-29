@@ -22,22 +22,20 @@
  * THE SOFTWARE.
  */
 
-'use strict';
-
 /* This module contains code that is reused in more than one of the Swagger middlewares */
 
-var _ = require('lodash');
-var helpers = require('../lib/helpers');
-var validators = require('../lib/validators');
-var parseurl = require('parseurl');
-var qs = require('qs');
+const _ = require('lodash');
+const parseurl = require('parseurl');
+const qs = require('qs');
+const helpers = require('../lib/helpers');
+const validators = require('../lib/validators');
 
-var isModelType = module.exports.isModelType = function (spec, type) {
+const isModelType = (spec, type) => {
   return spec.primitives.indexOf(type) === -1;
 };
 
-var getParameterType = module.exports.getParameterType = function (schema) {
-  var type = schema.type;
+const getParameterType = schema => {
+  let { type } = schema;
 
   if (!type && schema.schema) {
     type = getParameterType(schema.schema);
@@ -50,72 +48,80 @@ var getParameterType = module.exports.getParameterType = function (schema) {
   return type;
 };
 
-var isModelParameter = module.exports.isModelParameter = function (version, param) {
-  var spec = helpers.getSpec(version);
-  var type = getParameterType(param);
-  var isModel = false;
+const isModelParameter = (version, param) => {
+  const spec = helpers.getSpec(version);
+  const type = getParameterType(param);
+  let isModel = false;
 
   if (type === 'object' || isModelType(spec, type)) {
     isModel = true;
-  } else if (type === 'array' && isModelType(spec, param.items ?
-                                             param.items.type || param.items.$ref :
-                                             undefined)) {
+  } else if (
+    type === 'array' &&
+    isModelType(
+      spec,
+      param.items ? param.items.type || param.items.$ref : undefined,
+    )
+  ) {
     isModel = true;
   }
 
   return isModel;
 };
 
-module.exports.getParameterValue = function (version, parameter, pathKeys, match, req, debug) {
-  var defaultVal = version === '1.2' ? parameter.defaultValue : parameter.default;
-  var paramLocation = version === '1.2' ? parameter.paramType : parameter.in;
-  var paramType = getParameterType(parameter);
-  var val;
+const getParameterValue = (version, parameter, pathKeys, match, req, debug) => {
+  const defaultVal =
+    version === '1.2' ? parameter.defaultValue : parameter.default;
+  const paramLocation = version === '1.2' ? parameter.paramType : parameter.in;
+  const paramType = getParameterType(parameter);
+  let val;
 
   // Get the value to validate based on the operation parameter type
+  // eslint-disable-next-line default-case
   switch (paramLocation) {
-  case 'body':
-    val = req.body;
-
-    break;
-  case 'form':
-  case 'formData':
-    if (paramType.toLowerCase() === 'file') {
-      if (_.isArray(req.files)) {
-        val = _.find(req.files, function (file) {
-          return file.fieldname === parameter.name;
-        });
-      } else if (!_.isUndefined(req.files)) {
-        val = req.files[parameter.name] ? req.files[parameter.name] : undefined;
-      }
-
-      // Swagger does not allow an array of files
-      if (_.isArray(val)) {
-        val = val[0];
-      }
-    } else if (isModelParameter(version, parameter)) {
+    case 'body':
       val = req.body;
-    } else {
-      val = req.body[parameter.name];
-    }
 
-    break;
-  case 'header':
-    val = req.headers[parameter.name.toLowerCase()];
+      break;
+    case 'form':
+    case 'formData':
+      if (paramType.toLowerCase() === 'file') {
+        if (_.isArray(req.files)) {
+          val = _.find(req.files, file => {
+            return file.fieldname === parameter.name;
+          });
+        } else if (!_.isUndefined(req.files)) {
+          val = req.files[parameter.name]
+            ? req.files[parameter.name]
+            : undefined;
+        }
 
-    break;
-  case 'path':
-    _.each(pathKeys, function (key, index) {
-      if (key.name === parameter.name) {
-        val = decodeURIComponent(match[index + 1]);
+        // Swagger does not allow an array of files
+        if (_.isArray(val)) {
+          [val] = val;
+        }
+      } else if (isModelParameter(version, parameter)) {
+        val = req.body;
+      } else {
+        val = req.body[parameter.name];
       }
-    });
 
-    break;
-  case 'query':
-    val = _.get(req.query, parameter.name);
+      break;
+    case 'header':
+      val = req.headers[parameter.name.toLowerCase()];
 
-    break;
+      break;
+    case 'path':
+      _.each(pathKeys, (key, index) => {
+        if (key.name === parameter.name) {
+          val = decodeURIComponent(match[index + 1]);
+        }
+      });
+
+      break;
+    case 'query':
+      val = _.get(req.query, parameter.name);
+
+      break;
   }
 
   debug('      Value provided: %s', !_.isUndefined(val));
@@ -128,12 +134,12 @@ module.exports.getParameterValue = function (version, parameter, pathKeys, match
   return val;
 };
 
-module.exports.parseQueryString = function(req) {
+const parseQueryString = req => {
   return req.url.indexOf('?') > -1 ? qs.parse(parseurl(req).query, {}) : {};
 };
 
-module.exports.debugError = function (err, debug) {
-  var reason = err.message.replace(/^.*validation failed: /, '');
+const debugError = (err, debug) => {
+  let reason = err.message.replace(/^.*validation failed: /, '');
 
   reason = reason.charAt(0).toUpperCase() + reason.substring(1);
 
@@ -143,7 +149,7 @@ module.exports.debugError = function (err, debug) {
     if (err.results) {
       debug('  Errors:');
 
-      _.each(err.results.errors, function (error, index) {
+      _.each(err.results.errors, (error, index) => {
         debug('    %d:', index);
         debug('      code: %s', error.code);
         debug('      message: %s', error.message);
@@ -155,7 +161,7 @@ module.exports.debugError = function (err, debug) {
   if (err.stack) {
     debug('  Stack:');
 
-    _.each(err.stack.split('\n'), function (line, index) {
+    _.each(err.stack.split('\n'), (line, index) => {
       // Skip the first line since it's in the reasonx
       if (index > 0) {
         debug('  %s', line);
@@ -164,8 +170,11 @@ module.exports.debugError = function (err, debug) {
   }
 };
 
-var convertValue = module.exports.convertValue = function (value, schema, type, location) {
-  var original = value;
+const convertValue = function(origValue, origSchema, origType, location) {
+  let value = origValue;
+  let schema = origSchema;
+  let type = origType;
+  const original = value;
 
   // Default to {}
   if (_.isUndefined(schema)) {
@@ -187,123 +196,143 @@ var convertValue = module.exports.convertValue = function (value, schema, type, 
     return value;
   }
 
+  // eslint-disable-next-line default-case
   switch (type) {
-  case 'array':
-    if (_.isString(value)) {
-      switch (schema.collectionFormat) {
-      case 'csv':
-      case undefined:
+    case 'array':
+      if (_.isString(value)) {
+        // eslint-disable-next-line default-case
+        switch (schema.collectionFormat) {
+          case 'csv':
+          case undefined:
+            try {
+              value = JSON.parse(value);
+            } catch (err) {
+              value = original;
+            }
+
+            if (_.isString(value)) {
+              value = value.split(',');
+            }
+            break;
+          case 'multi':
+            value = [value];
+            break;
+          case 'pipes':
+            value = value.split('|');
+            break;
+          case 'ssv':
+            value = value.split(' ');
+            break;
+          case 'tsv':
+            value = value.split('\t');
+            break;
+        }
+      }
+
+      // Handle situation where the expected type is array but only one value was provided
+      if (!_.isArray(value)) {
+        // Do not convert non-Array items to single item arrays if the location is 'body' (Issue #438)
+        if (location !== 'body') {
+          value = [value];
+        }
+      }
+
+      if (_.isArray(value)) {
+        value = _.map(value, (item, index) => {
+          const iSchema = _.isArray(schema.items)
+            ? schema.items[index]
+            : schema.items;
+
+          return convertValue(
+            item,
+            iSchema,
+            iSchema ? iSchema.type : undefined,
+            location,
+          );
+        });
+      }
+
+      break;
+
+    case 'boolean':
+      if (!_.isBoolean(value)) {
+        if (['false', 'true'].indexOf(value) === -1) {
+          value = original;
+        } else {
+          value = !!(value === 'true' || value === true);
+        }
+      }
+
+      break;
+
+    case 'integer':
+      if (!_.isNumber(value)) {
+        if (_.isString(value) && _.trim(value).length === 0) {
+          value = NaN;
+        }
+
+        value = Number(value);
+
+        if (Number.isNaN(value)) {
+          value = original;
+        }
+      }
+
+      break;
+
+    case 'number':
+      if (!_.isNumber(value)) {
+        if (_.isString(value) && _.trim(value).length === 0) {
+          value = NaN;
+        }
+
+        value = Number(value);
+
+        if (Number.isNaN(value)) {
+          value = original;
+        }
+      }
+
+      break;
+
+    case 'object':
+      if (_.isString(value)) {
         try {
           value = JSON.parse(value);
         } catch (err) {
           value = original;
         }
-
-        if (_.isString(value)) {
-          value = value.split(',');
-        }
-        break;
-      case 'multi':
-        value = [value];
-        break;
-      case 'pipes':
-        value = value.split('|');
-        break;
-      case 'ssv':
-        value = value.split(' ');
-        break;
-      case 'tsv':
-        value = value.split('\t');
-        break;
-      }
-    }
-
-    // Handle situation where the expected type is array but only one value was provided
-    if (!_.isArray(value)) {
-      // Do not convert non-Array items to single item arrays if the location is 'body' (Issue #438)
-      if (location !== 'body') {
-        value = [value];
-      }
-    }
-
-    if (_.isArray(value)) {
-      value = _.map(value, function (item, index) {
-        var iSchema = _.isArray(schema.items) ? schema.items[index] : schema.items;
-
-        return convertValue(item, iSchema, iSchema ? iSchema.type : undefined, location);
-      });
-    }
-
-    break;
-
-  case 'boolean':
-    if (!_.isBoolean(value)) {
-      if (['false', 'true'].indexOf(value) === -1) {
-        value = original;
-      } else {
-        value = value === 'true' || value === true ? true : false;
-      }
-    }
-
-    break;
-
-  case 'integer':
-    if (!_.isNumber(value)) {
-      if (_.isString(value) && _.trim(value).length === 0) {
-        value = NaN;
       }
 
-      value = Number(value);
+      break;
 
-      if (isNaN(value)) {
-        value = original;
-      }
-    }
+    case 'string':
+      if (!_.isDate(value)) {
+        const isDate =
+          schema.format === 'date' && validators.isValidDate(value);
+        const isDateTime =
+          schema.format === 'date-time' && validators.isValidDateTime(value);
+        if (isDate || isDateTime) {
+          value = new Date(value);
 
-    break;
-
-  case 'number':
-    if (!_.isNumber(value)) {
-      if (_.isString(value) && _.trim(value).length === 0) {
-        value = NaN;
-      }
-
-      value = Number(value);
-
-      if (isNaN(value)) {
-        value = original;
-      }
-    }
-
-    break;
-
-  case 'object':
-    if (_.isString(value)) {
-      try {
-        value = JSON.parse(value);
-      } catch (err) {
-        value = original;
-      }
-    }
-
-    break;
-
-  case 'string':
-    if(!_.isDate(value)) {
-      var isDate = schema.format === 'date' && validators.isValidDate(value);
-      var isDateTime = schema.format === 'date-time' && validators.isValidDateTime(value);
-      if (isDate || isDateTime) {
-        value = new Date(value);
-    
-        if (!_.isDate(value) || value.toString() === 'Invalid Date') {
-          value = original;
+          if (!_.isDate(value) || value.toString() === 'Invalid Date') {
+            value = original;
+          }
         }
       }
-    }
 
-    break;
-
+      break;
   }
 
   return value;
+};
+
+module.exports = {
+  isModelType,
+  getParameterType,
+  isModelParameter,
+  getParameterValue,
+  parseQueryString,
+  debugError,
+  convertValue,
 };
