@@ -1,3 +1,4 @@
+/* eslint-disable default-case, prefer-rest-params */
 /*
  * The MIT License (MIT)
  *
@@ -22,90 +23,123 @@
  * THE SOFTWARE.
  */
 
-'use strict';
+const _ = require('lodash');
+const async = require('async');
+const JsonRefs = require('json-refs');
+const SparkMD5 = require('spark-md5');
+let swaggerConverter = require('swagger-converter');
+const traverse = require('traverse');
+const YAML = require('js-yaml');
+const validators = require('./validators');
+const helpers = require('./helpers');
 
-var _ = require('lodash');
-var async = require('async');
-var helpers = require('./helpers');
-var JsonRefs = require('json-refs');
-var SparkMD5 = require('spark-md5');
-var swaggerConverter = require('swagger-converter');
-var traverse = require('traverse');
-var validators = require('./validators');
-var YAML = require('js-yaml');
+const apiDeclarationJson = require('../schemas/1.2/apiDeclaration.json');
+const authorizationObjectJson = require('../schemas/1.2/authorizationObject.json');
+const dataTypeJson = require('../schemas/1.2/dataType.json');
+const dataTypeBaseJson = require('../schemas/1.2/dataTypeBase.json');
+const infoObjectJson = require('../schemas/1.2/infoObject.json');
+const modelsObjectJson = require('../schemas/1.2/modelsObject.json');
+const oauth2GrantTypeJson = require('../schemas/1.2/oauth2GrantType.json');
+const operationObjectJson = require('../schemas/1.2/operationObject.json');
+const parameterObjectJson = require('../schemas/1.2/parameterObject.json');
+const resourceListingJson = require('../schemas/1.2/resourceListing.json');
+const resourceObjectJson = require('../schemas/1.2/resourceObject.json');
+const schema20 = require('../schemas/2.0/schema.json');
 
 // Work around swagger-converter packaging issue (Browser builds only)
 if (_.isPlainObject(swaggerConverter)) {
   swaggerConverter = global.SwaggerConverter.convert;
 }
 
-var documentCache = {};
+const documentCache = {};
 
-var sanitizeRef = function (version, ref) {
+const sanitizeRef = (version, ref) => {
   return version !== '1.2' ? ref : ref.replace('#/models/', '');
 };
 
-var swagger1RefPreProcesor = function (obj) {
-  var pObj = _.cloneDeep(obj);
+const swagger1RefPreProcesor = obj => {
+  const pObj = _.cloneDeep(obj);
 
-  pObj.$ref = '#/models/' + obj.$ref;
+  pObj.$ref = `#/models/${obj.$ref}`;
 
   return pObj;
 };
-var validOptionNames = _.map(helpers.swaggerOperationMethods, function (method) {
+
+const validOptionNames = _.map(helpers.swaggerOperationMethods, method => {
   return method.toLowerCase();
 });
 
-var isRemotePtr = function (refDetails) {
+const isRemotePtr = refDetails => {
   return ['relative', 'remote'].indexOf(refDetails.type) > -1;
 };
 
-var createErrorOrWarning = function (code, message, path, dest) {
+const createErrorOrWarning = (code, message, path, dest) => {
   dest.push({
-    code: code,
-    message: message,
-    path: path
+    code,
+    message,
+    path,
   });
 };
 
-var addReference = function (cacheEntry, defPathOrPtr, refPathOrPtr, results, omitError) {
-  var result = true;
-  var swaggerVersion = helpers.getSwaggerVersion(cacheEntry.resolved);
-  var defPath = _.isArray(defPathOrPtr) ? defPathOrPtr : JsonRefs.pathFromPtr(defPathOrPtr);
-  var defPtr = _.isArray(defPathOrPtr) ? JsonRefs.pathToPtr(defPathOrPtr) : defPathOrPtr;
-  var refPath = _.isArray(refPathOrPtr) ? refPathOrPtr : JsonRefs.pathFromPtr(refPathOrPtr);
-  var refPtr = _.isArray(refPathOrPtr) ? JsonRefs.pathToPtr(refPathOrPtr) : refPathOrPtr;
-  var code;
-  var def;
-  var displayId;
-  var i;
-  var msgPrefix;
-  var type;
+const addReference = (
+  cacheEntry,
+  defPathOrPtr,
+  refPathOrPtr,
+  results,
+  omitError,
+) => {
+  let result = true;
+  const swaggerVersion = helpers.getSwaggerVersion(cacheEntry.resolved);
+  const defPath = _.isArray(defPathOrPtr)
+    ? defPathOrPtr
+    : JsonRefs.pathFromPtr(defPathOrPtr);
+  const defPtr = _.isArray(defPathOrPtr)
+    ? JsonRefs.pathToPtr(defPathOrPtr)
+    : defPathOrPtr;
+  const refPath = _.isArray(refPathOrPtr)
+    ? refPathOrPtr
+    : JsonRefs.pathFromPtr(refPathOrPtr);
+  const refPtr = _.isArray(refPathOrPtr)
+    ? JsonRefs.pathToPtr(refPathOrPtr)
+    : refPathOrPtr;
+  let code;
+  let def;
+  let i;
+  let msgPrefix;
 
   def = cacheEntry.definitions[defPtr];
-  type = defPath[0];
-  code = type === 'securityDefinitions' ?
-    'SECURITY_DEFINITION' :
-    type.substring(0, type.length - 1).toUpperCase();
-  displayId = swaggerVersion === '1.2' ? defPath[defPath.length - 1] : defPtr;
-  msgPrefix = type === 'securityDefinitions' ?
-    'Security definition' :
-    code.charAt(0) + code.substring(1).toLowerCase();
+  const type = defPath[0];
+  code =
+    type === 'securityDefinitions'
+      ? 'SECURITY_DEFINITION'
+      : type.substring(0, type.length - 1).toUpperCase();
+  const displayId =
+    swaggerVersion === '1.2' ? defPath[defPath.length - 1] : defPtr;
+  msgPrefix =
+    type === 'securityDefinitions'
+      ? 'Security definition'
+      : code.charAt(0) + code.substring(1).toLowerCase();
 
   // This is an authorization scope reference
-  if (['authorizations', 'securityDefinitions'].indexOf(defPath[0]) > -1 && defPath[2] === 'scopes') {
+  if (
+    ['authorizations', 'securityDefinitions'].indexOf(defPath[0]) > -1 &&
+    defPath[2] === 'scopes'
+  ) {
     code += '_SCOPE';
     msgPrefix += ' scope';
   }
 
   // If the reference was not found and this is not an authorization/security scope reference, attempt to find a
   // parent object to add the reference too.  (Issue 176)
-  if (_.isUndefined(def) && ['AUTHORIZATION_SCOPE', 'SECURITY_DEFINITION_SCOPE'].indexOf(code) === -1) {
+  if (
+    _.isUndefined(def) &&
+    ['AUTHORIZATION_SCOPE', 'SECURITY_DEFINITION_SCOPE'].indexOf(code) === -1
+  ) {
     // Attempt to find the definition in case the reference is to a path within a definition`
-    for (i = 1; i < defPath.length; i++) {
-      var pPath = defPath.slice(0, defPath.length - i);
-      var pPtr = JsonRefs.pathToPtr(pPath);
-      var pDef = cacheEntry.definitions[pPtr];
+    for (i = 1; i < defPath.length; i += 1) {
+      const pPath = defPath.slice(0, defPath.length - i);
+      const pPtr = JsonRefs.pathToPtr(pPath);
+      const pDef = cacheEntry.definitions[pPtr];
 
       if (!_.isUndefined(pDef)) {
         def = pDef;
@@ -117,12 +151,20 @@ var addReference = function (cacheEntry, defPathOrPtr, refPathOrPtr, results, om
 
   if (_.isUndefined(def)) {
     if (!omitError) {
-      if (cacheEntry.swaggerVersion !== '1.2' && ['SECURITY_DEFINITION', 'SECURITY_DEFINITION_SCOPE'].indexOf(code) === -1) {
+      if (
+        cacheEntry.swaggerVersion !== '1.2' &&
+        ['SECURITY_DEFINITION', 'SECURITY_DEFINITION_SCOPE'].indexOf(code) ===
+          -1
+      ) {
         refPath.push('$ref');
       }
 
-      createErrorOrWarning('UNRESOLVABLE_' + code, msgPrefix + ' could not be resolved: ' + displayId, refPath,
-                           results.errors);
+      createErrorOrWarning(
+        `UNRESOLVABLE_${code}`,
+        `${msgPrefix} could not be resolved: ${displayId}`,
+        refPath,
+        results.errors,
+      );
     }
 
     result = false;
@@ -137,21 +179,22 @@ var addReference = function (cacheEntry, defPathOrPtr, refPathOrPtr, results, om
   return result;
 };
 
-var getOrComposeSchema = function (documentMetadata, modelId) {
-  var title = 'Composed ' + (documentMetadata.swaggerVersion === '1.2' ?
-                               JsonRefs.pathFromPtr(modelId).pop() :
-                               modelId);
-  var metadata = documentMetadata.definitions[modelId];
-  var originalT = traverse(documentMetadata.original);
-  var resolvedT = traverse(documentMetadata.resolved);
-  var composed;
-  var original;
+const getOrComposeSchema = (documentMetadata, modelId) => {
+  const title = `Composed ${
+    documentMetadata.swaggerVersion === '1.2'
+      ? JsonRefs.pathFromPtr(modelId).pop()
+      : modelId
+  }`;
+  const metadata = documentMetadata.definitions[modelId];
+  const originalT = traverse(documentMetadata.original);
+  const resolvedT = traverse(documentMetadata.resolved);
+  let composed;
 
   if (!metadata) {
     return undefined;
   }
 
-  original = _.cloneDeep(originalT.get(JsonRefs.pathFromPtr(modelId)));
+  const original = _.cloneDeep(originalT.get(JsonRefs.pathFromPtr(modelId)));
   composed = _.cloneDeep(resolvedT.get(JsonRefs.pathFromPtr(modelId)));
 
   // Convert the Swagger 1.2 document to a valid JSON Schema file
@@ -160,46 +203,59 @@ var getOrComposeSchema = function (documentMetadata, modelId) {
     if (metadata.lineage.length > 0) {
       composed.allOf = [];
 
-      _.each(metadata.lineage, function (modelId) {
-        composed.allOf.push(getOrComposeSchema(documentMetadata, modelId));
+      _.each(metadata.lineage, eachModelId => {
+        composed.allOf.push(getOrComposeSchema(documentMetadata, eachModelId));
       });
     }
 
     // Remove the subTypes property
     delete composed.subTypes;
 
-    _.each(composed.properties, function (property, name) {
-      var oProp = original.properties[name];
+    _.each(composed.properties, (origProperty, name) => {
+      const property = origProperty;
+      const oProp = original.properties[name];
 
       // Convert the string values to numerical values
-      _.each(['maximum', 'minimum'], function (prop) {
+      _.each(['maximum', 'minimum'], prop => {
         if (_.isString(property[prop])) {
           property[prop] = parseFloat(property[prop]);
         }
       });
 
-      _.each(JsonRefs.findRefs(oProp, {
-        includeInvalid: true,
-        refPreProcessor: swagger1RefPreProcesor
-      }), function (refDetails, refPtr) {
-        var dMetadata = documentMetadata.definitions[refDetails.uri];
-        var path = JsonRefs.pathFromPtr(refPtr);
+      _.each(
+        JsonRefs.findRefs(oProp, {
+          includeInvalid: true,
+          refPreProcessor: swagger1RefPreProcesor,
+        }),
+        (refDetails, refPtr) => {
+          const dMetadata = documentMetadata.definitions[refDetails.uri];
+          const path = JsonRefs.pathFromPtr(refPtr);
 
-        if (dMetadata.lineage.length > 0) {
-          traverse(property).set(path, getOrComposeSchema(documentMetadata, refDetails.uri));
-        } else {
-          traverse(property).set(path.concat('title'), 'Composed ' + sanitizeRef(documentMetadata.swaggerVersion,
-                                                                                 refDetails.uri));
-        }
-      });
+          if (dMetadata.lineage.length > 0) {
+            traverse(property).set(
+              path,
+              getOrComposeSchema(documentMetadata, refDetails.uri),
+            );
+          } else {
+            traverse(property).set(
+              path.concat('title'),
+              `Composed ${sanitizeRef(
+                documentMetadata.swaggerVersion,
+                refDetails.uri,
+              )}`,
+            );
+          }
+        },
+      );
     });
   }
 
   // Scrub id properties
-  composed = traverse(composed).map(function (val) {
+  composed = traverse(composed).map(function traverseMap(val) {
     if (this.key === 'id' && _.isString(val)) {
       this.remove();
     }
+    return undefined;
   });
 
   composed.title = title;
@@ -207,30 +263,41 @@ var getOrComposeSchema = function (documentMetadata, modelId) {
   return composed;
 };
 
-var createUnusedErrorOrWarning = function (val, codeSuffix, msgPrefix, path, dest) {
-  createErrorOrWarning('UNUSED_' + codeSuffix, msgPrefix + ' is defined but is not used: ' + val, path, dest);
+const createUnusedErrorOrWarning = (val, codeSuffix, msgPrefix, path, dest) => {
+  createErrorOrWarning(
+    `UNUSED_${codeSuffix}`,
+    `${msgPrefix} is defined but is not used: ${val}`,
+    path,
+    dest,
+  );
 };
 
-var getDocumentCache = function (apiDOrSO) {
-  var key = SparkMD5.hash(JSON.stringify(apiDOrSO));
-  var cacheEntry = documentCache[key] || _.find(documentCache, function (cacheEntry) {
-    return cacheEntry.resolvedId === key;
-  });
+const getDocumentCache = apiDOrSO => {
+  const key = SparkMD5.hash(JSON.stringify(apiDOrSO));
+  let cacheEntry;
+  if (documentCache[key]) {
+    cacheEntry = documentCache[key];
+  } else {
+    cacheEntry = _.find(documentCache, docEntry => {
+      return docEntry.resolvedId === key;
+    });
+  }
 
   if (!cacheEntry) {
-    cacheEntry = documentCache[key] = {
+    documentCache[key] = {
       definitions: {},
       original: apiDOrSO,
       resolved: undefined,
-      swaggerVersion: helpers.getSwaggerVersion(apiDOrSO)
+      swaggerVersion: helpers.getSwaggerVersion(apiDOrSO),
     };
+    cacheEntry = documentCache[key];
   }
 
   return cacheEntry;
 };
 
-var handleValidationError = function (results, callback) {
-  var err = new Error('The Swagger document(s) are invalid');
+const handleValidationError = (results, callback) => {
+  const err = new Error('The Swagger document(s) are invalid');
 
   err.errors = results.errors;
   err.failedValidation = true;
@@ -243,27 +310,27 @@ var handleValidationError = function (results, callback) {
   callback(err);
 };
 
-var normalizePath = function (path) {
-  var matches = path.match(/\{(.*?)\}/g);
-  var argNames = [];
-  var normPath = path;
+const normalizePath = path => {
+  const matches = path.match(/\{(.*?)\}/g);
+  const argNames = [];
+  let normPath = path;
 
   if (matches) {
-    _.each(matches, function (match, index) {
-      normPath = normPath.replace(match, '{' + index + '}');
+    _.each(matches, (match, index) => {
+      normPath = normPath.replace(match, `{${index}}`);
       argNames.push(match.replace(/[{}]/g, ''));
     });
   }
 
   return {
     path: normPath,
-    args: argNames
+    args: argNames,
   };
 };
 
-var removeCirculars = function (obj) {
-  function walk (ancestors, node, path) {
-    function walkItem (item, segment) {
+const removeCirculars = obj => {
+  function walk(ancestors, node, path) {
+    function walkItem(item, segment) {
       path.push(segment);
       walk(ancestors, item, path);
       path.pop();
@@ -274,11 +341,11 @@ var removeCirculars = function (obj) {
       ancestors.push(node);
 
       if (_.isArray(node)) {
-        _.each(node, function (member, index) {
+        _.each(node, (member, index) => {
           walkItem(member, index.toString());
         });
       } else if (_.isPlainObject(node)) {
-        _.forOwn(node, function (member, key) {
+        _.forOwn(node, (member, key) => {
           walkItem(member, key.toString());
         });
       }
@@ -292,16 +359,31 @@ var removeCirculars = function (obj) {
   walk([], obj, []);
 };
 
-
-var validateNoExist = function (data, val, codeSuffix, msgPrefix, path, dest) {
+const validateNoExist = (data, val, codeSuffix, msgPrefix, path, dest) => {
   if (!_.isUndefined(data) && data.indexOf(val) > -1) {
-    createErrorOrWarning('DUPLICATE_' + codeSuffix, msgPrefix + ' already defined: ' + val, path, dest);
+    createErrorOrWarning(
+      `DUPLICATE_${codeSuffix}`,
+      `${msgPrefix} already defined: ${val}`,
+      path,
+      dest,
+    );
   }
 };
 
-var validateSchemaConstraints = function (documentMetadata, schema, path, results, skip) {
+const validateSchemaConstraints = (
+  documentMetadata,
+  schema,
+  path,
+  results,
+  skip,
+) => {
   try {
-    validators.validateSchemaConstraints(documentMetadata.swaggerVersion, schema, path, undefined);
+    validators.validateSchemaConstraints(
+      documentMetadata.swaggerVersion,
+      schema,
+      path,
+      undefined,
+    );
   } catch (err) {
     if (!skip) {
       createErrorOrWarning(err.code, err.message, err.path, results.errors);
@@ -309,20 +391,25 @@ var validateSchemaConstraints = function (documentMetadata, schema, path, result
   }
 };
 
-var processDocument = function (documentMetadata, results) {
-  var swaggerVersion = documentMetadata.swaggerVersion;
-  var getDefinitionMetadata = function (defPath, inline) {
-    var defPtr = JsonRefs.pathToPtr(defPath);
-    var metadata = documentMetadata.definitions[defPtr];
+const processDocument = (origDocumentMetadata, results) => {
+  const documentMetadata = origDocumentMetadata;
+  const { swaggerVersion } = documentMetadata;
+
+  const getDefinitionMetadata = (defPath, inline) => {
+    const defPtr = JsonRefs.pathToPtr(defPath);
+    let metadata = documentMetadata.definitions[defPtr];
 
     if (!metadata) {
-      metadata = documentMetadata.definitions[defPtr] = {
+      documentMetadata.definitions[defPtr] = {
         inline: inline || false,
-        references: []
+        references: [],
       };
+      metadata = documentMetadata.definitions[defPtr];
 
       // For model definitions, add the inheritance properties
-      if (['definitions', 'models'].indexOf(JsonRefs.pathFromPtr(defPtr)[0]) > -1) {
+      if (
+        ['definitions', 'models'].indexOf(JsonRefs.pathFromPtr(defPtr)[0]) > -1
+      ) {
         metadata.cyclical = false;
         metadata.lineage = undefined;
         metadata.parents = [];
@@ -331,18 +418,21 @@ var processDocument = function (documentMetadata, results) {
 
     return metadata;
   };
-  var getDisplayId = function (id) {
+
+  const getDisplayId = id => {
     return swaggerVersion === '1.2' ? JsonRefs.pathFromPtr(id).pop() : id;
   };
-  var jsonRefsOptions = {
+
+  const jsonRefsOptions = {
     filter: 'local',
-    includeInvalid: true
+    includeInvalid: true,
   };
-  var walk = function (root, id, lineage) {
-    var definition = documentMetadata.definitions[id || root];
+
+  const walk = (root, id, lineage) => {
+    const definition = documentMetadata.definitions[id || root];
 
     if (definition) {
-      _.each(definition.parents, function (parent) {
+      _.each(definition.parents, parent => {
         lineage.push(parent);
 
         if (root !== parent) {
@@ -351,12 +441,14 @@ var processDocument = function (documentMetadata, results) {
       });
     }
   };
-  var authDefsProp = swaggerVersion === '1.2' ? 'authorizations' : 'securityDefinitions';
-  var modelDefsProp = swaggerVersion === '1.2' ? 'models' : 'definitions';
+
+  const authDefsProp =
+    swaggerVersion === '1.2' ? 'authorizations' : 'securityDefinitions';
+  const modelDefsProp = swaggerVersion === '1.2' ? 'models' : 'definitions';
 
   // Process authorization definitions
-  _.each(documentMetadata.resolved[authDefsProp], function (authorization, name) {
-    var securityDefPath = [authDefsProp, name];
+  _.each(documentMetadata.resolved[authDefsProp], (authorization, name) => {
+    const securityDefPath = [authDefsProp, name];
 
     // Swagger 1.2 only has authorization definitions in the Resource Listing
     if (swaggerVersion === '1.2' && !authorization.type) {
@@ -366,125 +458,159 @@ var processDocument = function (documentMetadata, results) {
     // Create the authorization definition metadata
     getDefinitionMetadata(securityDefPath);
 
-    _.reduce(authorization.scopes, function (seenScopes, scope, indexOrName) {
-      var scopeName = swaggerVersion === '1.2' ? scope.scope : indexOrName;
-      var scopeDefPath = securityDefPath.concat(['scopes', indexOrName.toString()]);
-      var scopeMetadata = getDefinitionMetadata(securityDefPath.concat(['scopes', scopeName]));
+    _.reduce(
+      authorization.scopes,
+      (seenScopes, scope, indexOrName) => {
+        const scopeName = swaggerVersion === '1.2' ? scope.scope : indexOrName;
+        const scopeDefPath = securityDefPath.concat([
+          'scopes',
+          indexOrName.toString(),
+        ]);
+        const scopeMetadata = getDefinitionMetadata(
+          securityDefPath.concat(['scopes', scopeName]),
+        );
 
-      scopeMetadata.scopePath = scopeDefPath;
+        scopeMetadata.scopePath = scopeDefPath;
 
-      // Identify duplicate authorization scope defined in the Resource Listing
-      validateNoExist(seenScopes, scopeName, 'AUTHORIZATION_SCOPE_DEFINITION', 'Authorization scope definition',
-                      swaggerVersion === '1.2' ? scopeDefPath.concat('scope') : scopeDefPath, results.warnings);
+        // Identify duplicate authorization scope defined in the Resource Listing
+        validateNoExist(
+          seenScopes,
+          scopeName,
+          'AUTHORIZATION_SCOPE_DEFINITION',
+          'Authorization scope definition',
+          swaggerVersion === '1.2'
+            ? scopeDefPath.concat('scope')
+            : scopeDefPath,
+          results.warnings,
+        );
 
-      seenScopes.push(scopeName);
+        seenScopes.push(scopeName);
 
-      return seenScopes;
-    }, []);
+        return seenScopes;
+      },
+      [],
+    );
   });
 
   // Process model definitions
-  _.each(documentMetadata.resolved[modelDefsProp], function (model, modelId) {
-    var modelDefPath = [modelDefsProp, modelId];
-    var modelMetadata = getDefinitionMetadata(modelDefPath);
+  _.each(documentMetadata.resolved[modelDefsProp], (model, modelId) => {
+    const modelDefPath = [modelDefsProp, modelId];
+    const modelMetadata = getDefinitionMetadata(modelDefPath);
 
     // Identify model id mismatch (Id in models object is not the same as the model's id in the models object)
     if (swaggerVersion === '1.2' && modelId !== model.id) {
-      createErrorOrWarning('MODEL_ID_MISMATCH', 'Model id does not match id in models object: ' + model.id,
-                           modelDefPath.concat('id'), results.errors);
+      createErrorOrWarning(
+        'MODEL_ID_MISMATCH',
+        `Model id does not match id in models object: ${model.id}`,
+        modelDefPath.concat('id'),
+        results.errors,
+      );
     }
 
     // Do not reprocess parents/references if already processed
     if (_.isUndefined(modelMetadata.lineage)) {
       // Handle inheritance references
       switch (swaggerVersion) {
-      case '1.2':
-        _.each(model.subTypes, function (subType, index) {
-          var subPath = ['models', subType];
-          var subPtr = JsonRefs.pathToPtr(subPath);
-          var subMetadata = documentMetadata.definitions[subPtr];
-          var refPath = modelDefPath.concat(['subTypes', index.toString()]);
+        case '1.2':
+          _.each(model.subTypes, (subType, index) => {
+            const subPath = ['models', subType];
+            const subPtr = JsonRefs.pathToPtr(subPath);
+            let subMetadata = documentMetadata.definitions[subPtr];
+            const refPath = modelDefPath.concat(['subTypes', index.toString()]);
 
-          // If the metadata does not yet exist, create it
-          if (!subMetadata && documentMetadata.resolved[modelDefsProp][subType]) {
-            subMetadata = getDefinitionMetadata(subPath);
-          }
+            // If the metadata does not yet exist, create it
+            if (
+              !subMetadata &&
+              documentMetadata.resolved[modelDefsProp][subType]
+            ) {
+              subMetadata = getDefinitionMetadata(subPath);
+            }
 
-          // If the reference is valid, add the parent
-          if (addReference(documentMetadata, subPath, refPath, results)) {
-            subMetadata.parents.push(JsonRefs.pathToPtr(modelDefPath));
-          }
-        });
+            // If the reference is valid, add the parent
+            if (addReference(documentMetadata, subPath, refPath, results)) {
+              subMetadata.parents.push(JsonRefs.pathToPtr(modelDefPath));
+            }
+          });
 
-        break;
+          break;
 
-      default:
-        _.each(documentMetadata.original[modelDefsProp][modelId].allOf, function (schema, index) {
-          var isInline = false;
-          var parentPath;
+        default:
+          _.each(
+            documentMetadata.original[modelDefsProp][modelId].allOf,
+            (schema, index) => {
+              let isInline = false;
+              let parentPath;
 
-          if (_.isUndefined(schema.$ref) || isRemotePtr(JsonRefs.getRefDetails(schema))) {
-            isInline = true;
-            parentPath = modelDefPath.concat(['allOf', index.toString()]);
-          } else {
-            parentPath = JsonRefs.pathFromPtr(schema.$ref);
-          }
+              if (
+                _.isUndefined(schema.$ref) ||
+                isRemotePtr(JsonRefs.getRefDetails(schema))
+              ) {
+                isInline = true;
+                parentPath = modelDefPath.concat(['allOf', index.toString()]);
+              } else {
+                parentPath = JsonRefs.pathFromPtr(schema.$ref);
+              }
 
-          // If the parent model does not exist, do not create its metadata
-          if (!_.isUndefined(traverse(documentMetadata.resolved).get(parentPath))) {
-            // Create metadata for parent
-            getDefinitionMetadata(parentPath, isInline);
+              // If the parent model does not exist, do not create its metadata
+              if (
+                !_.isUndefined(
+                  traverse(documentMetadata.resolved).get(parentPath),
+                )
+              ) {
+                // Create metadata for parent
+                getDefinitionMetadata(parentPath, isInline);
 
-            modelMetadata.parents.push(JsonRefs.pathToPtr(parentPath));
-          }
-        });
+                modelMetadata.parents.push(JsonRefs.pathToPtr(parentPath));
+              }
+            },
+          );
 
-        break;
+          break;
       }
     }
   });
 
   switch (swaggerVersion) {
-  case '2.0':
-    // Process parameter definitions
-    _.each(documentMetadata.resolved.parameters, function (parameter, name) {
-      var path = ['parameters', name];
+    case '2.0':
+      // Process parameter definitions
+      _.each(documentMetadata.resolved.parameters, (parameter, name) => {
+        const path = ['parameters', name];
 
-      getDefinitionMetadata(path);
+        getDefinitionMetadata(path);
 
-      validateSchemaConstraints(documentMetadata, parameter, path, results);
-    });
+        validateSchemaConstraints(documentMetadata, parameter, path, results);
+      });
 
-    // Process response definitions
-    _.each(documentMetadata.resolved.responses, function (response, name) {
-      var path = ['responses', name];
+      // Process response definitions
+      _.each(documentMetadata.resolved.responses, (response, name) => {
+        const path = ['responses', name];
 
-      getDefinitionMetadata(path);
+        getDefinitionMetadata(path);
 
-      validateSchemaConstraints(documentMetadata, response, path, results);
-    });
+        validateSchemaConstraints(documentMetadata, response, path, results);
+      });
 
-    break;
+      break;
   }
 
   // Validate definition/models (Inheritance, property definitions, ...)
-  _.each(documentMetadata.definitions, function (metadata, id) {
-    var defPath = JsonRefs.pathFromPtr(id);
-    var definition = traverse(documentMetadata.original).get(defPath);
-    var defProp = defPath[0];
-    var code = defProp.substring(0, defProp.length - 1).toUpperCase();
-    var msgPrefix = code.charAt(0) + code.substring(1).toLowerCase();
-    var dProperties;
-    var iProperties;
-    var lineage;
+  _.each(documentMetadata.definitions, (origMetadata, id) => {
+    const metadata = origMetadata;
+
+    const defPath = JsonRefs.pathFromPtr(id);
+    const definition = traverse(documentMetadata.original).get(defPath);
+    const defProp = defPath[0];
+    const code = defProp.substring(0, defProp.length - 1).toUpperCase();
+    const msgPrefix = code.charAt(0) + code.substring(1).toLowerCase();
+    let lineage;
 
     // The only checks we perform below are inheritance checks so skip all non-model definitions
     if (['definitions', 'models'].indexOf(defProp) === -1) {
       return;
     }
 
-    dProperties = [];
-    iProperties = [];
+    const dProperties = [];
+    const iProperties = [];
     lineage = metadata.lineage;
 
     // Do not reprocess lineage if already processed
@@ -503,27 +629,37 @@ var processDocument = function (documentMetadata, results) {
 
     // Swagger 1.2 does not allow multiple inheritance while Swagger 2.0+ does
     if (metadata.parents.length > 1 && swaggerVersion === '1.2') {
-      createErrorOrWarning('MULTIPLE_' + code + '_INHERITANCE',
-                           'Child ' + code.toLowerCase() + ' is sub type of multiple models: ' +
-                           _.map(metadata.parents, function (parent) {
-                             return getDisplayId(parent);
-                           }).join(' && '), defPath, results.errors);
+      createErrorOrWarning(
+        `MULTIPLE_${code}_INHERITANCE`,
+        `Child ${code.toLowerCase()} is sub type of multiple models: ${_.map(
+          metadata.parents,
+          parent => {
+            return getDisplayId(parent);
+          },
+        ).join(' && ')}`,
+        defPath,
+        results.errors,
+      );
     }
 
     if (metadata.cyclical) {
-      createErrorOrWarning('CYCLICAL_' + code + '_INHERITANCE',
-                           msgPrefix + ' has a circular inheritance: ' +
-                             _.map(lineage, function (dep) {
-                               return getDisplayId(dep);
-                             }).join(' -> ') + ' -> ' + getDisplayId(id),
-                            defPath.concat(swaggerVersion === '1.2' ? 'subTypes' : 'allOf'), results.errors);
+      createErrorOrWarning(
+        `CYCLICAL_${code}_INHERITANCE`,
+        `${msgPrefix} has a circular inheritance: ${_.map(lineage, dep => {
+          return getDisplayId(dep);
+        }).join(' -> ')} -> ${getDisplayId(id)}`,
+        defPath.concat(swaggerVersion === '1.2' ? 'subTypes' : 'allOf'),
+        results.errors,
+      );
     }
 
     // Remove self reference from the end of the lineage (Front too if cyclical)
-    _.each(lineage.slice(metadata.cyclical ? 1 : 0), function (id) {
-      var pModel = traverse(documentMetadata.resolved).get(JsonRefs.pathFromPtr(id));
+    _.each(lineage.slice(metadata.cyclical ? 1 : 0), lineageId => {
+      const pModel = traverse(documentMetadata.resolved).get(
+        JsonRefs.pathFromPtr(lineageId),
+      );
 
-      _.each(Object.keys(pModel.properties || {}), function (name) {
+      _.each(Object.keys(pModel.properties || {}), name => {
         if (iProperties.indexOf(name) === -1) {
           iProperties.push(name);
         }
@@ -534,18 +670,20 @@ var processDocument = function (documentMetadata, results) {
     validateSchemaConstraints(documentMetadata, definition, defPath, results);
 
     // Identify redeclared properties
-    _.each(definition.properties, function (property, name) {
-      var pPath = defPath.concat(['properties', name]);
+    _.each(definition.properties, (property, name) => {
+      const pPath = defPath.concat(['properties', name]);
 
       // Do not process unresolved properties
       if (!_.isUndefined(property)) {
         validateSchemaConstraints(documentMetadata, property, pPath, results);
 
         if (iProperties.indexOf(name) > -1) {
-          createErrorOrWarning('CHILD_' + code + '_REDECLARES_PROPERTY',
-                               'Child ' + code.toLowerCase() + ' declares property already declared by ancestor: ' +
-                               name,
-                               pPath, results.errors);
+          createErrorOrWarning(
+            `CHILD_${code}_REDECLARES_PROPERTY`,
+            `Child ${code.toLowerCase()} declares property already declared by ancestor: ${name}`,
+            pPath,
+            results.errors,
+          );
         } else {
           dProperties.push(name);
         }
@@ -553,13 +691,19 @@ var processDocument = function (documentMetadata, results) {
     });
 
     // Identify missing required properties
-    _.each(definition.required || [], function (name, index) {
-      var type = swaggerVersion === '1.2' ? 'Model' : 'Definition';
+    _.each(definition.required || [], (name, index) => {
+      const type = swaggerVersion === '1.2' ? 'Model' : 'Definition';
 
-      if (iProperties.indexOf(name) === -1 && dProperties.indexOf(name) === -1) {
-        createErrorOrWarning('MISSING_REQUIRED_' + type.toUpperCase() + '_PROPERTY',
-                             type + ' requires property but it is not defined: ' + name,
-                             defPath.concat(['required', index.toString()]), results.errors);
+      if (
+        iProperties.indexOf(name) === -1 &&
+        dProperties.indexOf(name) === -1
+      ) {
+        createErrorOrWarning(
+          `MISSING_REQUIRED_${type.toUpperCase()}_PROPERTY`,
+          `${type} requires property but it is not defined: ${name}`,
+          defPath.concat(['required', index.toString()]),
+          results.errors,
+        );
       }
     });
   });
@@ -569,93 +713,136 @@ var processDocument = function (documentMetadata, results) {
   }
 
   // Process local references
-  _.each(JsonRefs.findRefs(documentMetadata.original, jsonRefsOptions), function (refDetails, refPtr) {
-    addReference(documentMetadata, refDetails.uri, refPtr, results);
-  });
+  _.each(
+    JsonRefs.findRefs(documentMetadata.original, jsonRefsOptions),
+    (refDetails, refPtr) => {
+      addReference(documentMetadata, refDetails.uri, refPtr, results);
+    },
+  );
 
   // Process invalid references
-  _.each(documentMetadata.referencesMetadata, function (refDetails, refPtr) {
+  _.each(documentMetadata.referencesMetadata, (refDetails, refPtr) => {
     if (isRemotePtr(refDetails) && refDetails.missing === true) {
       results.errors.push({
         code: 'UNRESOLVABLE_REFERENCE',
-        message: 'Reference could not be resolved: ' + sanitizeRef(documentMetadata.swaggerVersion, refDetails.uri),
-        path: JsonRefs.pathFromPtr(refPtr).concat('$ref')
+        message: `Reference could not be resolved: ${sanitizeRef(
+          documentMetadata.swaggerVersion,
+          refDetails.uri,
+        )}`,
+        path: JsonRefs.pathFromPtr(refPtr).concat('$ref'),
       });
     }
   });
 };
 
-var validateExist = function (data, val, codeSuffix, msgPrefix, path, dest) {
+const validateExist = (data, val, codeSuffix, msgPrefix, path, dest) => {
   if (!_.isUndefined(data) && data.indexOf(val) === -1) {
-    createErrorOrWarning('UNRESOLVABLE_' + codeSuffix, msgPrefix + ' could not be resolved: ' + val, path, dest);
+    createErrorOrWarning(
+      `UNRESOLVABLE_${codeSuffix}`,
+      `${msgPrefix} could not be resolved: ${val}`,
+      path,
+      dest,
+    );
   }
 };
 
-var processAuthRefs = function (documentMetadata, authRefs, path, results) {
-  var code = documentMetadata.swaggerVersion === '1.2' ? 'AUTHORIZATION' : 'SECURITY_DEFINITION';
-  var msgPrefix = code === 'AUTHORIZATION' ? 'Authorization' : 'Security definition';
+const processAuthRefs = (documentMetadata, authRefs, path, results) => {
+  const code =
+    documentMetadata.swaggerVersion === '1.2'
+      ? 'AUTHORIZATION'
+      : 'SECURITY_DEFINITION';
+  const msgPrefix =
+    code === 'AUTHORIZATION' ? 'Authorization' : 'Security definition';
 
   if (documentMetadata.swaggerVersion === '1.2') {
-    _.reduce(authRefs, function (seenNames, scopes, name) {
-      var authPtr = ['authorizations', name];
-      var aPath = path.concat([name]);
-
-      // Add reference or record unresolved authorization
-      if (addReference(documentMetadata, authPtr, aPath, results)) {
-        _.reduce(scopes, function (seenScopes, scope, index) {
-          var sPath = aPath.concat(index.toString(), 'scope');
-          var sPtr = authPtr.concat(['scopes', scope.scope]);
-
-          validateNoExist(seenScopes, scope.scope, code + '_SCOPE_REFERENCE', msgPrefix + ' scope reference', sPath,
-                          results.warnings);
-
-          // Add reference or record unresolved authorization scope
-          addReference(documentMetadata, sPtr, sPath, results);
-
-          return seenScopes.concat(scope.scope);
-        }, []);
-      }
-
-      return seenNames.concat(name);
-    }, []);
-  } else {
-    _.reduce(authRefs, function (seenNames, scopes, index) {
-      _.each(scopes, function (scopes, name) {
-        var authPtr = ['securityDefinitions', name];
-        var authRefPath = path.concat(index.toString(), name);
-
-        // Ensure the security definition isn't referenced more than once (Swagger 2.0+)
-        validateNoExist(seenNames, name, code + '_REFERENCE', msgPrefix + ' reference', authRefPath,
-                        results.warnings);
-
-        seenNames.push(name);
+    _.reduce(
+      authRefs,
+      (seenNames, scopes, name) => {
+        const authPtr = ['authorizations', name];
+        const aPath = path.concat([name]);
 
         // Add reference or record unresolved authorization
-        if (addReference(documentMetadata, authPtr, authRefPath, results)) {
-          _.each(scopes, function (scope, index) {
-            // Add reference or record unresolved authorization scope
-            var sPtr = authPtr.concat(['scopes', scope]);
-            addReference(documentMetadata, sPtr, authRefPath.concat(index.toString()),
-                         results);
-          });
-        }
-      });
+        if (addReference(documentMetadata, authPtr, aPath, results)) {
+          _.reduce(
+            scopes,
+            (seenScopes, scope, index) => {
+              const sPath = aPath.concat(index.toString(), 'scope');
+              const sPtr = authPtr.concat(['scopes', scope.scope]);
 
-      return seenNames;
-    }, []);
+              validateNoExist(
+                seenScopes,
+                scope.scope,
+                `${code}_SCOPE_REFERENCE`,
+                `${msgPrefix} scope reference`,
+                sPath,
+                results.warnings,
+              );
+
+              // Add reference or record unresolved authorization scope
+              addReference(documentMetadata, sPtr, sPath, results);
+
+              return seenScopes.concat(scope.scope);
+            },
+            [],
+          );
+        }
+
+        return seenNames.concat(name);
+      },
+      [],
+    );
+  } else {
+    _.reduce(
+      authRefs,
+      (seenNames, allScopes, index) => {
+        _.each(allScopes, (scopes, name) => {
+          const authPtr = ['securityDefinitions', name];
+          const authRefPath = path.concat(index.toString(), name);
+
+          // Ensure the security definition isn't referenced more than once (Swagger 2.0+)
+          validateNoExist(
+            seenNames,
+            name,
+            `${code}_REFERENCE`,
+            `${msgPrefix} reference`,
+            authRefPath,
+            results.warnings,
+          );
+
+          seenNames.push(name);
+
+          // Add reference or record unresolved authorization
+          if (addReference(documentMetadata, authPtr, authRefPath, results)) {
+            _.each(scopes, (scope, idx) => {
+              // Add reference or record unresolved authorization scope
+              const sPtr = authPtr.concat(['scopes', scope]);
+              addReference(
+                documentMetadata,
+                sPtr,
+                authRefPath.concat(idx.toString()),
+                results,
+              );
+            });
+          }
+        });
+
+        return seenNames;
+      },
+      [],
+    );
   }
 };
 
-var resolveRefs = function (apiDOrSO, callback) {
-  var cacheEntry = getDocumentCache(apiDOrSO);
-  var swaggerVersion = helpers.getSwaggerVersion(apiDOrSO);
-  var jsonRefsOptions = {
+const resolveRefs = (apiDOrSO, callback) => {
+  const cacheEntry = getDocumentCache(apiDOrSO);
+  const swaggerVersion = helpers.getSwaggerVersion(apiDOrSO);
+  const jsonRefsOptions = {
     includeInvalid: true,
     loaderOptions: {
-      processContent: function (res, callback) {
-        callback(undefined, YAML.safeLoad(res.text));
-      }
-    }
+      processContent(res, processContentCallback) {
+        processContentCallback(undefined, YAML.safeLoad(res.text));
+      },
+    },
   };
 
   if (!cacheEntry.resolved) {
@@ -666,11 +853,11 @@ var resolveRefs = function (apiDOrSO, callback) {
 
     // Resolve references
     JsonRefs.resolveRefs(apiDOrSO, jsonRefsOptions)
-      .then(function (results) {
+      .then(results => {
         removeCirculars(results.resolved);
 
         // Fix circular references
-        _.each(results.refs, function (refDetails, refPtr) {
+        _.each(results.refs, (refDetails, refPtr) => {
           if (refDetails.circular) {
             _.set(results.resolved, JsonRefs.pathFromPtr(refPtr), {});
           }
@@ -688,8 +875,10 @@ var resolveRefs = function (apiDOrSO, callback) {
   }
 };
 
-var validateAgainstSchema = function (spec, schemaOrName, data, callback) {
-  var validator = _.isString(schemaOrName) ? spec.validators[schemaOrName] : helpers.createJsonValidator();
+function validateAgainstSchema(spec, schemaOrName, data, callback) {
+  const validator = _.isString(schemaOrName)
+    ? spec.validators[schemaOrName]
+    : helpers.createJsonValidator();
 
   helpers.registerCustomFormats(data);
 
@@ -698,26 +887,32 @@ var validateAgainstSchema = function (spec, schemaOrName, data, callback) {
   } catch (err) {
     if (err.failedValidation) {
       return callback(undefined, err.results);
-    } else {
-      return callback(err);
     }
+    return callback(err);
   }
 
-  resolveRefs(data, function (err) {
+  return resolveRefs(data, err => {
     return callback(err);
   });
-};
+}
 
-var validateDefinitions = function (documentMetadata, results) {
+function validateDefinitions(documentMetadata, results) {
   // Validate unused definitions
-  _.each(documentMetadata.definitions, function (metadata, id) {
-    var defPath = JsonRefs.pathFromPtr(id);
-    var defType = defPath[0].substring(0, defPath[0].length - 1);
-    var displayId = documentMetadata.swaggerVersion === '1.2' ? defPath[defPath.length - 1] : id;
-    var code = defType === 'securityDefinition' ? 'SECURITY_DEFINITION' : defType.toUpperCase();
-    var msgPrefix = defType === 'securityDefinition' ?
-                             'Security definition' :
-                             defType.charAt(0).toUpperCase() + defType.substring(1);
+  _.each(documentMetadata.definitions, (metadata, id) => {
+    let defPath = JsonRefs.pathFromPtr(id);
+    const defType = defPath[0].substring(0, defPath[0].length - 1);
+    const displayId =
+      documentMetadata.swaggerVersion === '1.2'
+        ? defPath[defPath.length - 1]
+        : id;
+    let code =
+      defType === 'securityDefinition'
+        ? 'SECURITY_DEFINITION'
+        : defType.toUpperCase();
+    let msgPrefix =
+      defType === 'securityDefinition'
+        ? 'Security definition'
+        : defType.charAt(0).toUpperCase() + defType.substring(1);
 
     if (metadata.references.length === 0 && !metadata.inline) {
       // Swagger 1.2 authorization scope
@@ -727,290 +922,487 @@ var validateDefinitions = function (documentMetadata, results) {
         defPath = metadata.scopePath;
       }
 
-      createUnusedErrorOrWarning(displayId, code, msgPrefix, defPath, results.warnings);
+      createUnusedErrorOrWarning(
+        displayId,
+        code,
+        msgPrefix,
+        defPath,
+        results.warnings,
+      );
     }
   });
-};
+}
 
-var validateParameters = function (spec, documentMetadata, nPath, parameters, path, results,
-                                   skipMissing) {
-  var createParameterComboError = function (path) {
-    createErrorOrWarning('INVALID_PARAMETER_COMBINATION',
-                         'API cannot have a a body parameter and a ' +
-                           (spec.version === '1.2' ? 'form' : 'formData') + ' parameter',
-                         path, results.errors);
+const validateParameters = (
+  spec,
+  documentMetadata,
+  nPath,
+  parameters,
+  path,
+  results,
+  skipMissing,
+) => {
+  const createParameterComboError = pPath => {
+    createErrorOrWarning(
+      'INVALID_PARAMETER_COMBINATION',
+      `API cannot have a a body parameter and a ${
+        spec.version === '1.2' ? 'form' : 'formData'
+      } parameter`,
+      pPath,
+      results.errors,
+    );
   };
-  var pathParams = [];
-  var seenBodyParam = false;
-  var seenFormParam = false;
 
-  _.reduce(parameters, function (seenParameters, parameter, index) {
-    var pPath = path.concat(['parameters', index.toString()]);
+  const pathParams = [];
+  let seenBodyParam = false;
+  let seenFormParam = false;
 
-    // Unresolved parameter
-    if (_.isUndefined(parameter)) {
-      return;
-    }
+  _.reduce(
+    parameters,
+    (seenParameters, parameter, index) => {
+      const pPath = path.concat(['parameters', index.toString()]);
 
-    // Identify duplicate parameter names
-    validateNoExist(seenParameters, parameter.name, 'PARAMETER', 'Parameter', pPath.concat('name'),
-                    results.errors);
-
-    // Keep track of body and path parameters
-    if (parameter.paramType === 'body' || parameter.in === 'body') {
-      if (seenBodyParam === true) {
-        createErrorOrWarning('DUPLICATE_API_BODY_PARAMETER', 'API has more than one body parameter', pPath,
-                             results.errors);
-      } else if (seenFormParam === true) {
-        createParameterComboError(pPath);
+      // Unresolved parameter
+      if (_.isUndefined(parameter)) {
+        return;
       }
 
-      seenBodyParam = true;
-    } else if (parameter.paramType === 'form' || parameter.in === 'formData') {
-      if (seenBodyParam === true) {
-        createParameterComboError(pPath);
+      // Identify duplicate parameter names
+      validateNoExist(
+        seenParameters,
+        parameter.name,
+        'PARAMETER',
+        'Parameter',
+        pPath.concat('name'),
+        results.errors,
+      );
+
+      // Keep track of body and path parameters
+      if (parameter.paramType === 'body' || parameter.in === 'body') {
+        if (seenBodyParam === true) {
+          createErrorOrWarning(
+            'DUPLICATE_API_BODY_PARAMETER',
+            'API has more than one body parameter',
+            pPath,
+            results.errors,
+          );
+        } else if (seenFormParam === true) {
+          createParameterComboError(pPath);
+        }
+
+        seenBodyParam = true;
+      } else if (
+        parameter.paramType === 'form' ||
+        parameter.in === 'formData'
+      ) {
+        if (seenBodyParam === true) {
+          createParameterComboError(pPath);
+        }
+
+        seenFormParam = true;
+      } else if (parameter.paramType === 'path' || parameter.in === 'path') {
+        if (nPath.args.indexOf(parameter.name) === -1) {
+          createErrorOrWarning(
+            'UNRESOLVABLE_API_PATH_PARAMETER',
+            `API path parameter could not be resolved: ${parameter.name}`,
+            pPath.concat('name'),
+            results.errors,
+          );
+        }
+
+        pathParams.push(parameter.name);
       }
 
-      seenFormParam = true;
-    } else if (parameter.paramType === 'path' || parameter.in === 'path') {
-      if (nPath.args.indexOf(parameter.name) === -1) {
-        createErrorOrWarning('UNRESOLVABLE_API_PATH_PARAMETER',
-                             'API path parameter could not be resolved: ' + parameter.name, pPath.concat('name'),
-                             results.errors);
+      if (
+        spec.primitives.indexOf(parameter.type) === -1 &&
+        spec.version === '1.2'
+      ) {
+        addReference(
+          documentMetadata,
+          `#/models/${parameter.type}`,
+          pPath.concat('type'),
+          results,
+        );
       }
 
-      pathParams.push(parameter.name);
-    }
+      // Validate parameter constraints
+      validateSchemaConstraints(
+        documentMetadata,
+        parameter,
+        pPath,
+        results,
+        parameter.skipErrors,
+      );
 
-    if (spec.primitives.indexOf(parameter.type) === -1 && spec.version === '1.2') {
-      addReference(documentMetadata, '#/models/' + parameter.type, pPath.concat('type'), results);
-    }
-
-    // Validate parameter constraints
-    validateSchemaConstraints(documentMetadata, parameter, pPath, results, parameter.skipErrors);
-
-    return seenParameters.concat(parameter.name);
-  }, []);
+      // eslint-disable-next-line consistent-return
+      return seenParameters.concat(parameter.name);
+    },
+    [],
+  );
 
   // Validate missing path parameters (in path but not in operation.parameters)
   if (_.isUndefined(skipMissing) || skipMissing === false) {
-    _.each(_.difference(nPath.args, pathParams), function (unused) {
-      createErrorOrWarning('MISSING_API_PATH_PARAMETER', 'API requires path parameter but it is not defined: ' + unused,
-                           documentMetadata.swaggerVersion === '1.2' ? path.slice(0, 2).concat('path') : path,
-                           results.errors);
+    _.each(_.difference(nPath.args, pathParams), unused => {
+      createErrorOrWarning(
+        'MISSING_API_PATH_PARAMETER',
+        `API requires path parameter but it is not defined: ${unused}`,
+        documentMetadata.swaggerVersion === '1.2'
+          ? path.slice(0, 2).concat('path')
+          : path,
+        results.errors,
+      );
     });
   }
 };
 
-var validateSwagger1_2 = function (spec, resourceListing, apiDeclarations, callback) { // jshint ignore:line
-  var adResourcePaths = [];
-  var rlDocumentMetadata = getDocumentCache(resourceListing);
-  var rlResourcePaths = [];
-  var results = {
+const validateSwagger12 = (
+  spec,
+  resourceListing,
+  apiDeclarations,
+  callback,
+) => {
+  // jshint ignore:line
+  let adResourcePaths = [];
+  const rlDocumentMetadata = getDocumentCache(resourceListing);
+  let rlResourcePaths = [];
+  const results = {
     errors: [],
     warnings: [],
-    apiDeclarations: []
+    apiDeclarations: [],
   };
 
   // Process Resource Listing resource definitions
-  rlResourcePaths = _.reduce(resourceListing.apis, function (seenPaths, api, index) {
-    // Identify duplicate resource paths defined in the Resource Listing
-    validateNoExist(seenPaths, api.path, 'RESOURCE_PATH', 'Resource path', ['apis', index.toString(), 'path'],
-                    results.errors);
+  rlResourcePaths = _.reduce(
+    resourceListing.apis,
+    (seenPaths, api, index) => {
+      // Identify duplicate resource paths defined in the Resource Listing
+      validateNoExist(
+        seenPaths,
+        api.path,
+        'RESOURCE_PATH',
+        'Resource path',
+        ['apis', index.toString(), 'path'],
+        results.errors,
+      );
 
-    seenPaths.push(api.path);
+      seenPaths.push(api.path);
 
-    return seenPaths;
-  }, []);
+      return seenPaths;
+    },
+    [],
+  );
 
   // Process Resource Listing definitions (authorizations)
   processDocument(rlDocumentMetadata, results);
 
-
   // Process each API Declaration
-  adResourcePaths = _.reduce(apiDeclarations, function (seenResourcePaths, apiDeclaration, index) {
-    var aResults = results.apiDeclarations[index] = {
-      errors: [],
-      warnings: []
-    };
-    var adDocumentMetadata = getDocumentCache(apiDeclaration);
+  adResourcePaths = _.reduce(
+    apiDeclarations,
+    (seenResourcePaths, apiDeclaration, index) => {
+      results.apiDeclarations[index] = {
+        errors: [],
+        warnings: [],
+      };
+      const aResults = results.apiDeclarations[index];
+      const adDocumentMetadata = getDocumentCache(apiDeclaration);
 
-    // Identify duplicate resource paths defined in the API Declarations
-    validateNoExist(seenResourcePaths, apiDeclaration.resourcePath, 'RESOURCE_PATH', 'Resource path',
-                    ['resourcePath'], aResults.errors);
+      // Identify duplicate resource paths defined in the API Declarations
+      validateNoExist(
+        seenResourcePaths,
+        apiDeclaration.resourcePath,
+        'RESOURCE_PATH',
+        'Resource path',
+        ['resourcePath'],
+        aResults.errors,
+      );
 
-    if (adResourcePaths.indexOf(apiDeclaration.resourcePath) === -1) {
-      // Identify unused resource paths defined in the API Declarations
-      validateExist(rlResourcePaths, apiDeclaration.resourcePath, 'RESOURCE_PATH', 'Resource path',
-                    ['resourcePath'], aResults.errors);
+      if (adResourcePaths.indexOf(apiDeclaration.resourcePath) === -1) {
+        // Identify unused resource paths defined in the API Declarations
+        validateExist(
+          rlResourcePaths,
+          apiDeclaration.resourcePath,
+          'RESOURCE_PATH',
+          'Resource path',
+          ['resourcePath'],
+          aResults.errors,
+        );
 
-      seenResourcePaths.push(apiDeclaration.resourcePath);
-    }
-
-    // TODO: Process authorization references
-    // Not possible due to https://github.com/swagger-api/swagger-spec/issues/159
-
-    // Process models
-    processDocument(adDocumentMetadata, aResults);
-
-    // Process the API definitions
-    _.reduce(apiDeclaration.apis, function (seenPaths, api, index) {
-      var aPath = ['apis', index.toString()];
-      var nPath = normalizePath(api.path);
-
-      // Validate duplicate resource path
-      if (seenPaths.indexOf(nPath.path) > -1) {
-        createErrorOrWarning('DUPLICATE_API_PATH', 'API path (or equivalent) already defined: ' + api.path,
-                             aPath.concat('path'), aResults.errors);
-      } else {
-        seenPaths.push(nPath.path);
+        seenResourcePaths.push(apiDeclaration.resourcePath);
       }
 
-      // Process the API operations
-      _.reduce(api.operations, function (seenMethods, operation, index) {
-        var oPath = aPath.concat(['operations', index.toString()]);
+      // TODO: Process authorization references
+      // Not possible due to https://github.com/swagger-api/swagger-spec/issues/159
 
-        // Validate duplicate operation method
-        validateNoExist(seenMethods, operation.method, 'OPERATION_METHOD', 'Operation method', oPath.concat('method'),
-                        aResults.errors);
+      // Process models
+      processDocument(adDocumentMetadata, aResults);
 
-        // Keep track of the seen methods
-        seenMethods.push(operation.method);
+      // Process the API definitions
+      _.reduce(
+        apiDeclaration.apis,
+        (seenPaths, api, apisIndex) => {
+          const aPath = ['apis', apisIndex.toString()];
+          const nPath = normalizePath(api.path);
 
-        // Keep track of operation types
-        if (spec.primitives.indexOf(operation.type) === -1 && spec.version === '1.2') {
-          addReference(adDocumentMetadata, '#/models/' + operation.type, oPath.concat('type'), aResults);
-        }
-
-        // Process authorization references
-        processAuthRefs(rlDocumentMetadata, operation.authorizations, oPath.concat('authorizations'), aResults);
-
-        // Validate validate inline constraints
-        validateSchemaConstraints(adDocumentMetadata, operation, oPath, aResults);
-
-        // Validate parameters
-        validateParameters(spec, adDocumentMetadata, nPath, operation.parameters, oPath, aResults);
-
-        // Validate unique response code
-        _.reduce(operation.responseMessages, function (seenResponseCodes, responseMessage, index) {
-          var rmPath = oPath.concat(['responseMessages', index.toString()]);
-
-          validateNoExist(seenResponseCodes, responseMessage.code, 'RESPONSE_MESSAGE_CODE', 'Response message code',
-                          rmPath.concat(['code']), aResults.errors);
-
-          // Validate missing model
-          if (responseMessage.responseModel) {
-            addReference(adDocumentMetadata, '#/models/' + responseMessage.responseModel,
-                         rmPath.concat('responseModel'), aResults);
+          // Validate duplicate resource path
+          if (seenPaths.indexOf(nPath.path) > -1) {
+            createErrorOrWarning(
+              'DUPLICATE_API_PATH',
+              `API path (or equivalent) already defined: ${api.path}`,
+              aPath.concat('path'),
+              aResults.errors,
+            );
+          } else {
+            seenPaths.push(nPath.path);
           }
 
-          return seenResponseCodes.concat(responseMessage.code);
-        }, []);
+          // Process the API operations
+          _.reduce(
+            api.operations,
+            (seenMethods, operation, operationsIndex) => {
+              const oPath = aPath.concat([
+                'operations',
+                operationsIndex.toString(),
+              ]);
 
-        return seenMethods;
-      }, []);
+              // Validate duplicate operation method
+              validateNoExist(
+                seenMethods,
+                operation.method,
+                'OPERATION_METHOD',
+                'Operation method',
+                oPath.concat('method'),
+                aResults.errors,
+              );
 
-      return seenPaths;
-    }, []);
+              // Keep track of the seen methods
+              seenMethods.push(operation.method);
 
-    // Validate API Declaration definitions
-    validateDefinitions(adDocumentMetadata, aResults);
+              // Keep track of operation types
+              if (
+                spec.primitives.indexOf(operation.type) === -1 &&
+                spec.version === '1.2'
+              ) {
+                addReference(
+                  adDocumentMetadata,
+                  `#/models/${operation.type}`,
+                  oPath.concat('type'),
+                  aResults,
+                );
+              }
 
-    return seenResourcePaths;
-  }, []);
+              // Process authorization references
+              processAuthRefs(
+                rlDocumentMetadata,
+                operation.authorizations,
+                oPath.concat('authorizations'),
+                aResults,
+              );
+
+              // Validate validate inline constraints
+              validateSchemaConstraints(
+                adDocumentMetadata,
+                operation,
+                oPath,
+                aResults,
+              );
+
+              // Validate parameters
+              validateParameters(
+                spec,
+                adDocumentMetadata,
+                nPath,
+                operation.parameters,
+                oPath,
+                aResults,
+              );
+
+              // Validate unique response code
+              _.reduce(
+                operation.responseMessages,
+                (seenResponseCodes, responseMessage, responseMessagesIndex) => {
+                  const rmPath = oPath.concat([
+                    'responseMessages',
+                    responseMessagesIndex.toString(),
+                  ]);
+
+                  validateNoExist(
+                    seenResponseCodes,
+                    responseMessage.code,
+                    'RESPONSE_MESSAGE_CODE',
+                    'Response message code',
+                    rmPath.concat(['code']),
+                    aResults.errors,
+                  );
+
+                  // Validate missing model
+                  if (responseMessage.responseModel) {
+                    addReference(
+                      adDocumentMetadata,
+                      `#/models/${responseMessage.responseModel}`,
+                      rmPath.concat('responseModel'),
+                      aResults,
+                    );
+                  }
+
+                  return seenResponseCodes.concat(responseMessage.code);
+                },
+                [],
+              );
+
+              return seenMethods;
+            },
+            [],
+          );
+
+          return seenPaths;
+        },
+        [],
+      );
+
+      // Validate API Declaration definitions
+      validateDefinitions(adDocumentMetadata, aResults);
+
+      return seenResourcePaths;
+    },
+    [],
+  );
 
   // Validate API Declaration definitions
   validateDefinitions(rlDocumentMetadata, results);
 
   // Identify unused resource paths defined in the Resource Listing
-  _.each(_.difference(rlResourcePaths, adResourcePaths), function (unused) {
-    var index = rlResourcePaths.indexOf(unused);
+  _.each(_.difference(rlResourcePaths, adResourcePaths), unused => {
+    const index = rlResourcePaths.indexOf(unused);
 
-    createUnusedErrorOrWarning(resourceListing.apis[index].path, 'RESOURCE_PATH', 'Resource path',
-                               ['apis', index.toString(), 'path'], results.errors);
+    createUnusedErrorOrWarning(
+      resourceListing.apis[index].path,
+      'RESOURCE_PATH',
+      'Resource path',
+      ['apis', index.toString(), 'path'],
+      results.errors,
+    );
   });
 
   callback(undefined, results);
 };
 
-var validateSwagger2_0 = function (spec, swaggerObject, callback) { // jshint ignore:line
-  var documentMetadata = getDocumentCache(swaggerObject);
-  var results = {
+const validateSwagger20 = (spec, swaggerObject, callback) => {
+  // jshint ignore:line
+  const documentMetadata = getDocumentCache(swaggerObject);
+  const results = {
     errors: [],
-    warnings: []
+    warnings: [],
   };
 
   // Process definitions
   processDocument(documentMetadata, results);
 
   // Process security references
-  processAuthRefs(documentMetadata, swaggerObject.security, ['security'], results);
+  processAuthRefs(
+    documentMetadata,
+    swaggerObject.security,
+    ['security'],
+    results,
+  );
 
-  _.reduce(documentMetadata.resolved.paths, function (seenPaths, path, name) {
-    var pPath = ['paths', name];
-    var nPath = normalizePath(name);
+  _.reduce(
+    documentMetadata.resolved.paths,
+    (seenPaths, path, name) => {
+      const pPath = ['paths', name];
+      const nPath = normalizePath(name);
 
-    // Validate duplicate resource path
-    if (seenPaths.indexOf(nPath.path) > -1) {
-      createErrorOrWarning('DUPLICATE_API_PATH', 'API path (or equivalent) already defined: ' + name, pPath,
-                           results.errors);
-    }
-
-    // Validate parameters
-    validateParameters(spec, documentMetadata, nPath, path.parameters, pPath, results, true);
-
-    // Validate the Operations
-    _.each(path, function (operation, method) {
-      var cParams = [];
-      var oPath = pPath.concat(method);
-      var seenParams = [];
-
-      if (validOptionNames.indexOf(method) === -1) {
-        return;
+      // Validate duplicate resource path
+      if (seenPaths.indexOf(nPath.path) > -1) {
+        createErrorOrWarning(
+          'DUPLICATE_API_PATH',
+          `API path (or equivalent) already defined: ${name}`,
+          pPath,
+          results.errors,
+        );
       }
 
-      // Process security references
-      processAuthRefs(documentMetadata, operation.security, oPath.concat('security'), results);
+      // Validate parameters
+      validateParameters(
+        spec,
+        documentMetadata,
+        nPath,
+        path.parameters,
+        pPath,
+        results,
+        true,
+      );
 
-      // Compose parameters from path global parameters and operation parameters
-      _.each(operation.parameters, function (parameter) {
-        // Can happen with invalid references
-        if (_.isUndefined(parameter)) {
+      // Validate the Operations
+      _.each(path, (operation, method) => {
+        const cParams = [];
+        const oPath = pPath.concat(method);
+        const seenParams = [];
+
+        if (validOptionNames.indexOf(method) === -1) {
           return;
         }
 
-        cParams.push(parameter);
+        // Process security references
+        processAuthRefs(
+          documentMetadata,
+          operation.security,
+          oPath.concat('security'),
+          results,
+        );
 
-        seenParams.push(parameter.name + ':' + parameter.in);
+        // Compose parameters from path global parameters and operation parameters
+        _.each(operation.parameters, parameter => {
+          // Can happen with invalid references
+          if (_.isUndefined(parameter)) {
+            return;
+          }
+
+          cParams.push(parameter);
+
+          seenParams.push(`${parameter.name}:${parameter.in}`);
+        });
+
+        _.each(path.parameters, parameter => {
+          const cloned = _.cloneDeep(parameter);
+
+          // The only errors that can occur here are schema constraint validation errors which are already reported above
+          // so do not report them again.
+          cloned.skipErrors = true;
+
+          if (seenParams.indexOf(`${parameter.name}:${parameter.in}`) === -1) {
+            cParams.push(cloned);
+          }
+        });
+
+        // Validate parameters
+        validateParameters(
+          spec,
+          documentMetadata,
+          nPath,
+          cParams,
+          oPath,
+          results,
+        );
+
+        // Validate responses
+        _.each(operation.responses, (response, responseCode) => {
+          // Do not process references to missing responses
+          if (!_.isUndefined(response)) {
+            // Validate validate inline constraints
+            validateSchemaConstraints(
+              documentMetadata,
+              response,
+              oPath.concat('responses', responseCode),
+              results,
+            );
+          }
+        });
       });
 
-      _.each(path.parameters, function (parameter) {
-        var cloned = _.cloneDeep(parameter);
-
-        // The only errors that can occur here are schema constraint validation errors which are already reported above
-        // so do not report them again.
-        cloned.skipErrors = true;
-
-        if (seenParams.indexOf(parameter.name + ':' + parameter.in) === -1) {
-          cParams.push(cloned);
-        }
-      });
-
-      // Validate parameters
-      validateParameters(spec, documentMetadata, nPath, cParams, oPath, results);
-
-      // Validate responses
-      _.each(operation.responses, function (response, responseCode) {
-        // Do not process references to missing responses
-        if (!_.isUndefined(response)) {
-          // Validate validate inline constraints
-          validateSchemaConstraints(documentMetadata, response, oPath.concat('responses', responseCode), results);
-        }
-      });
-    });
-
-    return seenPaths.concat(nPath.path);
-  }, []);
+      return seenPaths.concat(nPath.path);
+    },
+    [],
+  );
 
   // Validate definitions
   validateDefinitions(documentMetadata, results);
@@ -1018,49 +1410,62 @@ var validateSwagger2_0 = function (spec, swaggerObject, callback) { // jshint ig
   callback(undefined, results);
 };
 
-var validateSemantically = function (spec, rlOrSO, apiDeclarations, callback) {
-  var cbWrapper = function (err, results) {
+const validateSemantically = (spec, rlOrSO, apiDeclarations, callback) => {
+  const cbWrapper = (err, results) => {
     callback(err, helpers.formatResults(results));
   };
   if (spec.version === '1.2') {
-    validateSwagger1_2(spec, rlOrSO, apiDeclarations, cbWrapper); // jshint ignore:line
+    validateSwagger12(spec, rlOrSO, apiDeclarations, cbWrapper); // jshint ignore:line
   } else {
-    validateSwagger2_0(spec, rlOrSO, cbWrapper); // jshint ignore:line
+    validateSwagger20(spec, rlOrSO, cbWrapper); // jshint ignore:line
   }
 };
 
-var validateStructurally = function (spec, rlOrSO, apiDeclarations, callback) {
-  validateAgainstSchema(spec, spec.version === '1.2' ? 'resourceListing.json' : 'schema.json', rlOrSO,
-                        function (err, results) {
-                          if (err) {
-                            return callback(err);
-                          }
+const validateStructurally = (spec, rlOrSO, apiDeclarations, callback) => {
+  validateAgainstSchema(
+    spec,
+    spec.version === '1.2' ? 'resourceListing.json' : 'schema.json',
+    rlOrSO,
+    (err, origResults) => {
+      let results = origResults;
+      if (err) {
+        return callback(err);
+      }
 
-                          // Only validate the API Declarations if the API is 1.2 and the Resource Listing was valid
-                          if (!results && spec.version === '1.2') {
-                            results = {
-                              errors: [],
-                              warnings: [],
-                              apiDeclarations: []
-                            };
+      // Only validate the API Declarations if the API is 1.2 and the Resource Listing was valid
+      if (!results && spec.version === '1.2') {
+        results = {
+          errors: [],
+          warnings: [],
+          apiDeclarations: [],
+        };
 
-                            async.map(apiDeclarations, function (apiDeclaration, callback2) {
-                              validateAgainstSchema(spec, 'apiDeclaration.json', apiDeclaration, callback2);
-                            }, function (err, allResults) {
-                              if (err) {
-                                return callback(err);
-                              }
+        return async.map(
+          apiDeclarations,
+          (apiDeclaration, callback2) => {
+            validateAgainstSchema(
+              spec,
+              'apiDeclaration.json',
+              apiDeclaration,
+              callback2,
+            );
+          },
+          (mapErr, allResults) => {
+            if (mapErr) {
+              return callback(mapErr);
+            }
 
-                              _.each(allResults, function (result, index) {
-                                results.apiDeclarations[index] = result;
-                              });
+            _.each(allResults, (result, index) => {
+              results.apiDeclarations[index] = result;
+            });
 
-                              callback(undefined, results);
-                            });
-                          } else {
-                            callback(undefined, results);
-                          }
-                        });
+            return callback(undefined, results);
+          },
+        );
+      }
+      return callback(undefined, results);
+    },
+  );
 };
 
 /**
@@ -1070,91 +1475,111 @@ var validateStructurally = function (spec, rlOrSO, apiDeclarations, callback) {
  *
  * @constructor
  */
-var Specification = function (version) {
-  var that = this;
-  var createValidators = function (spec, validatorsMap) {
-    return _.reduce(validatorsMap, function (result, schemas, schemaName) {
-      result[schemaName] = helpers.createJsonValidator(schemas);
+function Specification(version) {
+  const that = this;
 
-      return result;
-    }, {});
+  const createValidators = (spec, validatorsMap) => {
+    return _.reduce(
+      validatorsMap,
+      (origResult, schemas, schemaName) => {
+        const result = origResult;
+        result[schemaName] = helpers.createJsonValidator(schemas);
+
+        return result;
+      },
+      {},
+    );
   };
-  var fixSchemaId = function (schemaName) {
+
+  const fixSchemaId = schemaName => {
     // Swagger 1.2 schema files use one id but use a different id when referencing schema files.  We also use the schema
     // file name to reference the schema in ZSchema.  To fix this so that the JSON Schema validator works properly, we
     // need to set the id to be the name of the schema file.
-    var fixed = _.cloneDeep(that.schemas[schemaName]);
+    const fixed = _.cloneDeep(that.schemas[schemaName]);
 
     fixed.id = schemaName;
 
     return fixed;
   };
-  var primitives = ['string', 'number', 'boolean', 'integer', 'array'];
+
+  const primitives = ['string', 'number', 'boolean', 'integer', 'array'];
 
   switch (version) {
-  case '1.2':
-    this.docsUrl = 'https://github.com/swagger-api/swagger-spec/blob/master/versions/1.2.md';
-    this.primitives = _.union(primitives, ['void', 'File']);
-    this.schemasUrl = 'https://github.com/swagger-api/swagger-spec/tree/master/schemas/v1.2';
+    case '1.2':
+      this.docsUrl =
+        'https://github.com/swagger-api/swagger-spec/blob/master/versions/1.2.md';
+      this.primitives = _.union(primitives, ['void', 'File']);
+      this.schemasUrl =
+        'https://github.com/swagger-api/swagger-spec/tree/master/schemas/v1.2';
 
-    // Here explicitly to allow browserify to work
-    this.schemas = {
-      'apiDeclaration.json': require('../schemas/1.2/apiDeclaration.json'),
-      'authorizationObject.json': require('../schemas/1.2/authorizationObject.json'),
-      'dataType.json': require('../schemas/1.2/dataType.json'),
-      'dataTypeBase.json': require('../schemas/1.2/dataTypeBase.json'),
-      'infoObject.json': require('../schemas/1.2/infoObject.json'),
-      'modelsObject.json': require('../schemas/1.2/modelsObject.json'),
-      'oauth2GrantType.json': require('../schemas/1.2/oauth2GrantType.json'),
-      'operationObject.json': require('../schemas/1.2/operationObject.json'),
-      'parameterObject.json': require('../schemas/1.2/parameterObject.json'),
-      'resourceListing.json': require('../schemas/1.2/resourceListing.json'),
-      'resourceObject.json': require('../schemas/1.2/resourceObject.json')
-    };
+      // Here explicitly to allow browserify to work
+      this.schemas = {
+        'apiDeclaration.json': apiDeclarationJson,
+        'authorizationObject.json': authorizationObjectJson,
+        'dataType.json': dataTypeJson,
+        'dataTypeBase.json': dataTypeBaseJson,
+        'infoObject.json': infoObjectJson,
+        'modelsObject.json': modelsObjectJson,
+        'oauth2GrantType.json': oauth2GrantTypeJson,
+        'operationObject.json': operationObjectJson,
+        'parameterObject.json': parameterObjectJson,
+        'resourceListing.json': resourceListingJson,
+        'resourceObject.json': resourceObjectJson,
+      };
 
-    this.validators = createValidators(this, {
-      'apiDeclaration.json': _.map([
-        'dataTypeBase.json',
-        'modelsObject.json',
-        'oauth2GrantType.json',
-        'authorizationObject.json',
-        'parameterObject.json',
-        'operationObject.json',
-        'apiDeclaration.json'
-      ], fixSchemaId),
-      'resourceListing.json': _.map([
-        'resourceObject.json',
-        'infoObject.json',
-        'oauth2GrantType.json',
-        'authorizationObject.json',
-        'resourceListing.json'
-      ], fixSchemaId)
-    });
+      this.validators = createValidators(this, {
+        'apiDeclaration.json': _.map(
+          [
+            'dataTypeBase.json',
+            'modelsObject.json',
+            'oauth2GrantType.json',
+            'authorizationObject.json',
+            'parameterObject.json',
+            'operationObject.json',
+            'apiDeclaration.json',
+          ],
+          fixSchemaId,
+        ),
+        'resourceListing.json': _.map(
+          [
+            'resourceObject.json',
+            'infoObject.json',
+            'oauth2GrantType.json',
+            'authorizationObject.json',
+            'resourceListing.json',
+          ],
+          fixSchemaId,
+        ),
+      });
 
-    break;
+      break;
 
-  case '2.0':
-    this.docsUrl = 'https://github.com/swagger-api/swagger-spec/blob/master/versions/2.0.md';
-    this.primitives = _.union(primitives, ['file']);
-    this.schemasUrl = 'https://github.com/swagger-api/swagger-spec/tree/master/schemas/v2.0';
+    case '2.0':
+      this.docsUrl =
+        'https://github.com/swagger-api/swagger-spec/blob/master/versions/2.0.md';
+      this.primitives = _.union(primitives, ['file']);
+      this.schemasUrl =
+        'https://github.com/swagger-api/swagger-spec/tree/master/schemas/v2.0';
 
-    // Here explicitly to allow browserify to work
-    this.schemas = {
-      'schema.json': require('../schemas/2.0/schema.json')
-    };
+      // Here explicitly to allow browserify to work
+      this.schemas = {
+        'schema.json': schema20,
+      };
 
-    this.validators = createValidators(this, {
-      'schema.json': [fixSchemaId('schema.json')]
-    });
+      this.validators = createValidators(this, {
+        'schema.json': [fixSchemaId('schema.json')],
+      });
 
-    break;
+      break;
 
-  default:
-    throw new Error(version + ' is an unsupported Swagger specification version');
+    default:
+      throw new Error(
+        `${version} is an unsupported Swagger specification version`,
+      );
   }
 
   this.version = version;
-};
+}
 
 /**
  * Returns the result of the validation of the Swagger document(s).
@@ -1166,38 +1591,44 @@ var Specification = function (version) {
  * @returns undefined if validation passes or an object containing errors and/or warnings
  * @throws Error if the arguments provided are not valid
  */
-Specification.prototype.validate = function (rlOrSO, apiDeclarations, callback) {
+Specification.prototype.validate = function validate(
+  rlOrSO,
+  origApiDeclarations,
+  origCallback,
+) {
+  let callback = origCallback;
+  let apiDeclarations = origApiDeclarations;
   // Validate arguments
   switch (this.version) {
-  case '1.2':
-    // Validate arguments
-    if (_.isUndefined(rlOrSO)) {
-      throw new Error('resourceListing is required');
-    } else if (!_.isPlainObject(rlOrSO)) {
-      throw new TypeError('resourceListing must be an object');
-    }
+    case '1.2':
+      // Validate arguments
+      if (_.isUndefined(rlOrSO)) {
+        throw new Error('resourceListing is required');
+      } else if (!_.isPlainObject(rlOrSO)) {
+        throw new TypeError('resourceListing must be an object');
+      }
 
-    if (_.isUndefined(apiDeclarations)) {
-      throw new Error('apiDeclarations is required');
-    } else if (!_.isArray(apiDeclarations)) {
-      throw new TypeError('apiDeclarations must be an array');
-    }
+      if (_.isUndefined(apiDeclarations)) {
+        throw new Error('apiDeclarations is required');
+      } else if (!_.isArray(apiDeclarations)) {
+        throw new TypeError('apiDeclarations must be an array');
+      }
 
-    break;
+      break;
 
-  case '2.0':
-    // Validate arguments
-    if (_.isUndefined(rlOrSO)) {
-      throw new Error('swaggerObject is required');
-    } else if (!_.isPlainObject(rlOrSO)) {
-      throw new TypeError('swaggerObject must be an object');
-    }
+    case '2.0':
+      // Validate arguments
+      if (_.isUndefined(rlOrSO)) {
+        throw new Error('swaggerObject is required');
+      } else if (!_.isPlainObject(rlOrSO)) {
+        throw new TypeError('swaggerObject must be an object');
+      }
 
-    break;
+      break;
   }
 
   if (this.version === '2.0') {
-    callback = arguments[1];
+    [, callback] = arguments;
   }
 
   if (_.isUndefined(callback)) {
@@ -1211,10 +1642,10 @@ Specification.prototype.validate = function (rlOrSO, apiDeclarations, callback) 
     apiDeclarations = [];
   }
 
-  var that = this;
+  const that = this;
 
   // Perform the validation
-  validateStructurally(this, rlOrSO, apiDeclarations, function (err, result) {
+  validateStructurally(this, rlOrSO, apiDeclarations, (err, result) => {
     if (err || helpers.formatResults(result)) {
       callback(err, result);
     } else {
@@ -1236,21 +1667,26 @@ Specification.prototype.validate = function (rlOrSO, apiDeclarations, callback) 
  *
  * @throws Error if there are validation errors while creating
  */
-Specification.prototype.composeModel = function (apiDOrSO, modelIdOrRef, callback) {
-  var swaggerVersion = helpers.getSwaggerVersion(apiDOrSO);
-  var doComposition = function (err, results) {
-    var documentMetadata;
-
+Specification.prototype.composeModel = function composeModel(
+  apiDOrSO,
+  origModelIdOrRef,
+  callback,
+) {
+  let modelIdOrRef = origModelIdOrRef;
+  const swaggerVersion = helpers.getSwaggerVersion(apiDOrSO);
+  const doComposition = (err, origResults) => {
+    let results = origResults;
     if (err) {
       return callback(err);
-    } else if (helpers.getErrorCount(results) > 0) {
+    }
+    if (helpers.getErrorCount(results) > 0) {
       return handleValidationError(results, callback);
     }
 
-    documentMetadata = getDocumentCache(apiDOrSO);
+    const documentMetadata = getDocumentCache(apiDOrSO);
     results = {
       errors: [],
-      warnings: []
+      warnings: [],
     };
 
     processDocument(documentMetadata, results);
@@ -1263,37 +1699,40 @@ Specification.prototype.composeModel = function (apiDOrSO, modelIdOrRef, callbac
       return handleValidationError(results, callback);
     }
 
-    callback(undefined, getOrComposeSchema(documentMetadata, modelIdOrRef));
+    return callback(
+      undefined,
+      getOrComposeSchema(documentMetadata, modelIdOrRef),
+    );
   };
 
   switch (this.version) {
-  case '1.2':
-    // Validate arguments
-    if (_.isUndefined(apiDOrSO)) {
-      throw new Error('apiDeclaration is required');
-    } else if (!_.isPlainObject(apiDOrSO)) {
-      throw new TypeError('apiDeclaration must be an object');
-    }
+    case '1.2':
+      // Validate arguments
+      if (_.isUndefined(apiDOrSO)) {
+        throw new Error('apiDeclaration is required');
+      } else if (!_.isPlainObject(apiDOrSO)) {
+        throw new TypeError('apiDeclaration must be an object');
+      }
 
-    if (_.isUndefined(modelIdOrRef)) {
-      throw new Error('modelId is required');
-    }
+      if (_.isUndefined(modelIdOrRef)) {
+        throw new Error('modelId is required');
+      }
 
-    break;
+      break;
 
-  case '2.0':
-    // Validate arguments
-    if (_.isUndefined(apiDOrSO)) {
-      throw new Error('swaggerObject is required');
-    } else if (!_.isPlainObject(apiDOrSO)) {
-      throw new TypeError('swaggerObject must be an object');
-    }
+    case '2.0':
+      // Validate arguments
+      if (_.isUndefined(apiDOrSO)) {
+        throw new Error('swaggerObject is required');
+      } else if (!_.isPlainObject(apiDOrSO)) {
+        throw new TypeError('swaggerObject must be an object');
+      }
 
-    if (_.isUndefined(modelIdOrRef)) {
-      throw new Error('modelRef is required');
-    }
+      if (_.isUndefined(modelIdOrRef)) {
+        throw new Error('modelRef is required');
+      }
 
-    break;
+      break;
   }
 
   if (_.isUndefined(callback)) {
@@ -1304,7 +1743,7 @@ Specification.prototype.composeModel = function (apiDOrSO, modelIdOrRef, callbac
 
   if (modelIdOrRef.charAt(0) !== '#') {
     if (this.version === '1.2') {
-      modelIdOrRef = '#/models/' + modelIdOrRef;
+      modelIdOrRef = `#/models/${modelIdOrRef}`;
     } else {
       throw new Error('modelRef must be a JSON Pointer');
     }
@@ -1332,35 +1771,40 @@ Specification.prototype.composeModel = function (apiDOrSO, modelIdOrRef, callbac
  *
  * @throws Error if there are validation errors while creating
  */
-Specification.prototype.validateModel = function (apiDOrSO, modelIdOrRef, data, callback) {
+Specification.prototype.validateModel = function validateModel(
+  apiDOrSO,
+  modelIdOrRef,
+  data,
+  callback,
+) {
   switch (this.version) {
-  case '1.2':
-    // Validate arguments
-    if (_.isUndefined(apiDOrSO)) {
-      throw new Error('apiDeclaration is required');
-    } else if (!_.isPlainObject(apiDOrSO)) {
-      throw new TypeError('apiDeclaration must be an object');
-    }
+    case '1.2':
+      // Validate arguments
+      if (_.isUndefined(apiDOrSO)) {
+        throw new Error('apiDeclaration is required');
+      } else if (!_.isPlainObject(apiDOrSO)) {
+        throw new TypeError('apiDeclaration must be an object');
+      }
 
-    if (_.isUndefined(modelIdOrRef)) {
-      throw new Error('modelId is required');
-    }
+      if (_.isUndefined(modelIdOrRef)) {
+        throw new Error('modelId is required');
+      }
 
-    break;
+      break;
 
-  case '2.0':
-    // Validate arguments
-    if (_.isUndefined(apiDOrSO)) {
-      throw new Error('swaggerObject is required');
-    } else if (!_.isPlainObject(apiDOrSO)) {
-      throw new TypeError('swaggerObject must be an object');
-    }
+    case '2.0':
+      // Validate arguments
+      if (_.isUndefined(apiDOrSO)) {
+        throw new Error('swaggerObject is required');
+      } else if (!_.isPlainObject(apiDOrSO)) {
+        throw new TypeError('swaggerObject must be an object');
+      }
 
-    if (_.isUndefined(modelIdOrRef)) {
-      throw new Error('modelRef is required');
-    }
+      if (_.isUndefined(modelIdOrRef)) {
+        throw new Error('modelRef is required');
+      }
 
-    break;
+      break;
   }
 
   if (_.isUndefined(data)) {
@@ -1373,14 +1817,14 @@ Specification.prototype.validateModel = function (apiDOrSO, modelIdOrRef, data, 
     throw new TypeError('callback must be a function');
   }
 
-  var that = this;
+  const that = this;
 
-  this.composeModel(apiDOrSO, modelIdOrRef, function (err, result) {
+  this.composeModel(apiDOrSO, modelIdOrRef, (err, result) => {
     if (err) {
       return callback(err);
     }
 
-    validateAgainstSchema(that, result, data, callback);
+    return validateAgainstSchema(that, result, data, callback);
   });
 };
 
@@ -1396,14 +1840,19 @@ Specification.prototype.validateModel = function (apiDOrSO, modelIdOrRef, data, 
  *
  * @throws Error if there are upstream errors
  */
-Specification.prototype.resolve = function (document, ptr, callback) {
-  var documentMetadata;
-  var respond = function (document) {
+Specification.prototype.resolve = function resolve(
+  document,
+  origPtr,
+  origCallback,
+) {
+  let ptr = origPtr;
+  let callback = origCallback;
+
+  const respond = doc => {
     if (_.isString(ptr)) {
-      return callback(undefined, traverse(document).get(JsonRefs.pathFromPtr(ptr)));
-    } else {
-      return callback(undefined, document);
+      return callback(undefined, traverse(doc).get(JsonRefs.pathFromPtr(ptr)));
     }
+    return callback(undefined, doc);
   };
 
   // Validate arguments
@@ -1414,7 +1863,7 @@ Specification.prototype.resolve = function (document, ptr, callback) {
   }
 
   if (arguments.length === 2) {
-    callback = arguments[1];
+    [, callback] = arguments;
     ptr = undefined;
   }
 
@@ -1428,7 +1877,7 @@ Specification.prototype.resolve = function (document, ptr, callback) {
     throw new TypeError('callback must be a function');
   }
 
-  documentMetadata = getDocumentCache(document);
+  const documentMetadata = getDocumentCache(document);
 
   // Swagger 1.2 is not supported due to invalid JSON References being used.  Even if the JSON References were valid,
   // the JSON Schema for Swagger 1.2 do not allow JavaScript objects in all places where the resoution would occur.
@@ -1438,10 +1887,11 @@ Specification.prototype.resolve = function (document, ptr, callback) {
 
   if (!documentMetadata.resolved) {
     // Ensure the document is valid first
-    this.validate(document, function (err, results) {
+    this.validate(document, (err, results) => {
       if (err) {
         return callback(err);
-      } else if (helpers.getErrorCount(results) > 0) {
+      }
+      if (helpers.getErrorCount(results) > 0) {
         return handleValidationError(results, callback);
       }
 
@@ -1450,6 +1900,7 @@ Specification.prototype.resolve = function (document, ptr, callback) {
   } else {
     return respond(documentMetadata.resolved);
   }
+  return undefined;
 };
 
 /**
@@ -1464,9 +1915,23 @@ Specification.prototype.resolve = function (document, ptr, callback) {
  *
  * @throws Error if the arguments provided are not valid
  */
-Specification.prototype.convert = function (resourceListing, apiDeclarations, skipValidation, callback) {
-  var doConvert = function (resourceListing, apiDeclarations) {
-    callback(undefined, swaggerConverter(resourceListing, apiDeclarations));
+Specification.prototype.convert = function convert(
+  origResourceListing,
+  origApiDeclarations,
+  skipValidation,
+  origCallback,
+) {
+  let callback = origCallback;
+  const resourceListing = origResourceListing;
+  let apiDeclarations = origApiDeclarations;
+
+  const doConvert = (origResources, origDeclarations) => {
+    const resourceListingToConvert = origResources;
+    const apiDeclarationsToConvert = origDeclarations;
+    callback(
+      undefined,
+      swaggerConverter(resourceListingToConvert, apiDeclarationsToConvert),
+    );
   };
 
   if (this.version !== '1.2') {
@@ -1490,6 +1955,7 @@ Specification.prototype.convert = function (resourceListing, apiDeclarations, sk
   }
 
   if (arguments.length < 4) {
+    // eslint-disable-next-line prefer-rest-params
     callback = arguments[arguments.length - 1];
   }
 
@@ -1502,17 +1968,22 @@ Specification.prototype.convert = function (resourceListing, apiDeclarations, sk
   if (skipValidation === true) {
     doConvert(resourceListing, apiDeclarations);
   } else {
-    this.validate(resourceListing, apiDeclarations, function (err, results) {
+    this.validate(resourceListing, apiDeclarations, (err, results) => {
       if (err) {
         return callback(err);
-      } else if (helpers.getErrorCount(results) > 0) {
+      }
+      if (helpers.getErrorCount(results) > 0) {
         return handleValidationError(results, callback);
       }
 
-      doConvert(resourceListing, apiDeclarations);
+      return doConvert(resourceListing, apiDeclarations);
     });
   }
 };
 
-module.exports.v1 = module.exports.v1_2 = new Specification('1.2'); // jshint ignore:line
-module.exports.v2 = module.exports.v2_0 = new Specification('2.0'); // jshint ignore:line
+const v12 = new Specification('1.2');
+const v20 = new Specification('2.0');
+module.exports.v1_2 = v12;
+module.exports.v2_0 = v20;
+module.exports.v1 = v12;
+module.exports.v2 = v20;

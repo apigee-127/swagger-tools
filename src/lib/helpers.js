@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /*
  * The MIT License (MIT)
  *
@@ -22,44 +23,54 @@
  * THE SOFTWARE.
  */
 
-'use strict';
+const _ = require('lodash');
+const JsonRefs = require('json-refs');
+const traverse = require('traverse');
+const ZSchema = require('z-schema');
 
-var _ = require('lodash');
-var JsonRefs = require('json-refs');
-var traverse = require('traverse');
-var ZSchema = require('z-schema');
+const customJsonSchemaFormats = [
+  'byte',
+  'double',
+  'float',
+  'int32',
+  'int64',
+  'mime-type',
+  'uri-template',
+];
+const draft04Json = require('../schemas/json-schema-draft-04.json');
 
-var customJsonSchemaFormats = ['byte', 'double', 'float', 'int32', 'int64', 'mime-type', 'uri-template'];
-var draft04Json = require('../schemas/json-schema-draft-04.json');
-var draft04Url = 'http://json-schema.org/draft-04/schema';
-var specCache = {};
+const draft04Url = 'http://json-schema.org/draft-04/schema';
+const specCache = {};
 
-module.exports.registerCustomFormats = function (json) {
-  traverse(json).forEach(function () {
-    var name = this.key;
-    var format = this.node;
+const registerCustomFormats = json => {
+  traverse(json).forEach(() => {
+    const name = this.key;
+    const format = this.node;
 
-    if (name === 'format' && _.indexOf(ZSchema.getRegisteredFormats(), format) === -1) {
-      ZSchema.registerFormat(format, function () {
+    if (
+      name === 'format' &&
+      _.indexOf(ZSchema.getRegisteredFormats(), format) === -1
+    ) {
+      ZSchema.registerFormat(format, () => {
         return true;
       });
     }
   });
 };
 
-module.exports.createJsonValidator = function (schemas) {
-  var validator = new ZSchema({
+const createJsonValidator = schemas => {
+  const validator = new ZSchema({
     breakOnFirstError: false,
-    reportPathAsArray: true
+    reportPathAsArray: true,
   });
-  var result;
+  let result;
 
   // Add the draft-04 spec
   validator.setRemoteReference(draft04Url, draft04Json);
 
   // Swagger uses some unsupported/invalid formats so just make them all pass
-  _.each(customJsonSchemaFormats, function (format) {
-    ZSchema.registerFormat(format, function () {
+  _.each(customJsonSchemaFormats, format => {
+    ZSchema.registerFormat(format, () => {
       return true;
     });
   });
@@ -70,10 +81,16 @@ module.exports.createJsonValidator = function (schemas) {
 
     // If there is an error, it's unrecoverable so just blow the eff up
     if (result === false) {
-      console.error('JSON Schema file' + (schemas.length > 1 ? 's are' : ' is') + ' invalid:');
+      console.error(
+        `JSON Schema file${schemas.length > 1 ? 's are' : ' is'} invalid:`,
+      );
 
-      _.each(validator.getLastErrors(), function (err) {
-        console.error('  ' + (_.isArray(err.path) ? JsonRefs.pathToPtr(err.path) : err.path) + ': ' + err.message);
+      _.each(validator.getLastErrors(), err => {
+        console.error(
+          `  ${
+            _.isArray(err.path) ? JsonRefs.pathToPtr(err.path) : err.path
+          }: ${err.message}`,
+        );
       });
 
       throw new Error('Unable to create validator due to invalid JSON Schema');
@@ -83,29 +100,40 @@ module.exports.createJsonValidator = function (schemas) {
   return validator;
 };
 
-module.exports.formatResults = function (results) {
+const formatResults = origResults => {
+  let results = origResults;
   if (results) {
     // Update the results based on its content to indicate success/failure accordingly
-    results = (results.errors.length + results.warnings.length +
-    _.reduce(results.apiDeclarations, function (count, aResult) {
-      if (aResult) {
-        count += aResult.errors.length + aResult.warnings.length;
-      }
+    results =
+      results.errors.length +
+        results.warnings.length +
+        _.reduce(
+          results.apiDeclarations,
+          (origCount, aResult) => {
+            let count = origCount;
+            if (aResult) {
+              count += aResult.errors.length + aResult.warnings.length;
+            }
 
-      return count;
-    }, 0) > 0) ? results : undefined;
+            return count;
+          },
+          0,
+        ) >
+      0
+        ? results
+        : undefined;
   }
 
   return results;
 };
 
-var getErrorCount = module.exports.getErrorCount = function (results) {
-  var errors = 0;
+const getErrorCount = results => {
+  let errors = 0;
 
   if (results) {
     errors = results.errors.length;
 
-    _.each(results.apiDeclarations, function (adResults) {
+    _.each(results.apiDeclarations, adResults => {
       if (adResults) {
         errors += adResults.errors.length;
       }
@@ -115,7 +143,8 @@ var getErrorCount = module.exports.getErrorCount = function (results) {
   return errors;
 };
 
-var coerceVersion = function (version) {
+const coerceVersion = origVersion => {
+  let version = origVersion;
   // Convert the version to a number (Required for helpers.getSpec)
   if (version && !_.isString(version)) {
     version = version.toString();
@@ -137,28 +166,31 @@ var coerceVersion = function (version) {
  *
  * @returns the corresponding Swagger Specification object or undefined if there is none
  */
-module.exports.getSpec = function (version, throwError) {
-  var spec;
+const getSpec = (origVersion, throwError) => {
+  let spec;
+  let version = origVersion;
 
   version = coerceVersion(version);
   spec = specCache[version];
 
   if (_.isUndefined(spec)) {
     switch (version) {
-    case '1.2':
-      spec = require('./specs').v1_2; // jshint ignore:line
+      case '1.2':
+        // eslint-disable-next-line global-require
+        spec = require('./specs').v1_2; // jshint ignore:line
 
-      break;
+        break;
 
-    case '2.0':
-      spec = require('./specs').v2_0; // jshint ignore:line
+      case '2.0':
+        // eslint-disable-next-line global-require
+        spec = require('./specs').v2_0; // jshint ignore:line
 
-      break;
+        break;
 
-    default:
-      if (throwError === true) {
-        throw new Error('Unsupported Swagger version: ' + version);
-      }
+      default:
+        if (throwError === true) {
+          throw new Error(`Unsupported Swagger version: ${version}`);
+        }
     }
   }
 
@@ -172,27 +204,41 @@ module.exports.getSpec = function (version, throwError) {
  *
  * @returns the Swagger version or undefined if the document is not a Swagger document
  */
-module.exports.getSwaggerVersion = function (document) {
-  return _.isPlainObject(document) ? coerceVersion(document.swaggerVersion || document.swagger) : undefined;
+const getSwaggerVersion = document => {
+  return _.isPlainObject(document)
+    ? coerceVersion(document.swaggerVersion || document.swagger)
+    : undefined;
 };
 
-module.exports.printValidationResults = function (version, apiDOrSO, apiDeclarations, results, printSummary) {
-  var hasErrors = getErrorCount(results) > 0;
-  var stream = hasErrors ? console.error : console.log;
-  var pluralize = function (string, count) {
-    return count === 1 ? string : string + 's';
+const printValidationResults = (
+  version,
+  apiDOrSO,
+  apiDeclarations,
+  results,
+  printSummary,
+) => {
+  const hasErrors = getErrorCount(results) > 0;
+  const stream = hasErrors ? console.error : console.log;
+
+  const pluralize = (string, count) => {
+    return count === 1 ? string : `${string}s`;
   };
-  var printErrorsOrWarnings = function (header, entries, indent) {
+
+  const printErrorsOrWarnings = (header, entries, indent) => {
     if (header) {
-      stream(header + ':');
+      stream(`${header}:`);
       stream();
     }
 
-    _.each(entries, function (entry) {
-      stream(new Array(indent + 1).join(' ') + JsonRefs.pathToPtr(entry.path) + ': ' + entry.message);
+    _.each(entries, entry => {
+      stream(
+        `${new Array(indent + 1).join(' ') + JsonRefs.pathToPtr(entry.path)}: ${
+          entry.message
+        }`,
+      );
 
       if (entry.inner) {
-        printErrorsOrWarnings (undefined, entry.inner, indent + 2);
+        printErrorsOrWarnings(undefined, entry.inner, indent + 2);
       }
     });
 
@@ -200,8 +246,9 @@ module.exports.printValidationResults = function (version, apiDOrSO, apiDeclarat
       stream();
     }
   };
-  var errorCount = 0;
-  var warningCount = 0;
+
+  let errorCount = 0;
+  let warningCount = 0;
 
   stream();
 
@@ -218,45 +265,74 @@ module.exports.printValidationResults = function (version, apiDOrSO, apiDeclarat
   }
 
   if (results.apiDeclarations) {
-    results.apiDeclarations.forEach(function (adResult, index) {
+    results.apiDeclarations.forEach((adResult, index) => {
       if (!adResult) {
         return;
       }
 
-      var name = apiDeclarations[index].resourcePath || index;
+      const name = apiDeclarations[index].resourcePath || index;
 
       if (adResult.errors.length > 0) {
         errorCount += adResult.errors.length;
 
-        printErrorsOrWarnings('  API Declaration (' + name + ') Errors', adResult.errors, 4);
+        printErrorsOrWarnings(
+          `  API Declaration (${name}) Errors`,
+          adResult.errors,
+          4,
+        );
       }
 
       if (adResult.warnings.length > 0) {
         warningCount += adResult.warnings.length;
 
-        printErrorsOrWarnings('  API Declaration (' + name + ') Warnings', adResult.warnings, 4);
+        printErrorsOrWarnings(
+          `  API Declaration (${name}) Warnings`,
+          adResult.warnings,
+          4,
+        );
       }
     });
   }
 
   if (printSummary) {
     if (errorCount > 0) {
-      stream(errorCount + ' ' + pluralize('error', errorCount) + ' and ' + warningCount + ' ' +
-                    pluralize('warning', warningCount));
+      stream(
+        `${errorCount} ${pluralize(
+          'error',
+          errorCount,
+        )} and ${warningCount} ${pluralize('warning', warningCount)}`,
+      );
     } else {
-      stream('Validation succeeded but with ' + warningCount + ' ' + pluralize('warning', warningCount));
+      stream(
+        `Validation succeeded but with ${warningCount} ${pluralize(
+          'warning',
+          warningCount,
+        )}`,
+      );
     }
   }
 
   stream();
 };
 
-module.exports.swaggerOperationMethods = [
+const swaggerOperationMethods = [
   'DELETE',
   'GET',
   'HEAD',
   'OPTIONS',
   'PATCH',
   'POST',
-  'PUT'
+  'PUT',
 ];
+
+module.exports = {
+  registerCustomFormats,
+  createJsonValidator,
+  formatResults,
+  getErrorCount,
+  coerceVersion,
+  getSpec,
+  getSwaggerVersion,
+  printValidationResults,
+  swaggerOperationMethods,
+};

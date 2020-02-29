@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console, no-underscore-dangle */
 
 /*
  * The MIT License (MIT)
@@ -24,40 +25,35 @@
  * THE SOFTWARE.
  */
 
-'use strict';
+const _ = require('lodash');
+const async = require('async');
+const fs = require('fs');
+const path = require('path');
+const program = require('commander');
+const request = require('superagent');
+const YAML = require('js-yaml');
 
-var _ = require('lodash');
-var async = require('async');
-var fs = require('fs');
-var helpers = require('../src/lib/helpers');
-var paddingAmount = 18;
-var path = require('path');
-var pkg = require('../package.json');
-var program = require('commander');
-var request = require('superagent');
-var YAML = require('js-yaml');
+const helpers = require('../src/lib/helpers');
+const pkg = require('../package.json');
 
-var padRight = function (s, len, ch) {
-  if (!ch) {
-    ch = ' ';
-  }
+const paddingAmount = 18;
+
+const padRight = (s, len, ch = ' ') => {
   if (s.length >= len) {
     return s;
   }
   return s + Array(len - s.length + 1).join(ch);
 };
 
-var exitWithError = function (msg) {
-  console.error();
-  console.error('  error: ' + msg);
-  console.error(); // Here only to match the output of commander.js
-
+const exitWithError = msg => {
+  console.error(`\n  error: ${msg}\n`); // Here only to match the output of commander.js
   process.exit(1);
 };
-var getDocument = function (pathOrUrl, callback) {
-  var parseContent = function (content) {
-    var err;
-    var response;
+
+const getDocument = (pathOrUrl, callback) => {
+  const parseContent = content => {
+    let err;
+    let response;
 
     try {
       response = YAML.safeLoad(content);
@@ -71,12 +67,13 @@ var getDocument = function (pathOrUrl, callback) {
   if (!_.isString(pathOrUrl)) {
     callback();
   } else if (/^https?:\/\//.test(pathOrUrl)) {
-    request.get(pathOrUrl)
+    request
+      .get(pathOrUrl)
       .set('user-agent', 'apigee-127/swagger-tools')
       .accept('application/json')
       .accept('application/x-yaml')
       .accept('text/plain') // Here just in case
-      .end(function (err, res) {
+      .end((err, res) => {
         if (err) {
           callback(err);
         }
@@ -92,16 +89,18 @@ var getDocument = function (pathOrUrl, callback) {
   }
 };
 
-var handleUnidentifiableVersion = function (path) {
-  return exitWithError('Unable to identify the Swagger version for document: ' + path);
+const handleUnidentifiableVersion = documentPath => {
+  return exitWithError(
+    `Unable to identify the Swagger version for document: ${documentPath}`,
+  );
 };
 
-var getDocuments = function (pathsAndOrUrls, callback) {
-  var resolvedDocuments = {};
+const getDocuments = (pathsAndOrUrls, callback) => {
+  const resolvedDocuments = {};
 
-  async.map(pathsAndOrUrls, getDocument, function (err, documents) {
+  async.map(pathsAndOrUrls, getDocument, (err, documents) => {
     if (_.isNull(err)) {
-      _.each(documents, function (document, index) {
+      _.each(documents, (document, index) => {
         if (!document) {
           return;
         }
@@ -128,13 +127,13 @@ var getDocuments = function (pathsAndOrUrls, callback) {
   });
 };
 
-var handleUnsupportedVersion = function (version) {
-  exitWithError('Unsupported Swagger version: ' + version);
+const handleUnsupportedVersion = version => {
+  exitWithError(`Unsupported Swagger version: ${version}`);
 };
 
-var handleUnknownCommand = function (command) {
+const handleUnknownCommand = command => {
   // Using log instead of error since commander.js uses console.log for help output
-  console.log(program._name + ' does not support the ' + command + ' command.');
+  console.log(`${program._name} does not support the ${command} command.`);
 
   program.outputHelp();
 };
@@ -146,62 +145,84 @@ program.version(pkg.version);
 program
   .command('convert <resourceListing> [apiDeclarations...]')
   .description('Converts Swagger 1.2 documents to a Swagger 2.0 document')
-  .option('-n, --no-validation', 'disable pre-conversion validation of the Swagger document(s)')
+  .option(
+    '-n, --no-validation',
+    'disable pre-conversion validation of the Swagger document(s)',
+  )
   .option('-y, --yaml', 'output as YAML instead of JSON')
-  .action(function (resourceListing, apiDeclarations) {
-    var doConvert = function (err, converted) {
-      var results;
+  .action(function doConvertAction(resourceListing, apiDeclarations) {
+    const doConvert = function doConvert(err, converted) {
+      let results;
 
       if (err) {
         if (err.failedValidation) {
-          console.error();
-          console.error(err.message + ' (Run with --no-validation to skip validation)');
+          console.error(
+            `\n${err.message} (Run with --no-validation to skip validation)`,
+          );
 
           results = {
             errors: err.errors,
             warnings: err.warnings,
-            apiDeclarations: err.apiDeclarations
+            apiDeclarations: err.apiDeclarations,
           };
 
-          helpers.printValidationResults('1.2', resourceListing, apiDeclarations, results, true);
+          helpers.printValidationResults(
+            '1.2',
+            resourceListing,
+            apiDeclarations,
+            results,
+            true,
+          );
 
           process.exit(helpers.getErrorCount(results) > 0 ? 1 : 0);
         } else {
           return exitWithError(err.message);
         }
-      } else {
-        console.log();
-        console.log(this.yaml ? YAML.safeDump(converted, {indent: 2}) : JSON.stringify(converted, null, 2));
-        console.log();
       }
+      return console.log(
+        `\n${
+          this.yaml
+            ? YAML.safeDump(converted, { indent: 2 })
+            : JSON.stringify(converted, null, 2)
+        }\n`,
+      );
     }.bind(this);
 
-    getDocuments([resourceListing].concat(apiDeclarations || []), function (err, documents) {
-      if (err) {
-        return exitWithError(err.message);
-      }
+    getDocuments(
+      [resourceListing].concat(apiDeclarations || []),
+      function getDocumentsCallback(getDocumentsError, documents) {
+        if (getDocumentsError) {
+          return exitWithError(getDocumentsError.message);
+        }
 
-      if (_.isUndefined(documents.resourceListing)) {
-        return handleUnidentifiableVersion(resourceListing);
-      }
+        if (_.isUndefined(documents.resourceListing)) {
+          return handleUnidentifiableVersion(resourceListing);
+        }
 
-      try {
-        helpers.getSpec('1.2').convert(documents.resourceListing, documents.apiDeclarations, this.validation === false,
-                                       doConvert);
-      } catch (err) {
-        doConvert(err);
-      }
-    }.bind(this));
+        try {
+          return helpers
+            .getSpec('1.2')
+            .convert(
+              documents.resourceListing,
+              documents.apiDeclarations,
+              this.validation === false,
+              doConvert,
+            );
+        } catch (err) {
+          return doConvert(err);
+        }
+      }.bind(this),
+    );
   });
 
 program
   .command('help [command]')
   .description('Display help information')
-  .action(function (command) {
-    var theCommand;
+  .action(function doHelpAction(command) {
+    let theCommand;
 
     if (!_.isUndefined(command)) {
-      theCommand = _.find(this.parent.commands, function (cmd) {
+      theCommand = _.find(this.parent.commands, cmd => {
         return cmd._name === command;
       });
 
@@ -211,29 +232,29 @@ program
     }
 
     if (_.isUndefined(theCommand)) {
-      program.outputHelp();
-    } else {
-      theCommand.help();
+      return program.outputHelp();
     }
+    return theCommand.help();
   });
 
 program
   .command('info <version>')
   .description('Display information about the Swagger version requested')
-  .action(function (version) {
-    var spec = helpers.getSpec(version, false);
+  .action(function doInfoAction(version) {
+    const spec = helpers.getSpec(version, false);
 
     if (_.isUndefined(spec)) {
       return handleUnsupportedVersion(version);
     }
 
-    console.log();
-    console.log('Swagger ' + version + ' Information:');
-    console.log();
-
-    console.log('  ' + padRight('documentation url', paddingAmount) + spec.docsUrl);
-    console.log('  ' + padRight('schema(s) url', paddingAmount) + spec.schemasUrl);
-    console.log();
+    return console.log(
+      `\nSwagger ${version} Information:\n\n  ${padRight(
+        'documentation url',
+        paddingAmount,
+      )}${spec.docsUrl}\n  ${padRight('schema(s) url', paddingAmount)}${
+        spec.schemasUrl
+      }\n`,
+    );
   });
 
 // We have to use command+usage because commander.js does not handle the following properly:
@@ -243,104 +264,118 @@ program
   .command('validate <resourceListingOrSwaggerDoc> [apiDeclarations...]')
   .option('-v, --verbose', 'display verbose output')
   .description('Display validation results for the Swagger document(s)')
-  .action(function (rlOrSO, apiDeclarations) {
-    var verbose = this.verbose;
+  .action(function doValidateAction(rlOrSO, apiDeclarations) {
+    const { verbose } = this;
 
-    getDocuments([rlOrSO].concat(apiDeclarations || []), function (err, documents) {
-      if (err) {
-        return exitWithError(err.message);
-      }
+    getDocuments(
+      [rlOrSO].concat(apiDeclarations || []),
+      function getValidateDocuments(getDocumentsErr, documents) {
+        if (getDocumentsErr) {
+          return exitWithError(getDocumentsErr.message);
+        }
 
-      var adDocs = documents.apiDeclarations || [];
-      var rlDoc = documents.resourceListing;
-      var soDoc = documents.swaggerObject;
-      var soArgs = [];
-      var spec;
-      var version;
+        const adDocs = documents.apiDeclarations || [];
+        const rlDoc = documents.resourceListing;
+        const soDoc = documents.swaggerObject;
+        let soArgs = [];
+        let version;
 
-      if (soDoc && soDoc.swagger) {
-        version = soDoc.swagger;
-      } else if (rlDoc) {
-        version = rlDoc.swaggerVersion;
-      }
+        if (soDoc && soDoc.swagger) {
+          version = soDoc.swagger;
+        } else if (rlDoc) {
+          version = rlDoc.swaggerVersion;
+        }
 
-      spec = helpers.getSpec(version, false);
+        const spec = helpers.getSpec(version, false);
 
-      if (_.isUndefined(spec)) {
-        return handleUnsupportedVersion(version);
-      }
+        if (_.isUndefined(spec)) {
+          return handleUnsupportedVersion(version);
+        }
 
-      if (_.isUndefined(rlDoc)) {
-        soArgs = [soDoc];
-      } else {
-        soArgs = [rlDoc, adDocs];
-      }
+        if (_.isUndefined(rlDoc)) {
+          soArgs = [soDoc];
+        } else {
+          soArgs = [rlDoc, adDocs];
+        }
 
-      soArgs.push(function (err, results) {
-        var isError = helpers.getErrorCount(results) > 0;
-        var stream =  isError ? console.error : console.log;
-        var printValidationDetails = function () {
-          if (!verbose) {
-            return;
-          }
+        // eslint-disable-next-line consistent-return
+        soArgs.push((error, results) => {
+          let err = error;
 
-          stream();
-          stream('Validation Details:');
-          stream();
-          stream('  Swagger Version: %s', version);
+          const isError = helpers.getErrorCount(results) > 0;
+          const stream = isError ? console.error : console.log;
 
-          if (version === '1.2') {
-            stream('  Swagger files:');
+          const printValidationDetails = () => {
+            if (!verbose) {
+              return;
+            }
+
             stream();
-            stream('    Resource Listing: %s', rlOrSO);
-            stream('    API Declarations:');
+            stream('Validation Details:');
+            stream();
+            stream('  Swagger Version: %s', version);
+
+            if (version === '1.2') {
+              stream('  Swagger files:');
+              stream();
+              stream('    Resource Listing: %s', rlOrSO);
+              stream('    API Declarations:');
+              stream();
+
+              _.each(apiDeclarations, ad => {
+                stream('      %s', ad);
+              });
+            } else {
+              stream('  Swagger file: %s', rlOrSO);
+            }
+          };
+
+          if (err) {
+            return exitWithError(err.message);
+          }
+
+          if (helpers.formatResults(results)) {
+            err = new Error(
+              `Swagger document${version === '1.2' ? '(s)' : ''}
+              ${isError ? ' failed validation' : ' has warnings'}`,
+            );
+
+            err.results = results;
+          }
+
+          if (err) {
+            printValidationDetails();
+
+            helpers.printValidationResults(
+              version,
+              rlDoc || soDoc,
+              adDocs,
+              results,
+              true,
+            );
+
+            return process.exit(helpers.getErrorCount(results) > 0 ? 1 : 0);
+          }
+
+          if (verbose) {
+            printValidationDetails();
+
             stream();
 
-            _.each(apiDeclarations, function (ad) {
-              stream('      %s', ad);
-            });
-          } else {
-            stream('  Swagger file: %s', rlOrSO);
+            return version === '1.2'
+              ? stream('Swagger documents are valid')
+              : stream('Swagger document is valid');
           }
-        };
+        });
 
-        if (err) {
-          return exitWithError(err.message);
-        }
-
-        if (helpers.formatResults(results)) {
-          err = new Error('Swagger document' + (version === '1.2' ? '(s)' : '') +
-                          (isError ? ' failed validation' : ' has warnings'));
-
-          err.results = results;
-        }
-
-        if (err) {
-          printValidationDetails();
-
-          helpers.printValidationResults(version, rlDoc || soDoc, adDocs, results, true);
-
-          process.exit(helpers.getErrorCount(results) > 0 ? 1 : 0);
-        } else if (verbose) {
-          printValidationDetails();
-
-          stream();
-
-          if (version === '1.2') {
-            stream('Swagger documents are valid');
-          } else {
-            stream('Swagger document is valid');
-          }
-        }
-      });
-
-      spec.validate.apply(spec, soArgs);
-    });
+        return spec.validate(...soArgs);
+      },
+    );
   });
 
 program
-  .command('*', null, {noHelp: true}) // null is required to avoid the implicit 'help' command being added
-  .action(function(cmd){
+  .command('*', null, { noHelp: true }) // null is required to avoid the implicit 'help' command being added
+  .action(function doWildcardAction(cmd) {
     handleUnknownCommand(cmd);
   });
 

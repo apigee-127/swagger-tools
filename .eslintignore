@@ -1,8 +1,6 @@
 .nyc_output
-bin
 coverage
 docs
-lib
 middleware
 node_modules
 samples

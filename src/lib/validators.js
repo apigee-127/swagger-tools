@@ -22,19 +22,16 @@
  * THE SOFTWARE.
  */
 
-'use strict';
+const _ = require('lodash');
 
-var _ = require('lodash');
-var helpers = require('./helpers');
+const helpers = require('./helpers');
 
 // http://tools.ietf.org/html/rfc3339#section-5.6
-var dateRegExp = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/;
+const dateRegExp = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/;
 // http://tools.ietf.org/html/rfc3339#section-5.6
-var dateTimeRegExp = /^([0-9]{2}):([0-9]{2}):([0-9]{2})(.[0-9]+)?(z|([+-][0-9]{2}):([0-9]{2}))$/;
-var isValidDate = module.exports.isValidDate = function (date) {
-  var day;
-  var matches;
-  var month;
+const dateTimeRegExp = /^([0-9]{2}):([0-9]{2}):([0-9]{2})(.[0-9]+)?(z|([+-][0-9]{2}):([0-9]{2}))$/;
+const isValidDate = origDate => {
+  let date = origDate;
 
   if (_.isDate(date)) {
     return true;
@@ -44,14 +41,14 @@ var isValidDate = module.exports.isValidDate = function (date) {
     date = date.toString();
   }
 
-  matches = dateRegExp.exec(date);
+  const matches = dateRegExp.exec(date);
 
   if (matches === null) {
     return false;
   }
 
-  day = matches[3];
-  month = matches[2];
+  const day = matches[3];
+  const month = matches[2];
 
   if (month < '01' || month > '12' || day < '01' || day > '31') {
     return false;
@@ -59,16 +56,11 @@ var isValidDate = module.exports.isValidDate = function (date) {
 
   return true;
 };
-var isValidDateTime = module.exports.isValidDateTime = function (dateTime) {
-  var hour;
-  var date;
-  var time;
-  var matches;
-  var minute;
-  var parts;
-  var second;
-  var timezoneHours;
-  var timezoneMinutes;
+
+const isValidDateTime = origDateTime => {
+  let dateTime = origDateTime;
+  let timezoneHours;
+  let timezoneMinutes;
 
   if (_.isDate(dateTime)) {
     return true;
@@ -78,23 +70,21 @@ var isValidDateTime = module.exports.isValidDateTime = function (dateTime) {
     dateTime = dateTime.toString();
   }
 
-  parts = dateTime.toLowerCase().split('t');
-  date = parts[0];
-  time = parts.length > 1 ? parts[1] : undefined;
+  const parts = dateTime.toLowerCase().split('t');
+  const date = parts[0];
+  const time = parts.length > 1 ? parts[1] : undefined;
 
   if (!isValidDate(date)) {
     return false;
   }
 
-  matches = dateTimeRegExp.exec(time);
+  const matches = dateTimeRegExp.exec(time);
 
   if (matches === null) {
     return false;
   }
 
-  hour = matches[1];
-  minute = matches[2];
-  second = matches[3];
+  const [, hour, minute, second] = matches;
   if (matches[5] === 'z') {
     timezoneHours = 0;
     timezoneMinutes = 0;
@@ -103,17 +93,28 @@ var isValidDateTime = module.exports.isValidDateTime = function (dateTime) {
     timezoneMinutes = Number(matches[7]);
   }
 
-  var validTimezoneMinutes = timezoneMinutes === 0 || timezoneMinutes === 15 || timezoneMinutes === 30 || timezoneMinutes === 45;
+  const validTimezoneMinutes =
+    timezoneMinutes === 0 ||
+    timezoneMinutes === 15 ||
+    timezoneMinutes === 30 ||
+    timezoneMinutes === 45;
 
-  if (hour > '23' || minute > '59' || second > '59' || timezoneHours > 14 || timezoneHours < -12 || !validTimezoneMinutes) {
+  if (
+    hour > '23' ||
+    minute > '59' ||
+    second > '59' ||
+    timezoneHours > 14 ||
+    timezoneHours < -12 ||
+    !validTimezoneMinutes
+  ) {
     return false;
   }
 
   return true;
 };
 
-var throwErrorWithCode = function (code, msg) {
-  var err = new Error(msg);
+const throwErrorWithCode = (code, msg) => {
+  const err = new Error(msg);
 
   err.code = code;
   err.failedValidation = true;
@@ -121,30 +122,36 @@ var throwErrorWithCode = function (code, msg) {
   throw err;
 };
 
-module.exports.validateAgainstSchema = function (schemaOrName, data, validator) {
-  var sanitizeError = function (obj) {
+function validateAgainstSchema(schemaOrName, data, origValidator) {
+  let validator = origValidator;
+
+  const sanitizeError = origObj => {
+    const obj = origObj;
+
     // Make anyOf/oneOf errors more human readable (Issue 200)
-    var defType = ['additionalProperties', 'items'].indexOf(obj.path[obj.path.length - 1]) > -1 ?
-          'schema' :
-          obj.path[obj.path.length - 2];
+    let defType =
+      ['additionalProperties', 'items'].indexOf(obj.path[obj.path.length - 1]) >
+      -1
+        ? 'schema'
+        : obj.path[obj.path.length - 2];
 
     if (['ANY_OF_MISSING', 'ONE_OF_MISSING'].indexOf(obj.code) > -1) {
       switch (defType) {
-      case 'parameters':
-        defType = 'parameter';
-        break;
+        case 'parameters':
+          defType = 'parameter';
+          break;
 
-      case 'responses':
-        defType = 'response';
-        break;
+        case 'responses':
+          defType = 'response';
+          break;
 
-      case 'schema':
-        defType += ' ' + obj.path[obj.path.length - 1];
+        case 'schema':
+          defType += ` ${obj.path[obj.path.length - 1]}`;
 
         // no default
       }
 
-      obj.message = 'Not a valid ' + defType + ' definition';
+      obj.message = `Not a valid ${defType} definition`;
     }
 
     // Remove the params portion of the error
@@ -152,38 +159,42 @@ module.exports.validateAgainstSchema = function (schemaOrName, data, validator) 
     delete obj.schemaId;
 
     if (obj.inner) {
-      _.each(obj.inner, function (nObj) {
+      _.each(obj.inner, nObj => {
         sanitizeError(nObj);
       });
     }
   };
-  var schema = _.isPlainObject(schemaOrName) ? _.cloneDeep(schemaOrName) : schemaOrName;
+  const schema = _.isPlainObject(schemaOrName)
+    ? _.cloneDeep(schemaOrName)
+    : schemaOrName;
 
   // We don't check this due to internal usage but if validator is not provided, schemaOrName must be a schema
   if (_.isUndefined(validator)) {
     validator = helpers.createJsonValidator([schema]);
   }
 
-  var valid = validator.validate(data, schema);
+  const valid = validator.validate(data, schema);
 
   if (!valid) {
     try {
-      throwErrorWithCode('SCHEMA_VALIDATION_FAILED', 'Failed schema validation');
+      throwErrorWithCode(
+        'SCHEMA_VALIDATION_FAILED',
+        'Failed schema validation',
+      );
     } catch (err) {
       err.results = {
-        errors: _.map(validator.getLastErrors(), function (err) {
-          sanitizeError(err);
+        errors: _.map(validator.getLastErrors(), mapErr => {
+          sanitizeError(mapErr);
 
-          return err;
+          return mapErr;
         }),
-        warnings: []
+        warnings: [],
       };
 
       throw err;
     }
   }
-};
-
+}
 
 /**
  * Validates a schema of type array is properly formed (when necessar).
@@ -194,10 +205,13 @@ module.exports.validateAgainstSchema = function (schemaOrName, data, validator) 
  *
  * @see {@link https://github.com/swagger-api/swagger-spec/issues/174}
  */
-var validateArrayType = module.exports.validateArrayType = function (schema) {
+const validateArrayType = schema => {
   // We have to do this manually for now
   if (schema.type === 'array' && _.isUndefined(schema.items)) {
-    throwErrorWithCode('OBJECT_MISSING_REQUIRED_PROPERTY', 'Missing required property: items');
+    throwErrorWithCode(
+      'OBJECT_MISSING_REQUIRED_PROPERTY',
+      'Missing required property: items',
+    );
   }
 };
 
@@ -210,12 +224,15 @@ var validateArrayType = module.exports.validateArrayType = function (schema) {
  *
  * @throws Error if the content type is invalid
  */
-module.exports.validateContentType = function (gPOrC, oPOrC, reqOrRes) {
+function validateContentType(gPOrC, oPOrC, reqOrRes) {
   // http://www.w3.org/Protocols/rfc2616/rfc2616-sec7.html#sec7.2.1
-  var isResponse = typeof reqOrRes.end === 'function';
-  var contentType = isResponse ? reqOrRes.getHeader('content-type') : reqOrRes.headers['content-type'];
-  var pOrC = _.map(_.union(gPOrC, oPOrC), function (contentType) {
-    return contentType.split(';')[0];
+  const isResponse = typeof reqOrRes.end === 'function';
+  let contentType = isResponse
+    ? reqOrRes.getHeader('content-type')
+    : reqOrRes.headers['content-type'];
+
+  const pOrC = _.map(_.union(gPOrC, oPOrC), type => {
+    return type.split(';')[0];
   });
 
   if (!contentType) {
@@ -226,14 +243,20 @@ module.exports.validateContentType = function (gPOrC, oPOrC, reqOrRes) {
     }
   }
 
-  contentType = contentType.split(';')[0];
+  [contentType] = contentType.split(';');
 
-  if (pOrC.length > 0 && (isResponse ?
-                          true :
-                          ['POST', 'PUT'].indexOf(reqOrRes.method) !== -1) && pOrC.indexOf(contentType) === -1) {
-    throw new Error('Invalid content type (' + contentType + ').  These are valid: ' + pOrC.join(', '));
+  if (
+    pOrC.length > 0 &&
+    (isResponse ? true : ['POST', 'PUT'].indexOf(reqOrRes.method) !== -1) &&
+    pOrC.indexOf(contentType) === -1
+  ) {
+    throw new Error(
+      `Invalid content type (${contentType}).  These are valid: ${pOrC.join(
+        ', ',
+      )}`,
+    );
   }
-};
+}
 
 /**
  * Validates the value against the allowable values (when necessary).
@@ -243,9 +266,16 @@ module.exports.validateContentType = function (gPOrC, oPOrC, reqOrRes) {
  *
  * @throws Error if the value is not allowable
  */
-var validateEnum = module.exports.validateEnum = function (val, allowed) {
-  if (!_.isUndefined(allowed) && !_.isUndefined(val) && allowed.indexOf(val) === -1) {
-    throwErrorWithCode('ENUM_MISMATCH', 'Not an allowable value (' + allowed.join(', ') + '): ' + val);
+const validateEnum = (val, allowed) => {
+  if (
+    !_.isUndefined(allowed) &&
+    !_.isUndefined(val) &&
+    allowed.indexOf(val) === -1
+  ) {
+    throwErrorWithCode(
+      'ENUM_MISMATCH',
+      `Not an allowable value (${allowed.join(', ')}): ${val}`,
+    );
   }
 };
 
@@ -258,10 +288,11 @@ var validateEnum = module.exports.validateEnum = function (val, allowed) {
  *
  * @throws Error if the value is greater than the maximum
  */
-var validateMaximum = module.exports.validateMaximum = function (val, maximum, type, exclusive) {
-  var code = exclusive === true ? 'MAXIMUM_EXCLUSIVE' : 'MAXIMUM';
-  var testMax;
-  var testVal;
+const validateMaximum = (val, maximum, type, origExclusive) => {
+  let exclusive = origExclusive;
+  const code = exclusive === true ? 'MAXIMUM_EXCLUSIVE' : 'MAXIMUM';
+  let testMax;
+  let testVal;
 
   if (_.isUndefined(exclusive)) {
     exclusive = false;
@@ -277,9 +308,15 @@ var validateMaximum = module.exports.validateMaximum = function (val, maximum, t
     testMax = parseFloat(maximum);
 
     if (exclusive && testVal >= testMax) {
-      throwErrorWithCode(code, 'Greater than or equal to the configured maximum (' + maximum + '): ' + val);
+      throwErrorWithCode(
+        code,
+        `Greater than or equal to the configured maximum (${maximum}): ${val}`,
+      );
     } else if (testVal > testMax) {
-      throwErrorWithCode(code, 'Greater than the configured maximum (' + maximum + '): ' + val);
+      throwErrorWithCode(
+        code,
+        `Greater than the configured maximum (${maximum}): ${val}`,
+      );
     }
   }
 };
@@ -292,9 +329,12 @@ var validateMaximum = module.exports.validateMaximum = function (val, maximum, t
  *
  * @throws Error if the value contains more items than allowable
  */
-var validateMaxItems = module.exports.validateMaxItems = function (val, maxItems) {
+const validateMaxItems = (val, maxItems) => {
   if (!_.isUndefined(maxItems) && val.length > maxItems) {
-    throwErrorWithCode('ARRAY_LENGTH_LONG', 'Array is too long (' + val.length + '), maximum ' + maxItems);
+    throwErrorWithCode(
+      'ARRAY_LENGTH_LONG',
+      `Array is too long (${val.length}), maximum ${maxItems}`,
+    );
   }
 };
 
@@ -306,9 +346,12 @@ var validateMaxItems = module.exports.validateMaxItems = function (val, maxItems
  *
  * @throws Error if the value's length is greater than the maximum
  */
-var validateMaxLength = module.exports.validateMaxLength = function (val, maxLength) {
+const validateMaxLength = (val, maxLength) => {
   if (!_.isUndefined(maxLength) && val.length > maxLength) {
-    throwErrorWithCode('MAX_LENGTH', 'String is too long (' + val.length + ' chars), maximum ' + maxLength);
+    throwErrorWithCode(
+      'MAX_LENGTH',
+      `String is too long (${val.length} chars), maximum ${maxLength}`,
+    );
   }
 };
 
@@ -320,12 +363,14 @@ var validateMaxLength = module.exports.validateMaxLength = function (val, maxLen
  *
  * @throws Error if the value's property count is less than the maximum
  */
-var validateMaxProperties = module.exports.validateMaxProperties = function (val, maxProperties) {
-  var propCount = _.isPlainObject(val) ? Object.keys(val).length : 0;
+const validateMaxProperties = (val, maxProperties) => {
+  const propCount = _.isPlainObject(val) ? Object.keys(val).length : 0;
 
   if (!_.isUndefined(maxProperties) && propCount > maxProperties) {
-    throwErrorWithCode('MAX_PROPERTIES',
-                       'Number of properties is too many (' + propCount + ' properties), maximum ' + maxProperties);
+    throwErrorWithCode(
+      'MAX_PROPERTIES',
+      `Number of properties is too many (${propCount} properties), maximum ${maxProperties}`,
+    );
   }
 };
 
@@ -338,10 +383,11 @@ var validateMaxProperties = module.exports.validateMaxProperties = function (val
  *
  * @throws Error if the value is less than the minimum
  */
-var validateMinimum = module.exports.validateMinimum = function (val, minimum, type, exclusive) {
-  var code = exclusive === true ? 'MINIMUM_EXCLUSIVE' : 'MINIMUM';
-  var testMin;
-  var testVal;
+const validateMinimum = (val, minimum, type, origExclusive) => {
+  let exclusive = origExclusive;
+  const code = exclusive === true ? 'MINIMUM_EXCLUSIVE' : 'MINIMUM';
+  let testMin;
+  let testVal;
 
   if (_.isUndefined(exclusive)) {
     exclusive = false;
@@ -357,9 +403,15 @@ var validateMinimum = module.exports.validateMinimum = function (val, minimum, t
     testMin = parseFloat(minimum);
 
     if (exclusive && testVal <= testMin) {
-      throwErrorWithCode(code, 'Less than or equal to the configured minimum (' + minimum + '): ' + val);
+      throwErrorWithCode(
+        code,
+        `Less than or equal to the configured minimum (${minimum}): ${val}`,
+      );
     } else if (testVal < testMin) {
-      throwErrorWithCode(code, 'Less than the configured minimum (' + minimum + '): ' + val);
+      throwErrorWithCode(
+        code,
+        `Less than the configured minimum (${minimum}): ${val}`,
+      );
     }
   }
 };
@@ -372,9 +424,12 @@ var validateMinimum = module.exports.validateMinimum = function (val, minimum, t
  *
  * @throws Error if the value contains fewer items than allowable
  */
-var validateMinItems = module.exports.validateMinItems = function (val, minItems) {
+const validateMinItems = (val, minItems) => {
   if (!_.isUndefined(minItems) && val.length < minItems) {
-    throwErrorWithCode('ARRAY_LENGTH_SHORT', 'Array is too short (' + val.length + '), minimum ' + minItems);
+    throwErrorWithCode(
+      'ARRAY_LENGTH_SHORT',
+      `Array is too short (${val.length}), minimum ${minItems}`,
+    );
   }
 };
 
@@ -386,9 +441,12 @@ var validateMinItems = module.exports.validateMinItems = function (val, minItems
  *
  * @throws Error if the value's length is less than the minimum
  */
-var validateMinLength = module.exports.validateMinLength = function (val, minLength) {
+const validateMinLength = (val, minLength) => {
   if (!_.isUndefined(minLength) && val.length < minLength) {
-    throwErrorWithCode('MIN_LENGTH', 'String is too short (' + val.length + ' chars), minimum ' + minLength);
+    throwErrorWithCode(
+      'MIN_LENGTH',
+      `String is too short (${val.length} chars), minimum ${minLength}`,
+    );
   }
 };
 
@@ -400,12 +458,14 @@ var validateMinLength = module.exports.validateMinLength = function (val, minLen
  *
  * @throws Error if the value's property count is less than the minimum
  */
-var validateMinProperties = module.exports.validateMinProperties = function (val, minProperties) {
-  var propCount = _.isPlainObject(val) ? Object.keys(val).length : 0;
+const validateMinProperties = (val, minProperties) => {
+  const propCount = _.isPlainObject(val) ? Object.keys(val).length : 0;
 
   if (!_.isUndefined(minProperties) && propCount < minProperties) {
-    throwErrorWithCode('MIN_PROPERTIES',
-                       'Number of properties is too few (' + propCount + ' properties), minimum ' + minProperties);
+    throwErrorWithCode(
+      'MIN_PROPERTIES',
+      `Number of properties is too few (${propCount} properties), minimum ${minProperties}`,
+    );
   }
 };
 
@@ -417,9 +477,9 @@ var validateMinProperties = module.exports.validateMinProperties = function (val
  *
  * @throws Error if the value contains fewer items than allowable
  */
-var validateMultipleOf = module.exports.validateMultipleOf = function (val, multipleOf) {
+const validateMultipleOf = (val, multipleOf) => {
   if (!_.isUndefined(multipleOf) && val % multipleOf !== 0) {
-    throwErrorWithCode('MULTIPLE_OF', 'Not a multiple of ' + multipleOf);
+    throwErrorWithCode('MULTIPLE_OF', `Not a multiple of ${multipleOf}`);
   }
 };
 
@@ -432,9 +492,12 @@ var validateMultipleOf = module.exports.validateMultipleOf = function (val, mult
  *
  * @throws Error if the value does not match the pattern
  */
-var validatePattern = module.exports.validatePattern = function (val, pattern) {
+const validatePattern = (val, pattern) => {
   if (!_.isUndefined(pattern) && _.isNull(val.match(new RegExp(pattern)))) {
-    throwErrorWithCode('PATTERN', 'Does not match required pattern: ' + pattern);
+    throwErrorWithCode(
+      'PATTERN',
+      `Does not match required pattern: ${pattern}`,
+    );
   }
 };
 
@@ -446,7 +509,7 @@ var validatePattern = module.exports.validatePattern = function (val, pattern) {
  *
  * @throws Error if the value is required but is not present
  */
-module.exports.validateRequiredness = function (val, required) {
+const validateRequiredness = (val, required) => {
   if (!_.isUndefined(required) && required === true && _.isUndefined(val)) {
     throwErrorWithCode('REQUIRED', 'Is required');
   }
@@ -463,24 +526,44 @@ module.exports.validateRequiredness = function (val, required) {
  *
  * @throws Error if the value is not the proper type or format
  */
-var validateTypeAndFormat = module.exports.validateTypeAndFormat =
-  function validateTypeAndFormat (version, val, type, format, allowEmptyValue, skipError) {
-    var result = true;
-    var oVal = val;
+const validateTypeAndFormat = function validateTypeAndFormat(
+  version,
+  origVal,
+  type,
+  format,
+  allowEmptyValue,
+  skipError,
+) {
+  let val = origVal;
+  let result = true;
+  const oVal = val;
 
-    // If there is an empty value and we allow empty values, the value is always valid
-    if (allowEmptyValue === true && val === '') {
-      return;
-    }
+  // If there is an empty value and we allow empty values, the value is always valid
+  if (allowEmptyValue === true && val === '') {
+    return;
+  }
 
-    if (_.isArray(val)) {
-      _.each(val, function (aVal, index) {
-        if (!validateTypeAndFormat(version, aVal, type, format, allowEmptyValue, true)) {
-          throwErrorWithCode('INVALID_TYPE', 'Value at index ' + index + ' is not a valid ' + type + ': ' + aVal);
-        }
-      });
-    } else {
-      switch (type) {
+  if (_.isArray(val)) {
+    _.each(val, (aVal, index) => {
+      if (
+        !validateTypeAndFormat(
+          version,
+          aVal,
+          type,
+          format,
+          allowEmptyValue,
+          true,
+        )
+      ) {
+        throwErrorWithCode(
+          'INVALID_TYPE',
+          `Value at index ${index} is not a valid ${type}: ${aVal}`,
+        );
+      }
+    });
+  } else {
+    // eslint-disable-next-line default-case
+    switch (type) {
       case 'boolean':
         // Coerce the value only for Swagger 1.2
         if (version === '1.2' && _.isString(val)) {
@@ -499,7 +582,7 @@ var validateTypeAndFormat = module.exports.validateTypeAndFormat =
           val = Number(val);
         }
 
-        result = _.isFinite(val) && (Math.round(val) === val);
+        result = _.isFinite(val) && Math.round(val) === val;
         break;
       case 'number':
         // Coerce the value only for Swagger 1.2
@@ -511,31 +594,38 @@ var validateTypeAndFormat = module.exports.validateTypeAndFormat =
         break;
       case 'string':
         if (!_.isUndefined(format)) {
+          // eslint-disable-next-line default-case
           switch (format) {
-          case 'date':
-            result = isValidDate(val);
-            break;
-          case 'date-time':
-            result = isValidDateTime(val);
-            break;
+            case 'date':
+              result = isValidDate(val);
+              break;
+            case 'date-time':
+              result = isValidDateTime(val);
+              break;
           }
         }
         break;
       case 'void':
         result = _.isUndefined(val);
         break;
-      }
     }
+  }
 
-    if (skipError) {
-      return result;
-    } else if (!result) {
-      throwErrorWithCode('INVALID_TYPE',
-                         type !== 'void' ?
-                           'Not a valid ' + (_.isUndefined(format) ? '' : format + ' ') + type + ': ' + oVal :
-                           'Void does not allow a value');
-    }
-  };
+  if (skipError) {
+    // eslint-disable-next-line consistent-return
+    return result;
+  }
+  if (!result) {
+    throwErrorWithCode(
+      'INVALID_TYPE',
+      type !== 'void'
+        ? `Not a valid ${
+            _.isUndefined(format) ? '' : `${format} `
+          }${type}: ${oVal}`
+        : 'Void does not allow a value',
+    );
+  }
+};
 
 /**
  * Validates the value values are unique (when necessary).
@@ -545,9 +635,12 @@ var validateTypeAndFormat = module.exports.validateTypeAndFormat =
  *
  * @throws Error if the value has duplicates
  */
-var validateUniqueItems = module.exports.validateUniqueItems = function (val, isUnique) {
+const validateUniqueItems = (val, isUnique) => {
   if (!_.isUndefined(isUnique) && _.uniq(val).length !== val.length) {
-    throwErrorWithCode('ARRAY_UNIQUE', 'Does not allow duplicate values: ' + val.join(', '));
+    throwErrorWithCode(
+      'ARRAY_UNIQUE',
+      `Does not allow duplicate values: ${val.join(', ')}`,
+    );
   }
 };
 
@@ -561,9 +654,13 @@ var validateUniqueItems = module.exports.validateUniqueItems = function (val, is
  *
  * @throws Error if any validation failes
  */
-var validateSchemaConstraints = module.exports.validateSchemaConstraints = function (version, schema, path, val) {
-  var resolveSchema = function (schema) {
-    var resolved = schema;
+const validateSchemaConstraints = (version, origSchema, origPath, origVal) => {
+  let schema = origSchema;
+  let path = origPath;
+  let val = origVal;
+
+  const resolveSchema = schemaToResolve => {
+    let resolved = schemaToResolve;
 
     if (resolved.schema) {
       path = path.concat(['schema']);
@@ -574,8 +671,7 @@ var validateSchemaConstraints = module.exports.validateSchemaConstraints = funct
     return resolved;
   };
 
-  var type = schema.type;
-  var allowEmptyValue;
+  let { type } = schema;
 
   if (!type) {
     if (!schema.schema) {
@@ -590,7 +686,7 @@ var validateSchemaConstraints = module.exports.validateSchemaConstraints = funct
     }
   }
 
-  allowEmptyValue = schema ? schema.allowEmptyValue === true : false;
+  const allowEmptyValue = schema ? schema.allowEmptyValue === true : false;
 
   try {
     // Always perform this check even if there is no value
@@ -611,12 +707,18 @@ var validateSchemaConstraints = module.exports.validateSchemaConstraints = funct
     }
 
     if (type === 'array') {
-      _.each(val, function (val, index) {
+      _.each(val, (v, index) => {
         try {
-          validateSchemaConstraints(version, schema.items || {}, path.concat(index.toString()), val);
+          validateSchemaConstraints(
+            version,
+            schema.items || {},
+            path.concat(index.toString()),
+            v,
+          );
         } catch (err) {
-          err.message = 'Value at index ' + index + ' ' + (err.code === 'INVALID_TYPE' ? 'is ' : '') +
-            err.message.charAt(0).toLowerCase() + err.message.substring(1);
+          err.message = `Value at index ${index} ${
+            err.code === 'INVALID_TYPE' ? 'is ' : ''
+          }${err.message.charAt(0).toLowerCase()}${err.message.substring(1)}`;
 
           throw err;
         }
@@ -630,7 +732,6 @@ var validateSchemaConstraints = module.exports.validateSchemaConstraints = funct
 
     // Validate maximum
     validateMaximum(val, schema.maximum, type, schema.exclusiveMaximum);
-
 
     // Validate maxItems (Swagger 2.0+)
     validateMaxItems(val, schema.maxItems);
@@ -666,4 +767,27 @@ var validateSchemaConstraints = module.exports.validateSchemaConstraints = funct
 
     throw err;
   }
+};
+
+module.exports = {
+  isValidDate,
+  isValidDateTime,
+  validateAgainstSchema,
+  validateArrayType,
+  validateContentType,
+  validateEnum,
+  validateMaximum,
+  validateMaxItems,
+  validateMaxLength,
+  validateMaxProperties,
+  validateMinimum,
+  validateMinItems,
+  validateMinLength,
+  validateMinProperties,
+  validateMultipleOf,
+  validatePattern,
+  validateRequiredness,
+  validateTypeAndFormat,
+  validateUniqueItems,
+  validateSchemaConstraints,
 };
