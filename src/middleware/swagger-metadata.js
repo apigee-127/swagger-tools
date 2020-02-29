@@ -28,7 +28,7 @@ const bp = require('body-parser');
 const debug = require('debug')('swagger-tools:middleware:metadata');
 const multer = require('multer');
 const parseurl = require('parseurl');
-const pathToRegexp = require('path-to-regexp');
+const { pathToRegexp } = require('path-to-regexp');
 
 const mHelpers = require('./helpers');
 const cHelpers = require('../lib/helpers');
