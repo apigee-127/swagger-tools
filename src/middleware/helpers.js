@@ -170,7 +170,7 @@ const debugError = (err, debug) => {
   }
 };
 
-const convertValue = function(origValue, origSchema, origType, location) {
+const convertValue = (origValue, origSchema, origType, location) => {
   let value = origValue;
   let schema = origSchema;
   let type = origType;
