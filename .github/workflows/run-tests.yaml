@@ -1,0 +1,38 @@
+name: Run tests
+
+# on: [push, pull_request]
+
+on:
+  push:
+    branches-ignore:
+      - 'master'
+    tags-ignore:
+      - 'v*'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [8.x, 10.x, 12.x, 14.x]
+
+    name: Node.js ${{ matrix.node-version }}
+
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: npm install
+        env:
+          CI: true
+
+      - name: Build
+        run: npm test
