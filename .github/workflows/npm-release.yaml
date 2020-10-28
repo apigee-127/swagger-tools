@@ -29,6 +29,6 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Remove 'next' dist-tag
-        run: npm dist-tag rm next
+        run: npm dist-tag rm @axway/swagger-tools next
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
