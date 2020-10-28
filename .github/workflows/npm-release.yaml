@@ -24,8 +24,11 @@ jobs:
           echo "PKG_VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Update dist-tag
-        run: |
-          npm dist-tag add @axway/swagger-tools@${PKG_VERSION} latest
-          npm dist-tag rm next
+        run: npm dist-tag add @axway/swagger-tools@${PKG_VERSION} latest
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Remove 'next' dist-tag
+        run: npm dist-tag rm next
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
