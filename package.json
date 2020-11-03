@@ -1,25 +1,21 @@
 {
-  "name": "swagger-tools",
-  "version": "0.10.3",
-  "description": "Various tools for using and integrating with Swagger.",
+  "name": "@axway/swagger-tools",
+  "version": "0.11.0",
+  "description": "Various tools for using and integrating with Swagger 2.0.",
   "main": "index.js",
-  "scripts": {
-    "test": "gulp",
-    "test-debug": "node --debug-brk node_modules/.bin/gulp"
-  },
   "author": {
     "name": "Jeremy Whitlock",
     "email": "jwhitlock@apache.org",
     "url": "https://github.com/whitlockjc"
   },
   "bugs": {
-    "url": "https://github.com/apigee-127/swagger-tools/issues"
+    "url": "https://github.com/Axway/swagger-tools/issues"
   },
-  "homepage": "https://github.com/apigee-127/swagger-tools",
+  "homepage": "https://github.com/Axway/swagger-tools",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git://github.com/apigee-127/swagger-tools.git"
+    "url": "git@github.com:Axway/swagger-tools.git"
   },
   "keywords": [
     "api",
@@ -27,11 +23,7 @@
     "middleware",
     "swagger"
   ],
-  "bin": {
-    "swagger-tools": "./bin/swagger-tools"
-  },
   "files": [
-    "bin",
     "index.js",
     "LICENSE",
     "lib",
@@ -39,49 +31,27 @@
     "schemas"
   ],
   "devDependencies": {
-    "browserify": "^14.4.0",
-    "connect": "^3.4.0",
-    "del": "^3.0.0",
-    "exposify": "^0.5.0",
-    "gulp": "^3.9.0",
-    "gulp-if": "^2.0.0",
-    "gulp-istanbul": "^1.1.2",
-    "gulp-jshint": "^2.0.0",
-    "gulp-load-plugins": "^1.2.0",
-    "gulp-mocha": "^3.0.1",
-    "gulp-nsp": "^2.4.2",
-    "gulp-uglify": "^3.0.0",
-    "jshint": "^2.9.1",
-    "jshint-stylish": "^2.0.1",
-    "karma": "^1.7.1",
-    "karma-mocha": "^1.3.0",
-    "karma-mocha-reporter": "^2.0.0",
-    "karma-phantomjs-launcher": "^1.0.0",
-    "mocha": "^4.0.1",
-    "phantomjs-prebuilt": "^2.1.6",
-    "run-sequence": "^2.0.0",
-    "supertest": "^3.0.0",
-    "vinyl-browserify": "1.0.0",
-    "vinyl-buffer": "^1.0.0",
-    "vinyl-source-stream": "^1.1.0"
+    "async": "^3.2.0",
+    "connect": "^3.7.0",
+    "mocha": "^6.2.3",
+    "supertest": "^5.0.0"
   },
   "dependencies": {
-    "async": "^2.5.0",
-    "body-parser": "1.18.2",
-    "commander": "~2.11.0",
-    "debug": "^3.1.0",
-    "js-yaml": "^3.3.1",
-    "json-refs": "^3.0.2",
-    "lodash": "^4.17.4",
-    "multer": "^1.1.0",
-    "parseurl": "^1.3.0",
-    "path-to-regexp": "^2.0.0",
-    "qs": "^6.0.3",
-    "serve-static": "^1.10.0",
-    "spark-md5": "^3.0.0",
-    "superagent": "^3.5.2",
-    "swagger-converter": "^0.1.7",
+    "body-parser": "^1.19.0",
+    "debug": "^4.2.0",
+    "js-yaml": "^3.14.0",
+    "json-refs": "^3.0.15",
+    "lodash": "^4.17.20",
+    "multer": "^1.4.2",
+    "parseurl": "^1.3.3",
+    "path-to-regexp": "^6.2.0",
+    "qs": "^6.9.4",
+    "regex-escape": "^3.4.10",
     "traverse": "^0.6.6",
-    "z-schema": "^3.15.4"
+    "z-schema": "^5.0.0"
+  },
+  "scripts": {
+    "test": "mocha --recursive",
+    "test:watch": "mocha --recursive --watch"
   }
 }

@@ -1,4 +1,14 @@
 ## Release Notes
+# Changes
+
+## 0.11.0
+* major: changed module name to @axway/swagger-tools
+* major: Removed support for Swagger 1.2
+* major: Removed bundled swagger-ui
+* major: Removed browser support
+* major: Removed the swagger-tools binary
+* major: Updated all dependencies to resolve security issues
+* chore: Support Node.js 14
 
 ### 0.10.4 (2018-07-20)
 

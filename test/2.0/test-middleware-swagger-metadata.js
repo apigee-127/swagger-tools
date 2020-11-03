@@ -634,6 +634,7 @@ describe('Swagger Metadata Middleware v2.0', function () {
       delete(subPathedPet['x-swagger-router-handle-subpaths']);
 
       helpers.createServer([cPetStoreJson], {
+        handler: function (req, res) { res.end('OK'); },
         swaggerRouterOptions: {
           controllers: {
             'Pets_getPetById': function() {
@@ -656,6 +657,7 @@ describe('Swagger Metadata Middleware v2.0', function () {
       subPathedPet['x-swagger-router-handle-subpaths'] = false;
 
       helpers.createServer([cPetStoreJson], {
+        handler: function (req, res) { res.end('OK'); },
         swaggerRouterOptions: {
           controllers: {
             'Pets_getPetById': function() {
@@ -888,6 +890,7 @@ describe('Swagger Metadata Middleware v2.0', function () {
       delete cPetStoreJson.paths['/pets/{id}'].parameters[0].format;
 
       helpers.createServer([cPetStoreJson], {
+        handler: function (req, res) { res.end('OK'); },
         swaggerRouterOptions: {
           controllers: {
             getPetById: function (req, res, next) {
@@ -958,6 +961,7 @@ describe('Swagger Metadata Middleware v2.0', function () {
       });
 
       helpers.createServer([cPetStoreJson], {
+        handler: function (req, res) { res.end('OK'); },
         swaggerRouterOptions: {
           controllers: {
             getAllPets: function (req, res, next) {

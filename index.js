@@ -86,28 +86,10 @@ var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, cal
         // Create a wrapper to avoid having to pass the non-optional arguments back to the swaggerMetadata middleware
         swaggerMetadata: function () {
           var swaggerMetadata = require('./middleware/swagger-metadata');
-
           return swaggerMetadata.apply(undefined, args.slice(0, args.length - 1));
         },
         swaggerRouter: require('./middleware/swagger-router'),
         swaggerSecurity: require('./middleware/swagger-security'),
-        // Create a wrapper to avoid having to pass the non-optional arguments back to the swaggerUi middleware
-        swaggerUi: function (options) {
-          var swaggerUi = require('./middleware/swagger-ui');
-          var suArgs = [rlOrSO];
-
-          if (spec.version === '1.2') {
-            suArgs.push(_.reduce(resources, function (map, resource) {
-              map[resource.resourcePath] = resource;
-
-              return map;
-            }, {}));
-          }
-
-          suArgs.push(options || {});
-
-          return swaggerUi.apply(undefined, suArgs);
-        },
         swaggerValidator: require('./middleware/swagger-validator')
       });
     } catch (err) {

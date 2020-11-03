@@ -32,7 +32,8 @@ var debug = require('debug')('swagger-tools:middleware:metadata');
 var mHelpers = require('./helpers');
 var multer = require('multer');
 var parseurl = require('parseurl');
-var pathToRegexp = require('path-to-regexp');
+var { pathToRegexp } = require('path-to-regexp');
+var regexEscape = require('regex-escape');
 
 // Upstream middlewares
 var bodyParserOptions = {
@@ -258,12 +259,13 @@ var processSwaggerDocuments = function (rlOrSO, apiDeclarations) {
 
     return cParams;
   };
+
   var createCacheEntry = function (adOrSO, apiOrPath, indexOrName, indent) {
     var apiPath = spec.version === '1.2' ? apiOrPath.path : indexOrName;
     var expressPath = expressStylePath(adOrSO.basePath, spec.version === '1.2' ? apiOrPath.path: indexOrName);
     var keys = [];
     var handleSubPaths = !(rlOrSO.paths && rlOrSO.paths[apiPath]['x-swagger-router-handle-subpaths']);
-    var re = pathToRegexp(expressPath, keys, { end: handleSubPaths });
+    var re = pathToRegexp(regexEscape(expressPath), keys, { end: handleSubPaths });
     var cacheKey = re.toString();
     var cacheEntry;
 
@@ -272,32 +274,19 @@ var processSwaggerDocuments = function (rlOrSO, apiDeclarations) {
       cacheKey = expressPath;
     }
 
-    debug(new Array(indent + 1).join(' ') + 'Found %s: %s',
-          (spec.version === '1.2' ? 'API' : 'Path'),
-          apiPath);
+    debug(new Array(indent + 1).join(' ') + 'Found Path: %s', apiPath);
 
-    cacheEntry = apiCache[cacheKey] = spec.version === '1.2' ?
-      {
-        api: apiOrPath,
-        apiDeclaration: adOrSO,
-        apiIndex: indexOrName,
-        keys: keys,
-        params: {},
-        re: re,
-        operations: {},
-        resourceListing: rlOrSO
-      } :
-      {
-        apiPath: indexOrName,
-        path: apiOrPath,
-        keys: keys,
-        re: re,
-        operations: {},
-        swaggerObject: {
-          original: rlOrSO,
-          resolved: adOrSO
-        }
-      };
+    cacheEntry = apiCache[cacheKey] = {
+      apiPath: indexOrName,
+      path: apiOrPath,
+      keys: keys,
+      re: re,
+      operations: {},
+      swaggerObject: {
+        original: rlOrSO,
+        resolved: adOrSO
+      }
+    };
 
     return cacheEntry;
   };
@@ -410,16 +399,7 @@ exports = module.exports = function (rlOrSO, apiDeclarations) {
       return next();
     }
 
-    metadata = swaggerVersion === '1.2' ?
-      {
-        api: cacheEntry.api,
-        apiDeclaration: cacheEntry.apiDeclaration,
-        apiIndex: cacheEntry.apiIndex,
-        params: {},
-        resourceIndex: cacheEntry.resourceIndex,
-        resourceListing: cacheEntry.resourceListing
-      } :
-    {
+    metadata = {
       apiPath : cacheEntry.apiPath,
       path: cacheEntry.path,
       params: {},
@@ -429,13 +409,8 @@ exports = module.exports = function (rlOrSO, apiDeclarations) {
     if (_.isPlainObject(cacheEntry.operations[method])) {
       metadata.operation = cacheEntry.operations[method].operation;
       metadata.operationPath = cacheEntry.operations[method].operationPath;
-
-      if (swaggerVersion === '1.2') {
-        metadata.authorizations = metadata.operation.authorizations || cacheEntry.apiDeclaration.authorizations;
-      } else {
-        metadata.operationParameters = cacheEntry.operations[method].operationParameters;
-        metadata.security = metadata.operation.security || metadata.swaggerObject.security || [];
-      }
+      metadata.operationParameters = cacheEntry.operations[method].operationParameters;
+      metadata.security = metadata.operation.security || metadata.swaggerObject.security || [];
     }
 
     metadata.swaggerVersion = swaggerVersion;

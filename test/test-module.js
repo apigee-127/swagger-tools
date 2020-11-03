@@ -36,11 +36,7 @@ var assert = require('assert');
 var swagger = require('../');
 
 var middlewares = ['swaggerMetadata', 'swaggerRouter', 'swaggerSecurity', 'swaggerUi', 'swaggerValidator'];
-var petJson = _.cloneDeep(require('../samples/1.2/pet.json'));
 var petStoreJson = _.cloneDeep(require('../samples/2.0/petstore.json'));
-var rlJson = _.cloneDeep(require('../samples/1.2/resource-listing.json'));
-var storeJson = _.cloneDeep(require('../samples/1.2/store.json'));
-var userJson = _.cloneDeep(require('../samples/1.2/user.json'));
 
 describe('swagger-tools', function () {
   describe('initializeMiddlware', function () {
@@ -52,115 +48,6 @@ describe('swagger-tools', function () {
       } catch (err) {
         assert.equal('Unsupported Swagger version: undefined', err.message);
       }
-    });
-
-    describe('Swagger 1.2', function () {
-      it('should throw errors for invalid arguments', function () {
-        var errors = {
-          'rlOrSO is required': [],
-          'rlOrSO must be an object': ['resource-listing.json'],
-          'resources is required': [rlJson],
-          'resources must be an array': [rlJson, petJson],
-          'callback is required': [rlJson, [petJson, storeJson, userJson]],
-          'callback must be a function': [rlJson, [petJson, storeJson, userJson], 'wrong-type']
-        };
-
-        _.each(errors, function (args, message) {
-          try {
-            swagger.initializeMiddleware.apply(undefined, args);
-
-            assert.fail(null, null, 'Should had failed above');
-          } catch (err) {
-            assert.equal(message, err.message);
-          }
-        });
-      });
-
-      it('should throw errors for invalid Swagger documents', function (done) {
-        var cRlJson = _.cloneDeep(rlJson);
-
-        cRlJson.apis.push(cRlJson.apis[0]);
-
-        swagger.initializeMiddleware(cRlJson, [petJson, storeJson, userJson], function (err) {
-          assert.ok(!_.isUndefined(err));
-
-          assert.deepEqual(err.results.errors, [
-            {
-              code: 'DUPLICATE_RESOURCE_PATH',
-              message: 'Resource path already defined: /pet',
-              path: ['apis', '3', 'path']
-            }
-          ]);
-          assert.equal(err.results.warnings.length, 0);
-
-          done();
-        });
-      });
-
-      it('should not throw error when Swagger document have only warnings', function () {
-        var cPetJson = _.cloneDeep(petJson);
-
-        cPetJson.models.Person = {
-          id: 'Person',
-          properties: {
-            age: {
-              type: 'integer'
-            },
-            name: {
-              type: 'string'
-            }
-          }
-        };
-
-        try {
-          swagger.initializeMiddleware(rlJson, [cPetJson, storeJson, userJson], function(middleware) {
-            _.each(Object.keys(middlewares), function (key) {
-              assert.ok(!_.isFunction(middleware[key]));
-            });
-          });
-        } catch (err) {
-          assert.fail(null, null, 'Should not had failed');
-        }
-      });
-
-      it('should not throw an error for valid arguments', function () {
-        try {
-          swagger.initializeMiddleware(rlJson, [petJson, storeJson, userJson], function(middleware) {
-            _.each(Object.keys(middlewares), function (key) {
-              assert.ok(!_.isFunction(middleware[key]));
-            });
-          });
-        } catch (err) {
-          assert.fail(null, null, 'Should not had failed');
-        }
-      });
-
-      describe('issues', function () {
-        it('should handle invalid swagger version (Issue 137)', function (done) {
-          var cRlJson = _.cloneDeep(rlJson);
-
-          cRlJson.swaggerVersion = 1.2;
-
-          swagger.initializeMiddleware(cRlJson, [petJson, storeJson, userJson], function (err) {
-            assert.ok(!_.isUndefined(err));
-            assert.equal('Swagger document(s) failed validation so the server cannot start', err.message);
-            assert.deepEqual({
-              errors: [
-                {
-                  code: 'ENUM_MISMATCH',
-                  message: 'No enum match for: 1.2',
-                  path: [
-                    'swaggerVersion'
-                  ]
-                }
-              ],
-              warnings: []
-            }, err.results);
-
-            done();
-          });
-        });
-      });
     });
 
     describe('Swagger 2.0', function () {
@@ -282,7 +169,7 @@ describe('swagger-tools', function () {
 
   describe('specs', function () {
     it('should have proper exports', function () {
-      assert.equal(0, _.difference(['v1', 'v1_2', 'v2', 'v2_0'], Object.keys(swagger.specs)).length);
+      assert.equal(0, _.difference(['v2', 'v2_0'], Object.keys(swagger.specs)).length);
     });
   });
 });

@@ -53,7 +53,9 @@ var sampleInvalidPet = {
 describe('Swagger Validator Middleware v2.0', function () {
   describe('request validation', function () {
     it('should not validate request when there are no operations', function (done) {
-      helpers.createServer([petStoreJson], {}, function (app) {
+      helpers.createServer([petStoreJson], {
+        handler: function (req, res) { res.end('OK'); }
+      }, function (app) {
         request(app)
         .get('/api/foo')
         .expect(200)
@@ -568,6 +570,7 @@ describe('Swagger Validator Middleware v2.0', function () {
   describe('response validation', function () {
     it('should not validate response when there are no operations', function (done) {
       helpers.createServer([petStoreJson], {
+        handler: function (req, res) { res.end('OK'); },
         swaggerValidatorOptions: {
           validateResponse: true
         }

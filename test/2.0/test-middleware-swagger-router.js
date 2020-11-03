@@ -69,6 +69,7 @@ petStoreJson.paths['/pets/{id}'].delete['x-swagger-router-controller'] = 'Pets';
 describe('Swagger Router Middleware v2.0', function () {
   it('should do no routing when there is no route match', function (done) {
     helpers.createServer([petStoreJson], {
+      handler: function (req, res) { res.end('OK'); },
       swaggerRouterOptions: optionsWithControllersDir
     }, function (app) {
       request(app)
@@ -188,6 +189,7 @@ describe('Swagger Router Middleware v2.0', function () {
     delete cPetStoreJson.paths['/pets/{id}'].delete['x-swagger-router-controller'];
 
     helpers.createServer([cPetStoreJson], {
+      handler: function (req, res) { res.end('OK'); },
       swaggerRouterOptions: cOptions
     }, function (app) {
       request(app)
