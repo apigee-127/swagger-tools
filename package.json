@@ -1,6 +1,6 @@
 {
   "name": "@axway/swagger-tools",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "description": "Various tools for using and integrating with Swagger 2.0.",
   "main": "index.js",
   "author": {
