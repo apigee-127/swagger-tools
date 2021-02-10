@@ -1,0 +1,83 @@
+{
+    "swagger": "2.0",
+    "schemes": [ "http" ],
+    "info": {
+        "description": "Sample API",
+        "version": "1.0.0",
+        "title": "Sample API"
+    },
+    "paths": {
+        "/greet": {
+            "get": {
+                "description":"Greet API",
+                "operationId": "Greet",
+                "parameters": [],
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "201": {
+                        "description": "greeting 201",
+                        "schema": {
+                            "$ref": "#/definitions/Success%21Type"
+                        }
+                    },
+                    "202": {
+                        "description": "greeting 202",
+                        "schema": {
+                            "$ref": "#/definitions/Success%23"
+                        }
+                    },
+                    "203": {
+                        "description": "greeting 203",
+                        "schema": {
+                            "$ref": "#/definitions/SP~1T"
+                        }
+                    },
+                    "204": {
+                        "description": "greeting 204",
+                        "schema": {
+                            "$ref": "#/definitions/SP~0T"
+                        }
+                    }                                                                                
+                },
+                "summary": "Greet a user",
+                "tags": [
+                    "store"
+                ]
+            }
+        }
+    },
+    "definitions": {
+        "SP~T": {
+            "allOf": [
+                {
+                    "$ref": "#/definitions/Success%23"
+                }
+            ]
+        },        
+        "SP/T": {
+            "allOf": [
+                {
+                    "$ref": "#/definitions/Success%23"
+                }
+            ]
+        },        
+        "Success!Type": {
+            "type": "object",
+            "properties": {
+                "metadatos": {
+                    "type": "object"
+                }
+            }
+        },
+        "Success#": {
+            "type": "object",
+            "properties": {
+                "metadatos": {
+                    "type": "object"
+                }
+            }
+        }        
+    }
+}

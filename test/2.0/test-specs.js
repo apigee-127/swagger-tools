@@ -32,6 +32,7 @@ var async = require('async');
 var JsonRefs = require('json-refs');
 var spec = (typeof window === 'undefined' ? require('../../lib/specs') : SwaggerTools.specs).v2_0; // jshint ignore:line
 var petStoreJson = _.cloneDeep(require('../../samples/2.0/petstore.json'));
+var jsonWithEncodedRefs = _.cloneDeep(require('../../samples/2.0/jsonWithEncodedRefs.json'));
 
 describe('Specification v2.0', function () {
   var server;
@@ -89,6 +90,19 @@ describe('Specification v2.0', function () {
 
     it('should return undefined for valid JSON files', function (done) {
       spec.validate(petStoreJson, function (err, result) {
+        if (err) {
+          return done(err);
+        }
+
+        assert.ok(_.isUndefined(err));
+        assert.ok(_.isUndefined(result));
+
+        done();
+      });
+    });
+
+    it('should return undefined for JSON files with URI encoded refs', function (done) {
+      spec.validate(jsonWithEncodedRefs, function (err, result) {
         if (err) {
           return done(err);
         }
