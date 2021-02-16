@@ -1,83 +1,138 @@
 {
-    "swagger": "2.0",
-    "schemes": [ "http" ],
-    "info": {
-        "description": "Sample API",
-        "version": "1.0.0",
-        "title": "Sample API"
-    },
-    "paths": {
-        "/greet": {
-            "get": {
-                "description":"Greet API",
-                "operationId": "Greet",
-                "parameters": [],
-                "produces": [
-                    "application/json"
-                ],
-                "responses": {
-                    "201": {
-                        "description": "greeting 201",
-                        "schema": {
-                            "$ref": "#/definitions/Success%21Type"
-                        }
-                    },
-                    "202": {
-                        "description": "greeting 202",
-                        "schema": {
-                            "$ref": "#/definitions/Success%23"
-                        }
-                    },
-                    "203": {
-                        "description": "greeting 203",
-                        "schema": {
-                            "$ref": "#/definitions/SP~1T"
-                        }
-                    },
-                    "204": {
-                        "description": "greeting 204",
-                        "schema": {
-                            "$ref": "#/definitions/SP~0T"
-                        }
-                    }                                                                                
-                },
-                "summary": "Greet a user",
-                "tags": [
-                    "store"
-                ]
-            }
-        }
-    },
+	"swagger": "2.0",
+	"info": {
+		"description": "Greeting",
+		"version": "1.0.0",
+		"title": "Greeting API"
+	},
+	"paths": {
+		"/greet": {
+			"get": {
+				"description": "",
+				"operationId": "Greet",
+				"parameters": [
+					{
+						"description": "The username",
+						"in": "query",
+						"name": "username",
+						"required": true,
+						"type": "string"
+					}
+				],
+				"produces": [
+					"application/json"
+				],
+				"responses": {
+					"201": {
+						"description": "schemaWithNestedRefs",
+						"schema": {
+							"$ref": "#/definitions/ProductWithRef"
+						}
+					},
+					"202": {
+						"description": "definitionWithTilde",
+						"schema": {
+							"$ref": "#/definitions/Pro~0duct"
+						}                        
+					},
+					"203": {
+						"description": "definitionWithHash",
+						"schema": {
+							"$ref": "#/definitions/Pro~1duct"
+						}                  
+					},
+					"204": {
+						"description": "trickyOne",
+						"schema": {
+							"$ref": "#/definitions/Pro%3A%23du~0~1ct%21"
+						}                  
+                    }
+				},
+				"summary": "Greet a user",
+				"tags": [
+					"helloworld"
+				]
+			}
+		}
+	},
     "definitions": {
-        "SP~T": {
+        "ProductWithRef": {
             "allOf": [
                 {
-                    "$ref": "#/definitions/Success%23"
-                }
-            ]
-        },        
-        "SP/T": {
-            "allOf": [
+                    "$ref": "#/definitions/Apple"
+                },
                 {
-                    "$ref": "#/definitions/Success%23"
-                }
+                    "$ref": "#/definitions/Banana"
+                }                
             ]
-        },        
-        "Success!Type": {
+        },
+        "Apple": {
             "type": "object",
             "properties": {
-                "metadatos": {
-                    "type": "object"
-                }
+                "brand": {
+                    "type": "string",
+                    "description": "Apple brand"
+                },
+                "origin": {
+                    "type": "string",
+                    "description": "Country of origin"
+                }                
             }
         },
-        "Success#": {
+        "Banana": {
             "type": "object",
             "properties": {
-                "metadatos": {
-                    "type": "object"
-                }
+                "brand": {
+                    "type": "string",
+                    "description": "Apple brand"
+                },
+                "origin": {
+                    "type": "string",
+                    "description": "Country of origin"
+                }                
             }
-        }        
-    }
+        },
+        "Pro/duct": {
+            "type": "object"
+        },
+        "Pro~duct": {
+            "type": "object"
+        },
+        "Pro:#du~/ct!": {
+            "allOf": [
+                {
+                    "$ref": "#/definitions/Ap~1ple%3F"
+                },
+                {
+                    "$ref": "#/definitions/Bana~1na~0"
+                }                
+            ]
+        },
+        "Ap/ple?": {
+            "type": "object",
+            "properties": {
+                "brand": {
+                    "type": "string",
+                    "description": "Apple brand"
+                },
+                "origin": {
+                    "type": "string",
+                    "description": "Country of origin"
+                }                
+            }
+        },
+        "Bana/na~": {
+            "type": "object",
+            "properties": {
+                "brand": {
+                    "type": "string",
+                    "description": "Apple brand"
+                },
+                "origin": {
+                    "type": "string",
+                    "description": "Country of origin"
+                }                
+            }
+        }              
+    }	
 }

@@ -8,3 +8,5 @@ test/1.2/test-specs-browser.js
 test/2.0/test-specs-browser.js
 test/*/browser
 .tern-project
+package-lock.json
+.DS_Store
