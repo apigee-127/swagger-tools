@@ -938,7 +938,7 @@ describe('Swagger Validator Middleware v2.0', function () {
       cPetStoreJson.paths['/pets/{id}'].get.operationId = 'getPetById';
 
       // Make name required
-      cPetStoreJson.definitions.Tag.required = ['name'];
+      cPetStoreJson.definitions['Tag~'].required = ['name'];
 
       cSamplePet.tags = [
         {id: 1, name: 'Tag 1'},
@@ -1065,7 +1065,7 @@ describe('Swagger Validator Middleware v2.0', function () {
       cPetStoreJson.paths['/pets'].get.operationId = 'getPets';
 
       // Make name required
-      cPetStoreJson.definitions.Tag.required = ['name'];
+      cPetStoreJson.definitions['Tag~'].required = ['name'];
 
       cSamplePet.tags = [
         {id: 1, name: 'Tag 1'},

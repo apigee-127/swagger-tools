@@ -22,7 +22,7 @@
       "get": {
         "security": [
           {
-            "oauth%2F": ["read"]
+            "oauth2": ["read"]
           }
         ],
         "tags": [ "Pet Operations" ],
@@ -57,7 +57,7 @@
       "post": {
         "security": [
           {
-            "oauth/": ["write"]
+            "oauth2": ["write"]
           }
         ],
         "tags": [ "Pet Operations" ],
@@ -201,7 +201,7 @@
         },
         "tags": {
           "items": {
-            "$ref": "#/definitions/Tag~0"
+            "$ref": "#/definitions/Tag"
           },
           "type": "array"
         }
@@ -221,17 +221,14 @@
         "name"
       ]
     },
-    "complex/ ": {
-      "type": "string"
-    },
-    "Tag~": {
+    "Tag": {
       "properties": {
         "id": {
           "format": "int64",
           "type": "integer"
         },
         "name": {
-          "$ref": "#/definitions/complex~1%20"
+          "type": "string"
         }
       }
     },
@@ -246,7 +243,7 @@
           "format": "int32"
         },
         "message": {
-          "$ref": "#/definitions/complex%2F%20"
+          "type": "string"
         }
       }
     }
@@ -263,24 +260,6 @@
       "scopes": {
         "read": "Read access.",
         "write": "Write access"
-      },
-      "flow": "accessCode",
-      "authorizationUrl": "http://petstore.swagger.wordnik.com/oauth/authorize",
-      "tokenUrl": "http://petstore.swagger.wordnik.com/oauth/token"
-    },
-    "oauth/": {
-      "type": "oauth2",
-      "scopes": {
-        "write": "Write access."
-      },
-      "flow": "accessCode",
-      "authorizationUrl": "http://petstore.swagger.wordnik.com/oauth/authorize",
-      "tokenUrl": "http://petstore.swagger.wordnik.com/oauth/token"
-    },
-    "oauth%2F": {
-      "type": "oauth2",
-      "scopes": {
-        "read": "Read access."
       },
       "flow": "accessCode",
       "authorizationUrl": "http://petstore.swagger.wordnik.com/oauth/authorize",

@@ -32,6 +32,7 @@ var async = require('async');
 var JsonRefs = require('json-refs');
 var spec = (typeof window === 'undefined' ? require('../../lib/specs') : SwaggerTools.specs).v2_0; // jshint ignore:line
 var petStoreJson = _.cloneDeep(require('../../samples/2.0/petstore.json'));
+var petStoreOriginalJson = _.cloneDeep(require('../../samples/2.0/petstoreOriginal.json'));
 var jsonWithEncodedRefs = _.cloneDeep(require('../../samples/2.0/jsonWithEncodedRefs.json'));
 
 describe('Specification v2.0', function () {
@@ -1627,7 +1628,7 @@ describe('Specification v2.0', function () {
       });
 
       it('unresolvable security definition (operation)', function (done) {
-        var swaggerObject = _.cloneDeep(petStoreJson);
+        var swaggerObject = _.cloneDeep(petStoreOriginalJson);
 
         swaggerObject.paths['/pets'].get.security = [
           {
@@ -1681,7 +1682,7 @@ describe('Specification v2.0', function () {
       });
 
       it('unresolvable security definition scope (operation)', function (done) {
-        var swaggerObject = _.cloneDeep(petStoreJson);
+        var swaggerObject = _.cloneDeep(petStoreOriginalJson);
 
         swaggerObject.paths['/pets'].get.security = [
           {
@@ -1713,7 +1714,7 @@ describe('Specification v2.0', function () {
       //  Not possible due to https://github.com/swagger-api/swagger-spec/issues/159
 
       it('duplicate security definition reference (global)', function (done) {
-        var swaggerObject = _.cloneDeep(petStoreJson);
+        var swaggerObject = _.cloneDeep(petStoreOriginalJson);
 
         swaggerObject.security = [
           {
@@ -1743,7 +1744,7 @@ describe('Specification v2.0', function () {
       });
 
       it('duplicate security definition reference (operation)', function (done) {
-        var swaggerObject = _.cloneDeep(petStoreJson);
+        var swaggerObject = _.cloneDeep(petStoreOriginalJson);
 
         swaggerObject.paths['/pets'].get.security = [
           {
@@ -2081,7 +2082,10 @@ describe('Specification v2.0', function () {
       ePet.properties.id.minimum = 0;
       ePet.properties.tags = {
         items: {
-          properties: _.cloneDeep(swaggerObject.definitions.Tag.properties)
+          properties: {
+            id: _.cloneDeep(swaggerObject.definitions['Tag~'].properties.id),
+            name: _.cloneDeep(swaggerObject.definitions['complex/ '])
+          }
         },
         type: 'array'
       };

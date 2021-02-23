@@ -8,6 +8,11 @@
 	"paths": {
 		"/greet": {
 			"get": {
+                "security": [
+                    {
+                        "oauth%2F": ["read"]
+                    }
+                ],
 				"description": "",
 				"operationId": "Greet",
 				"parameters": [
@@ -133,6 +138,17 @@
                     "description": "Country of origin"
                 }                
             }
-        }              
-    }	
+        }
+    },
+    "securityDefinitions": {
+        "oauth%2F": {
+          "type": "oauth2",
+          "scopes": {
+            "read": "Read access."
+          },
+          "flow": "accessCode",
+          "authorizationUrl": "http://petstore.swagger.wordnik.com/oauth/authorize",
+          "tokenUrl": "http://petstore.swagger.wordnik.com/oauth/token"
+        }
+      }
 }

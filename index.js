@@ -72,6 +72,7 @@ var initializeMiddleware = function initializeMiddleware (rlOrSO, resources, cal
       err = new Error('Swagger document(s) failed validation so the server cannot start');
 
       err.failedValidation = true;
+      console.log(results);
       err.results = results;
     }
 
