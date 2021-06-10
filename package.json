@@ -70,7 +70,7 @@
     "body-parser": "1.18.2",
     "commander": "~2.11.0",
     "debug": "^3.1.0",
-    "js-yaml": "^3.3.1",
+    "js-yaml": "^4.1.0",
     "json-refs": "^3.0.2",
     "lodash": "^4.17.4",
     "multer": "^1.1.0",
