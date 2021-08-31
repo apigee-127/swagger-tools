@@ -7,7 +7,6 @@ see what issues we are aware of and what features/enhancements we are working on
 
 [![Join the chat at https://gitter.im/apigee-127/swagger-tools](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/apigee-127/swagger-tools?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-* Build status: [![Build Status](https://travis-ci.org/apigee-127/swagger-tools.svg)](https://travis-ci.org/apigee-127/swagger-tools)
 * Dependencies: [![Dependencies](https://david-dm.org/apigee-127/swagger-tools.svg)](https://david-dm.org/apigee-127/swagger-tools)
 * Developer dependencies: [![Dev Dependencies](https://david-dm.org/apigee-127/swagger-tools/dev-status.svg)](https://david-dm.org/apigee-127/swagger-tools#info=devDependencies&view=table)
 * Downloads: [![NPM Downloads Per Month](http://img.shields.io/npm/dm/swagger-tools.svg?style=flat)](https://www.npmjs.org/package/swagger-tools)
