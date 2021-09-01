@@ -295,6 +295,221 @@ describe('Swagger Router Middleware v2.0', function () {
       done();
     });
   });
+    
+  describe('get mock values from default then example', function () {
+    it('should return mock string from default over example', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      cPetStoreJson.paths['/pets/{id}'].get.responses['200'].schema = {
+          type: 'string',
+          pattern: '^([A-Za-z0-9]*)$',
+          example: 'exampleString',
+          default: 'defaultString'
+      };
+          
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+            useStubs: true
+        }
+      }, function (app) {
+        request(app)
+        .get('/api/pets/1')
+        .expect(200)
+        .end(helpers.expectContent(JSON.stringify('defaultString'), done));
+      });
+    });
+
+    it('should return mock string from example if no default', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+          
+      cPetStoreJson.paths['/pets/{id}'].get.responses['200'].schema = {
+          type: 'string',
+          pattern: '^([A-Za-z0-9]*)$',
+          example: 'exampleString'
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+            useStubs: true
+        }
+      }, function (app) {
+        request(app)
+        .get('/api/pets/1')
+        .expect(200)
+        .end(helpers.expectContent(JSON.stringify('exampleString'), done));
+      });
+    });
+
+    it('should return mock number from default over example', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      cPetStoreJson.paths['/pets/{id}'].get.responses['200'].schema = {
+          type: 'number',
+          example: 1.01,
+          default: 2.02
+      };
+          
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+            useStubs: true
+        }
+      }, function (app) {
+        request(app)
+        .get('/api/pets/1')
+        .expect(200)
+        .end(helpers.expectContent(JSON.stringify(2.02), done));
+      });
+    });
+
+    it('should return mock number from example if no default', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+          
+      cPetStoreJson.paths['/pets/{id}'].get.responses['200'].schema = {
+          type: 'number',
+          example: 1.01
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+            useStubs: true
+        }
+      }, function (app) {
+        request(app)
+        .get('/api/pets/1')
+        .expect(200)
+        .end(helpers.expectContent(JSON.stringify(1.01), done));
+      });
+    });
+  
+    it('should return mock integer from default over example', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      cPetStoreJson.paths['/pets/{id}'].get.responses['200'].schema = {
+          type: 'integer',
+          example: 1,
+          default: 2
+      };
+          
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+            useStubs: true
+        }
+      }, function (app) {
+        request(app)
+        .get('/api/pets/1')
+        .expect(200)
+        .end(helpers.expectContent(JSON.stringify(2), done));
+      });
+    });
+
+    it('should return mock integer from example if no default', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+          
+      cPetStoreJson.paths['/pets/{id}'].get.responses['200'].schema = {
+          type: 'integer',
+          example: 1
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+            useStubs: true
+        }
+      }, function (app) {
+        request(app)
+        .get('/api/pets/1')
+        .expect(200)
+        .end(helpers.expectContent(JSON.stringify(1), done));
+      });
+    });
+  
+    it('should return mock boolean from default over example', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+
+      cPetStoreJson.paths['/pets/{id}'].get.responses['200'].schema = {
+          type: 'boolean',
+          example: false,
+          default: true
+      };
+          
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+            useStubs: true
+        }
+      }, function (app) {
+        request(app)
+        .get('/api/pets/1')
+        .expect(200)
+        .end(helpers.expectContent(JSON.stringify(true), done));
+      });
+    });
+
+    it('should return mock boolean from example if no default', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+          
+      cPetStoreJson.paths['/pets/{id}'].get.responses['200'].schema = {
+          type: 'boolean',
+          example: true
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+            useStubs: true
+        }
+      }, function (app) {
+        request(app)
+        .get('/api/pets/1')
+        .expect(200)
+        .end(helpers.expectContent(JSON.stringify(true), done));
+      });
+    });
+  });
+    
+  describe('mock arrays', function () {
+    it('should return array of specified min length', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+            
+      cPetStoreJson.paths['/pets/{id}'].get.responses['200'].schema = {
+          type: 'array',
+          items: [{type: 'number'}],
+          minItems: 2,
+          maxItems: 3
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          useStubs: true
+        }
+      }, function (app) {
+        request(app)
+        .get('/api/pets/1')
+        .expect(200)
+        .end(helpers.expectContent(JSON.stringify([1,1]), done));
+      });
+    });
+
+    it('should return array of length 1 if not specified', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
+            
+      cPetStoreJson.paths['/pets/{id}'].get.responses['200'].schema = {
+          type: 'array',
+          items: [{type: 'number'}],
+          maxItems: 3
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          useStubs: true
+        }
+      }, function (app) {
+        request(app)
+        .get('/api/pets/1')
+        .expect(200)
+        .end(helpers.expectContent(JSON.stringify([1]), done));
+      });
+    });
+
+    
+    });
 
   describe('issues', function () {
     it('should handle uncaught exceptions (Issue 123)', function (done) {
