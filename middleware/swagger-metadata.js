@@ -203,14 +203,14 @@ var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch,
       var oVal;
       var value;
 
-      debug('    %s', parameter.name);
+      debug('    %j', parameter.name);
       debug('      Type: %s%s', pType, !_.isUndefined(parameter.format) ? ' (format: ' + parameter.format + ')': '');
 
       // Located here to make the debug output pretty
       oVal = mHelpers.getParameterValue(version, parameter, pathKeys, pathMatch, req, debug);
       value = mHelpers.convertValue(oVal, _.isUndefined(parameter.schema) ? parameter : parameter.schema, pType, pLocation);
 
-      debug('      Value: %s', value);
+      debug('      Value: %j', value);
 
       swaggerMetadata.params[parameter.name] = {
         path: version === '1.2' ?
