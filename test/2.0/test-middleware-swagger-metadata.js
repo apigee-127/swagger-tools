@@ -252,6 +252,17 @@ describe('Swagger Metadata Middleware v2.0', function () {
     });
   });
 
+  it('should not crash when passing wrong data in path',function(done) {
+    var cPetStoreJson = _.cloneDeep(petStoreJson);
+    
+     helpers.createServer([cPetStoreJson],{}, function (app) {
+      request(app)
+        .get('/api/pets/:id')
+        .expect(400)
+        .end(helpers.expectContent('Request validation failed: Parameter (id) is not a valid int64 integer: :id', done));
+    });
+  });
+
   describe('non-multipart form parameters', function () {
     it('should handle primitives', function (done) {
       var cPetStoreJson = _.cloneDeep(petStoreJson);
