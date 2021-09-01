@@ -67,7 +67,7 @@ Swagger document(s).
 
 ## Swagger Middleware Debugging
 
-All Swagger Middleware uses the [debug](debug) module to allow you to have a better idea of what is going on during the
+All Swagger Middleware uses the [debug][debug] module to allow you to have a better idea of what is going on during the
 middleware initialization and processing lifecycle.  To enable debugging globally, just set the `DEBUG` environment
 variable to be `swagger-tools:middleware:*`.  If you want to only see debugging output for a specific middleware, you
 can do that too.  To do so, you sould set `DEBUG` to a value like this:
@@ -116,7 +116,7 @@ Your server is listening on port 3000 (http://localhost:3000)
   swagger-tools:middleware:router   Mock mode: false +0ms
 ```
 
-To see mode documentation on how to further talior the debugging to your needs, please view the [debug](debug) module
+To see mode documentation on how to further talior the debugging to your needs, please view the [debug][debug] module
 documentation.
 
 ## Swagger Middleware Errors
