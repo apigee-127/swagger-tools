@@ -113,7 +113,9 @@ var validateValue = function (req, schema, path, val, location, callback) {
   var isModel = mHelpers.isModelParameter(version, schema);
   var spec = cHelpers.getSpec(version);
 
-  val = mHelpers.convertValue(val, schema, mHelpers.getParameterType(schema), location);
+  // In swagger 2, a parameter in body will have a .schema, rather than be a schema: http://swagger.io/specification/#parameterObject
+  // getParameterType() is already savvy to this, so we do what it does for the schema.
+  val = mHelpers.convertValue(val, _.isUndefined(schema.schema) ? schema : schema.schema, mHelpers.getParameterType(schema), location);
 
   try {
     validators.validateSchemaConstraints(version, schema, path, val);
