@@ -229,7 +229,7 @@ var mockResponse = function (req, res, next, handlerName) {
       debug('send mock response: %s', response);
 
       // Explicitly set the response status to 200 if not present (Issue #269)
-      if (_.isUndefined(req.statusCode)) {
+      if (_.isUndefined(res.statusCode)) {
         res.statusCode = 200;
       }
 
