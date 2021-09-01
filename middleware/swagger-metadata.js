@@ -38,9 +38,6 @@ var pathToRegexp = require('path-to-regexp');
 var bodyParserOptions = {
   extended: false
 };
-var multerOptions = {
-  storage: multer.memoryStorage()
-};
 var textBodyParserOptions = {
   type: '*/*'
 };
@@ -76,7 +73,21 @@ var bodyParser = function (req, res, next) {
     next();
   }
 };
-var realMultiPartParser = multer(multerOptions);
+
+function imageFilter(req, file, cb){
+  // accept only image files.
+  if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+    return cb(new Error('Only image files are allowed'), false);
+  } else if (!file.mimetype.match(/image\/.*/)) {
+    return cb(new Error('Only image files are allowed'), false);
+  }
+  cb(null, true);
+};
+
+var realMultiPartParser;
+var imageMultiPartParser;
+var handleFileUpload;
+
 var makeMultiPartParser = function (parser) {
   return function (req, res, next) {
     if (_.isUndefined(req.files)) {
@@ -172,7 +183,7 @@ var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch,
       case 'formData':
         if (paramType.toLowerCase() === 'file') {
           // Swagger spec does not allow array of files, so maxCount should be 1
-          fields.push({name: paramName, maxCount: 1});
+          fields.push({name: paramName, maxCount: 1, format: parameter.schema.format});
         }
         break;
     }
@@ -181,12 +192,31 @@ var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch,
   }, []);
   
   var contentType = req.headers['content-type'];
-  if (multiPartFields.length) {
-    // If there are files, use multer#fields
-    parsers.push(makeMultiPartParser(realMultiPartParser.fields(multiPartFields)));
-  } else if (contentType && contentType.split(';')[0] === 'multipart/form-data') {
-    // If no files but multipart form, use empty multer#array for text fields
-    parsers.push(makeMultiPartParser(realMultiPartParser.array()));
+  
+  if (handleFileUpload) {
+    
+    if (multiPartFields.length) {
+      // If there are files, use multer#fields
+      
+      let imageFiles = multiPartFields.filter(field => field.format === 'image');
+
+      if (imageFiles.length === 0) {
+        parsers.push(makeMultiPartParser(realMultiPartParser.fields(multiPartFields)));
+      } else if (imageFiles.length === multiPartFields.length) {
+        parsers.push(makeMultiPartParser(imageMultiPartParser.fields(multiPartFields)));
+      } else {
+        multiPartFields.forEach(field => {
+          if (field.format === 'image') {
+            parsers.push(makeMultiPartParser(imageMultiPartParser.fields([field])));
+          } else {
+          } parsers.push(makeMultiPartParser(realMultiPartParser.fields([field])));
+        });
+      }
+    
+    } else if (contentType && contentType.split(';')[0] === 'multipart/form-data') {
+      // If no files but multipart form, use empty multer#array for text fields
+      parsers.push(makeMultiPartParser(realMultiPartParser.array()));
+    }
   }
 
   async.map(parsers, function (parser, callback) {
@@ -358,6 +388,8 @@ var processSwaggerDocuments = function (rlOrSO, apiDeclarations) {
   return apiCache;
 };
 
+let apiCache;
+
 /**
  * Middleware for providing Swagger information to downstream middleware and request handlers.  For all requests that
  * match a Swagger path, 'req.swagger' will be provided with pertinent Swagger details.  Since Swagger 1.2 and 2.0
@@ -370,10 +402,22 @@ var processSwaggerDocuments = function (rlOrSO, apiDeclarations) {
  *
  * @returns the middleware function
  */
-exports = module.exports = function (rlOrSO, apiDeclarations) {
+exports = module.exports = function (rlOrSO, options) {
+  options = options || {};
+  handleFileUpload = options.handleFileUpload !== false;
+  let apiDeclarations = undefined;
+  
+  if(handleFileUpload) {
+    let multerOptions = options.multer || {
+      storage: multer.memoryStorage()
+    };
+    realMultiPartParser = multer(multerOptions);
+    imageMultiPartParser = multer(Object.assign({}, multerOptions, {imageFilter}));
+  }
+  
   debug('Initializing swagger-metadata middleware');
 
-  var apiCache = processSwaggerDocuments(rlOrSO, apiDeclarations);
+  apiCache = processSwaggerDocuments(rlOrSO, apiDeclarations);
   var swaggerVersion = cHelpers.getSwaggerVersion(rlOrSO);
 
   if (_.isUndefined(rlOrSO)) {
@@ -389,18 +433,13 @@ exports = module.exports = function (rlOrSO, apiDeclarations) {
       throw new TypeError('apiDeclarations must be an array');
     }
   }
-
-  return function swaggerMetadata (req, res, next) {
+  
+  return function swaggerMetadata(req, res, next) {
     var method = req.method.toLowerCase();
     var path = parseurl(req).pathname;
-    var cacheEntry;
-    var match;
     var metadata;
 
-    cacheEntry = apiCache[path] || _.find(apiCache, function (metadata) {
-      match = metadata.re.exec(path);
-      return _.isArray(match);
-    });
+    let {cacheEntry, match} = getCacheEntry(path);
 
     debug('%s %s', req.method, req.url);
     debug('  Is a Swagger path: %s', !_.isUndefined(cacheEntry));
@@ -452,3 +491,18 @@ exports = module.exports = function (rlOrSO, apiDeclarations) {
     }
   };
 };
+
+exports.getCacheEntry = getCacheEntry;
+
+function getCacheEntry(path) {
+  let match;
+
+  let cacheEntry = apiCache[path] || _.find(apiCache, function (metadata) {
+    match = metadata.re.exec(path);
+    return _.isArray(match);
+  });
+  return {
+    match,
+    cacheEntry
+  }
+}

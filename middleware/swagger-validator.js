@@ -107,7 +107,7 @@ var send400 = function (req, res, next, err) {
 
   return next(err);
 };
-var validateValue = function (req, schema, path, val, location, callback) {
+var validateValue = function (req, schema, path, val, location, callback, formatValidators) {
   var document = req.swagger.apiDeclaration || req.swagger.swaggerObject;
   var version = req.swagger.apiDeclaration ? '1.2' : '2.0';
   var isModel = mHelpers.isModelParameter(version, schema);
@@ -116,7 +116,7 @@ var validateValue = function (req, schema, path, val, location, callback) {
   val = mHelpers.convertValue(val, schema, mHelpers.getParameterType(schema), location);
 
   try {
-    validators.validateSchemaConstraints(version, schema, path, val);
+    validators.validateSchemaConstraints(version, schema, path, val, formatValidators);
   } catch (err) {
     return callback(err);
   }
@@ -140,7 +140,7 @@ var validateValue = function (req, schema, path, val, location, callback) {
                                                     schema.type), aVal, oCallback);
       } else {
         try {
-          validators.validateAgainstSchema(schema.schema ? schema.schema : schema, val);
+          validators.validateAgainstSchema(schema.schema ? schema.schema : schema, val, undefined, formatValidators);
 
           oCallback();
         } catch (err) {
@@ -311,7 +311,7 @@ var wrapEnd = function (req, res, next) {
  *
  * @param {object} [options] - The middleware options
  * @param {boolean} [options.validateResponse=false] - Whether or not to validate responses
- *
+ * @param {object} [optinos.formatValidators]
  * @returns the middleware function
  */
 exports = module.exports = function (options) {
@@ -320,6 +320,8 @@ exports = module.exports = function (options) {
   if (_.isUndefined(options)) {
     options = {};
   }
+  
+  var formatValidators = (options && options.formatValidators || {});
 
   debug('  Response validation: %s', options.validateResponse === true ? 'enabled' : 'disabled');
 
@@ -376,7 +378,7 @@ exports = module.exports = function (options) {
                       return oCallback();
                     }
 
-                    validateValue(req, schema, paramPath, val, pLocation, oCallback);
+                    validateValue(req, schema, paramPath, val, pLocation, oCallback, formatValidators);
 
                     paramIndex++;
                   }, function (err) {
