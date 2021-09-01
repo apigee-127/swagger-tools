@@ -37,6 +37,8 @@ var async = require('async');
 var helpers = require('../helpers');
 var request = require('supertest');
 var stream = require('stream');
+var fs = require('fs');
+var crypto = require('crypto');
 
 var petStoreJson = _.cloneDeep(require('../../samples/2.0/petstore.json'));
 
@@ -1135,7 +1137,45 @@ describe('Swagger Validator Middleware v2.0', function () {
       });
     });
 
+    it('should not return an error with a null schema on an empty response', function (done) {
+      var cPetStoreJson = _.cloneDeep(petStoreJson);
 
+      cPetStoreJson.paths['/redirect'] = {
+        'get': {
+          'x-swagger-router-controller': 'Test',
+          'operationId': 'redirectTest',
+          'responses': {
+            '302': {
+              'description': 'Redirect'
+            }
+          }
+        }
+      };
+
+      helpers.createServer([cPetStoreJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            'Test_redirectTest': function (req, res) {
+              res.statusCode = 302;
+              res.end();
+            }
+          }
+        },
+        swaggerValidatorOptions: {
+          validateResponse: true
+        }
+      }, function (app) {
+        request(app)
+          .get('/api/redirect')
+          .expect(302)
+          .end(function (err, res) {
+            if (err) {
+              throw err + '\n' + res.error.text;
+            }
+            done();
+          });
+      });
+    });
 
     it('should validate a valid piped response', function (done) {
       var cPetStoreJson = _.cloneDeep(petStoreJson);
@@ -1569,6 +1609,55 @@ describe('Swagger Validator Middleware v2.0', function () {
             .get('/api/tags')
             .expect(200)
             .end(helpers.expectContent(responseValue, done));
+        } catch (err) {
+          done();
+        }
+      });
+    });
+
+    it('should validate file and return it (issue #463)', function (done) {
+      var cPetStore = _.cloneDeep(petStoreJson);
+
+      cPetStore.paths['/image'] = {
+        get: {
+          summary: 'Get image',
+          description: 'Retrieves image.',
+          operationId: 'getImage',
+          produces: ['image/png'],
+          responses: {
+            '200': {
+              description: 'OK',
+              schema: {
+                type: 'file'
+              }
+            }
+          }
+        }
+      };
+
+      helpers.createServer([cPetStore], {
+        swaggerRouterOptions: {
+          controllers: {
+            getImage: function (req, res) {
+              res.setHeader('Content-type', 'image/png');
+              return fs.createReadStream('test/image.png').pipe(res);
+            }
+          }
+        },
+        swaggerValidatorOptions: {
+          validateResponse: true
+        }
+      }, function (app) {
+        try {
+          request(app)
+            .get('/api/image')
+            .end(function(err, res) {
+              assert.strictEqual(
+                crypto.createHash('sha256').update(fs.readFileSync('test/image.png')).digest('hex'), //expected
+                crypto.createHash('sha256').update(res.body).digest('hex') //actual
+              );
+              done(err);
+            });
         } catch (err) {
           done();
         }

@@ -31,6 +31,20 @@ var debug = require('debug')('swagger-tools:middleware:validator');
 var mHelpers = require('./helpers');
 var validators = require('../lib/validators');
 
+var checkIsFile = function (schema, version) {
+  var isFile = false;
+  if (version === '1.2') {
+    var type = (schema.items ? schema.items.type || schema.items.$ref : schema.type);
+    isFile = type === 'file';
+  }
+  else {
+    if (!_.isUndefined(schema.schema)) {
+      isFile = schema.schema.type === 'file';
+    }
+  }
+  return isFile;
+};
+
 var sendData = function (swaggerVersion, res, data, encoding, skipped) {
   // 'res.end' requires a Buffer or String so if it's not one, create a String
   if (!(data instanceof Buffer) && !_.isString(data)) {
@@ -203,6 +217,11 @@ var wrapEnd = function (req, res, next) {
         val = data;
       }
     }
+    else if(writtenData.length === 0) {
+      // Some code expects val to be undefined and not an empty string
+      // when no data is passed to 'end' or written with 'write'.
+      val = undefined;
+    }
     else if(writtenData.length !== 0) {
       val = Buffer.concat(writtenData);
     }
@@ -216,9 +235,6 @@ var wrapEnd = function (req, res, next) {
     debug('  Response validation:');
 
     // If the data is a buffer, convert it to a string so we can parse it prior to validation
-    if (val instanceof Buffer) {
-      val = val.toString(encoding);
-    }
 
     // Express removes the Content-Type header from 204/304 responses which makes response validation impossible
     if (_.isUndefined(res.getHeader('content-type')) && [204, 304].indexOf(res.statusCode) > -1) {
@@ -281,6 +297,11 @@ var wrapEnd = function (req, res, next) {
       if (_.isUndefined(schema)) {
         sendData(swaggerVersion, res, val, encoding, true);
       } else {
+        // If the data is a buffer, convert it to a string so we can parse it prior to validation
+        var isFile = checkIsFile(schema, req.swagger.apiDeclaration ? '1.2' : '2.0');
+        if (val instanceof Buffer && !isFile) {
+          val = val.toString(encoding);
+        }
         validateValue(req, schema, vPath, val, 'body', function (err) {
           if (err) {
             throw err;
