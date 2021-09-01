@@ -127,6 +127,9 @@ var prepareText = module.exports.prepareText = function (text) {
 module.exports.expectContent = function (content, done) {
   return function (err, res) {
     if (err) {
+      if (_.isFunction(done)) {
+        return done(err);
+      }
       throw err;
     }
 
