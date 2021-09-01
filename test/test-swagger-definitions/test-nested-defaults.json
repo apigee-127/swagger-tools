@@ -1,0 +1,153 @@
+﻿{
+  "swagger": "2.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Test nested default values",
+    "license": {
+      "name": "MIT"
+    }
+  },
+  "host": "example.com",
+  "basePath": "/api",
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/nest1": {
+      "post": {
+        "operationId": "testNest1",
+        "summary": "Tests a 1 level of nesting with a default",
+        "parameters": [
+          {
+            "name": "testParam",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Nest1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Created test response"
+          }
+        }
+      }
+    },
+    "/nest1_NoDefault": {
+      "post": {
+        "operationId": "testNest1NoDefault",
+        "summary": "Tests a 1 level of nesting without a default",
+        "parameters": [
+          {
+            "name": "testParam",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Nest1_NoDefault"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Created test response"
+          }
+        }
+      }
+    },
+    "/nest2": {
+      "post": {
+        "operationId": "testNest2",
+        "summary": "Tests 2 levels of nesting with a default at level 2",
+        "parameters": [
+          {
+            "name": "testParam",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Nest2"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Created test response"
+          }
+        }
+      }
+    },
+    "/nest2_default1": {
+      "post": {
+        "operationId": "testNest2Default1",
+        "summary": "Tests 2 levels of nesting with one default param, and one non-default",
+        "parameters": [
+          {
+            "name": "testParam",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Nest2_Default1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Created test response"
+          }
+        }
+      }
+    }
+
+  },
+  "definitions": {
+    "Nest1": {
+      "type": "object",
+      "properties": {
+        "hasDefault": {
+          "type": "string",
+          "default": "nest1"
+        }
+      }
+    },
+    "Nest1_NoDefault": {
+      "type": "object",
+      "properties": {
+        "noDefault": {
+          "type": "string"
+        }
+      }
+    },
+    "Nest2": {
+      "properties": {
+        "nest1": {
+          "$ref": "#/definitions/Nest1"
+        }
+      }
+    },
+    "Nest2_Default1": {
+      "properties": {
+        "withDefault": {
+          "$ref": "#/definitions/Nest1"
+        },
+        "withoutDefault": {
+          "$ref": "#/definitions/Nest1_NoDefault"
+        }
+      }
+    }
+  },
+  "produces": [
+    "application/json"
+  ],
+  "securityDefinitions": {
+    "oauth2": {
+      "type": "oauth2",
+      "scopes": {
+        "read": "Read access.",
+        "write": "Write access"
+      },
+      "flow": "accessCode",
+      "authorizationUrl": "http://petstore.swagger.wordnik.com/oauth/authorize",
+      "tokenUrl": "http://petstore.swagger.wordnik.com/oauth/token"
+    }
+  }
+}

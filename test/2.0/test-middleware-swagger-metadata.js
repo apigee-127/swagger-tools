@@ -38,6 +38,7 @@ var helpers = require('../helpers');
 var multer = require('multer');
 var path = require('path');
 var petStoreJson = _.cloneDeep(require('../../samples/2.0/petstore.json'));
+var nestingTestJson = _.cloneDeep(require('../test-swagger-definitions/test-nested-defaults.json'));
 var pkg = require('../../package.json');
 var request = require('supertest');
 var spec = require('../../lib/helpers').getSpec('2.0');
@@ -249,6 +250,122 @@ describe('Swagger Metadata Middleware v2.0', function () {
         .send({name: 'Top Dog'})
         .expect(200)
         .end(helpers.expectContent({id: 1, name: 'Top Dog'}, done));
+    });
+  });
+  
+  /*
+   * Tests for setting defaults of parameters nested within an object (i.e. in
+   * the request body)
+   */
+  describe('nested default parameters in body object', function () {
+    /*
+     * Before each test load the test Swagger definied for the tests
+     */
+    var cTestJson;
+    beforeEach(function () {
+      cTestJson = _.cloneDeep(nestingTestJson);
+    });
+    
+    it('should add 1 deep defaults', function (done) {
+      helpers.createServer([cTestJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            testNest1: function (req, res, next) {
+              var body = req.swagger.params.testParam.value;
+              var expected = {
+                hasDefault: 'nest1'
+              };
+              assert.deepEqual(body, expected);
+              
+              res.end('OK');
+
+              next();
+            }
+          }
+        }
+      }, function (app) {
+        request(app)
+                .post('/api/nest1')
+                .expect(200)
+                .end(helpers.expectContent('OK', done));
+      });
+    });
+
+    it('should not add 1 deep if no defaults', function (done) {
+      helpers.createServer([cTestJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            testNest1NoDefault: function (req, res, next) {
+              var body = req.swagger.params.testParam.value;
+              var expected = {};
+              assert.deepEqual(body, expected);
+              
+              res.end('OK');
+
+              next();
+            }
+          }
+        }
+      }, function (app) {
+        request(app)
+                .post('/api/nest1_NoDefault')
+                .expect(200)
+                .end(helpers.expectContent('OK', done));
+      });
+    });
+
+    it('should add 2 deep with defaults', function (done) {
+      helpers.createServer([cTestJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            testNest2: function (req, res, next) {
+              var body = req.swagger.params.testParam.value;
+              var expected = {
+                nest1: {
+                  hasDefault: 'nest1'
+                }
+              };
+              assert.deepEqual(body, expected);
+              
+              res.end('OK');
+
+              next();
+            }
+          }
+        }
+      }, function (app) {
+        request(app)
+                .post('/api/nest2')
+                .expect(200)
+                .end(helpers.expectContent('OK', done));
+      });
+    });
+
+    it('should add 2 deep with partial defaults', function (done) {
+      helpers.createServer([cTestJson], {
+        swaggerRouterOptions: {
+          controllers: {
+            testNest2Default1: function (req, res, next) {
+              var body = req.swagger.params.testParam.value;
+              var expected = {
+                withDefault: {
+                  hasDefault: 'nest1'
+                }
+              };
+              assert.deepEqual(body, expected);
+              
+              res.end('OK');
+
+              next();
+            }
+          }
+        }
+      }, function (app) {
+        request(app)
+                .post('/api/nest2_default1')
+                .expect(200)
+                .end(helpers.expectContent('OK', done));
+      });
     });
   });
 

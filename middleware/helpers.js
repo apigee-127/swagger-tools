@@ -66,6 +66,55 @@ var isModelParameter = module.exports.isModelParameter = function (version, para
   return isModel;
 };
 
+/*
+ * Gets the parameter values for the members of an object (recursively).  This
+ * includes getting any applicable defaults based on the Swagger definition.
+ */
+function getObjectParameterValue(version, parameter, val, debug) {
+    if (version === '1.2') {
+        return undefined; //Doesn't support old formats
+    }
+    if (_.isUndefined(val) || !_.isObject(val)) {
+        val = {};
+    }
+    var foundDefault = false;
+    var nestedParams = parameter.properties;
+    if (_.isUndefined(nestedParams) && !_.isUndefined(parameter.schema)) {
+        nestedParams = parameter.schema.properties;
+    }
+
+    if (!_.isObject(nestedParams)) {
+        return undefined;
+    }
+
+    _.each(nestedParams, function (schemaParam, key) {
+        //
+        // Do we have a default for a missing value?
+        //
+        if (_.isUndefined(val[key]) && !_.isUndefined(schemaParam.default)) {
+            foundDefault = true;
+            val[key] = schemaParam.default;
+            debug('      Nested model default: %s =', key, schemaParam.default);
+        } else if (getParameterType(schemaParam) === 'object') {
+            //
+            // Go deeper
+            //
+            var newVal = getObjectParameterValue(version, schemaParam, val[key], debug);
+            if (!_.isUndefined(newVal)) {
+                val[key] = newVal;
+                foundDefault = true;
+            }
+        }
+    });
+
+    if (foundDefault) {
+        return val;
+    } else {
+        // Didn't change anything (except perhaps making val an object) so...
+        return undefined;
+    }
+}
+
 module.exports.getParameterValue = function (version, parameter, pathKeys, match, req, debug) {
   var defaultVal = version === '1.2' ? parameter.defaultValue : parameter.default;
   var paramLocation = version === '1.2' ? parameter.paramType : parameter.in;
@@ -123,6 +172,12 @@ module.exports.getParameterValue = function (version, parameter, pathKeys, match
   // Use the default value when necessary
   if (_.isUndefined(val) && !_.isUndefined(defaultVal)) {
     val = defaultVal;
+  } else if (getParameterType(parameter) === 'object') {
+    // We need to look deeper for defaults
+    var newVal = getObjectParameterValue(version, parameter, val, debug);
+    if (!_.isUndefined(newVal)) {
+        val = newVal;
+    }
   }
 
   return val;
