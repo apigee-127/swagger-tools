@@ -1,4 +1,9 @@
 ## Release Notes
+### 0.10.5 (2021-10-02)
+
+* Fix issue where typescript file loaded by 'require' by handlerCacheFromDir _(Issue #608)_
+* Modified regex expression handlerCacheFromDir function to exclude files where ".d" preceded ".ts" file extension.
+* `var jsFileRegex = /(\.(coffee|js)|(?<!\.d)\.ts)$/;`
 
 ### 0.10.4 (2018-07-20)
 
