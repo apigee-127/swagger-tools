@@ -30,6 +30,7 @@ var debug = require('debug')('swagger-tools:middleware:router');
 var fs = require('fs');
 var mHelpers = require('./helpers');
 var path = require('path');
+const { throws } = require('assert');
 
 var defaultOptions = {
   controllers: {},
@@ -424,6 +425,7 @@ exports = module.exports = function (options) {
     }
 
     if (rErr) {
+      throw new Error(rErr);
       mHelpers.debugError(rErr, debug);
     }
 
