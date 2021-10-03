@@ -43,6 +43,7 @@
     "connect": "^3.4.0",
     "del": "^3.0.0",
     "exposify": "^0.5.0",
+    "gulp": "^3.9.0",
     "gulp-if": "^2.0.0",
     "gulp-istanbul": "^1.1.2",
     "gulp-jshint": "^2.0.0",
