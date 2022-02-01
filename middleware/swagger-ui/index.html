@@ -93,7 +93,7 @@ window.onload = function() {
   xhr.open('HEAD', document.location.href);
 
   xhr.onreadystatechange = function () {
-    var url = 'http://petstore.swagger.io/v2/swagger.json';
+    var url = 'https://petstore.swagger.io/v2/swagger.json';
 
     if (xhr.readyState === XMLHttpRequest.DONE) {
       url = xhr.getResponseHeader('Swagger-API-Docs-URL');
