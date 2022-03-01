@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 0.10.5 (2022-03-01)
+
+* Updated the version of z-schema to fix vulnerability _(Issue #636)_
+
 ### 0.10.4 (2018-07-20)
 
 * Fix issue where an `object` with a `length` property was incorrectly traversed _(Issue #557)_

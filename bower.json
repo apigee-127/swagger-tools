@@ -38,6 +38,6 @@
     "swagger-converter": "~0.1.7",
     "traverse": "^0.6.7",
     "visionmedia-debug": "~3.1.0",
-    "z-schema": "~3.18.4"
+    "z-schema": "^5.0.2"
   }
 }
